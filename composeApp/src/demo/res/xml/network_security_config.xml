@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Demo flavor only: the Firebase Local Emulator Suite speaks plain HTTP on the developer's machine
+  (10.0.2.2 from the Android emulator, or the host IP set in local.properties for a physical device).
+  The demo build is never published.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

@@ -2,27 +2,24 @@ package se.pusslet.android
 
 import android.app.Application
 import co.touchlab.kermit.Logger
+import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
-import org.koin.dsl.module
+import se.pusslet.android.di.androidModule
 import se.pusslet.core.AppConfig
-import se.pusslet.data.db.createDatabase
+import se.pusslet.data.AppCoordinator
 import se.pusslet.data.di.dataModule
-import se.pusslet.data.net.createHttpClient
+import se.pusslet.shell.di.appModules
 
 class PussletApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         Logger.setTag(AppConfig.APP_NAME)
+        val backend = FirebaseSetup.initialize(this)
         startKoin {
             androidContext(this@PussletApplication)
-            modules(
-                module {
-                    single { createDatabase(get()) }
-                    single { createHttpClient(AppConfig.userAgent(BuildConfig.VERSION_NAME)) }
-                },
-                dataModule,
-            )
+            modules(listOf(androidModule(backend), dataModule) + appModules)
         }
+        get<AppCoordinator>().start()
     }
 }

@@ -1,43 +1,113 @@
 package se.pusslet.android.screenshots
 
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import se.pusslet.shell.PussletApp
-import se.pusslet.ui.theme.ThemeMode
 
-/** Phase 0 smoke test: the app shell renders the bottom navigation in light and dark mode, Swedish and English. */
+/**
+ * Screenshots of the real app with the demo family (Familjen Lind) on a fixed morning: light, dark, English and
+ * large text. They double as smoke tests – each one asserts the key content is there.
+ */
+@OptIn(ExperimentalTestApi::class)
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "sv-w411dp-h891dp-xxhdpi")
 class ShellScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
 
+    @After
+    fun tearDown() = TestEnvironment.stop()
+
+    private fun launch(seed: Boolean = true, waitFor: String = "Ella") {
+        TestEnvironment.start(ApplicationProvider.getApplicationContext(), seed)
+        compose.setContent { PussletApp() }
+        compose.waitUntilAtLeastOneExists(hasText(waitFor, substring = true), timeoutMillis = 15_000)
+        compose.waitForIdle()
+    }
+
+    private fun snap(name: String) = compose.onRoot().captureRoboImage("src/test/snapshots/$name.png")
+
     @Test
-    fun shellLight() {
-        compose.setContent { PussletApp(themeMode = ThemeMode.Light) }
+    fun todayLight() {
+        launch()
         compose.onNodeWithText("Idag").assertExists()
-        compose.onNodeWithText("Handla").assertExists()
-        compose.onRoot().captureRoboImage("src/test/snapshots/shell_light.png")
+        snap("today_light")
     }
 
     @Test
-    fun shellDark() {
-        compose.setContent { PussletApp(themeMode = ThemeMode.Dark) }
-        compose.onRoot().captureRoboImage("src/test/snapshots/shell_dark.png")
+    @Config(qualifiers = "+night")
+    fun todayDark() {
+        launch()
+        snap("today_dark")
     }
 
     @Test
     @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
-    fun shellEnglish() {
-        compose.setContent { PussletApp(themeMode = ThemeMode.Light) }
+    fun todayEnglish() {
+        launch()
         compose.onNodeWithText("Today").assertExists()
-        compose.onRoot().captureRoboImage("src/test/snapshots/shell_light_en.png")
+        snap("today_en")
+    }
+
+    @Test
+    @Config(fontScale = 1.5f)
+    fun todayLargeText() {
+        launch()
+        snap("today_large_text")
+    }
+
+    @Test
+    fun calendarWeek() {
+        launch()
+        compose.onNodeWithText("Kalender").performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41"), timeoutMillis = 10_000)
+        snap("calendar_week")
+    }
+
+    @Test
+    fun calendarMonth() {
+        launch()
+        compose.onNodeWithText("Kalender").performClick()
+        compose.onNodeWithText("Månad").performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Oktober 2026"), timeoutMillis = 10_000)
+        snap("calendar_month")
+    }
+
+    @Test
+    fun eventDetails() {
+        launch()
+        compose.onNodeWithText("Kalender").performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41"), timeoutMillis = 10_000)
+        compose.onAllNodesWithText("Skola", substring = true).onFirst().performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Lämning och hämtning"), timeoutMillis = 10_000)
+        snap("event_details")
+    }
+
+    @Test
+    fun more() {
+        launch()
+        compose.onNodeWithText("Mer").performClick()
+        compose.waitForIdle()
+        snap("more")
+    }
+
+    @Test
+    fun onboarding() {
+        launch(seed = false, waitFor = "Pusslet")
+        snap("onboarding_welcome")
     }
 }

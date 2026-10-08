@@ -62,6 +62,18 @@ class AppNavigator internal constructor(
         }
     }
 
+    /** Back to a fresh Today, e.g. after leaving a family on this device. */
+    fun reset() {
+        stacks.forEach { (tab, stack) ->
+            stack.clear()
+            stack.add(tab.root)
+        }
+        currentTab = TopLevelTab.Today
+    }
+
+    /** True when the visible screen is a tab root (bottom bar and quick add are shown). */
+    val atTabRoot: Boolean get() = backStack.lastOrNull() in TopLevelTab.entries.map { it.root }
+
     private fun stack(tab: TopLevelTab): SnapshotStateList<Route> = requireNotNull(stacks[tab])
 
     internal fun snapshot(): String = json.encodeToString(

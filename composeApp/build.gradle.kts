@@ -1,4 +1,7 @@
+import com.android.build.api.dsl.ApplicationProductFlavor
+import groovy.json.JsonSlurper
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -9,19 +12,73 @@ plugins {
 }
 
 val appName = providers.gradleProperty("pusslet.appName").getOrElse("Pusslet")
+val baseApplicationId = "se.pusslet.app"
+
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+/** The Android emulator reaches the host as 10.0.2.2; set pusslet.emulatorHost in local.properties for a physical device. */
+val emulatorHost: String = localProps.getProperty("pusslet.emulatorHost", "10.0.2.2")
+
+/** Host used for invite links (Android App Links), e.g. your-project.web.app. */
+val linkHost: String = localProps.getProperty("pusslet.linkHost", "pusslet.web.app")
+
+/**
+ * Reads Firebase options from src/<flavor>/google-services.json when present (gitignored, only the owner has it).
+ * Missing file = empty values = the app runs local-only. No Google Services Gradle plugin needed (ADR-013).
+ */
+@Suppress("UNCHECKED_CAST")
+fun firebaseOptions(flavor: String, packageName: String): Map<String, String> {
+    val file = file("src/$flavor/google-services.json")
+    if (!file.exists()) return emptyMap()
+    val json = JsonSlurper().parse(file) as Map<String, Any?>
+    val project = json["project_info"] as Map<String, Any?>
+    val clients = json["client"] as List<Map<String, Any?>>
+
+    fun pkg(c: Map<String, Any?>) = ((c["client_info"] as Map<String, Any?>)["android_client_info"] as Map<String, Any?>)["package_name"]
+    val client = clients.firstOrNull { pkg(it) == packageName } ?: clients.first()
+    val apiKey = ((client["api_key"] as List<Map<String, Any?>>).first())["current_key"].toString()
+    return mapOf(
+        "PROJECT_ID" to project["project_id"].toString(),
+        "APP_ID" to (client["client_info"] as Map<String, Any?>)["mobilesdk_app_id"].toString(),
+        "API_KEY" to apiKey,
+        "SENDER_ID" to project["project_number"].toString(),
+        "STORAGE_BUCKET" to (project["storage_bucket"] ?: "").toString(),
+        // OAuth web client (type 3) is what Google sign-in via Credential Manager needs.
+        "WEB_CLIENT_ID" to
+            (
+                (client["oauth_client"] as? List<Map<String, Any?>>).orEmpty().firstOrNull {
+                    it["client_type"].toString() == "3"
+                }?.get("client_id")
+                    ?: ""
+            ).toString(),
+    )
+}
+
+fun ApplicationProductFlavor.firebase(options: Map<String, String>) {
+    listOf("PROJECT_ID", "APP_ID", "API_KEY", "SENDER_ID", "STORAGE_BUCKET", "WEB_CLIENT_ID").forEach { key ->
+        val value = options[key].orEmpty()
+        buildConfigField("String", "FIREBASE_$key", "\"$value\"")
+    }
+}
 
 android {
     namespace = "se.pusslet.android"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "se.pusslet.app"
+        applicationId = baseApplicationId
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = libs.versions.app.versionCode.get().toInt()
         versionName = libs.versions.app.versionName.get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resValue("string", "app_name", appName)
+        buildConfigField("String", "EMULATOR_HOST", "\"$emulatorHost\"")
+        buildConfigField("String", "LINK_HOST", "\"$linkHost\"")
+        manifestPlaceholders["linkHost"] = linkHost
     }
 
     flavorDimensions += "env"
@@ -34,6 +91,15 @@ android {
             resValue("string", "app_name", "$appName Demo")
             buildConfigField("String", "BACKEND", "\"emulator\"")
             buildConfigField("boolean", "SEED_DEMO_DATA", "true")
+            // "demo-" project ids make the emulators run without any real Firebase project.
+            firebase(
+                mapOf(
+                    "PROJECT_ID" to "demo-pusslet",
+                    "APP_ID" to "1:000000000000:android:0000000000000000",
+                    "API_KEY" to "demo-not-a-secret",
+                    "SENDER_ID" to "000000000000",
+                ),
+            )
         }
         // Real Firebase project for development (google-services.json in src/dev/).
         create("dev") {
@@ -43,12 +109,14 @@ android {
             resValue("string", "app_name", "$appName Dev")
             buildConfigField("String", "BACKEND", "\"firebase\"")
             buildConfigField("boolean", "SEED_DEMO_DATA", "false")
+            firebase(firebaseOptions("dev", "$baseApplicationId.dev"))
         }
         // Production (google-services.json in src/prod/).
         create("prod") {
             dimension = "env"
             buildConfigField("String", "BACKEND", "\"firebase\"")
             buildConfigField("boolean", "SEED_DEMO_DATA", "false")
+            firebase(firebaseOptions("prod", baseApplicationId))
         }
     }
 
@@ -115,15 +183,28 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.core)
     implementation(libs.compose.components.resources)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.kermit)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.googleid)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     debugImplementation(libs.compose.ui.tooling)
 
@@ -131,6 +212,11 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.sqlite.framework)
+    testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.serialization.kotlinx.json)
+    testImplementation(libs.androidx.room.runtime)
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.junit.rule)

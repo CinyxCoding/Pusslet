@@ -1,0 +1,142 @@
+package se.pusslet.core.quickadd
+
+import kotlinx.datetime.DayOfWeek
+import se.pusslet.core.model.EventTags
+
+/**
+ * Word lists for the rule-based Swedish quick-add parser. Plain data so it is easy to extend and review.
+ * All entries are lowercase.
+ */
+internal object SwedishLexicon {
+    val weekdays: Map<String, DayOfWeek> = buildMap {
+        fun add(day: DayOfWeek, vararg words: String) = words.forEach { put(it, day) }
+        add(DayOfWeek.MONDAY, "måndag", "mån", "må", "monday", "mon")
+        add(DayOfWeek.TUESDAY, "tisdag", "tis", "ti", "tuesday", "tue", "tues")
+        add(DayOfWeek.WEDNESDAY, "onsdag", "ons", "wednesday", "wed")
+        add(DayOfWeek.THURSDAY, "torsdag", "tors", "tor", "thursday", "thu", "thur")
+        add(DayOfWeek.FRIDAY, "fredag", "fre", "friday", "fri")
+        add(DayOfWeek.SATURDAY, "lördag", "lör", "lö", "saturday", "sat")
+        add(DayOfWeek.SUNDAY, "söndag", "sön", "sö", "sunday", "sun")
+    }
+
+    /** "tisdagar" = every Tuesday. */
+    val weekdayPlurals: Map<String, DayOfWeek> = mapOf(
+        "måndagar" to DayOfWeek.MONDAY,
+        "tisdagar" to DayOfWeek.TUESDAY,
+        "onsdagar" to DayOfWeek.WEDNESDAY,
+        "torsdagar" to DayOfWeek.THURSDAY,
+        "fredagar" to DayOfWeek.FRIDAY,
+        "lördagar" to DayOfWeek.SATURDAY,
+        "söndagar" to DayOfWeek.SUNDAY,
+        "mondays" to DayOfWeek.MONDAY,
+        "tuesdays" to DayOfWeek.TUESDAY,
+        "wednesdays" to DayOfWeek.WEDNESDAY,
+        "thursdays" to DayOfWeek.THURSDAY,
+        "fridays" to DayOfWeek.FRIDAY,
+        "saturdays" to DayOfWeek.SATURDAY,
+        "sundays" to DayOfWeek.SUNDAY,
+    )
+
+    val months: Map<String, Int> = buildMap {
+        val names = listOf(
+            listOf("januari", "jan", "january"),
+            listOf("februari", "feb", "february"),
+            listOf("mars", "mar", "march"),
+            listOf("april", "apr"),
+            listOf("maj", "may"),
+            listOf("juni", "jun", "june"),
+            listOf("juli", "jul", "july"),
+            listOf("augusti", "aug", "august"),
+            listOf("september", "sep", "sept"),
+            listOf("oktober", "okt", "oct", "october"),
+            listOf("november", "nov"),
+            listOf("december", "dec"),
+        )
+        names.forEachIndexed { i, words -> words.forEach { put(it, i + 1) } }
+    }
+
+    val hourWords: Map<String, Int> = mapOf(
+        "ett" to 1, "en" to 1, "två" to 2, "tre" to 3, "fyra" to 4, "fem" to 5, "sex" to 6, "sju" to 7,
+        "åtta" to 8, "nio" to 9, "tio" to 10, "elva" to 11, "tolv" to 12,
+    )
+
+    val countWords: Map<String, Int> = mapOf(
+        "en" to 1, "ett" to 1, "två" to 2, "tre" to 3, "fyra" to 4, "fem" to 5, "sex" to 6, "sju" to 7,
+    )
+
+    /** Imperative verbs that make a clause a task ("köp present", "ring tandläkaren"). */
+    val taskVerbs: Set<String> = setOf(
+        "köp", "köpa", "hämta", "lämna", "ring", "ringa", "boka", "betala", "fixa", "anmäl", "anmäla", "skicka", "beställ", "maila",
+        "mejla", "sms:a", "smsa", "svara", "osa", "packa", "tvätta", "städa", "dammsug", "dammsuga", "laga", "förnya",
+        "signera", "skriv", "läs", "lämna in", "hämta ut", "kom ihåg", "glöm inte", "påminn", "kolla", "byt", "sälj",
+        "slänga", "släng", "panta", "baka", "plantera", "vattna", "rensa", "sortera", "ladda", "uppdatera", "säg upp",
+        "buy", "call", "book", "pay", "remember",
+    )
+
+    /** Verbs meaning "I take care of pick-up / drop-off". */
+    val pickupVerbs: Set<String> = setOf("hämtar", "hämta", "hämtning", "hämtningen", "picks up", "pick up")
+    val dropoffVerbs: Set<String> = setOf("lämnar", "lämna", "lämning", "lämningen", "drops off", "drop off")
+
+    /** Activity words that strongly indicate a calendar event, mapped to a tag. */
+    val activityTags: Map<String, String> = buildMap {
+        listOf("kalas", "födelsedagskalas", "barnkalas", "fest", "party").forEach { put(it, EventTags.PARTY) }
+        listOf("utflykt", "skogsutflykt", "skolresa", "studiebesök", "trip").forEach { put(it, EventTags.TRIP) }
+        listOf("studiedag", "studiedagar", "planeringsdag", "stängt").forEach { put(it, EventTags.STUDY_DAY) }
+        listOf("lov", "sportlov", "höstlov", "jullov", "påsklov", "sommarlov", "lovdag").forEach { put(it, EventTags.HOLIDAY_BREAK) }
+        listOf(
+            "träning", "fotboll", "fotbollsträning", "match", "innebandy", "handboll", "hockey", "simning", "simskola",
+            "dans", "balett", "ridning", "gymnastik", "scouter", "scouterna", "judo", "karate", "tennis", "basket",
+            "klättring", "friidrott", "skridskor", "skidor", "cup", "turnering", "musikskola", "pianolektion", "kör",
+            "gitarrlektion", "teater", "football", "practice", "swimming",
+        ).forEach { put(it, EventTags.TRAINING) }
+        listOf(
+            "möte", "föräldramöte", "utvecklingssamtal", "kvartssamtal", "tandläkare", "tandläkaren", "läkare", "bvc",
+            "vårdcentralen", "frisör", "frisören", "meeting", "appointment",
+        ).forEach { put(it, EventTags.MEETING) }
+        listOf("idrott", "gympa", "idrottslektion").forEach { put(it, EventTags.PE) }
+        listOf("jobb", "jobbet", "arbete", "konferens", "work").forEach { put(it, EventTags.WORK) }
+    }
+
+    /** Tags that imply an all-day event when no time is given. */
+    val allDayTags = setOf(EventTags.STUDY_DAY, EventTags.HOLIDAY_BREAK)
+
+    /** Common Swedish family dinners. Used to recognise "tacos fredag" as a meal-plan entry. */
+    val dishes: Set<String> = setOf(
+        "tacos", "taco", "pasta", "spaghetti", "köttfärssås", "spaghetti bolognese", "bolognese", "lasagne", "lasagnette",
+        "pizza", "fisk", "fiskpinnar", "lax", "ugnslax", "torsk", "sej", "fiskgratäng", "soppa", "ärtsoppa", "tomatsoppa",
+        "linssoppa", "pannkakor", "plättar", "köttbullar", "falukorv", "korv", "korv stroganoff", "korvstroganoff",
+        "stroganoff", "kyckling", "kycklinggryta", "kycklingwok", "wok", "gryta", "chili", "chili con carne", "burgare",
+        "hamburgare", "hamburgers", "pyttipanna", "omelett", "äggröra", "risotto", "paella", "curry", "dal", "sushi",
+        "nudlar", "ramen", "kåldolmar", "kalops", "pytt", "fläskpannkaka", "raggmunk", "blodpudding", "fiskburgare",
+        "quesadillas", "quesadilla", "enchiladas", "burritos", "wraps", "paj", "quiche", "pastasallad", "gratäng",
+        "potatisgratäng", "biffar", "järpar", "schnitzel", "kebab", "lövbiff", "grillat", "grillkväll", "fredagsmys",
+        "carbonara", "pasta carbonara", "makaroner", "makaroner och korv", "gröt", "risgrynsgröt", "pizzasallad", "vegetariskt",
+        "halloumi", "falafel", "rester", "matlåda", "tacopaj", "kycklingklubbor", "fajitas", "pesto", "gnocchi",
+    )
+
+    /** Grocery words: "köp mjölk" is shopping, "köp present" is a task. */
+    val groceries: Set<String> = setOf(
+        "mjölk", "fil", "filmjölk", "yoghurt", "grädde", "smör", "ost", "ägg", "bröd", "knäckebröd", "bananer", "banan",
+        "äpplen", "äpple", "päron", "apelsiner", "gurka", "tomater", "tomat", "paprika", "lök", "gul lök", "rödlök",
+        "vitlök", "potatis", "morötter", "morot", "sallad", "broccoli", "blomkål", "pasta", "ris", "mjöl", "socker",
+        "salt", "kaffe", "te", "juice", "kyckling", "köttfärs", "nötfärs", "fläskfärs", "korv", "falukorv", "bacon",
+        "skinka", "lax", "torsk", "fiskpinnar", "tacoskal", "tortilla", "tortillabröd", "krossade tomater", "majs",
+        "bönor", "kikärtor", "linser", "havregryn", "flingor", "müsli", "glass", "frysta ärtor", "ärtor", "blåbär",
+        "jordgubbar", "citron", "lime", "avokado", "creme fraiche", "crème fraiche", "gräddfil", "kvarg", "keso",
+        "toapapper", "hushållspapper", "diskmedel", "tvättmedel", "blöjor", "våtservetter", "tandkräm", "schampo",
+        "tvål", "kaffefilter", "sylt", "leverpastej", "kaviar", "pålägg", "chips", "godis", "läsk", "vatten", "tofu",
+        "halloumi", "fetaost", "parmesan", "riven ost", "mozzarella", "olja", "olivolja", "vinäger", "ketchup", "senap",
+        "majonnäs", "buljong", "kryddor", "pesto", "nudlar", "spenat", "zucchini", "squash", "svamp", "champinjoner",
+        "vindruvor", "melon", "kiwi", "mango", "ananas", "russin", "nötter", "jäst", "bakpulver", "vaniljsocker",
+        "kakao", "choklad", "kex", "skorpor", "mellanmjölk", "lättmjölk", "havremjölk", "oatly", "bröd", "frukt",
+    )
+
+    /** Leading words that mark a meal entry explicitly. */
+    val mealMarkers = setOf("middag", "middagen", "till middag", "lunch", "frukost", "äter", "vi äter", "dinner")
+
+    /** First-person pronouns resolve to the current user. */
+    val selfPronouns = setOf("jag", "mig", "me", "myself")
+
+    /** Filler words removed from titles when they dangle at the edges. */
+    val danglingWords = setOf("på", "kl", "kl.", "klockan", "den", "till", "i", "och", "med", "om", "vid", "at", "on", "the", "från", "-", "–")
+}

@@ -39,6 +39,8 @@ data class Member(
     val joinedAt: Instant? = null,
     /** The invite used to join; validated by security rules on create. */
     val inviteCode: String? = null,
+    /** What the family calls this person ("Morfar", "Mamma"). Understood by quick add. */
+    val nickname: String? = null,
 )
 
 /** A child profile. Children never need an account; only a first name is required (data minimisation). */
@@ -135,12 +137,21 @@ data class FamilyPerson(
     val role: Role? = null,
     val avatar: String? = null,
     val birthDate: LocalDate? = null,
+    /** Other names the family uses ("morfar"). */
+    val aliases: List<String> = emptyList(),
 ) {
     /** Colour is never the only signal: UI shows this initial (or the avatar emoji) on the colour. */
     val initial: String get() = avatar ?: name.trim().take(1).uppercase().ifEmpty { "?" }
 
     companion object {
-        fun of(member: Member) = FamilyPerson(member.id, member.displayName, member.color, isChild = false, role = member.role)
+        fun of(member: Member) = FamilyPerson(
+            member.id,
+            member.displayName,
+            member.color,
+            isChild = false,
+            role = member.role,
+            aliases = listOfNotNull(member.nickname?.takeIf { it.isNotBlank() }),
+        )
 
         fun of(child: Child) = FamilyPerson(
             child.id,

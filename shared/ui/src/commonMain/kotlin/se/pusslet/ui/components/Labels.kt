@@ -2,11 +2,16 @@ package se.pusslet.ui.components
 
 import org.jetbrains.compose.resources.StringResource
 import se.pusslet.core.holidays.HolidayId
+import se.pusslet.core.meals.SuggestionReason
+import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.Allergen
 import se.pusslet.core.model.Diet
 import se.pusslet.core.model.EventTags
+import se.pusslet.core.model.MainComponent
 import se.pusslet.core.model.MealSlot
+import se.pusslet.core.model.RecipeTag
 import se.pusslet.core.model.Role
+import se.pusslet.core.units.MeasureUnit
 import se.pusslet.core.weather.ClothingAdvice
 import se.pusslet.core.weather.WeatherCondition
 import se.pusslet.ui.resources.*
@@ -142,5 +147,91 @@ object Labels {
         Diet.Halal -> Res.string.diet_Halal
         Diet.NoPork -> Res.string.diet_NoPork
         Diet.Kosher -> Res.string.diet_Kosher
+    }
+
+    fun aisle(a: Aisle): StringResource = when (a) {
+        Aisle.Produce -> Res.string.aisle_produce
+        Aisle.Bakery -> Res.string.aisle_bakery
+        Aisle.Deli -> Res.string.aisle_deli
+        Aisle.Meat -> Res.string.aisle_meat
+        Aisle.Fish -> Res.string.aisle_fish
+        Aisle.Dairy -> Res.string.aisle_dairy
+        Aisle.Cheese -> Res.string.aisle_cheese
+        Aisle.Eggs -> Res.string.aisle_eggs
+        Aisle.Frozen -> Res.string.aisle_frozen
+        Aisle.Pantry -> Res.string.aisle_pantry
+        Aisle.Canned -> Res.string.aisle_canned
+        Aisle.SpicesAndSauces -> Res.string.aisle_spices
+        Aisle.Baking -> Res.string.aisle_baking
+        Aisle.Breakfast -> Res.string.aisle_breakfast
+        Aisle.Drinks -> Res.string.aisle_drinks
+        Aisle.SnacksAndSweets -> Res.string.aisle_snacks
+        Aisle.Baby -> Res.string.aisle_baby
+        Aisle.Hygiene -> Res.string.aisle_hygiene
+        Aisle.Household -> Res.string.aisle_household
+        Aisle.Pets -> Res.string.aisle_pets
+        Aisle.Pharmacy -> Res.string.aisle_pharmacy
+        Aisle.Other -> Res.string.aisle_other
+    }
+
+    fun recipeTag(t: RecipeTag): StringResource = when (t) {
+        RecipeTag.Quick -> Res.string.recipe_tag_quick
+        RecipeTag.Vegetarian -> Res.string.recipe_tag_vegetarian
+        RecipeTag.Vegan -> Res.string.recipe_tag_vegan
+        RecipeTag.KidFriendly -> Res.string.recipe_tag_kid_friendly
+        RecipeTag.Lunchbox -> Res.string.recipe_tag_lunchbox
+        RecipeTag.FreezerFriendly -> Res.string.recipe_tag_freezer
+        RecipeTag.Weekend -> Res.string.recipe_tag_weekend
+        RecipeTag.Budget -> Res.string.recipe_tag_budget
+    }
+
+    fun component(c: MainComponent): StringResource = when (c) {
+        MainComponent.Fish -> Res.string.component_fish
+        MainComponent.Chicken -> Res.string.component_chicken
+        MainComponent.Beef -> Res.string.component_beef
+        MainComponent.Pork -> Res.string.component_pork
+        MainComponent.MincedMeat -> Res.string.component_minced
+        MainComponent.Sausage -> Res.string.component_sausage
+        MainComponent.Vegetarian -> Res.string.component_vegetarian
+        MainComponent.Egg -> Res.string.component_egg
+        MainComponent.Pasta -> Res.string.component_pasta
+        MainComponent.Soup -> Res.string.component_soup
+        MainComponent.Other -> Res.string.component_other
+    }
+
+    fun reason(r: SuggestionReason): StringResource = when (r) {
+        SuggestionReason.Favorite -> Res.string.reason_favorite
+        SuggestionReason.NotRecently -> Res.string.reason_not_recently
+        SuggestionReason.QuickForBusyEvening -> Res.string.reason_quick
+        SuggestionReason.UsesWhatYouHave -> Res.string.reason_pantry
+        SuggestionReason.VariesTheWeek -> Res.string.reason_variety
+        SuggestionReason.DiffersFromSchoolLunch -> Res.string.reason_lunch
+        SuggestionReason.SuitsEveryone -> Res.string.reason_suits_everyone
+    }
+
+    fun unit(u: MeasureUnit): StringResource = when (u) {
+        MeasureUnit.Krm -> Res.string.unit_krm
+        MeasureUnit.Tsk -> Res.string.unit_tsk
+        MeasureUnit.Msk -> Res.string.unit_msk
+        MeasureUnit.Ml -> Res.string.unit_ml
+        MeasureUnit.Cl -> Res.string.unit_cl
+        MeasureUnit.Dl -> Res.string.unit_dl
+        MeasureUnit.L -> Res.string.unit_l
+        MeasureUnit.Mg -> Res.string.unit_mg
+        MeasureUnit.G -> Res.string.unit_g
+        MeasureUnit.Hg -> Res.string.unit_hg
+        MeasureUnit.Kg -> Res.string.unit_kg
+        MeasureUnit.St -> Res.string.unit_st
+        MeasureUnit.Forp -> Res.string.unit_forp
+        MeasureUnit.Pkt -> Res.string.unit_pkt
+        MeasureUnit.Burk -> Res.string.unit_burk
+        MeasureUnit.Flaska -> Res.string.unit_flaska
+        MeasureUnit.Pase -> Res.string.unit_pase
+        MeasureUnit.Klyfta -> Res.string.unit_klyfta
+        MeasureUnit.Skiva -> Res.string.unit_skiva
+        MeasureUnit.Knippe -> Res.string.unit_knippe
+        MeasureUnit.Kruka -> Res.string.unit_kruka
+        MeasureUnit.Nypa -> Res.string.unit_nypa
+        MeasureUnit.Portion -> Res.string.unit_portion
     }
 }

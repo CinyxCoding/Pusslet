@@ -24,7 +24,8 @@ object RecipeTextSplitter {
         RegexOption.IGNORE_CASE,
     )
     private val stepHeadings = Regex(
-        """^(gör så här|så gör du|så här gör du|instruktioner|tillagning|tillvägagångssätt|beskrivning|steg|method|instructions|directions)\b.*""",
+        """^(gör så här|så gör du|så här gör du|instruktioner|tillagning|tillvägagångssätt|beskrivning|steg|""" +
+            """method|instructions|directions)\b.*""",
         RegexOption.IGNORE_CASE,
     )
     private val servingsPattern = Regex(
@@ -49,7 +50,11 @@ object RecipeTextSplitter {
         for (raw in lines) {
             if (raw.isEmpty()) continue
             val line = raw.trimEnd()
-            if (servings == null) servingsPattern.find(line)?.let { m -> servings = (m.groupValues[1].ifEmpty { m.groupValues[2] }).toIntOrNull() }
+            if (servings ==
+                null
+            ) {
+                servingsPattern.find(line)?.let { m -> servings = (m.groupValues[1].ifEmpty { m.groupValues[2] }).toIntOrNull() }
+            }
             when {
                 ingredientHeadings.matches(line) && line.length < MAX_TITLE_CHARS -> {
                     section = Section.Ingredients
@@ -57,7 +62,9 @@ object RecipeTextSplitter {
                 }
                 stepHeadings.matches(line) && line.length < MAX_TITLE_CHARS -> section = Section.Steps
                 isServingsOnly(line) -> Unit
-                title.isEmpty() && ingredients.isEmpty() && steps.isEmpty() && section == Section.Unknown && isTitleLike(line) -> title = line
+                title.isEmpty() && ingredients.isEmpty() && steps.isEmpty() && section == Section.Unknown && isTitleLike(line) ->
+                    title =
+                        line
                 section == Section.Ingredients && line.endsWith(':') && line.length < MAX_TITLE_CHARS -> group = line.dropLast(1).trim()
                 section == Section.Ingredients -> if (isIngredientLike(line)) {
                     ingredients += IngredientParser.parse(line, group)

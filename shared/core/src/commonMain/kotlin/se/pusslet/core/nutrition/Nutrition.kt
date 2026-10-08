@@ -195,6 +195,8 @@ object FoodMatcher {
         for (w in want) {
             when {
                 have.any { it == w } -> s += 2.0
+                // Swedish compounds end in what the thing is: "matlagningsgrädde" is a kind of "grädde".
+                have.any { it.endsWith(w) && w.length >= MIN_HEAD_CHARS } -> s += 1.5
                 have.any { it.startsWith(w) || w.startsWith(it) } -> s += 1.2
                 have.any { it.contains(w) || w.contains(it) } -> s += 0.6
             }
@@ -206,6 +208,8 @@ object FoodMatcher {
         s -= have.size * 0.08
         return s
     }
+
+    private const val MIN_HEAD_CHARS = 4
 
     fun best(ingredientName: String, candidates: List<Food>, limit: Int = 5): List<Food> =
         candidates.map {

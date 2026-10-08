@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.first
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.nutrition.Food
 import se.pusslet.core.nutrition.FoodMatcher
+import se.pusslet.core.nutrition.GramEstimator
 import se.pusslet.core.nutrition.NutrientValues
 import se.pusslet.core.nutrition.NutritionCalculator
 import se.pusslet.core.nutrition.NutritionSummary
@@ -18,14 +19,27 @@ class RecipeNutrition(private val foods: FoodDatabase, private val recipes: Reci
     /** Null when the database has never been downloaded and the phone is offline. */
     suspend fun summary(recipe: Recipe, servings: Int = recipe.servings): NutritionSummary? {
         if (!foods.ensureLoaded()) return null
-        val mappings = recipes.ingredientMappings.first()
-        val numbers = recipe.ingredients.filter { !it.optional }.associate { ing ->
-            ing.name to (ing.foodNumber ?: mappings[ing.name.trim().lowercase()] ?: bestMatch(ing.name)?.number)
-        }
+        val numbers = numbers(recipe)
         val values: Map<Int, NutrientValues> = numbers.values.filterNotNull().distinct()
             .mapNotNull { n -> foods.nutrients(n)?.let { n to it } }
             .toMap()
         return NutritionCalculator.forRecipe(recipe, { numbers[it.name] }, values::get, servings)
+    }
+
+    /** Which food each ingredient is counted as, so the user can check and correct it. Empty when offline. */
+    suspend fun matches(recipe: Recipe): List<IngredientMatch> {
+        if (!foods.ensureLoaded()) return emptyList()
+        val numbers = numbers(recipe)
+        return recipe.ingredients.filter { !it.optional }.map { ing ->
+            IngredientMatch(ing.name, numbers[ing.name]?.let { foods.food(it) }, GramEstimator.grams(ing) != null)
+        }
+    }
+
+    private suspend fun numbers(recipe: Recipe): Map<String, Int?> {
+        val mappings = recipes.ingredientMappings.first()
+        return recipe.ingredients.filter { !it.optional }.associate { ing ->
+            ing.name to (ing.foodNumber ?: mappings[ing.name.trim().lowercase()] ?: bestMatch(ing.name)?.number)
+        }
     }
 
     suspend fun candidates(ingredientName: String): List<Food> {
@@ -41,3 +55,6 @@ class RecipeNutrition(private val foods: FoodDatabase, private val recipes: Reci
         const val SEARCH_LIMIT = 30
     }
 }
+
+/** [food] null = no match; [convertible] false = the amount cannot be turned into grams ("1 förp"). */
+data class IngredientMatch(val ingredient: String, val food: Food?, val convertible: Boolean)

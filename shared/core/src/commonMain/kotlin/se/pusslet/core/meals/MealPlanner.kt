@@ -79,7 +79,15 @@ object MealPlanner {
 }
 
 /** Why a dinner is suggested; shown as small chips so the suggestion is explainable (no black box). */
-enum class SuggestionReason { Favorite, NotRecently, QuickForBusyEvening, UsesWhatYouHave, VariesTheWeek, DiffersFromSchoolLunch, SuitsEveryone }
+enum class SuggestionReason {
+    Favorite,
+    NotRecently,
+    QuickForBusyEvening,
+    UsesWhatYouHave,
+    VariesTheWeek,
+    DiffersFromSchoolLunch,
+    SuitsEveryone,
+}
 
 data class MealSuggestion(val recipe: Recipe, val reasons: Set<SuggestionReason>, val score: Int)
 

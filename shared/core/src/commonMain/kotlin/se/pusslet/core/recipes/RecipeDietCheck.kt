@@ -23,14 +23,53 @@ sealed interface DietConflict {
 object RecipeDietCheck {
     private val allergenStems: Map<Allergen, List<String>> = mapOf(
         Allergen.Milk to listOf(
-            "mjölk", "grädde", "smör", "ost", "parmesan", "mozzarella", "fetaost", "halloumi", "crème fraiche", "creme fraiche",
-            "gräddfil", "yoghurt", "kvarg", "keso", "färskost", "mascarpone", "ricotta", "kesella", "vassle",
+            "mjölk",
+            "grädde",
+            "smör",
+            "ost",
+            "parmesan",
+            "mozzarella",
+            "fetaost",
+            "halloumi",
+            "crème fraiche",
+            "creme fraiche",
+            "gräddfil",
+            "yoghurt",
+            "kvarg",
+            "keso",
+            "färskost",
+            "mascarpone",
+            "ricotta",
+            "kesella",
+            "vassle",
         ),
         Allergen.Egg to listOf("ägg", "äggula", "äggvita", "majonnäs", "aioli"),
         Allergen.Gluten to listOf(
-            "vetemjöl", "mjöl", "vete", "råg", "korn", "dinkel", "pasta", "spaghetti", "makaroner", "penne", "lasagneplattor",
-            "nudlar", "bröd", "tortilla", "pizzadeg", "ströbröd", "skorpmjöl", "couscous", "bulgur", "pannkaks", "sojasås",
-            "korngryn", "pärlkorn", "matvete", "lasagne",
+            "vetemjöl",
+            "mjöl",
+            "vete",
+            "råg",
+            "korn",
+            "dinkel",
+            "pasta",
+            "spaghetti",
+            "makaroner",
+            "penne",
+            "lasagneplattor",
+            "nudlar",
+            "bröd",
+            "tortilla",
+            "pizzadeg",
+            "ströbröd",
+            "skorpmjöl",
+            "couscous",
+            "bulgur",
+            "pannkaks",
+            "sojasås",
+            "korngryn",
+            "pärlkorn",
+            "matvete",
+            "lasagne",
         ),
         Allergen.Peanut to listOf("jordnöt"),
         Allergen.TreeNuts to listOf("mandel", "hasselnöt", "valnöt", "cashew", "pekannöt", "pistage", "paranöt", "pinjenöt", "nötter"),
@@ -47,24 +86,72 @@ object RecipeDietCheck {
     /** Ingredient words that are not what the stem suggests ("ostronsås" is not cheese, "kokosmjölk" is not milk). */
     private val exceptions: Map<Allergen, List<String>> = mapOf(
         Allergen.Milk to listOf(
-            "kokosmjölk", "havremjölk", "sojamjölk", "mandelmjölk", "havregrädde", "sojagrädde", "ostronsås", "kokosgrädde",
-            "jordnötssmör", "mandelsmör", "vegansk", "växtbaserad",
+            "kokosmjölk",
+            "havremjölk",
+            "sojamjölk",
+            "mandelmjölk",
+            "havregrädde",
+            "sojagrädde",
+            "ostronsås",
+            "kokosgrädde",
+            "jordnötssmör",
+            "mandelsmör",
+            "vegansk",
+            "växtbaserad",
         ),
         Allergen.Gluten to listOf(
-            "glutenfri", "majsmjöl", "rismjöl", "potatismjöl", "mandelmjöl", "kokosmjöl", "risnudlar", "majstortilla", "bovete", "pastasås",
-            "kikärtsmjöl", "majsbröd",
+            "glutenfri",
+            "majsmjöl",
+            "rismjöl",
+            "potatismjöl",
+            "mandelmjöl",
+            "kokosmjöl",
+            "risnudlar",
+            "majstortilla",
+            "bovete",
+            "pastasås",
+            "kikärtsmjöl",
+            "majsbröd",
         ),
         Allergen.Egg to listOf("äggfri", "vegansk majonnäs"),
         Allergen.Sulphites to listOf("vindruv"),
     )
 
     private val meat = listOf(
-        "kött", "färs", "nötfärs", "blandfärs", "fläskfärs", "kyckling", "kalkon", "bacon", "skinka", "korv", "fläsk", "biff",
-        "entrecôte", "oxfilé", "lamm", "vilt", "älg", "rådjur", "salami", "chorizo", "pancetta", "kassler", "köttbullar", "kycklingbuljong",
-        "köttbuljong", "hönsbuljong", "kalvfond", "oxfond", "viltfond",
+        "kött",
+        "färs",
+        "nötfärs",
+        "blandfärs",
+        "fläskfärs",
+        "kyckling",
+        "kalkon",
+        "bacon",
+        "skinka",
+        "korv",
+        "fläsk",
+        "biff",
+        "entrecôte",
+        "oxfilé",
+        "lamm",
+        "vilt",
+        "älg",
+        "rådjur",
+        "salami",
+        "chorizo",
+        "pancetta",
+        "kassler",
+        "köttbullar",
+        "kycklingbuljong",
+        "köttbuljong",
+        "hönsbuljong",
+        "kalvfond",
+        "oxfond",
+        "viltfond",
     )
-    private val pork = listOf("fläsk", "bacon", "skinka", "kassler", "pancetta", "chorizo", "salami", "falukorv", "prinskorv", "fläskfärs", "blandfärs")
-    private val vegExceptions = listOf("grönsaksbuljong", "svampbuljong", "vegobuljong", "vegetarisk", "vegansk", "vego", "sojafärs", "quornfärs", "vegofärs")
+    private val pork =
+        listOf("fläsk", "bacon", "skinka", "kassler", "pancetta", "chorizo", "salami", "falukorv", "prinskorv", "fläskfärs", "blandfärs")
+    private val vegExceptions =
+        listOf("grönsaksbuljong", "svampbuljong", "vegobuljong", "vegetarisk", "vegansk", "vego", "sojafärs", "quornfärs", "vegofärs")
 
     fun allergens(recipe: Recipe): Map<Allergen, String> {
         val found = LinkedHashMap<Allergen, String>()
@@ -86,6 +173,7 @@ object RecipeDietCheck {
     /** The first ingredient that breaks [diet], or null if the recipe fits (tags count: a "vegetarian" recipe fits). */
     fun breaks(recipe: Recipe, diet: Diet): String? {
         val names = recipe.ingredients.map { it.name }
+
         fun first(stems: List<String>, except: List<String> = vegExceptions) = names.firstOrNull { n ->
             val l = n.lowercase()
             except.none { it in l } && stems.any { matches(l, it) }

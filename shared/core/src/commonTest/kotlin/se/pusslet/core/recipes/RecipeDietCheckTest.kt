@@ -83,7 +83,8 @@ class RecipeDietCheckTest {
 
     @Test
     fun suggestionsNeverIncludeAllergensAndPreferWhatSuitsEveryone() {
-        val profiles = listOf(DietProfile("c-ella", allergies = setOf(Allergen.Fish)), DietProfile("m-sara", diets = setOf(Diet.Vegetarian)))
+        val profiles =
+            listOf(DietProfile("c-ella", allergies = setOf(Allergen.Fish)), DietProfile("m-sara", diets = setOf(Diet.Vegetarian)))
         val s = MealSuggester.suggest(LocalDate(2026, 10, 14), listOf(pasta, tacos, curry, salmon), emptyList(), dietProfiles = profiles)
         assertFalse(s.any { it.recipe.id == "lax" })
         assertEquals("curry", s.first().recipe.id, "fits the vegetarian too")

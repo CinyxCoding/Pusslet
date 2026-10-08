@@ -187,6 +187,67 @@ object ShoppingListGenerator {
         return ShoppingPlan(add, update, remove)
     }
 
+    /**
+     * "Lägg ingredienserna på listan" for one recipe, outside the meal plan: amounts are added to matching open items
+     * (converted when possible) and the lines count as hand-added, so regenerating the week never removes them.
+     */
+    fun append(
+        listId: String,
+        existing: List<ShoppingItem>,
+        lines: List<GeneratedLine>,
+        newId: () -> String,
+        now: Instant,
+        memberId: String?,
+    ): ShoppingPlan {
+        val open = existing.filter { it.listId == listId && !it.checked }
+        val add = mutableListOf<ShoppingItem>()
+        val update = mutableListOf<ShoppingItem>()
+        for (line in lines) {
+            val sources = line.sources.map { it.copy(mealDate = null) }
+            val primary = line.primary
+            val match = open.firstOrNull { ShoppingNames.canonical(it.name) == line.key }
+            val converted = primary?.let { p ->
+                match?.let { m ->
+                    if (m.unit == null &&
+                        m.quantity == null
+                    ) {
+                        p
+                    } else {
+                        p.convertTo(m.unit ?: p.unit ?: MeasureUnit.St)
+                    }
+                }
+            }
+            if (match != null && (primary == null || converted != null)) {
+                val current = update.firstOrNull { it.id == match.id } ?: match
+                val merged = current.copy(
+                    quantity = when {
+                        converted == null -> current.quantity
+                        current.quantity == null -> converted.value
+                        else -> current.quantity + converted.value
+                    },
+                    unit = current.unit ?: converted?.unit,
+                    sources = current.sources + sources,
+                )
+                update.removeAll { it.id == match.id }
+                update += merged
+            } else {
+                add += ShoppingItem(
+                    id = newId(),
+                    listId = listId,
+                    name = line.name,
+                    quantity = primary?.value,
+                    unit = primary?.unit,
+                    note = line.extra,
+                    aisle = line.aisle,
+                    addedBy = memberId,
+                    addedAt = now,
+                    sources = sources,
+                )
+            }
+        }
+        return ShoppingPlan(add, update, emptyList())
+    }
+
     /** Existing item + freshly generated line: hand-typed share kept, generated share replaced. */
     private fun mergeInto(match: ShoppingItem, line: GeneratedLine, generated: (ItemSource) -> Boolean): ShoppingItem {
         val primary = line.primary

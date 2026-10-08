@@ -205,4 +205,26 @@ class ShoppingListGeneratorTest {
         val sources = lines.line("gurka").sources
         assertEquals(listOf(ItemSource("r9", monday, "Tacos", 1.0, MeasureUnit.St)), sources)
     }
+
+    @Test
+    fun appendingOneRecipeAddsToWhatIsAlreadyOnTheList() {
+        val existing = listOf(
+            ShoppingItem("a", "l", "Grädde", 1.0, MeasureUnit.Dl, aisle = Aisle.Dairy),
+            ShoppingItem("b", "l", "Gul lök", aisle = Aisle.Produce),
+            ShoppingItem("c", "l", "Nötfärs", 500.0, MeasureUnit.G, checked = true),
+        )
+        val demand = MealDemand(MealEntry(monday, recipeId = "r1", title = "Köttfärssås"), kottfarssas, 4)
+        val lines = ShoppingListGenerator.lines(listOf(demand))
+        var n = 0
+        val plan = ShoppingListGenerator.append("l", existing, lines, { "new${n++}" }, now, "m")
+        val cream = plan.update.single { it.id == "a" }
+        assertEquals(2.0, cream.quantity, "1 dl typed + 1 dl from the recipe")
+        assertEquals(MeasureUnit.Dl, cream.unit)
+        val onion = plan.update.single { it.id == "b" }
+        assertEquals(1.0, onion.quantity, "an item without amount takes the recipe's amount")
+        // The checked mince is in the trolley already: a new line is added.
+        assertTrue(plan.add.any { it.name == "nötfärs" && it.amount?.convertTo(MeasureUnit.G)?.value == 500.0 })
+        assertTrue(plan.remove.isEmpty())
+        assertTrue((plan.add + plan.update).flatMap { it.sources }.all { it.mealDate == null }, "not tied to a meal: survives regeneration")
+    }
 }

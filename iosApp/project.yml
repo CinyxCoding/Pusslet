@@ -1,0 +1,29 @@
+# XcodeGen spec (https://github.com/yonaskolb/XcodeGen). On macOS: `brew install xcodegen && xcodegen generate`.
+# iOS is not a launch target yet; platform actuals are stubs behind interfaces (docs/DECISIONS.md, ADR-006).
+name: Pusslet
+options:
+  bundleIdPrefix: se.pusslet
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    sources: [iosApp]
+    info:
+      path: iosApp/Info.plist
+      properties:
+        CFBundleDisplayName: Pusslet
+        UILaunchScreen: {}
+        CFBundleLocalizations: [sv, en]
+        CFBundleDevelopmentRegion: sv
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: se.pusslet.app
+        FRAMEWORK_SEARCH_PATHS: "$(SRCROOT)/../shared/app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)"
+        OTHER_LDFLAGS: ["-framework", "PussletShared"]
+    preBuildScripts:
+      - name: Compile Kotlin framework
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :shared:app:embedAndSignAppleFrameworkForXcode

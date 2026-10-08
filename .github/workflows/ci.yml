@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android – lint, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Lint (ktlint + detekt)
+        run: ./gradlew ktlintCheck detekt --continue
+      - name: Unit tests (shared modules + app incl. screenshot tests)
+        run: ./gradlew testAndroidHostTest :composeApp:testDemoDebugUnitTest --continue
+      - name: Assemble demo debug + prod release
+        run: ./gradlew :composeApp:assembleDemoDebug :composeApp:bundleProdRelease
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: '**/build/reports/tests/**'
+
+  ios:
+    name: iOS – compile shared framework
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Link iOS simulator framework
+        run: ./gradlew :shared:app:linkDebugFrameworkIosSimulatorArm64 :shared:core:iosSimulatorArm64Test
+
+  firebase:
+    name: Firestore rules + Functions tests (emulator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test

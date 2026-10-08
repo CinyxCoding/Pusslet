@@ -1,0 +1,30 @@
+{
+  "name": "pusslet-functions",
+  "private": true,
+  "description": "Cloud Functions and Firestore security rules tests for Pusslet",
+  "type": "module",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "firebase emulators:exec --only firestore,auth --project demo-pusslet \"vitest run\"",
+    "test:unit": "vitest run test/unit",
+    "serve": "npm run build && firebase emulators:start --project demo-pusslet",
+    "deploy": "firebase deploy --only functions"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^6.0.0",
+    "@types/node": "^22.0.0",
+    "firebase": "^13.0.0",
+    "firebase-tools": "^15.33.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

@@ -10,12 +10,12 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Navigation-skal (Navigation 3, bottennavigering Idag · Kalender · Mat · Handla · Mer, global +)
 - [x] Tema ljust/mörkt, dynamic color som tillval, kontrasttestad medlemspalett
 - [x] ktlint + detekt
-- [ ] CI-workflow (GitHub Actions)
-- [ ] Firebase-emulatorkonfiguration (`firebase.json`, regler, `functions/` i TypeScript)
+- [x] CI-workflow (GitHub Actions: Android lint+test+build, iOS-länkning på macOS, Firestore-regeltester mot emulator)
+- [x] Firebase-emulatorkonfiguration (`firebase.json`, `.firebaserc` demo-pusslet, regler, `functions/` i TypeScript + regeltest)
 - [x] `CLAUDE.md`, `docs/BRIEF.md`, `docs/DECISIONS.md`, `docs/PROGRESS.md`, `docs/SETUP.md`
 - [x] Testanrop mot Livsmedelsdatabasen, SMHI SNOW1g, Skolverket, skolmaten-RSS, Open Food Facts → fixturer
 - [x] ✅ `./gradlew :composeApp:assembleDemoDebug` bygger
-- [ ] Appen startar på emulator (kräver systemavbild, se Kända begränsningar)
+- [x] Skalet renderar (Robolectric + Roborazzi-skärmdumpar ljust/mörkt/engelska). Start på riktig emulator: se Kända begränsningar
 - [ ] iOS-target kompilerar (verifieras i macOS-jobbet i CI; går inte att bygga på Windows)
 
 ## Fas 1 – Familj, kalender, Idag

@@ -1,5 +1,7 @@
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.dependencies
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -13,6 +15,10 @@ class KmpComposeConventionPlugin : Plugin<Project> {
 
         val libs = libs
         extensions.configure<KotlinMultiplatformExtension> {
+            // Compose Multiplatform resources are packaged as Android assets; the KMP library plugin disables them by default.
+            (this as ExtensionAware).extensions.configure<KotlinMultiplatformAndroidLibraryTarget>("android") {
+                androidResources { enable = true }
+            }
             sourceSets.getByName("commonMain").dependencies {
                 implementation(libs.findLibrary("compose-runtime").get())
                 implementation(libs.findLibrary("compose-foundation").get())

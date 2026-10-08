@@ -45,7 +45,10 @@ import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.data.usecase.DataPrivacy
 import se.pusslet.data.usecase.HandoffAssigner
+import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.QuickAddExecutor
+import se.pusslet.data.usecase.RecipeImporter
+import se.pusslet.data.usecase.RecipeNutrition
 import kotlin.time.Clock
 
 val AppScope = named("appScope")
@@ -82,6 +85,9 @@ val dataModule: Module = module {
     single { HandoffAssigner(get()) }
     single { DataPrivacy(get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { RecipeImporter(get(), get()) }
+    single { MealShopping(get(), get(), get(), get(), get(), get(), get()) }
+    single { RecipeNutrition(get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

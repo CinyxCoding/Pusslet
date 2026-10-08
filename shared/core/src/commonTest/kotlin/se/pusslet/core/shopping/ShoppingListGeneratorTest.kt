@@ -177,11 +177,7 @@ class ShoppingListGeneratorTest {
         // Running it again changes nothing.
         val applied = list.filterNot { it.id in second.remove }.map { item -> second.update.firstOrNull { it.id == item.id } ?: item }
         val third = ShoppingListGenerator.plan("list", applied, lines, dates, { "g${n++}" }, now, "m-sara")
-        assertTrue(third.add.isEmpty() && third.remove.isEmpty())
-        assertEquals(
-            applied.filter { !it.checked && it.sources.isNotEmpty() }.associate { it.name to it.quantity },
-            third.update.associate { it.name to it.quantity },
-        )
+        assertTrue(third.isEmpty, "a list that already matches the plan needs no writes: ${third.update.map { it.name }}")
     }
 
     @Test

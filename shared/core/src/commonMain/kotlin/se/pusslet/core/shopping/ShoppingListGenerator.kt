@@ -167,7 +167,8 @@ object ShoppingListGenerator {
                 )
             } else {
                 handled += match.id
-                update += mergeInto(match, line, ::generated)
+                val merged = mergeInto(match, line, ::generated)
+                if (merged != match) update += merged
             }
         }
 
@@ -179,7 +180,8 @@ object ShoppingListGenerator {
             if (keep.isEmpty() && (item.quantity == null || manual <= EPSILON)) {
                 remove += item.id
             } else {
-                update += item.copy(quantity = if (item.quantity == null) null else manual, sources = keep)
+                val trimmed = item.copy(quantity = if (item.quantity == null) null else manual, sources = keep)
+                if (trimmed != item) update += trimmed
             }
         }
         return ShoppingPlan(add, update, remove)

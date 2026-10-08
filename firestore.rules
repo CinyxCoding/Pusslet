@@ -1,10 +1,180 @@
 rules_version = '2';
 
-// Phase 0 skeleton: everything is denied until the data model rules land (Phase 1).
+// Pusslet security rules. Principles:
+// - Only members of a family (an access doc for their uid) can read or write its data.
+// - Parents can write everything; caregivers (e.g. a grandparent) see what is shared with them and can check things off.
+// - Every client write is stamped: updatedBy == caller and updatedAt == server time (the sync engine always does this).
+// - Clients never hard-delete family data; deletion is soft (deletedAt) or done by a Cloud Function.
+// Tests: functions/test/rules.test.ts (run against the emulator in CI).
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function famPath(fid) { return /databases/$(database)/documents/families/$(fid); }
+    function accessDoc(fid) { return get(/databases/$(database)/documents/families/$(fid)/access/$(me())); }
+    function isMember(fid) {
+      return signedIn() && exists(/databases/$(database)/documents/families/$(fid)/access/$(me()));
+    }
+    function isParent(fid) { return isMember(fid) && accessDoc(fid).data.role == 'parent'; }
+    function isCaregiver(fid) { return isMember(fid) && accessDoc(fid).data.role == 'caregiver'; }
+    function myMemberId(fid) { return accessDoc(fid).data.memberId; }
+
+    function data() { return request.resource.data; }
+    function stamped() { return data().updatedBy == me() && data().updatedAt == request.time; }
+    function changed() { return data().diff(resource == null ? {} : resource.data).affectedKeys(); }
+    function onlyChanges(keys) { return changed().hasOnly(keys.concat(['updatedAt', 'updatedBy'])); }
+    function reasonableSize() { return data().size() <= 64; }
+    function shortString(v, max) { return v is string && v.size() <= max; }
+    function optString(field, max) { return !(field in data()) || shortString(data()[field], max); }
+    function softDeleteOnly() { return onlyChanges(['deletedAt']) && data().deletedAt == request.time; }
+    function sharedWithCaregivers() { return resource.data.get('sharedWithCaregivers', false) == true; }
+
+    // ---------- per-collection validation ----------
+    function validEvent() {
+      return shortString(data().title, 300) && data().start is string && data().end is string
+        && optString('location', 300) && optString('note', 5000) && optString('rrule', 500)
+        && (!('participantIds' in data()) || data().participantIds is list)
+        && (!('sharedWithCaregivers' in data()) || data().sharedWithCaregivers is bool);
+    }
+    function validItem(listId) {
+      return shortString(data().name, 200) && data().listId == listId && optString('note', 500)
+        && (!('checked' in data()) || data().checked is bool);
+    }
+    function validTask() {
+      return shortString(data().title, 300) && optString('note', 5000)
+        && (!('sharedWithCaregivers' in data()) || data().sharedWithCaregivers is bool);
+    }
+    function validRecipe() {
+      return shortString(data().title, 300) && (!('ingredients' in data()) || data().ingredients is list)
+        && (!('steps' in data()) || data().steps is list);
+    }
+    function validNamed(field) { return shortString(data()[field], 200); }
+
+    function validFor(collection) {
+      return collection == 'events' ? validEvent()
+        : collection == 'tasks' ? validTask()
+        : collection == 'recipes' ? validRecipe()
+        : collection == 'children' ? validNamed('firstName')
+        : collection == 'members' ? validNamed('displayName')
+        : collection == 'shoppingLists' ? validNamed('name')
+        : collection == 'stores' ? validNamed('name')
+        : collection == 'icsSubscriptions' ? (validNamed('name') && shortString(data().url, 2000))
+        : true;
+    }
+
+    // Collections caregivers can read without restriction / not at all.
+    function caregiverReadable(collection) {
+      return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
+        'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings', 'dietProfiles',
+        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks'];
+    }
+    function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
+
+    // ---------- users ----------
+    match /users/{userId} {
+      allow read, write: if signedIn() && me() == userId;
+      match /devices/{deviceId} {
+        allow read, write: if signedIn() && me() == userId;
+      }
+    }
+
+    // ---------- invites (knowing the code is the capability) ----------
+    match /invites/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if isParent(data().familyId) && data().createdBy == me()
+        && data().role in ['parent', 'caregiver']
+        && data().expiresAt is timestamp && data().expiresAt <= request.time + duration.value(15, 'd')
+        && code.size() == 10;
+      allow update: if false;
+      allow delete: if signedIn() && isParent(resource.data.familyId);
+    }
+
+    // Secret calendar feed tokens (served by the familyCalendarFeed function, never read by clients).
+    match /calendarFeeds/{token} {
+      allow create: if isParent(data().familyId) && data().createdBy == me() && token.size() >= 24;
+      allow delete: if signedIn() && isParent(resource.data.familyId);
+      allow read, update: if false;
+    }
+
+    // Read-only handover cards shared with the other household via link.
+    match /handoverShares/{token} {
+      allow create: if isParent(data().familyId) && data().createdBy == me() && token.size() >= 24
+        && data().expiresAt is timestamp && data().expiresAt <= request.time + duration.value(31, 'd');
+      allow delete: if signedIn() && isParent(resource.data.familyId);
+      allow read, update: if false;
+    }
+
+    // ---------- families ----------
+    match /families/{fid} {
+      allow read: if isMember(fid);
+      allow create: if signedIn() && data().createdBy == me() && stamped() && shortString(data().name, 100);
+      allow update: if isParent(fid) && stamped() && data().createdBy == resource.data.createdBy && shortString(data().name, 100);
+      allow delete: if false;
+
+      function validInvite(code, role, memberId) {
+        let inv = get(/databases/$(database)/documents/invites/$(code)).data;
+        return code is string && inv.familyId == fid && inv.role == role && inv.expiresAt > request.time
+          && (inv.get('memberId', null) == null || inv.get('memberId', null) == memberId);
+      }
+
+      // Membership index used by every rule above. Doc id = Firebase uid.
+      match /access/{userId} {
+        allow read: if isMember(fid);
+        allow create: if signedIn() && userId == me() && data().memberId is string && (
+          (getAfter(famPath(fid)).data.createdBy == me() && data().role == 'parent')
+          || ('inviteCode' in data() && validInvite(data().inviteCode, data().role, data().memberId))
+        );
+        allow update: if isParent(fid) && userId != me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role']);
+        allow delete: if isParent(fid) || (signedIn() && userId == me());
+      }
+
+      // Shopping items live under their list.
+      match /shoppingLists/{listId}/items/{itemId} {
+        allow read: if isMember(fid);
+        allow create, update: if isMember(fid) && stamped() && reasonableSize() && (validItem(listId) || softDeleteOnly());
+        allow delete: if false;
+      }
+
+      // Members: parents manage everyone; a joining adult creates their own member doc; anyone may edit their own.
+      match /members/{memberId} {
+        allow read: if isMember(fid);
+        allow create: if signedIn() && stamped() && validNamed('displayName') && (
+          isParent(fid)
+          || (getAfter(/databases/$(database)/documents/families/$(fid)/access/$(me())).data.memberId == memberId
+              && data().get('uid', '') == me())
+        );
+        allow update: if isMember(fid) && stamped() && (isParent(fid) || myMemberId(fid) == memberId
+          || (data().get('uid', '') == me()
+              && getAfter(/databases/$(database)/documents/families/$(fid)/access/$(me())).data.memberId == memberId));
+        allow delete: if false;
+      }
+
+      match /{collection}/{docId} {
+        // What a caregiver may change: tick off packing, answer hand-off requests, mark shared tasks done, show presence.
+        function caregiverWrite(collection) {
+          return collection == 'packingChecks'
+            || collection == 'handoffRequests'
+            || (collection == 'presence' && docId == myMemberId(fid))
+            || (collection == 'tasks' && resource != null && sharedWithCaregivers()
+                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']));
+        }
+
+        allow read: if collection != 'access' && collection != 'members' && isMember(fid) && (
+          isParent(fid)
+          || (isCaregiver(fid) && caregiverReadable(collection))
+          || (isCaregiver(fid) && caregiverFiltered(collection) && sharedWithCaregivers())
+        );
+
+        allow create, update: if collection != 'access' && collection != 'members' && stamped() && reasonableSize() && (
+          (isParent(fid) && (validFor(collection) || softDeleteOnly()))
+          || (isCaregiver(fid) && caregiverWrite(collection))
+        );
+        allow delete: if false;
+
+      }
     }
   }
 }

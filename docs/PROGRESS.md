@@ -33,15 +33,15 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 
 
 ## Fas 2 – Mat & handla
-- [ ] Receptbibliotek, URL-import (JSON-LD), portionsskalning/enhetskonvertering
-- [ ] Veckomatsedel (kopiera förra veckan, favoritveckor, gör dubbelt)
-- [ ] Livsmedelsdatabasen: lokalt FTS-index + näringsöversikt
+- [ ] Receptbibliotek, URL-import (JSON-LD), portionsskalning/enhetskonvertering – 🟡 logik + tester klara (IngredientParser, RecipeJsonLd, RecipeScaler, RecipeImporter); UI saknas
+- [ ] Veckomatsedel (kopiera förra veckan, favoritveckor, gör dubbelt) – 🟡 MealPlanner klar; UI saknas
+- [ ] Livsmedelsdatabasen: lokalt FTS-index + näringsöversikt – 🟡 RecipeNutrition klar; UI saknas
 - [ ] Skollunch-provider (skolmaten-RSS + manuell)
-- [ ] Smarta förslag (regelbaserat)
-- [ ] Inköpslista från matsedel med sammanslagning, basvaror, butiksläge med avdelningsordning
+- [ ] Smarta förslag (regelbaserat) – 🟡 MealSuggester klar (förklarbara skäl); UI saknas
+- [ ] Inköpslista från matsedel med sammanslagning, basvaror, butiksläge med avdelningsordning – 🟡 ShoppingListGenerator + MealShopping klara; UI saknas
 - [ ] Streckkodsskanning + Open Food Facts
 - [ ] "Jag handlar nu"
-- [ ] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (enhetstester)
+- [x] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (ShoppingListGeneratorTest)
 
 ## Fas 3 – Integrationer & notiser
 - [ ] ICS-prenumerationer
@@ -79,7 +79,7 @@ Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestor
   (nytt regeltest), (2) lämnings-/hämtningstider konverterades inte till enhetens tidszon, (3) engelska strängar med `\'`
   visades bokstavligt (nytt strängtest), (4) regeltesterna rensade demoappens data på delad emulator (eget projekt-id).
 
-Nästa steg: fas 2 (mat & handla).
+Nästa steg (fas 2): UI i `feature-meals` (veckomatsedel med skollunch och krockmarkering, dagsark med förslag, receptbibliotek, receptvy med skalning och näring, redigerare, import från länk) och `feature-shopping` (listor per avdelning, snabbtillägg, butiksläge, "Jag handlar nu", skanning + Open Food Facts, Hemma-lager, butiker med gångordning). Rutter läggs till i `shared/app` och strängar i sv + en.
 
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.

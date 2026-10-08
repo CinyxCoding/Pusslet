@@ -121,15 +121,39 @@ fun AboutDataRoute(onBack: () -> Unit, viewModel: AboutDataViewModel = koinViewM
 
 // region Privacy
 
+enum class PrivacyAction { Forget, DeleteFamily, DeleteAccount }
+
 class PrivacyViewModel(private val privacy: DataPrivacy) : ViewModel() {
+    private val log = co.touchlab.kermit.Logger.withTag("Privacy")
+    val busy = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val failed = kotlinx.coroutines.flow.MutableStateFlow(false)
+    val canDeleteOnServer: Boolean get() = privacy.canDeleteOnServer
+    val isParent: Boolean get() = privacy.isParent
+
     fun export(onReady: (String, String) -> Unit) {
         viewModelScope.launch { onReady(privacy.exportFileName(), privacy.exportJson()) }
     }
 
-    fun forget(onDone: () -> Unit) {
+    fun run(action: PrivacyAction, onDone: () -> Unit) {
         viewModelScope.launch {
-            privacy.forgetOnDevice()
-            onDone()
+            busy.value = true
+            failed.value = false
+            try {
+                when (action) {
+                    PrivacyAction.Forget -> privacy.forgetOnDevice()
+                    PrivacyAction.DeleteFamily -> privacy.deleteFamilyEverywhere()
+                    PrivacyAction.DeleteAccount -> privacy.deleteAccount()
+                }
+                onDone()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Nothing was removed locally: the user can try again when online.
+                log.w { "Privacy action $action failed: ${e::class.simpleName}" }
+                failed.value = true
+            } finally {
+                busy.value = false
+            }
         }
     }
 }
@@ -137,7 +161,9 @@ class PrivacyViewModel(private val privacy: DataPrivacy) : ViewModel() {
 @Composable
 fun PrivacyRoute(onBack: () -> Unit, onForgotten: () -> Unit, viewModel: PrivacyViewModel = koinViewModel()) {
     val platform = LocalPlatformActions.current
-    var confirmForget by remember { mutableStateOf(false) }
+    var confirm by remember { mutableStateOf<PrivacyAction?>(null) }
+    val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val failed by viewModel.failed.collectAsStateWithLifecycle()
     Scaffold(topBar = { PussletTopBar(stringResource(Res.string.privacy_title), onBack = onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(Spacing.screenHorizontal),
@@ -153,22 +179,62 @@ fun PrivacyRoute(onBack: () -> Unit, onForgotten: () -> Unit, viewModel: Privacy
                     modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
                 ) { Text(stringResource(Res.string.privacy_export)) }
             }
-            SectionCard(stringResource(Res.string.privacy_delete_family)) {
-                Text(stringResource(Res.string.privacy_delete_family_body), style = MaterialTheme.typography.bodyMedium)
-                OutlinedButton(onClick = {
-                    confirmForget = true
-                }, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget)) {
-                    Text(stringResource(Res.string.privacy_forget_device))
-                }
+            SectionCard(stringResource(Res.string.privacy_forget_device)) {
+                Text(stringResource(Res.string.privacy_forget_device_body), style = MaterialTheme.typography.bodyMedium)
+                OutlinedButton(
+                    onClick = { confirm = PrivacyAction.Forget },
+                    enabled = !busy,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
+                ) { Text(stringResource(Res.string.privacy_forget_device)) }
             }
+            if (viewModel.canDeleteOnServer) {
+                if (viewModel.isParent) {
+                    SectionCard(stringResource(Res.string.privacy_delete_family)) {
+                        Text(stringResource(Res.string.privacy_delete_family_body), style = MaterialTheme.typography.bodyMedium)
+                        OutlinedButton(
+                            onClick = { confirm = PrivacyAction.DeleteFamily },
+                            enabled = !busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
+                        ) { Text(stringResource(Res.string.privacy_delete_family)) }
+                    }
+                }
+                SectionCard(stringResource(Res.string.privacy_delete_account)) {
+                    Text(stringResource(Res.string.privacy_delete_account_body), style = MaterialTheme.typography.bodyMedium)
+                    OutlinedButton(
+                        onClick = { confirm = PrivacyAction.DeleteAccount },
+                        enabled = !busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
+                    ) { Text(stringResource(Res.string.privacy_delete_account)) }
+                }
+            } else {
+                Text(stringResource(Res.string.privacy_local_only), style = MaterialTheme.typography.bodySmall)
+            }
+            if (failed) Text(stringResource(Res.string.privacy_failed), color = MaterialTheme.colorScheme.error)
         }
     }
-    if (confirmForget) {
+    confirm?.let { action ->
         AlertDialog(
-            onDismissRequest = { confirmForget = false },
-            text = { Text(stringResource(Res.string.privacy_delete_confirm)) },
-            confirmButton = { TextButton(onClick = { viewModel.forget(onForgotten) }) { Text(stringResource(Res.string.action_confirm)) } },
-            dismissButton = { TextButton(onClick = { confirmForget = false }) { Text(stringResource(Res.string.action_cancel)) } },
+            onDismissRequest = { confirm = null },
+            text = {
+                Text(
+                    stringResource(
+                        if (action ==
+                            PrivacyAction.Forget
+                        ) {
+                            Res.string.privacy_forget_confirm
+                        } else {
+                            Res.string.privacy_delete_confirm
+                        },
+                    ),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirm = null
+                    viewModel.run(action, onForgotten)
+                }) { Text(stringResource(Res.string.action_confirm)) }
+            },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
 }

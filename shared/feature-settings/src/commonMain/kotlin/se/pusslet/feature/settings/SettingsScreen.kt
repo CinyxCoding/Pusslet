@@ -270,6 +270,7 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMod
                     }
                 }
             }
+            CalendarFeedSection()
             SectionCard(null) {
                 SwitchRow(
                     stringResource(Res.string.settings_crash_reports),

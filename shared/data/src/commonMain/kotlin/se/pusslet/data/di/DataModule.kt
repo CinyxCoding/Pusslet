@@ -43,6 +43,7 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.RoomSyncLocalStore
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.data.usecase.CalendarFeeds
 import se.pusslet.data.usecase.DataPrivacy
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.MealShopping
@@ -55,7 +56,7 @@ val AppScope = named("appScope")
 
 /**
  * Platform-independent bindings. The platform module must provide: [PussletDatabase], HttpClient, RemoteStore,
- * FamilyRemote, AuthRepository, DeviceCalendarSource and BackendConfig.
+ * FamilyRemote, AuthRepository, CloudFunctions, DeviceCalendarSource and BackendConfig.
  */
 val dataModule: Module = module {
     single(AppScope) { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
@@ -83,11 +84,12 @@ val dataModule: Module = module {
     single { TaskRepository(get()) }
     single { LunchRepository(get(), get(), get()) }
     single { HandoffAssigner(get()) }
-    single { DataPrivacy(get(), get(), get(), get()) }
+    single { DataPrivacy(get(), get(), get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeNutrition(get(), get()) }
+    single { CalendarFeeds(get(), get(), get(), get(), get(), get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

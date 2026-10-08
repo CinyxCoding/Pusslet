@@ -73,6 +73,7 @@ object TestEnvironment {
             single<RemoteStore> { OfflineRemoteStore }
             single<FamilyRemote> { LocalOnlyFamilyRemote }
             single<AuthRepository> { LocalOnlyAuthRepository() }
+            single<se.pusslet.data.remote.CloudFunctions> { se.pusslet.data.remote.LocalOnlyCloudFunctions }
         }
         val overrides = module {
             single<Clock> { FixedClock }

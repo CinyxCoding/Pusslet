@@ -957,6 +957,26 @@
     <string name="subs_delete_confirm">Remove %1$s? Its events disappear from the calendar.</string>
     <string name="subs_empty">No subscriptions yet. Add the school's or the club's calendar to see everything in one place.</string>
 
+    <!-- Calendar feed -->
+    <string name="feed_title">The family calendar in other calendars</string>
+    <string name="feed_body">Create a secret link your work Outlook or Google Calendar can subscribe to. It shows the family's events (read-only) and updates by itself. Anyone with the link can see the events – revoke it if it ends up in the wrong place.</string>
+    <string name="feed_create_family">Whole family</string>
+    <string name="feed_create_mine">Only mine</string>
+    <string name="feed_link_family">Whole family</string>
+    <string name="feed_link_person">Only %1$s</string>
+    <string name="feed_revoke">Revoke</string>
+    <string name="feed_revoke_all">Revoke all links</string>
+    <string name="feed_revoke_all_confirm">All of the family's calendar links stop working, also those made on other phones.</string>
+    <string name="feed_share_subject">Family calendar</string>
+    <string name="feed_no_backend">Needs the family to sync through the cloud. In this version everything stays on the phone.</string>
+    <string name="feed_needs_sign_in">Sign in under Account and sync first.</string>
+    <string name="feed_parents_only">Only parents can create calendar links.</string>
+    <string name="feed_failed">That did not work right now. Check your connection and try again.</string>
+    <string name="privacy_forget_device_body">Removes the family's data from this phone. The family stays for the others and comes back if you sign in again.</string>
+    <string name="privacy_forget_confirm">Remove the family from this phone?</string>
+    <string name="privacy_local_only">Everything is only on this phone, so removing the family here deletes it all.</string>
+    <string name="privacy_failed">Could not delete right now – nothing was removed. Check your connection and try again.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
     <string name="empty_calendar">The calendar is empty for now.</string>

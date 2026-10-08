@@ -52,6 +52,9 @@ object Prefs {
     val ActiveShoppingList = PrefKey("shopping.activeList", String.serializer(), "")
     val ActiveStore = PrefKey("shopping.activeStore", String.serializer(), "")
 
+    /** Calendar feed links made on this phone (the tokens are secrets; they never leave the device except as links). */
+    val CalendarFeeds = PrefKey("calendar.feeds", ListSerializer(se.pusslet.data.usecase.FeedLink.serializer()), emptyList())
+
     /** Staple suggestions dismissed with "Inte nu": key -> when (epoch ms). Device-local. */
     val DismissedStaples = PrefKey("shopping.dismissedStaples", MapSerializer(String.serializer(), Long.serializer()), emptyMap())
     val RecentQuickAdds = PrefKey("quickadd.recent", ListSerializer(String.serializer()), emptyList())

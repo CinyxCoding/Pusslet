@@ -958,6 +958,26 @@
     <string name="subs_delete_confirm">Ta bort %1$s? Händelserna försvinner från kalendern.</string>
     <string name="subs_empty">Inga prenumerationer än. Lägg till skolans eller föreningens kalender så syns allt på ett ställe.</string>
 
+    <!-- Calendar feed -->
+    <string name="feed_title">Familjekalendern i andra kalendrar</string>
+    <string name="feed_body">Skapa en hemlig länk som jobbets Outlook eller Google Kalender kan prenumerera på. Den visar familjens händelser (läsbart, inte ändringsbart) och uppdateras av sig själv. Den som har länken kan se händelserna – återkalla den om den hamnat fel.</string>
+    <string name="feed_create_family">Hela familjen</string>
+    <string name="feed_create_mine">Bara mina</string>
+    <string name="feed_link_family">Hela familjen</string>
+    <string name="feed_link_person">Bara %1$s</string>
+    <string name="feed_revoke">Återkalla</string>
+    <string name="feed_revoke_all">Återkalla alla länkar</string>
+    <string name="feed_revoke_all_confirm">Alla familjens kalenderlänkar slutar fungera, även de som skapats på andra telefoner.</string>
+    <string name="feed_share_subject">Familjens kalender</string>
+    <string name="feed_no_backend">Kräver att familjen synkas via molnet. I den här versionen finns allt bara på telefonen.</string>
+    <string name="feed_needs_sign_in">Logga in under Konto och synk först.</string>
+    <string name="feed_parents_only">Bara föräldrar kan skapa kalenderlänkar.</string>
+    <string name="feed_failed">Det gick inte just nu. Kontrollera nätet och försök igen.</string>
+    <string name="privacy_forget_device_body">Tar bort familjens uppgifter från den här telefonen. Familjen finns kvar för de andra och kommer tillbaka om du loggar in igen.</string>
+    <string name="privacy_forget_confirm">Ta bort familjen från den här telefonen?</string>
+    <string name="privacy_local_only">Allt finns bara på den här telefonen, så att ta bort familjen härifrån raderar allt.</string>
+    <string name="privacy_failed">Det gick inte att radera just nu – inget har tagits bort. Kontrollera nätet och försök igen.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
     <string name="empty_calendar">Kalendern är tom än så länge.</string>

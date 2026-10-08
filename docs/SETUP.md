@@ -63,8 +63,10 @@ Cloud Functions kräver **Blaze** (betala per användning). Sätt en **budgetvar
 ### 2.4 Deploy
 ```bash
 firebase use --add                       # välj projektet
-firebase deploy --only firestore:rules,firestore:indexes,functions
+firebase deploy --only firestore:rules,firestore:indexes,functions,hosting
 ```
+Hosting serverar familjens kalenderlänkar (`https://<din-domän>/feed/<token>.ics` → funktionen `calendarFeed`).
+Standarddomänen är `<projekt-id>.web.app`; sätt samma värde som `linkHost` (se `BackendConfig`) om du byter domän.
 
 ### 2.5 SHA-fingeravtryck
 Lägg till SHA-1 och SHA-256 för debug- och release-nyckeln i Firebase (krävs för Google Sign-In och App Links):

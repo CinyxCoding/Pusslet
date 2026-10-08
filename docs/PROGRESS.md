@@ -61,7 +61,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
       vem den gäller, färg), av/på, uppdatera nu; WorkManager hämtar var 6:e timme med nät; webcal://-länkar och delade
       .ics-länkar öppnar dialogen. Gamla händelser gallras (FeedWindow) så att även stora flöden går snabbt
 - [ ] Tvåvägs enhetskalender (CalendarContract)
-- [ ] Eget ICS-flöde (Cloud Function)
+- [x] Eget ICS-flöde (Cloud Function) – `calendarFeed` + Hosting-omskrivning `/feed/<token>.ics`, hela familjen eller
+      "bara mina", skapa/dela/återkalla i Inställningar, "återkalla alla" via `revokeCalendarFeeds` (ADR-021).
+      Tester: 7 enhet (escaping, vikning, serier/undantag/flyttade/heldag, golden), 4 mot emulatorn, Kotlin-rundtur
 - [ ] Konfliktdetektering, hämta/lämna-förfrågningar
 - [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
 - [ ] Två widgets (Idag, Inköpslista)
@@ -69,7 +71,8 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
       snabbtillägg, redigerare med checklista och upprepning, turordning per vecka/varannan vecka, "Johan nästa gång",
       fördelning senaste 4 veckorna (uppgifter, sysslor, lämningar, hämtningar) utan poäng. Bugg rättad: roterande syssla utan
       startdatum visades felaktigt på rotationens måndag
-- [ ] Export/radering av data
+- [x] Export/radering av data – export (JSON) fanns; nu även `deleteFamily`/`deleteAccount` (rekursivt, roller,
+      Auth-användare) med 4 emulatortester och knappar i Integritet (ADR-022)
 - [ ] ✅ Publik test-ICS visas korrekt (återkommande + tidszoner); familjehändelser syns i enhetens kalender
       – första halvan klar: Kubernetes-communityns publika Google-kalender (15 643 händelser, 24 MB, parsas på 0,8 s) – ett
       urval ordagranna rader som fixtur: veckomöte 10:00 Los Angeles visas 19:00 → 18:00 (vecka 44, mellan EU:s och USA:s

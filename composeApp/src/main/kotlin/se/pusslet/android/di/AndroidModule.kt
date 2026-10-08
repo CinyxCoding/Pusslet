@@ -12,11 +12,14 @@ import se.pusslet.data.db.createDatabase
 import se.pusslet.data.di.AppScope
 import se.pusslet.data.net.createHttpClient
 import se.pusslet.data.remote.AuthRepository
+import se.pusslet.data.remote.CloudFunctions
 import se.pusslet.data.remote.FamilyRemote
 import se.pusslet.data.remote.FirestoreFamilyRemote
 import se.pusslet.data.remote.FirestoreRemoteStore
 import se.pusslet.data.remote.GitLiveAuthRepository
+import se.pusslet.data.remote.GitLiveCloudFunctions
 import se.pusslet.data.remote.LocalOnlyAuthRepository
+import se.pusslet.data.remote.LocalOnlyCloudFunctions
 import se.pusslet.data.remote.LocalOnlyFamilyRemote
 import se.pusslet.data.repository.DeviceCalendarSource
 import se.pusslet.data.sync.OfflineRemoteStore
@@ -33,9 +36,13 @@ fun androidModule(config: BackendConfig): Module = module {
         single<RemoteStore> { OfflineRemoteStore }
         single<FamilyRemote> { LocalOnlyFamilyRemote }
         single<AuthRepository> { LocalOnlyAuthRepository() }
+        single<CloudFunctions> { LocalOnlyCloudFunctions }
     } else {
         single<RemoteStore> { FirestoreRemoteStore(FirebaseFirestore.getInstance()) }
         single<FamilyRemote> { FirestoreFamilyRemote(FirebaseFirestore.getInstance()) }
         single<AuthRepository> { GitLiveAuthRepository(get(AppScope)) }
+        single<CloudFunctions> {
+            GitLiveCloudFunctions(emulatorHost = config.emulatorHost.takeIf { config.mode == BackendMode.Emulator })
+        }
     }
 }

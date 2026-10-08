@@ -168,3 +168,23 @@ Recept med en allergen som någon i familjen undviker föreslås aldrig; recept 
 Resterna behåller receptkopplingen men handlas aldrig för (den dubbla satsen räknas på originalmiddagen). Stängs "Gör dubbelt"
 av tas resterna bort om ingen ändrat dem. Favoritveckor appliceras från söndag och bakåt så att samma regel gäller.
 **Konsekvens:** Restdagen syns direkt i veckovyn (som standard visas bara middag).
+
+## ADR-021 – Familjens eget ICS-flöde via Cloud Function och Hosting
+**Kontext:** "Prenumerera på familjekalendern i jobbets Outlook/Google" utan inloggning, men hemligt och återkallbart.
+**Beslut:** Appen skapar `calendarFeeds/{token}` (64 hextecken från en kryptografisk UUID-källa, aldrig id-generatorn;
+reglerna kräver ≥ 24 tecken och att skaparen är förälder). `calendarFeed` (europe-north1) läser bara, bygger RFC 5545
+(VTIMEZONE för Europe/Stockholm, RRULE/EXDATE, flyttade tillfällen som RECURRENCE-ID, escaping, radvikning på 75 oktetter)
+och svarar `text/calendar` med `private, max-age=900`. Okänd och felformad token ger samma 404. Hosting skriver om
+`/feed/**` så länken blir `https://<linkHost>/feed/<token>.ics`. En personlig länk tar bara händelser där personen deltar,
+lämnar eller hämtar. Länkar sparas på telefonen som skapade dem; `revokeCalendarFeeds` låter vilken förälder som helst
+återkalla alla. Samma "golden"-ICS testas i TypeScript och parsas tillbaka av appens Kotlin-parser.
+**Konsekvens:** Den som har länken ser händelserna (sagt i appen). Andra tidszoner än Stockholm skrivs med IANA-TZID utan
+VTIMEZONE – det förstår Google, Outlook och Apple.
+
+## ADR-022 – Radering av familj och konto på servern
+**Kontext:** GDPR kräver radering; klienter kan inte radera rekursivt och reglerna tillåter inga raderingar (bara mjuk radering).
+**Beslut:** `deleteFamily` (bara föräldrar) raderar familjen rekursivt, dess kalender-/delningslänkar och inbjudningar och tar
+bort familjen från användarnas listor. `deleteAccount` tar bort åtkomst, personpost, enheter, `users/{uid}` och Auth-användaren;
+var anroparen sista förälder raderas hela familjen. Appen raderar lokalt först när servern svarat, och säger till om det misslyckas.
+**Konsekvens:** Inget halvraderat läge i appen. Utan backend (lokalt läge) är "ta bort från telefonen" detsamma som att radera allt.
+

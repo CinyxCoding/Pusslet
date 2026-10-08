@@ -9,7 +9,10 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import se.pusslet.core.AppConfig
+import se.pusslet.core.model.Role
 import se.pusslet.data.AppCoordinator
+import se.pusslet.data.remote.AuthRepository
+import se.pusslet.data.remote.CloudFunctions
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.SyncLocalStore
 import kotlin.time.Clock
@@ -22,8 +25,14 @@ class DataPrivacy(
     private val local: SyncLocalStore,
     private val sessions: SessionProvider,
     private val coordinator: AppCoordinator,
+    private val functions: CloudFunctions,
+    private val auth: AuthRepository,
     private val clock: Clock = Clock.System,
 ) {
+    /** Server deletion needs the backend and a signed-in account; without them everything is only on this phone. */
+    val canDeleteOnServer: Boolean get() = functions.available && auth.currentUser.value != null
+
+    val isParent: Boolean get() = sessions.session.value.role == Role.Parent
     private val json = Json { prettyPrint = true }
 
     suspend fun exportJson(): String {
@@ -60,4 +69,19 @@ class DataPrivacy(
 
     /** Removes the family's data from this device only (the family continues for the others). */
     suspend fun forgetOnDevice() = coordinator.forgetFamilyOnDevice(local)
+
+    /** "Radera familjen": gone for everyone on the server, then from this phone. */
+    suspend fun deleteFamilyEverywhere() {
+        val familyId = sessions.session.value.familyId ?: return
+        functions.deleteFamily(familyId)
+        auth.signOut()
+        forgetOnDevice()
+    }
+
+    /** "Radera mitt konto": my account and membership are deleted; the family continues for the others. */
+    suspend fun deleteAccount() {
+        functions.deleteAccount()
+        auth.signOut()
+        forgetOnDevice()
+    }
 }

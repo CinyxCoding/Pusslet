@@ -116,6 +116,8 @@ fun CheckRow(
     modifier: Modifier = Modifier,
     supporting: String? = null,
     leading: (@Composable () -> Unit)? = null,
+    /** Store mode: bigger text for reading at arm's length with a trolley in the other hand. */
+    large: Boolean = false,
 ) {
     val haptics = LocalHapticFeedback.current
     Row(
@@ -134,12 +136,16 @@ fun CheckRow(
         Column(Modifier.weight(1f)) {
             Text(
                 text,
-                style = MaterialTheme.typography.bodyLarge,
+                style = if (large) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
                 textDecoration = if (checked) TextDecoration.LineThrough else null,
                 color = if (checked) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
             )
             if (supporting != null) {
-                Text(supporting, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    supporting,
+                    style = if (large) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

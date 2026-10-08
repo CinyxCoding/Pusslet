@@ -810,6 +810,7 @@
     <string name="shopping_no_lists">No shopping list yet.</string>
     <string name="shopping_create_first">Create a list</string>
     <string name="shopping_check">Check off %1$s</string>
+    <string name="shopping_added_by_other">%1$s added %2$s</string>
     <string name="item_edit_title">Edit item</string>
     <string name="item_name">Item</string>
     <string name="item_quantity">Amount</string>

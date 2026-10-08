@@ -7,6 +7,7 @@ import se.pusslet.feature.calendar.calendarModule
 import se.pusslet.feature.family.familyModule
 import se.pusslet.feature.meals.mealsModule
 import se.pusslet.feature.settings.settingsModule
+import se.pusslet.feature.shopping.shoppingModule
 import se.pusslet.feature.today.todayModule
 import se.pusslet.shell.ShellViewModel
 import se.pusslet.shell.quickadd.QuickAddViewModel
@@ -17,4 +18,4 @@ val shellModule: Module = module {
 }
 
 /** Every UI module; platform code adds its own module plus `dataModule`. */
-val appModules: List<Module> = listOf(shellModule, todayModule, calendarModule, familyModule, settingsModule, mealsModule)
+val appModules: List<Module> = listOf(shellModule, todayModule, calendarModule, familyModule, settingsModule, mealsModule, shoppingModule)

@@ -50,6 +50,12 @@ sealed interface Route {
 
     @Serializable data object Tasks : Route
 
+    @Serializable data class StoreMode(val listId: String) : Route
+
+    @Serializable data object Pantry : Route
+
+    @Serializable data object Stores : Route
+
     @Serializable data object Recipes : Route
 
     @Serializable data class Recipe(val recipeId: String) : Route

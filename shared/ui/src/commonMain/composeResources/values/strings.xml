@@ -811,6 +811,7 @@
     <string name="shopping_no_lists">Ingen inköpslista än.</string>
     <string name="shopping_create_first">Skapa en lista</string>
     <string name="shopping_check">Bocka av %1$s</string>
+    <string name="shopping_added_by_other">%1$s lade till %2$s</string>
     <string name="item_edit_title">Ändra vara</string>
     <string name="item_name">Vara</string>
     <string name="item_quantity">Mängd</string>

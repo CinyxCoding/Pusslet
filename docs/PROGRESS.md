@@ -63,7 +63,10 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Konfliktdetektering, hämta/lämna-förfrågningar
 - [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
 - [ ] Två widgets (Idag, Inköpslista)
-- [ ] Uppgifter/sysslor med rotation, fördelningsvy
+- [x] Uppgifter/sysslor med rotation, fördelningsvy – listor (mina/alla/sysslor; försenat, idag, kommande, när det passar),
+      snabbtillägg, redigerare med checklista och upprepning, turordning per vecka/varannan vecka, "Johan nästa gång",
+      fördelning senaste 4 veckorna (uppgifter, sysslor, lämningar, hämtningar) utan poäng. Bugg rättad: roterande syssla utan
+      startdatum visades felaktigt på rotationens måndag
 - [ ] Export/radering av data
 - [ ] ✅ Publik test-ICS visas korrekt (återkommande + tidszoner); familjehändelser syns i enhetens kalender
 

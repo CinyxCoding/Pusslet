@@ -60,6 +60,8 @@ object EventExpander {
                     source = source,
                     sourceName = sourceName,
                     sourceColor = sourceColor,
+                    dropOffAt = event.dropOff?.time?.let { convert(LocalDateTime(s.date, it), zone, displayZone, event.allDay).time },
+                    pickUpAt = event.pickUp?.time?.let { convert(LocalDateTime(e.date, it), zone, displayZone, event.allDay).time },
                 )
                 if (overlapsWindow(occurrence, windowStart, windowEnd)) result += occurrence
             }

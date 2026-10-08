@@ -203,6 +203,8 @@ class EventEditorViewModel(
                         start = d.startDateTime,
                         end = d.endDateTime,
                         createdBy = sessions.session.value.memberId,
+                        // New events use the device zone; edits keep the event's own zone so its wall-clock times stay put.
+                        timeZoneId = zone.id,
                     ),
                     d,
                 )
@@ -246,7 +248,6 @@ class EventEditorViewModel(
         allDay = d.allDay,
         start = d.startDateTime,
         end = d.endDateTime,
-        timeZoneId = zone.id,
         rrule = if (event.isOverride) null else ruleFor(d),
         participantIds = d.participants.toList(),
         dropOff = if (d.allDay || (d.dropOffBy == null && d.dropOffTime == null)) null else Handoff(d.dropOffBy, d.dropOffTime),

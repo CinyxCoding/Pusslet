@@ -94,13 +94,16 @@ data class EventOccurrence(
     /** Colour/owner for non-family sources (subscription colour, device calendar). */
     val sourceName: String? = null,
     val sourceColor: MemberColor? = null,
+    /** Hand-off times converted to the display time zone (the stored ones are in the event's zone). */
+    val dropOffAt: LocalTime? = null,
+    val pickUpAt: LocalTime? = null,
 ) {
     val key: String get() = "${event.id}@$occurrenceDate"
     val allDay: Boolean get() = event.allDay
 
-    fun pickUpTime(): LocalTime? = event.pickUp?.time ?: if (event.allDay) null else end.time
+    fun pickUpTime(): LocalTime? = pickUpAt ?: event.pickUp?.time ?: if (event.allDay) null else end.time
 
-    fun dropOffTime(): LocalTime? = event.dropOff?.time ?: if (event.allDay) null else start.time
+    fun dropOffTime(): LocalTime? = dropOffAt ?: event.dropOff?.time ?: if (event.allDay) null else start.time
 
     /** Days this occurrence touches (all-day ends are exclusive). */
     fun overlapsDate(date: LocalDate): Boolean {

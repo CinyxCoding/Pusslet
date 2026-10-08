@@ -219,6 +219,25 @@ class RecurrenceTest {
     }
 
     @Test
+    fun handOffTimesAreConvertedWithTheEvent() {
+        // A phone set to UTC shows a Stockholm pick-up at 15:30 CEST as 13:30, like the event itself.
+        val school = Event(
+            id = "s",
+            title = "Förskola",
+            start = dt("2026-10-08T08:00"),
+            end = dt("2026-10-08T16:00"),
+            dropOff = se.pusslet.core.model.Handoff("johan", LocalTime(7, 50)),
+            pickUp = se.pusslet.core.model.Handoff("bengt", LocalTime(15, 30)),
+        )
+        val o = EventExpander.expand(listOf(school), d("2026-10-08"), d("2026-10-08"), TimeZone.UTC).single()
+        assertEquals(dt("2026-10-08T06:00"), o.start)
+        assertEquals(LocalTime(5, 50), o.dropOffTime())
+        assertEquals(LocalTime(13, 30), o.pickUpTime())
+        val home = EventExpander.expand(listOf(school), d("2026-10-08"), d("2026-10-08"), stockholm).single()
+        assertEquals(LocalTime(15, 30), home.pickUpTime())
+    }
+
+    @Test
     fun eventInOtherZoneIsConvertedForDisplay() {
         val call = Event(
             id = "c",

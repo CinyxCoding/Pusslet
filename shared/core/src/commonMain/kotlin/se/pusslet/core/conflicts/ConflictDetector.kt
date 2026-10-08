@@ -72,7 +72,8 @@ object ConflictDetector {
             if (kids.isEmpty() || o.allDay) continue
             for ((kind, handoff) in listOf(HandoffKind.DropOff to o.event.dropOff, HandoffKind.PickUp to o.event.pickUp)) {
                 if (handoff == null) continue
-                val time = handoff.time ?: if (kind == HandoffKind.PickUp) o.end.time else o.start.time
+                // Display-zone time, so it compares correctly with the (converted) times of other events.
+                val time = (if (kind == HandoffKind.PickUp) o.pickUpTime() else o.dropOffTime()) ?: continue
                 val at = LocalDateTime(date, time)
                 val busy = today.filter { other ->
                     other !== o && overlaps(other, at, slackMinutes) &&

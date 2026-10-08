@@ -123,8 +123,17 @@ class AndroidDeviceCalendarSource(private val context: Context, private val zone
     override suspend fun exportEvents(calendarId: Long, events: List<Event>): Int = withContext(Dispatchers.IO) {
         if (!canWrite()) return@withContext 0
         var touched = 0
-        for (event in events.filter { it.seriesId == null }) {
-            val values = toValues(calendarId, event)
+        // A changed single occurrence is its own event; its series skips that date.
+        val moved = events.filter { it.seriesId != null }.groupBy({ it.seriesId }, { it.originalDate ?: it.start.date })
+        for (event in events) {
+            val withExceptions = if (event.isRecurring) {
+                event.copy(
+                    exDates = (event.exDates + moved[event.id].orEmpty()).distinct(),
+                )
+            } else {
+                event
+            }
+            val values = toValues(calendarId, withExceptions)
             val existing = findExported(calendarId, event.id)
             try {
                 if (existing != null) {
@@ -141,6 +150,29 @@ class AndroidDeviceCalendarSource(private val context: Context, private val zone
             }
         }
         touched
+    }
+
+    override suspend fun removeExported(calendarId: Long, keepEventIds: Set<String>): Int = withContext(Dispatchers.IO) {
+        if (!canWrite()) return@withContext 0
+        val keep = keepEventIds.map(::uid).toSet()
+        val stale = ArrayList<Long>()
+        resolver.query(
+            CalendarContract.Events.CONTENT_URI,
+            arrayOf(CalendarContract.Events._ID, CalendarContract.Events.UID_2445),
+            "${CalendarContract.Events.CALENDAR_ID} = ? AND ${CalendarContract.Events.UID_2445} LIKE ?",
+            arrayOf(calendarId.toString(), "$UID_PREFIX%"),
+            null,
+        )?.use { c ->
+            while (c.moveToNext()) if (c.getString(1) !in keep) stale += c.getLong(0)
+        }
+        stale.sumOf { id ->
+            try {
+                resolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id), null, null)
+            } catch (e: SecurityException) {
+                log.w(e) { "Calendar delete not permitted" }
+                0
+            }
+        }
     }
 
     private fun findExported(calendarId: Long, eventId: String): Long? = resolver.query(

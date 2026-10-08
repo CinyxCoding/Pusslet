@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit
 object BackgroundWork {
     private const val SUBSCRIPTIONS = "subscriptions-refresh"
     private const val SUBSCRIPTION_HOURS = 6L
+    private const val CALENDAR_EXPORT = "calendar-export"
+    private const val EXPORT_HOURS = 6L
 
     fun schedule(context: Context) {
         val online = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
@@ -19,6 +21,11 @@ object BackgroundWork {
             SUBSCRIPTIONS,
             ExistingPeriodicWorkPolicy.KEEP,
             PeriodicWorkRequestBuilder<SubscriptionRefreshWorker>(SUBSCRIPTION_HOURS, TimeUnit.HOURS).setConstraints(online).build(),
+        )
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+            CALENDAR_EXPORT,
+            ExistingPeriodicWorkPolicy.KEEP,
+            PeriodicWorkRequestBuilder<CalendarExportWorker>(EXPORT_HOURS, TimeUnit.HOURS).build(),
         )
     }
 }

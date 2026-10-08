@@ -45,6 +45,7 @@ import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.data.usecase.CalendarFeeds
 import se.pusslet.data.usecase.DataPrivacy
+import se.pusslet.data.usecase.DeviceCalendarExport
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.QuickAddExecutor
@@ -90,6 +91,7 @@ val dataModule: Module = module {
     single { MealShopping(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeNutrition(get(), get()) }
     single { CalendarFeeds(get(), get(), get(), get(), get(), get(), get()) }
+    single { DeviceCalendarExport(get(), get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

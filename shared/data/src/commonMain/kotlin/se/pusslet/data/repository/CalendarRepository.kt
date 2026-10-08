@@ -45,8 +45,14 @@ interface DeviceCalendarSource {
 
     suspend fun events(calendarIds: Set<Long>, from: LocalDate, to: LocalDate, ownerMemberId: String?): List<Event>
 
-    /** Writes/updates family events into [calendarId] (stable ids in SYNC_DATA). Returns number of rows touched. */
+    /**
+     * Writes/updates family events into [calendarId], identified by a stable UID. Changed single occurrences are written
+     * as their own events and excluded from their series. Returns number of rows touched.
+     */
     suspend fun exportEvents(calendarId: Long, events: List<Event>): Int
+
+    /** Deletes events this app exported to [calendarId] that are no longer in [keepEventIds] (deleted in the family). */
+    suspend fun removeExported(calendarId: Long, keepEventIds: Set<String>): Int
 
     /** Creates (or returns) a local calendar owned by the app. */
     suspend fun ensureAppCalendar(name: String): Long?
@@ -63,6 +69,8 @@ object NoDeviceCalendars : DeviceCalendarSource {
     override suspend fun events(calendarIds: Set<Long>, from: LocalDate, to: LocalDate, ownerMemberId: String?): List<Event> = emptyList()
 
     override suspend fun exportEvents(calendarId: Long, events: List<Event>) = 0
+
+    override suspend fun removeExported(calendarId: Long, keepEventIds: Set<String>) = 0
 
     override suspend fun ensureAppCalendar(name: String): Long? = null
 

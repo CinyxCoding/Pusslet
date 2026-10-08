@@ -20,6 +20,7 @@ class KmpFeatureConventionPlugin : Plugin<Project> {
             }
             sourceSets.getByName("commonTest").dependencies {
                 implementation(libs.findLibrary("turbine").get())
+                implementation(project(":shared:testing"))
             }
         }
     }

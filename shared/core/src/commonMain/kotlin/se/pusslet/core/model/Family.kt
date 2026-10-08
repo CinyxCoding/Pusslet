@@ -29,13 +29,17 @@ enum class Role {
     Child,
 }
 
-/** An adult with an account. The id is the Firebase uid. */
+/**
+ * An adult in the family. [id] is a family-scoped person id (works before anyone has an account);
+ * [uid] links the person to a Firebase account once they sign in or accept an invite.
+ */
 @Serializable
 data class Member(
     val id: String,
     val displayName: String,
     val role: Role = Role.Parent,
     val color: MemberColor = MemberColor.Sage,
+    val uid: String? = null,
     val joinedAt: Instant? = null,
     /** The invite used to join; validated by security rules on create. */
     val inviteCode: String? = null,

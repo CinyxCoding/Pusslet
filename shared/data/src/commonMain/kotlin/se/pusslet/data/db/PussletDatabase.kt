@@ -14,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 
-/** Small key/value table for device-local preferences (no DataStore dependency needed). */
+/** Small key/value table for device-local preferences (no DataStore dependency needed, ADR-012). */
 @Entity(tableName = "preferences")
 data class PreferenceEntity(
     @PrimaryKey val key: String,
@@ -34,16 +34,41 @@ interface PreferenceDao {
 
     @Query("DELETE FROM preferences WHERE `key` = :key")
     suspend fun remove(key: String)
+
+    @Query("DELETE FROM preferences")
+    suspend fun clear()
 }
 
 @Database(
-    entities = [PreferenceEntity::class],
+    entities = [
+        PreferenceEntity::class,
+        DocumentEntity::class,
+        OutboxEntity::class,
+        SyncStateEntity::class,
+        CacheEntryEntity::class,
+        FoodEntity::class,
+        FoodFtsEntity::class,
+        FoodNutrientsEntity::class,
+        PurchaseLogEntity::class,
+    ],
     version = 1,
     exportSchema = true,
 )
 @ConstructedBy(PussletDatabaseConstructor::class)
 abstract class PussletDatabase : RoomDatabase() {
     abstract fun preferenceDao(): PreferenceDao
+
+    abstract fun documentDao(): DocumentDao
+
+    abstract fun outboxDao(): OutboxDao
+
+    abstract fun syncStateDao(): SyncStateDao
+
+    abstract fun cacheDao(): CacheDao
+
+    abstract fun foodDao(): FoodDao
+
+    abstract fun purchaseLogDao(): PurchaseLogDao
 
     companion object {
         const val FILE_NAME = "pusslet.db"

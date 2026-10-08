@@ -213,7 +213,7 @@ private fun Meta(recipe: se.pusslet.core.model.Recipe) {
 private fun Actions(state: RecipeUiState, onPlan: (kotlinx.datetime.LocalDate) -> Unit, onAddToList: (String) -> Unit) {
     var planMenu by remember { mutableStateOf(false) }
     var listMenu by remember { mutableStateOf(false) }
-    val today = state.planDays.firstOrNull()
+    val today = state.planDays.firstOrNull() ?: return
     Box {
         Button(onClick = { planMenu = true }, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.touchTarget)) {
             Text(stringResource(Res.string.recipe_plan))
@@ -225,8 +225,8 @@ private fun Actions(state: RecipeUiState, onPlan: (kotlinx.datetime.LocalDate) -
                 modifier = Modifier.padding(Spacing.md),
             )
             state.planDays.forEach { d ->
-                val soon = today != null && d.toEpochDays() - today.toEpochDays() < 2
-                val label = if (soon && today != null) relativeDay(d, today) else weekdayName(d.dayOfWeek)
+                val soon = d.toEpochDays() - today.toEpochDays() < 2
+                val label = if (soon) relativeDay(d, today) else weekdayName(d.dayOfWeek)
                 DropdownMenuItem(text = { Text(label.replaceFirstChar { it.uppercase() }) }, onClick = {
                     planMenu = false
                     onPlan(d)

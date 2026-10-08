@@ -63,16 +63,23 @@ class MealPlannerTest {
         val target = monday.isoWeek.plusWeeks(3)
         val applied = MealPlanner.applyFavorite(fav, target, MealPlanWeek(target))
         assertEquals("Fiskpinnar", applied.entry(target.monday)?.title)
-        assertEquals("Fredagstacos", applied.entry(target.monday.plusDays(5), MealSlot.Lunch)?.title, "cook double recreates leftovers")
+        assertEquals("Fredagstacos", applied.entry(target.monday.plusDays(5))?.title, "cook double recreates leftovers")
+        assertEquals(target.monday.plusDays(4), applied.entry(target.monday.plusDays(5))?.leftoversFrom)
     }
 
     @Test
-    fun leftoversAreTomorrowsLunch() {
-        val l = MealPlanner.leftoversFor(MealEntry(monday, recipeId = "r", title = "Lasagne", servings = 4, cookDouble = true))
+    fun leftoversAreTomorrowsDinnerOrALunchBox() {
+        val lasagne = MealEntry(monday, recipeId = "r", title = "Lasagne", servings = 4, cookDouble = true)
+        val l = MealPlanner.leftoversFor(lasagne)
         assertEquals(monday.plusDays(1), l.date)
-        assertEquals(MealSlot.Lunch, l.slot)
+        assertEquals(MealSlot.Dinner, l.slot)
         assertEquals(monday, l.leftoversFrom)
-        assertEquals(null, l.recipeId)
+        assertEquals("r", l.recipeId, "the recipe stays linked; leftovers are never shopped for")
+        assertEquals(
+            MealSlot.Lunch,
+            MealPlanner.leftoversFor(lasagne, nextDinnerTaken = true).slot,
+            "matlåda when tomorrow's dinner is planned",
+        )
     }
 
     @Test

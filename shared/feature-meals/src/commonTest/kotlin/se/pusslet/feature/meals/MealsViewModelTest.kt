@@ -143,6 +143,27 @@ class MealsViewModelTest {
     }
 
     @Test
+    fun aDoubledDinnerBeforeAPlannedDayBecomesALunchBox() = viewModelTest {
+        val g = TestGraph()
+        g.seedFamily()
+        g.settingsWithLunch()
+        g.meals.setEntry(MealEntry(monday.plusDays(-7), title = "Lasagne", cookDouble = true))
+        g.meals.setEntry(MealEntry(tuesday.plusDays(-7), title = "Fiskpinnar"))
+        val vm = vm(g)
+        collectInBackground(vm.state)
+        vm.previousWeek()
+        vm.saveFavorite("Med matlåda")
+        vm.thisWeek()
+        vm.applyFavorite(vm.state.value.favorites.single())
+        val tue = vm.state.value.days[1]
+        assertEquals("Fiskpinnar", tue.meals.first { it.slot == MealSlot.Dinner }.entry?.title)
+        assertEquals("Lasagne", tue.meals.first { it.slot == MealSlot.Lunch }.entry?.title, "the leftovers go in the lunch box")
+    }
+
+    private suspend fun TestGraph.settingsWithLunch() =
+        family.saveSettings { it.copy(mealSlots = setOf(MealSlot.Lunch, MealSlot.Dinner)) }
+
+    @Test
     fun moveSwapsDays() = viewModelTest {
         val g = TestGraph()
         g.seedFamily()

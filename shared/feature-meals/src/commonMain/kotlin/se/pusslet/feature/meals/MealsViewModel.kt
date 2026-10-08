@@ -350,10 +350,10 @@ class MealsViewModel(
     fun setCookDouble(date: LocalDate, slot: MealSlot, on: Boolean) = launch {
         val entry = meals.getWeek(date.isoWeek).entry(date, slot) ?: return@launch
         if (!on) {
-            // Remove the leftovers day this entry created, if nobody changed it.
+            // Remove the leftovers this entry created (dinner or lunch box), if nobody changed them.
             val next = date.plusDays(1)
-            val leftovers = meals.getWeek(next.isoWeek).entry(next, MealSlot.Dinner)
-            if (leftovers?.leftoversFrom == date) meals.clearEntry(next, MealSlot.Dinner)
+            val nextWeek = meals.getWeek(next.isoWeek)
+            MealSlot.entries.filter { nextWeek.entry(next, it)?.leftoversFrom == date }.forEach { meals.clearEntry(next, it) }
         }
         meals.setEntry(entry.copy(cookDouble = on))
     }

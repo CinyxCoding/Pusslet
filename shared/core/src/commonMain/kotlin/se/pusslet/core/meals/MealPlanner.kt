@@ -42,11 +42,14 @@ object RecipeScaler {
 }
 
 object MealPlanner {
-    /** "Gör dubbelt": tomorrow's lunch box is the leftovers (no extra shopping, the dinner itself is doubled). */
-    fun leftoversFor(entry: MealEntry): MealEntry = MealEntry(
+    /**
+     * "Gör dubbelt": the next day's dinner is the leftovers – or, when that dinner is already planned, a lunch box.
+     * No extra shopping: the doubled dinner itself is bought for (leftover entries are skipped by the list generator).
+     */
+    fun leftoversFor(entry: MealEntry, nextDinnerTaken: Boolean = false): MealEntry = MealEntry(
         date = entry.date.plusDays(1),
-        slot = MealSlot.Lunch,
-        recipeId = null,
+        slot = if (nextDinnerTaken) MealSlot.Lunch else MealSlot.Dinner,
+        recipeId = entry.recipeId,
         title = entry.title,
         servings = entry.servings,
         leftoversFrom = entry.date,
@@ -72,7 +75,11 @@ object MealPlanner {
         favorite.days.forEach { (offset, template) ->
             val entry = template.copy(date = target.monday.plusDays(offset), slot = MealSlot.Dinner)
             week = week.with(entry)
-            if (entry.cookDouble) week = week.with(leftoversFor(entry))
+            val next = entry.date.plusDays(1)
+            if (entry.cookDouble && next in target) {
+                val leftovers = leftoversFor(entry, nextDinnerTaken = favorite.days.containsKey(offset + 1) || week.entry(next) != null)
+                if (week.entry(next, leftovers.slot) == null) week = week.with(leftovers)
+            }
         }
         return week
     }

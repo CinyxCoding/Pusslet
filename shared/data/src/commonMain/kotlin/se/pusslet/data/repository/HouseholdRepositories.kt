@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import se.pusslet.core.meals.MealPlanner
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.FavoriteWeek
@@ -62,13 +63,14 @@ class MealRepository(private val docs: DocumentStore) {
         val week = entry.date.isoWeek
         val plan = getWeek(week).with(entry)
         docs.put(Collections.MealPlans, week.key, plan, MealPlanWeek.serializer())
-        // "Gör dubbelt": plan leftovers the next free day.
+        // "Gör dubbelt": leftovers tomorrow – dinner if it is free, otherwise a lunch box.
         if (entry.cookDouble) {
             val next = entry.date.plusDays(1)
             val nextWeek = next.isoWeek
             val nextPlan = getWeek(nextWeek)
-            if (nextPlan.entry(next, MealSlot.Dinner) == null) {
-                val leftovers = MealEntry(next, MealSlot.Dinner, entry.recipeId, entry.title, leftoversFrom = entry.date)
+            val alreadyThere = MealSlot.entries.any { nextPlan.entry(next, it)?.leftoversFrom == entry.date }
+            val leftovers = MealPlanner.leftoversFor(entry, nextDinnerTaken = nextPlan.entry(next, MealSlot.Dinner) != null)
+            if (!alreadyThere && nextPlan.entry(next, leftovers.slot) == null) {
                 docs.put(Collections.MealPlans, nextWeek.key, nextPlan.with(leftovers), MealPlanWeek.serializer())
             }
         }
@@ -105,10 +107,14 @@ class MealRepository(private val docs: DocumentStore) {
 
     suspend fun deleteFavorite(id: String) = docs.delete(Collections.FavoriteWeeks, id)
 
+    /**
+     * Days in [fav] replace those days; doubled dinners plan their leftovers like when set by hand. Applied from Sunday
+     * backwards, so a doubled Monday sees that Tuesday's dinner is planned and becomes a lunch box instead.
+     */
     suspend fun applyFavorite(fav: FavoriteWeek, target: IsoWeek) {
-        var dst = getWeek(target)
-        for ((offset, e) in fav.days) dst = dst.with(e.copy(date = target.monday.plusDays(offset)))
-        docs.put(Collections.MealPlans, target.key, dst, MealPlanWeek.serializer())
+        for ((offset, e) in fav.days.entries.sortedByDescending { it.key }) {
+            setEntry(e.copy(date = target.monday.plusDays(offset), leftoversFrom = null))
+        }
     }
 }
 

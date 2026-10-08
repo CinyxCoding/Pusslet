@@ -170,6 +170,7 @@ class ShoppingViewModelTest {
         assertTrue(vm.state.value.shoppers.isEmpty(), "Johan's sign has expired")
     }
 
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     @Test
     fun othersAdditionsAreAnnouncedInStoreMode() = viewModelTest {
         val g = TestGraph()

@@ -22,13 +22,13 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Auth (e-post + Google Sign-In; anonym i demo)
 - [ ] Skapa/gå med i familj via länk/QR
 - [ ] Barnprofiler med Skolverket-lookup
-- [ ] Kalender: dag/vecka/månad/agenda, RRULE, veckonummer
-- [ ] Svenska helgdagar lokalt (inkl. klämdagar, aftnar)
-- [ ] Vårdnadsschema + överlämningskort
+- [ ] Kalender: dag/vecka/månad/agenda (UI saknas) – RRULE-motor, ICS-parser och veckonummer klara med tester
+- [x] Svenska helgdagar lokalt (inkl. klämdagar, aftnar) – korskontrollerat mot Googles helgdagsflöde (11 år)
+- [x] Vårdnadsschema + överlämningskort (domänlogik + tester) – 🟡 UI saknas
 - [ ] Idag-vy: tidslinje, ska-med-idag, SMHI-väder, klädråd
-- [ ] Snabbinmatning med svensk parser (≥ 60 testfall)
-- [ ] Synkmotor + säkerhetsregler + regeltester
-- [ ] Seed-data "Familjen Lind"
+- [x] Svensk snabbinmatningsparser (81 testfall) – 🟡 UI (förhandsgranskning) saknas
+- [x] Synkmotor (11 tvåenhetstester mot fejkad backend) + säkerhetsregler + 23 regeltester mot emulatorn
+- [x] Seed-data "Familjen Lind" (DemoSeed)
 - [ ] ✅ Två emulatorer i samma familj ser varandras ändringar, fungerar offline
 
 ## Fas 2 – Mat & handla
@@ -65,6 +65,10 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 
 ## Fas 5 – V2
 - [ ] Barnvy & veckopeng · kalas/presenter · sök · flerhushållsdelning · fler lunchleverantörer
+
+## Status vid senaste avbrott (2026-10-08)
+Klart: domänkärnan i `shared/core` (veckor, helgdagar, RRULE/ICS, parser, vårdnad, packregler, klädråd, konflikter, uppgiftsrotation, Idag-planerare), datalagret i `shared/data` (Room-dokumentlager, utkö, synkmotor, Firestore-adapter, repositories, adaptrar för SMHI/Skolverket/skolmaten/Livsmedelsverket/Open Food Facts/ICS, demodata, AppCoordinator, Koin), Firestore-regler.
+Nästa steg: (1) koppla in Koin-moduler och Firebase-init per flavor i `composeApp`, (2) UI för Idag/Kalender/Familj/onboarding/snabbinmatning med strängresurser, (3) Fas 2–4.
 
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.

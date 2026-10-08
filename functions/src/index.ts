@@ -20,3 +20,6 @@ setGlobalOptions({
 export const health = onRequest({ cors: false }, (_req, res) => {
   res.status(200).json({ ok: true, service: "pusslet-functions" });
 });
+
+export { calendarFeed, revokeCalendarFeeds } from "./feeds.js";
+export { deleteAccount, deleteFamily } from "./privacy.js";

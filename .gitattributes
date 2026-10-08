@@ -4,3 +4,5 @@
 *.png binary
 *.jpg binary
 *.webp binary
+# ICS fixtures keep their CRLF line endings (RFC 5545); the generated golden feed is compared byte for byte.
+*.ics -text

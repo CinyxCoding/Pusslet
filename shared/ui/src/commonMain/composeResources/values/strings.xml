@@ -12,6 +12,597 @@
     <string name="quick_add_description">Snabbinmatning: skriv vad som ska hända</string>
     <string name="navigate_back">Tillbaka</string>
 
+    <!-- Common -->
+    <string name="action_save">Spara</string>
+    <string name="action_cancel">Avbryt</string>
+    <string name="action_delete">Ta bort</string>
+    <string name="action_edit">Redigera</string>
+    <string name="action_done">Klar</string>
+    <string name="action_add">Lägg till</string>
+    <string name="action_close">Stäng</string>
+    <string name="action_next">Nästa</string>
+    <string name="action_skip">Hoppa över</string>
+    <string name="action_retry">Försök igen</string>
+    <string name="action_share">Dela</string>
+    <string name="action_undo">Ångra</string>
+    <string name="action_confirm">Ja, gör det</string>
+    <string name="action_change">Ändra</string>
+    <string name="action_show_all">Visa alla</string>
+    <string name="nobody">Ingen</string>
+    <string name="everyone">Alla</string>
+    <string name="optional">valfritt</string>
+    <string name="loading">Laddar…</string>
+    <string name="error_generic">Något gick snett. Försök igen om en stund.</string>
+    <string name="offline_notice">Du är offline – ändringar sparas och skickas när du har nät igen.</string>
+    <string name="list_separator">, </string>
+    <string name="and_separator"> och </string>
+
+    <!-- Dates and times -->
+    <string-array name="weekdays">
+        <item>måndag</item>
+        <item>tisdag</item>
+        <item>onsdag</item>
+        <item>torsdag</item>
+        <item>fredag</item>
+        <item>lördag</item>
+        <item>söndag</item>
+    </string-array>
+    <string-array name="weekdays_short">
+        <item>mån</item>
+        <item>tis</item>
+        <item>ons</item>
+        <item>tor</item>
+        <item>fre</item>
+        <item>lör</item>
+        <item>sön</item>
+    </string-array>
+    <string-array name="months">
+        <item>januari</item>
+        <item>februari</item>
+        <item>mars</item>
+        <item>april</item>
+        <item>maj</item>
+        <item>juni</item>
+        <item>juli</item>
+        <item>augusti</item>
+        <item>september</item>
+        <item>oktober</item>
+        <item>november</item>
+        <item>december</item>
+    </string-array>
+    <string-array name="months_short">
+        <item>jan</item>
+        <item>feb</item>
+        <item>mar</item>
+        <item>apr</item>
+        <item>maj</item>
+        <item>jun</item>
+        <item>jul</item>
+        <item>aug</item>
+        <item>sep</item>
+        <item>okt</item>
+        <item>nov</item>
+        <item>dec</item>
+    </string-array>
+    <!-- weekday, day of month, month name -->
+    <string name="date_long">%1$s %2$d %3$s</string>
+    <string name="date_long_year">%1$s %2$d %3$s %4$d</string>
+    <string name="date_short">%1$d %2$s</string>
+    <string name="week_short">v. %1$d</string>
+    <string name="week_long">Vecka %1$d</string>
+    <string name="time_range">%1$s–%2$s</string>
+    <string name="at_time">kl %1$s</string>
+    <string name="all_day">Heldag</string>
+    <string name="today">Idag</string>
+    <string name="tomorrow">Imorgon</string>
+    <string name="yesterday">Igår</string>
+    <string name="on_weekday">på %1$s</string>
+
+    <!-- Greetings -->
+    <string name="greeting_morning">God morgon</string>
+    <string name="greeting_day">Hej</string>
+    <string name="greeting_evening">God kväll</string>
+    <string name="greeting_night">Hej, nattuggla</string>
+    <string name="greeting_named">%1$s, %2$s</string>
+
+    <!-- Today -->
+    <string name="today_weather_now">%1$d° just nu</string>
+    <string name="today_weather_range">%1$d° till %2$d° under dagen</string>
+    <string name="today_weather_stale">Väder från %1$s – kunde inte uppdatera</string>
+    <string name="today_weather_missing">Välj ort i inställningarna för att få väder och klädråd.</string>
+    <string name="today_weather_unavailable">Vädret kunde inte hämtas just nu.</string>
+    <string name="today_clothes_for">%1$s: %2$s</string>
+    <string name="today_timeline_title">Dagen</string>
+    <string name="today_packing_title">Ska med idag</string>
+    <string name="today_packing_empty">Inget extra att packa idag.</string>
+    <string name="today_packing_reason_event">till %1$s</string>
+    <string name="today_packing_reason_handover">bytesdag</string>
+    <string name="today_meals_title">Mat idag</string>
+    <string name="today_lunch">Lunch för %1$s: %2$s</string>
+    <string name="today_dinner">Middag: %1$s</string>
+    <string name="today_no_dinner">Ingen middag planerad än.</string>
+    <string name="today_plan_dinner">Planera middag</string>
+    <string name="today_clash">%1$s har redan ätit %2$s till lunch</string>
+    <string name="today_upcoming_title">Kommande dagar</string>
+    <string name="today_upcoming_nothing">Lugnt</string>
+    <string name="today_tasks_title">Att göra för dig</string>
+    <string name="today_no_tasks">Inget på din lista. Skönt!</string>
+    <string name="today_custody">Barnen är hos: %1$s</string>
+    <string name="today_custody_handover">Byte idag kl %1$s – till %2$s</string>
+    <string name="today_custody_next">Nästa byte %1$s</string>
+    <string name="today_dropoff">Lämning</string>
+    <string name="today_pickup">Hämtning</string>
+    <string name="today_handoff_line">%1$s %2$s</string>
+    <string name="today_handoff_nobody">Ingen är satt än</string>
+    <string name="today_quiet">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
+    <string name="today_overdue">Försenad</string>
+    <string name="today_holiday">%1$s</string>
+
+    <!-- Context cards -->
+    <string name="card_nobody_pickup">%1$s är upptagna kl %2$s – ingen kan hämta %3$s</string>
+    <string name="card_nobody_dropoff">%1$s är upptagna kl %2$s – ingen kan lämna %3$s</string>
+    <string name="card_busy_pickup">%1$s ska hämta %2$s kl %3$s men har %4$s</string>
+    <string name="card_busy_dropoff">%1$s ska lämna %2$s kl %3$s men har %4$s</string>
+    <string name="card_unassigned_pickup">Ingen hämtar %1$s kl %2$s</string>
+    <string name="card_unassigned_dropoff">Ingen lämnar %1$s kl %2$s</string>
+    <string name="card_double_booked">%1$s har både %2$s och %3$s samtidigt</string>
+    <string name="card_study_day">%1$s %2$s – vem är hemma?</string>
+    <string name="card_party_gift">Kalas %1$s – present är inte köpt</string>
+    <string name="card_squeeze_day">Klämdag %1$s – ledigt eller fritids?</string>
+    <string name="card_handover">Byte %1$s: barnen flyttar till %2$s</string>
+    <string name="card_action_ask">Fråga om hjälp</string>
+    <string name="card_action_take">Jag tar det</string>
+    <string name="card_action_add_task">Lägg till att göra</string>
+    <string name="card_action_open">Visa</string>
+    <string name="card_today">idag</string>
+    <string name="card_tomorrow">imorgon</string>
+
+    <!-- Clothing advice -->
+    <string name="advice_winter_overall">Vinteroverall</string>
+    <string name="advice_winter_jacket">Vinterjacka</string>
+    <string name="advice_wool">Ullunderställ</string>
+    <string name="advice_hat_mittens">Mössa och vantar</string>
+    <string name="advice_thin_hat">Tunn mössa och handskar</string>
+    <string name="advice_winter_boots">Vinterkängor</string>
+    <string name="advice_rain_gear">Regnställ + stövlar</string>
+    <string name="advice_rain_jacket">Regnjacka</string>
+    <string name="advice_fleece">Fleece under jackan</string>
+    <string name="advice_light_jacket">Tunn jacka</string>
+    <string name="advice_windproof">Vindtät jacka</string>
+    <string name="advice_tshirt">T-shirt</string>
+    <string name="advice_sun_hat">Solhatt + vatten</string>
+    <string name="advice_sunscreen">Solkräm</string>
+    <string name="advice_extra_clothes">Extra ombyte i facket</string>
+    <string name="advice_reflective">Reflexväst</string>
+
+    <!-- Weather -->
+    <string name="weather_clear">Klart</string>
+    <string name="weather_partly">Halvklart</string>
+    <string name="weather_cloudy">Mulet</string>
+    <string name="weather_fog">Dimma</string>
+    <string name="weather_rain">Regn</string>
+    <string name="weather_showers">Regnskurar</string>
+    <string name="weather_thunder">Åska</string>
+    <string name="weather_sleet">Snöblandat regn</string>
+    <string name="weather_snow">Snö</string>
+    <string name="weather_source">Prognos: SMHI</string>
+
+    <!-- Holidays -->
+    <string name="holiday_NewYearsDay">Nyårsdagen</string>
+    <string name="holiday_TwelfthNight">Trettondagsafton</string>
+    <string name="holiday_Epiphany">Trettondedag jul</string>
+    <string name="holiday_ValentinesDay">Alla hjärtans dag</string>
+    <string name="holiday_ShroveTuesday">Fettisdagen</string>
+    <string name="holiday_MaundyThursday">Skärtorsdag</string>
+    <string name="holiday_GoodFriday">Långfredagen</string>
+    <string name="holiday_EasterEve">Påskafton</string>
+    <string name="holiday_EasterSunday">Påskdagen</string>
+    <string name="holiday_EasterMonday">Annandag påsk</string>
+    <string name="holiday_WalpurgisNight">Valborgsmässoafton</string>
+    <string name="holiday_MayDay">Första maj</string>
+    <string name="holiday_AscensionDay">Kristi himmelsfärdsdag</string>
+    <string name="holiday_MothersDay">Mors dag</string>
+    <string name="holiday_WhitsunEve">Pingstafton</string>
+    <string name="holiday_WhitSunday">Pingstdagen</string>
+    <string name="holiday_NationalDay">Sveriges nationaldag</string>
+    <string name="holiday_MidsummerEve">Midsommarafton</string>
+    <string name="holiday_MidsummerDay">Midsommardagen</string>
+    <string name="holiday_AllSaintsEve">Allhelgonaafton</string>
+    <string name="holiday_AllSaintsDay">Alla helgons dag</string>
+    <string name="holiday_FathersDay">Fars dag</string>
+    <string name="holiday_FirstAdvent">Första advent</string>
+    <string name="holiday_SecondAdvent">Andra advent</string>
+    <string name="holiday_ThirdAdvent">Tredje advent</string>
+    <string name="holiday_FourthAdvent">Fjärde advent</string>
+    <string name="holiday_Lucia">Lucia</string>
+    <string name="holiday_ChristmasEve">Julafton</string>
+    <string name="holiday_ChristmasDay">Juldagen</string>
+    <string name="holiday_BoxingDay">Annandag jul</string>
+    <string name="holiday_NewYearsEve">Nyårsafton</string>
+    <string name="holiday_DaylightSavingStart">Sommartid börjar</string>
+    <string name="holiday_DaylightSavingEnd">Vintertid börjar</string>
+
+    <!-- Event tags -->
+    <string name="tag_party">Kalas</string>
+    <string name="tag_trip">Utflykt</string>
+    <string name="tag_study_day">Studiedag</string>
+    <string name="tag_break">Lov</string>
+    <string name="tag_training">Träning</string>
+    <string name="tag_meeting">Möte</string>
+    <string name="tag_work">Jobb</string>
+    <string name="tag_pe">Idrott</string>
+
+    <!-- Recurrence -->
+    <string name="repeat_none">Upprepas inte</string>
+    <string name="repeat_daily">Varje dag</string>
+    <string name="repeat_weekly">Varje vecka</string>
+    <string name="repeat_weekly_on">Varje %1$s</string>
+    <string name="repeat_biweekly">Varannan vecka</string>
+    <string name="repeat_biweekly_on">Varannan %1$s</string>
+    <string name="repeat_every_n_weeks">Var %1$d:e vecka</string>
+    <string name="repeat_monthly">Varje månad</string>
+    <string name="repeat_yearly">Varje år</string>
+    <string name="repeat_weekdays">Vardagar</string>
+    <string name="repeat_custom">Eget mönster</string>
+
+    <!-- Quick add -->
+    <string name="quickadd_title">Vad ska hända?</string>
+    <string name="quickadd_hint">T.ex. ”Simon fotboll tis 17:30 varje vecka”</string>
+    <string name="quickadd_interpreted">Jag tolkade detta som…</string>
+    <string name="quickadd_uncertain">Kolla det som är markerat – tryck för att ändra.</string>
+    <string name="quickadd_kind_event">Händelse</string>
+    <string name="quickadd_kind_task">Att göra</string>
+    <string name="quickadd_kind_shopping">Till inköpslistan</string>
+    <string name="quickadd_kind_meal">Till matsedeln</string>
+    <string name="quickadd_kind_handoff">Hämta/lämna</string>
+    <string name="quickadd_save">Spara</string>
+    <string name="quickadd_save_all">Spara %1$d saker</string>
+    <string name="quickadd_saved">Sparat!</string>
+    <string name="quickadd_examples">Prova till exempel</string>
+    <string name="quickadd_example_1">Ella kalas lör 14-16 hos Vera, köp present</string>
+    <string name="quickadd_example_2">mjölk, 2 gurka, pasta</string>
+    <string name="quickadd_example_3">Johan hämtar imorgon</string>
+    <string name="quickadd_example_4">tacos fredag</string>
+    <string name="quickadd_handoff_pickup">%1$s hämtar %2$s</string>
+    <string name="quickadd_handoff_dropoff">%1$s lämnar %2$s</string>
+    <string name="quickadd_handoff_all_children">barnen</string>
+    <string name="quickadd_no_handoff_found">Det fanns ingen lämning/hämtning den dagen, så jag lade till en ny hämtning kl %1$s.</string>
+    <string name="quickadd_linked_task">Kopplad till händelsen</string>
+    <string name="quickadd_meal_slot">%1$s, %2$s</string>
+    <string name="field_title">Titel</string>
+    <string name="field_date">Datum</string>
+    <string name="field_time">Tid</string>
+    <string name="field_start">Börjar</string>
+    <string name="field_end">Slutar</string>
+    <string name="field_who">Vem</string>
+    <string name="field_repeat">Upprepas</string>
+    <string name="field_location">Plats</string>
+    <string name="field_due">Klart senast</string>
+    <string name="field_assignee">Ansvarig</string>
+    <string name="field_items">Varor</string>
+    <string name="meal_breakfast">Frukost</string>
+    <string name="meal_lunch">Lunch</string>
+    <string name="meal_dinner">Middag</string>
+
+    <!-- Calendar -->
+    <string name="calendar_view_day">Dag</string>
+    <string name="calendar_view_week">Vecka</string>
+    <string name="calendar_view_month">Månad</string>
+    <string name="calendar_view_agenda">Agenda</string>
+    <string name="calendar_layers">Visa i kalendern</string>
+    <string name="layer_family">Familjens händelser</string>
+    <string name="layer_subscriptions">Prenumerationer (skola, förening)</string>
+    <string name="layer_device">Mina egna kalendrar</string>
+    <string name="layer_holidays">Helgdagar</string>
+    <string name="layer_custody">Växelvis boende</string>
+    <string name="calendar_filter_all">Alla</string>
+    <string name="calendar_empty_day">Inget planerat</string>
+    <string name="calendar_empty_week">Inget planerat den här veckan. Lägg till med +.</string>
+    <string name="calendar_new_event">Ny händelse</string>
+    <string name="calendar_edit_event">Redigera händelse</string>
+    <string name="calendar_previous">Föregående</string>
+    <string name="calendar_next">Nästa</string>
+    <string name="calendar_go_today">Gå till idag</string>
+    <string name="calendar_more_events">+%1$d till</string>
+    <string name="event_all_day">Heldag</string>
+    <string name="event_participants">Vem gäller det?</string>
+    <string name="event_dropoff">Lämnar</string>
+    <string name="event_pickup">Hämtar</string>
+    <string name="event_handoffs">Lämning och hämtning</string>
+    <string name="event_handoff_none">Behövs inte</string>
+    <string name="event_location">Plats</string>
+    <string name="event_note">Anteckning</string>
+    <string name="event_tags">Typ av händelse</string>
+    <string name="event_packing">Ska med</string>
+    <string name="event_packing_add">Lägg till sak att ta med</string>
+    <string name="event_reminder">Påminnelse</string>
+    <string name="reminder_none">Ingen påminnelse</string>
+    <string name="reminder_minutes">%1$d min innan</string>
+    <string name="reminder_hours">%1$d tim innan</string>
+    <string name="reminder_day">Dagen innan</string>
+    <string name="event_shared_caregivers">Synlig för andra vuxna (t.ex. morfar)</string>
+    <string name="event_delete_confirm">Ta bort händelsen?</string>
+    <string name="event_delete_series">Hela serien</string>
+    <string name="event_delete_occurrence">Bara den här gången</string>
+    <string name="event_source_subscription">Från %1$s</string>
+    <string name="event_source_device">Från din kalender</string>
+    <string name="event_source_holiday">Helgdag</string>
+    <string name="event_read_only">Den här händelsen kommer från en annan kalender och kan inte ändras här.</string>
+    <string name="event_request_pickup">Kan någon hämta?</string>
+    <string name="event_title_required">Skriv vad det är</string>
+    <string name="event_end_before_start">Sluttiden är före starten</string>
+    <string name="event_editing_occurrence">Du ändrar bara tillfället %1$s. Resten av serien påverkas inte.</string>
+    <string name="event_edit_scope">Vill du ändra bara den här gången eller hela serien?</string>
+    <string name="event_request_from">%1$s frågar om någon kan ta det.</string>
+    <string name="event_private_hint">Bara föräldrar ser den här händelsen.</string>
+    <string name="calendar_week_abbr">v.</string>
+    <string name="empty_generic">Hittade inget här.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Välkommen till %1$s</string>
+    <string name="onboarding_welcome_body">Familjens vardagspussel på ett ställe: vem hämtar, vad ska med och vad blir det till middag.</string>
+    <string name="onboarding_create">Skapa vår familj</string>
+    <string name="onboarding_join">Jag har en inbjudan</string>
+    <string name="onboarding_demo">Utforska med en exempelfamilj</string>
+    <string name="onboarding_step">Steg %1$d av %2$d</string>
+    <string name="onboarding_family_title">Vilka är ni?</string>
+    <string name="onboarding_family_name">Familjens namn</string>
+    <string name="onboarding_family_name_hint">Familjen Lind</string>
+    <string name="onboarding_your_name">Ditt namn</string>
+    <string name="onboarding_default_family_name">Familjen %1$s</string>
+    <string name="onboarding_children_title">Vilka barn finns i familjen?</string>
+    <string name="onboarding_children_body">Förnamn räcker. Födelseår gör klädråden bättre men är frivilligt.</string>
+    <string name="onboarding_add_child">Lägg till barn</string>
+    <string name="onboarding_child_name">Barnets förnamn</string>
+    <string name="onboarding_child_birth_year">Födelseår</string>
+    <string name="onboarding_place_title">Var bor ni?</string>
+    <string name="onboarding_place_body">Används bara för väderprognosen. Välj närmaste ort.</string>
+    <string name="onboarding_place_search">Sök ort</string>
+    <string name="onboarding_done_title">Klart!</string>
+    <string name="onboarding_done_body">Börja med veckans händelser via +. Resten kan du fylla i när det passar.</string>
+    <string name="onboarding_start">Kom igång</string>
+
+    <!-- Join -->
+    <string name="join_title">Gå med i en familj</string>
+    <string name="join_body">Skriv in koden du fått, eller skanna QR-koden.</string>
+    <string name="join_code_hint">Inbjudningskod</string>
+    <string name="join_scan">Skanna QR-kod</string>
+    <string name="scanner_hint">Rikta kameran mot QR-koden eller streckkoden</string>
+    <string name="scanner_unavailable">Kameran kunde inte startas.</string>
+    <string name="join_find">Hitta inbjudan</string>
+    <string name="join_found">Inbjudan till %1$s</string>
+    <string name="join_as_parent">Du går med som förälder och ser allt.</string>
+    <string name="join_as_caregiver">Du går med som annan vuxen och ser det som delas med dig.</string>
+    <string name="join_button">Gå med</string>
+    <string name="join_invalid">Koden hittades inte eller har gått ut.</string>
+    <string name="join_needs_network">Du behöver vara uppkopplad för att gå med.</string>
+    <string name="join_unavailable">Den här versionen av appen är inte kopplad till någon server, så det går inte att gå med i en familj.</string>
+
+    <!-- Family -->
+    <string name="family_title">Familjen</string>
+    <string name="family_adults">Vuxna</string>
+    <string name="family_children">Barn</string>
+    <string name="family_invite">Bjud in</string>
+    <string name="family_add_child">Lägg till barn</string>
+    <string name="family_add_adult">Lägg till vuxen</string>
+    <string name="family_custody">Växelvis boende</string>
+    <string name="family_custody_none">Inget schema. Lägg till om barnen bor i två hem.</string>
+    <string name="family_rename">Byt namn på familjen</string>
+    <string name="family_me">du</string>
+    <string name="member_nickname">Vad kallar ni personen?</string>
+    <string name="member_nickname_hint">T.ex. Morfar</string>
+    <string name="invite_person">Bjud in %1$s</string>
+    <string name="role_parent">Förälder</string>
+    <string name="role_caregiver">Annan vuxen</string>
+    <string name="role_child">Barn</string>
+    <string name="person_age">%1$d år</string>
+
+    <!-- Invite -->
+    <string name="invite_title">Bjud in</string>
+    <string name="invite_body">Den du bjuder in får egen inloggning. Inbjudan gäller i 7 dagar.</string>
+    <string name="invite_role_parent">Förälder – ser och ändrar allt</string>
+    <string name="invite_role_caregiver">Annan vuxen – ser det som delas och kan bocka av</string>
+    <string name="invite_claim">Gäller för %1$s</string>
+    <string name="invite_claim_new">En ny person</string>
+    <string name="invite_create">Skapa inbjudan</string>
+    <string name="invite_code_label">Kod</string>
+    <string name="invite_valid_until">Gäller till %1$s</string>
+    <string name="invite_share_text">Hej! Gå med i %1$s i %2$s: %3$s – eller skriv koden %4$s i appen.</string>
+    <string name="invite_needs_account">Logga in först, så kan familjen delas mellan era telefoner.</string>
+    <string name="invite_qr_description">QR-kod för inbjudan</string>
+
+    <!-- Child editor -->
+    <string name="child_new">Nytt barn</string>
+    <string name="child_edit">Redigera %1$s</string>
+    <string name="child_name">Förnamn</string>
+    <string name="child_avatar">Symbol</string>
+    <string name="child_color">Färg</string>
+    <string name="child_birth_date">Födelsedatum</string>
+    <string name="child_birth_hint">ÅÅÅÅ-MM-DD</string>
+    <string name="child_school">Skola eller förskola</string>
+    <string name="child_class">Klass eller avdelning</string>
+    <string name="child_lunch">Skollunch</string>
+    <string name="lunch_none">Visa inte</string>
+    <string name="lunch_skolmaten">skolmaten.se</string>
+    <string name="lunch_rss">Egen RSS-länk</string>
+    <string name="lunch_manual">Skriv in själv</string>
+    <string name="lunch_reference_hint">Skolans sida på skolmaten.se eller länk</string>
+    <string name="child_sizes">Klädstorlekar</string>
+    <string name="size_pants">Byxor</string>
+    <string name="size_top">Tröja</string>
+    <string name="size_shoes">Skor</string>
+    <string name="size_outerwear">Ytterkläder</string>
+    <string name="size_noted">%1$s (%2$s)</string>
+    <string name="child_contacts">Viktiga kontakter</string>
+    <string name="contact_name">Namn</string>
+    <string name="contact_relation">Vem är det?</string>
+    <string name="contact_phone">Telefon</string>
+    <string name="contact_add">Lägg till kontakt</string>
+    <string name="child_notes">Anteckningar</string>
+    <string name="child_delete_confirm">Ta bort %1$s från familjen?</string>
+    <string name="color_label">Färg %1$d</string>
+
+    <!-- School picker -->
+    <string name="school_municipality">Kommun</string>
+    <string name="school_search">Sök skola</string>
+    <string name="school_not_found">Hittar du inte skolan? Skriv namnet själv.</string>
+    <string name="school_free_text">Använd ”%1$s”</string>
+    <string name="school_source">Källa: Skolverkets skolenhetsregister</string>
+    <string name="school_preschool_note">Förskolor finns inte i Skolverkets register – skriv namnet själv.</string>
+    <string name="school_offline">Kunde inte hämta skolor just nu. Du kan skriva namnet själv.</string>
+
+    <!-- Diet (opt-in sensitive data) -->
+    <string name="diet_title">Allergier och kost</string>
+    <string name="diet_explain">Frivilligt. Används bara för att varna och filtrera recept, och syns för familjen. Du kan ta bort uppgifterna när som helst.</string>
+    <string name="diet_consent">Spara allergier och kost för %1$s</string>
+    <string name="diet_remove">Ta bort uppgifterna</string>
+    <string name="allergen_Milk">Mjölkprotein</string>
+    <string name="allergen_Lactose">Laktos</string>
+    <string name="allergen_Egg">Ägg</string>
+    <string name="allergen_Gluten">Gluten</string>
+    <string name="allergen_Peanut">Jordnötter</string>
+    <string name="allergen_TreeNuts">Nötter</string>
+    <string name="allergen_Fish">Fisk</string>
+    <string name="allergen_Shellfish">Skaldjur</string>
+    <string name="allergen_Soy">Soja</string>
+    <string name="allergen_Sesame">Sesam</string>
+    <string name="allergen_Celery">Selleri</string>
+    <string name="allergen_Mustard">Senap</string>
+    <string name="allergen_Lupin">Lupin</string>
+    <string name="allergen_Sulphites">Sulfiter</string>
+    <string name="diet_Vegetarian">Vegetariskt</string>
+    <string name="diet_Vegan">Veganskt</string>
+    <string name="diet_Pescetarian">Pescetariskt</string>
+    <string name="diet_Halal">Halal</string>
+    <string name="diet_NoPork">Inget fläsk</string>
+    <string name="diet_Kosher">Koscher</string>
+
+    <!-- Custody -->
+    <string name="custody_title">Växelvis boende</string>
+    <string name="custody_children">Gäller</string>
+    <string name="custody_pattern">Mönster</string>
+    <string name="custody_pattern_alternating">Varannan vecka</string>
+    <string name="custody_pattern_2255">2-2-5-5</string>
+    <string name="custody_pattern_223">2-2-3</string>
+    <string name="custody_households">Hemmen</string>
+    <string name="custody_household_a">Första hemmet</string>
+    <string name="custody_household_b">Andra hemmet</string>
+    <string name="custody_household_hint">T.ex. Hos pappa</string>
+    <string name="custody_anchor">Första dagen i första hemmet</string>
+    <string name="custody_handover_time">Byte kl</string>
+    <string name="custody_exceptions">Undantag (lov, högtider)</string>
+    <string name="custody_exception_add">Lägg till undantag</string>
+    <string name="custody_exception_line">%1$s–%2$s: %3$s</string>
+    <string name="custody_preview">De närmaste veckorna</string>
+    <string name="handover_title">Överlämning</string>
+    <string name="handover_when">%1$s kl %2$s till %3$s</string>
+    <string name="handover_bring">Ska med</string>
+    <string name="handover_homework">Läxor</string>
+    <string name="handover_upcoming">På gång</string>
+    <string name="handover_note">Meddelande till andra hemmet</string>
+    <string name="handover_share">Dela med andra hemmet</string>
+    <string name="handover_share_explain">Bara det som står här delas – inget annat av familjens information.</string>
+    <string name="handover_nothing">Inget särskilt den här gången.</string>
+
+    <!-- More -->
+    <string name="more_title">Mer</string>
+    <string name="more_family">Familjen</string>
+    <string name="more_family_body">Barn, vuxna, inbjudningar och växelvis boende</string>
+    <string name="more_tasks">Uppgifter och sysslor</string>
+    <string name="more_tasks_body">Att göra, sysslor som roterar och hur det fördelas</string>
+    <string name="more_recipes">Recept</string>
+    <string name="more_settings">Inställningar</string>
+    <string name="more_account">Konto och synk</string>
+    <string name="more_about_data">Om data</string>
+    <string name="more_privacy">Integritet och dina data</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Inställningar</string>
+    <string name="settings_appearance">Utseende</string>
+    <string name="settings_theme">Tema</string>
+    <string name="theme_system">Som telefonen</string>
+    <string name="theme_light">Ljust</string>
+    <string name="theme_dark">Mörkt</string>
+    <string name="settings_dynamic_color">Färger från bakgrundsbilden</string>
+    <string name="settings_language">Språk</string>
+    <string name="language_system">Telefonens språk</string>
+    <string name="language_sv">Svenska</string>
+    <string name="language_en">English</string>
+    <string name="settings_weather_place">Ort för väder</string>
+    <string name="settings_weather_place_none">Ingen ort vald</string>
+    <string name="settings_notifications">Notiser</string>
+    <string name="settings_morning">Morgonkoll</string>
+    <string name="settings_morning_body">En kort sammanfattning av dagen kl %1$s</string>
+    <string name="settings_quiet_hours">Tysta timmar</string>
+    <string name="settings_quiet_hours_body">Inga notiser %1$s–%2$s</string>
+    <string name="settings_calendars">Kalendrar</string>
+    <string name="settings_device_calendars">Visa mina egna kalendrar</string>
+    <string name="settings_device_calendars_body">Så att krockar med jobbet syns. Kräver behörighet till kalendern.</string>
+    <string name="settings_export_calendar">Lägg familjens händelser i</string>
+    <string name="settings_export_none">Exportera inte</string>
+    <string name="settings_export_app_calendar">En egen Pusslet-kalender</string>
+    <string name="settings_crash_reports">Skicka kraschrapporter</string>
+    <string name="settings_crash_reports_body">Anonyma tekniska uppgifter när appen kraschar. Av som standard.</string>
+    <string name="settings_version">Version %1$s</string>
+
+    <!-- Account -->
+    <string name="account_title">Konto och synk</string>
+    <string name="account_signed_out">Just nu sparas allt bara på den här telefonen. Logga in för att dela med familjen.</string>
+    <string name="account_email">E-post</string>
+    <string name="account_password">Lösenord</string>
+    <string name="account_sign_in">Logga in</string>
+    <string name="account_create">Skapa konto</string>
+    <string name="account_google">Fortsätt med Google</string>
+    <string name="account_sign_out">Logga ut</string>
+    <string name="account_signed_in_as">Inloggad som %1$s</string>
+    <string name="account_anonymous">Inloggad utan konto (demo)</string>
+    <string name="account_local_only">Den här versionen är inte kopplad till någon server. Allt sparas bara på telefonen.</string>
+    <string name="account_error_credentials">Fel e-post eller lösenord.</string>
+    <string name="account_error_email_in_use">Det finns redan ett konto med den e-posten.</string>
+    <string name="account_error_weak_password">Lösenordet behöver minst 6 tecken.</string>
+    <string name="account_error_network">Ingen kontakt med servern. Är du uppkopplad?</string>
+    <string name="sync_title">Synk</string>
+    <string name="sync_synced">Synkat %1$s</string>
+    <string name="sync_pending">Ändringar väntar på att skickas: %1$d</string>
+    <string name="sync_offline">Offline – försöker igen automatiskt</string>
+    <string name="sync_disabled">Synk är avstängd</string>
+    <string name="sync_connecting">Ansluter…</string>
+    <string name="sync_rejected">%1$d ändringar nekades av servern och finns bara här</string>
+
+    <!-- About data -->
+    <string name="about_title">Om data</string>
+    <string name="about_intro">Pusslet hämtar öppna data från de här källorna. Tack!</string>
+    <string name="about_no_ai">Pusslet använder ingen AI-tjänst. All tolkning sker med regler direkt i telefonen.</string>
+    <string name="source_livsmedel">Livsmedelsverkets livsmedelsdatabas</string>
+    <string name="source_livsmedel_body">Näringsvärden. Licens CC BY 4.0, källa: Livsmedelsverket.</string>
+    <string name="source_smhi">SMHI</string>
+    <string name="source_smhi_body">Väderprognoser (SNOW1g), öppna data från SMHI.</string>
+    <string name="source_skolverket">Skolverket</string>
+    <string name="source_skolverket_body">Skolenhetsregistret – namn och adresser på skolor.</string>
+    <string name="source_off">Open Food Facts</string>
+    <string name="source_off_body">Produktdata vid streckkodsskanning. Licens ODbL, insamlat av frivilliga.</string>
+    <string name="source_skolmaten">skolmaten.se</string>
+    <string name="source_skolmaten_body">Skollunchmenyer för skolor som använder tjänsten.</string>
+    <string name="source_scb">SCB</string>
+    <string name="source_scb_body">Kommunkoder och kommunnamn.</string>
+    <string name="source_icons">Material Icons</string>
+    <string name="source_icons_body">Ikoner från Google, Apache License 2.0.</string>
+    <string name="source_last_fetch">Senast hämtat %1$s</string>
+    <string name="source_never">Inte hämtat än</string>
+
+    <!-- Privacy -->
+    <string name="privacy_title">Integritet och dina data</string>
+    <string name="privacy_summary">Familjens uppgifter lagras på telefonen och – när ni loggar in – hos Google Firebase inom EU. Barn behöver bara ett förnamn. Inget säljs, ingen reklam, ingen AI.</string>
+    <string name="privacy_sensitive">Allergier och kost sparas bara om du aktivt väljer det, och kan tas bort när som helst.</string>
+    <string name="privacy_export">Exportera all data</string>
+    <string name="privacy_export_body">En fil (JSON) med allt som finns om familjen på den här telefonen.</string>
+    <string name="privacy_delete_family">Radera familjen</string>
+    <string name="privacy_delete_family_body">Tar bort familjens alla uppgifter för alla medlemmar. Kan inte ångras.</string>
+    <string name="privacy_delete_account">Radera mitt konto</string>
+    <string name="privacy_delete_account_body">Tar bort ditt konto och din koppling till familjen.</string>
+    <string name="privacy_delete_confirm">Är du helt säker? Det går inte att ångra.</string>
+    <string name="privacy_forget_device">Ta bort familjen från den här telefonen</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
     <string name="empty_calendar">Kalendern är tom än så länge.</string>

@@ -146,9 +146,14 @@ service cloud.firestore {
           || (getAfter(/databases/$(database)/documents/families/$(fid)/access/$(me())).data.memberId == memberId
               && data().get('uid', '') == me())
         );
-        allow update: if isMember(fid) && stamped() && (isParent(fid) || myMemberId(fid) == memberId
+        // The last branch is joining through an invite that claims an existing member ("Johan" added by Sara):
+        // the access doc is written in the same batch, so membership is only visible through getAfter().
+        allow update: if stamped() && (
+          (isMember(fid) && (isParent(fid) || myMemberId(fid) == memberId))
           || (data().get('uid', '') == me()
-              && getAfter(/databases/$(database)/documents/families/$(fid)/access/$(me())).data.memberId == memberId));
+              && resource.data.get('uid', null) in [null, me()]
+              && getAfter(/databases/$(database)/documents/families/$(fid)/access/$(me())).data.memberId == memberId)
+        );
         allow delete: if false;
       }
 

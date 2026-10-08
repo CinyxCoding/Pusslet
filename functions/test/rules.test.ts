@@ -56,7 +56,8 @@ async function seed() {
 
 beforeAll(async () => {
   env = await initializeTestEnvironment({
-    projectId: "demo-pusslet",
+    // Own project id: clearFirestore() between tests must never wipe the demo app's data on a shared emulator.
+    projectId: "demo-pusslet-rules",
     firestore: { rules: readFileSync(resolve(process.cwd(), "../firestore.rules"), "utf8") },
   });
 });
@@ -139,6 +140,35 @@ describe("invites and joining", () => {
     batch.set(doc(f, `families/${FID}/members/m-johan`), { displayName: "Johan", uid: "johan", ...stamp("johan") });
     await assertSucceeds(batch.commit());
     await assertSucceeds(getDocs(collection(f, `families/${FID}/events`)));
+  });
+
+  it("lets an invited user claim the member a parent already added", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      const f = ctx.firestore();
+      await setDoc(doc(f, `families/${FID}/members/m-johan`), { displayName: "Johan", updatedBy: "sara" });
+      await setDoc(doc(f, "invites/CLAIMJXHAN"), {
+        familyId: FID, role: "parent", memberId: "m-johan", createdBy: "sara", expiresAt: future(7),
+      });
+    });
+    const f = db("johan");
+    const batch = writeBatch(f);
+    batch.set(doc(f, `families/${FID}/access/johan`), { memberId: "m-johan", role: "parent", inviteCode: "CLAIMJXHAN" });
+    batch.set(doc(f, `families/${FID}/members/m-johan`), { uid: "johan", ...stamp("johan") }, { merge: true });
+    await assertSucceeds(batch.commit());
+  });
+
+  it("does not let an invite take over a member linked to another account", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      const f = ctx.firestore();
+      await setDoc(doc(f, "invites/CLAIMSARAX"), {
+        familyId: FID, role: "parent", memberId: "m-sara", createdBy: "sara", expiresAt: future(7),
+      });
+    });
+    const f = db("eve");
+    const batch = writeBatch(f);
+    batch.set(doc(f, `families/${FID}/access/eve`), { memberId: "m-sara", role: "parent", inviteCode: "CLAIMSARAX" });
+    batch.set(doc(f, `families/${FID}/members/m-sara`), { uid: "eve", ...stamp("eve") }, { merge: true });
+    await assertFails(batch.commit());
   });
 
   it("rejects joining with a different role than invited", async () => {

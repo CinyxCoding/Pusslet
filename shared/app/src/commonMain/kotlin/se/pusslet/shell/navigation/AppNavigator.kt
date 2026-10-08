@@ -8,6 +8,7 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 
 /**
@@ -21,6 +22,9 @@ class AppNavigator internal constructor(
 ) {
     var currentTab: TopLevelTab by mutableStateOf(initialTab)
         private set
+
+    /** A day the Mat tab should open ("Planera middag" on Today). Consumed by the Meals screen. */
+    var mealsFocus: LocalDate? by mutableStateOf(null)
 
     private val stacks: Map<TopLevelTab, SnapshotStateList<Route>> = TopLevelTab.entries.associateWith { tab ->
         mutableStateListOf<Route>().apply { addAll(initialStacks[tab]?.takeIf { it.isNotEmpty() } ?: listOf(tab.root)) }
@@ -51,6 +55,13 @@ class AppNavigator internal constructor(
         } else {
             stack(currentTab).add(route)
         }
+    }
+
+    /** Replaces the visible screen, e.g. a finished editor with the recipe it created. */
+    fun replace(route: Route) {
+        val stack = stack(currentTab)
+        if (stack.size > 1) stack.removeAt(stack.lastIndex)
+        stack.add(route)
     }
 
     fun goBack() {

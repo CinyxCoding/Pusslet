@@ -13,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import se.pusslet.android.platform.AndroidPlatformActions
 import se.pusslet.core.util.InviteCodes
+import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.shell.IncomingIntent
 import se.pusslet.shell.PussletApp
 import se.pusslet.ui.platform.LocalPlatformActions
@@ -46,8 +47,18 @@ class MainActivity : AppCompatActivity() {
         Intent.ACTION_VIEW -> intent.data?.let(::joinCode)?.let { IncomingIntent.JoinCode(it) }
         Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf {
             it.isNotBlank()
-        }?.let { IncomingIntent.SharedText(it.take(MAX_SHARED_TEXT)) }
+        }?.let(::sharedText)
         else -> null
+    }
+
+    /** A shared page ("Krämig kycklinggryta https://…") goes to recipe import; anything else to quick add. */
+    private fun sharedText(text: String): IncomingIntent {
+        val url = RecipeImporter.findUrl(text)
+        return if (url != null && text.length - url.length <= MAX_LINK_CAPTION) {
+            IncomingIntent.SharedLink(url)
+        } else {
+            IncomingIntent.SharedText(text.take(MAX_SHARED_TEXT))
+        }
     }
 
     /** https://<linkHost>/join/<code> or pusslet://join/<code>. */
@@ -63,5 +74,6 @@ class MainActivity : AppCompatActivity() {
     private companion object {
         /** Quick add is for short messages; anything longer is cut rather than freezing the parser. */
         const val MAX_SHARED_TEXT = 2_000
+        const val MAX_LINK_CAPTION = 120
     }
 }

@@ -51,7 +51,7 @@
                 <data android:scheme="pusslet" android:host="join" />
             </intent-filter>
 
-            <!-- Share to the app: text goes to quick add (images and recipe links come with phase 2). -->
+            <!-- Share to the app: links go to recipe import, other text to quick add. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />

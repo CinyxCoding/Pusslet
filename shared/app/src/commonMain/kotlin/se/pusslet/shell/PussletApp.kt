@@ -55,7 +55,10 @@ import se.pusslet.feature.family.invite.InviteRoute
 import se.pusslet.feature.family.join.JoinRoute
 import se.pusslet.feature.family.member.MemberEditorRoute
 import se.pusslet.feature.family.onboarding.OnboardingRoute
-import se.pusslet.feature.meals.MealsScreen
+import se.pusslet.feature.meals.MealsRoute
+import se.pusslet.feature.meals.recipes.RecipeEditorRoute
+import se.pusslet.feature.meals.recipes.RecipeLibraryRoute
+import se.pusslet.feature.meals.recipes.RecipeRoute
 import se.pusslet.feature.settings.AboutDataRoute
 import se.pusslet.feature.settings.AccountRoute
 import se.pusslet.feature.settings.MoreDestination
@@ -141,6 +144,7 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
                 quickAdd.start(incoming.text)
                 showQuickAdd = true
             }
+            is IncomingIntent.SharedLink -> navigator.navigate(Route.RecipeEditor(link = true, url = incoming.url))
             null -> return@LaunchedEffect
         }
         onIncomingHandled()
@@ -193,7 +197,10 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
             entry<Route.Today> {
                 TodayRoute(
                     onOpenOccurrence = openOccurrence,
-                    onPlanDinner = { navigator.navigate(Route.Meals) },
+                    onPlanDinner = {
+                        navigator.mealsFocus = it
+                        navigator.navigate(Route.Meals)
+                    },
                     onOpenSettings = { navigator.navigate(Route.Settings) },
                     onOpenHandover = { navigator.navigate(Route.Handover(it)) },
                     contentPadding = padding,
@@ -204,7 +211,37 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                     navigator.navigate(Route.EventEditor(date = it))
                 }, contentPadding = padding)
             }
-            entry<Route.Meals> { MealsScreen() }
+            entry<Route.Meals> {
+                MealsRoute(
+                    onOpenRecipe = { navigator.navigate(Route.Recipe(it)) },
+                    onOpenLibrary = { navigator.navigate(Route.Recipes) },
+                    focusDate = navigator.mealsFocus,
+                    onFocusHandled = { navigator.mealsFocus = null },
+                    contentPadding = padding,
+                )
+            }
+            entry<Route.Recipes> {
+                RecipeLibraryRoute(
+                    onBack = navigator::goBack,
+                    onOpen = { navigator.navigate(Route.Recipe(it)) },
+                    onNew = { navigator.navigate(Route.RecipeEditor()) },
+                    onImport = { navigator.navigate(Route.RecipeEditor(link = true)) },
+                    onPaste = { navigator.navigate(Route.RecipeEditor(paste = true)) },
+                )
+            }
+            entry<Route.Recipe> { r ->
+                RecipeRoute(r.recipeId, onBack = navigator::goBack, onEdit = { navigator.navigate(Route.RecipeEditor(recipeId = it)) })
+            }
+            entry<Route.RecipeEditor> { r ->
+                RecipeEditorRoute(
+                    recipeId = r.recipeId,
+                    link = r.link,
+                    url = r.url,
+                    paste = r.paste,
+                    onBack = navigator::goBack,
+                    onSaved = { id, isNew -> if (isNew) navigator.replace(Route.Recipe(id)) else navigator.goBack() },
+                )
+            }
             entry<Route.Shopping> { ShoppingScreen() }
             entry<Route.More> { MoreScreen(onOpen = { navigator.navigate(it.route()) }, contentPadding = padding) }
             entry<Route.Tasks> { TasksScreen() }

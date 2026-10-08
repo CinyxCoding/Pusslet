@@ -49,6 +49,18 @@ sealed interface Route {
     @Serializable data object Account : Route
 
     @Serializable data object Tasks : Route
+
+    @Serializable data object Recipes : Route
+
+    @Serializable data class Recipe(val recipeId: String) : Route
+
+    /** New ([recipeId] null), edit, import from a link ([link], optionally pre-filled [url]) or paste text ([paste]). */
+    @Serializable data class RecipeEditor(
+        val recipeId: String? = null,
+        val link: Boolean = false,
+        val url: String? = null,
+        val paste: Boolean = false,
+    ) : Route
 }
 
 /** Bottom navigation: Idag · Kalender · Mat · Handla · Mer. */

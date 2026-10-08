@@ -2,6 +2,7 @@ package se.pusslet.core.meals
 
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.isoDayNumber
+import se.pusslet.core.model.DietProfile
 import se.pusslet.core.model.FavoriteWeek
 import se.pusslet.core.model.Ingredient
 import se.pusslet.core.model.MainComponent
@@ -10,6 +11,8 @@ import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.RecipeTag
+import se.pusslet.core.recipes.DietConflict
+import se.pusslet.core.recipes.RecipeDietCheck
 import se.pusslet.core.shopping.ShoppingNames
 import se.pusslet.core.time.IsoWeek
 import se.pusslet.core.time.plusDays
@@ -76,13 +79,14 @@ object MealPlanner {
 }
 
 /** Why a dinner is suggested; shown as small chips so the suggestion is explainable (no black box). */
-enum class SuggestionReason { Favorite, NotRecently, QuickForBusyEvening, UsesWhatYouHave, VariesTheWeek, DiffersFromSchoolLunch }
+enum class SuggestionReason { Favorite, NotRecently, QuickForBusyEvening, UsesWhatYouHave, VariesTheWeek, DiffersFromSchoolLunch, SuitsEveryone }
 
 data class MealSuggestion(val recipe: Recipe, val reasons: Set<SuggestionReason>, val score: Int)
 
 /**
  * Rule-based dinner suggestions: favourites you have not cooked for a while, quick dishes on busy evenings,
  * something other than what the children had for lunch, and recipes that use what is already at home.
+ * Recipes with an allergen someone in the family avoids are never suggested; ones that break a diet rank low.
  */
 object MealSuggester {
     private const val RECENT_DAYS = 14
@@ -116,6 +120,7 @@ object MealSuggester {
         schoolLunchDishes: List<String> = emptyList(),
         busyEvening: Boolean = false,
         pantryNames: Set<String> = emptySet(),
+        dietProfiles: List<DietProfile> = emptyList(),
         limit: Int = 5,
     ): List<MealSuggestion> {
         val yesterday = history.firstOrNull { it.date == date.plusDays(-1) && it.slot == MealSlot.Dinner }
@@ -131,13 +136,17 @@ object MealSuggester {
             busy = busyEvening,
             pantry = pantryNames.map(ShoppingNames::canonical).toSet(),
         )
-        return recipes.map { r -> score(r, day) }
+        val allowed = recipes.filter { r -> RecipeDietCheck.conflicts(r, dietProfiles).none { it is DietConflict.ContainsAllergen } }
+        return allowed.map { r -> score(r, day, dietProfiles) }
             .sortedWith(compareByDescending<MealSuggestion> { it.score }.thenBy { it.recipe.title })
             .take(limit)
     }
 
-    private fun score(r: Recipe, day: Day): MealSuggestion {
+    private fun score(r: Recipe, day: Day, profiles: List<DietProfile>): MealSuggestion {
         val s = Score()
+        if (profiles.any { it.diets.isNotEmpty() || it.allergies.isNotEmpty() }) {
+            if (RecipeDietCheck.conflicts(r, profiles).isEmpty()) s.add(6, SuggestionReason.SuitsEveryone) else s.add(-40)
+        }
         freshness(r, day, s)
         if (r.favorite) s.add(20, SuggestionReason.Favorite)
         if (day.busy) {

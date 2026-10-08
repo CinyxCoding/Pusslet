@@ -33,15 +33,28 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 
 
 ## Fas 2 – Mat & handla
-- [ ] Receptbibliotek, URL-import (JSON-LD), portionsskalning/enhetskonvertering – 🟡 logik + tester klara (IngredientParser, RecipeJsonLd, RecipeScaler, RecipeImporter); UI saknas
-- [ ] Veckomatsedel (kopiera förra veckan, favoritveckor, gör dubbelt) – 🟡 MealPlanner klar; UI saknas
-- [ ] Livsmedelsdatabasen: lokalt FTS-index + näringsöversikt – 🟡 RecipeNutrition klar; UI saknas
-- [ ] Skollunch-provider (skolmaten-RSS + manuell)
-- [ ] Smarta förslag (regelbaserat) – 🟡 MealSuggester klar (förklarbara skäl); UI saknas
-- [ ] Inköpslista från matsedel med sammanslagning, basvaror, butiksläge med avdelningsordning – 🟡 ShoppingListGenerator + MealShopping klara; UI saknas
-- [ ] Streckkodsskanning + Open Food Facts
-- [ ] "Jag handlar nu"
-- [x] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (ShoppingListGeneratorTest)
+- [x] Receptbibliotek (sök i titel och ingredienser, taggfilter, favoriter), receptvy med portionsskalning (svenska enheter,
+      läsbara mängder), redigerare med förhandsvisning av hur varje ingrediensrad tolkas
+- [x] URL-import (schema.org JSON-LD) från länk eller delad länk (SEND text/plain med URL) – källan visas och krediteras;
+      utan receptdata: klistra in texten → regelbaserad uppdelning i ingredienser och steg (RecipeTextSplitter)
+- [x] Veckomatsedel med veckonummer: kopiera förra veckan, favoritveckor, flytta/byt dag, gör dubbelt (rester nästa dag
+      eller matlåda, ADR-020), konfigurerbara måltider (frukost/lunch/middag)
+- [x] Livsmedelsdatabasen: lokalt FTS-index, näring per portion i receptvyn och veckans snitt; användaren kan granska och
+      rätta matchningen per ingrediens (sparas för familjen). Neutral framställning, inga mål eller värderande ord
+- [x] Skollunch: skolmaten-RSS (konfigureras på barnprofilen) + manuell inmatning i dagsarket; visas per barn i veckovyn,
+      krockvarning "Ella och Simon har redan ätit köttbullar till lunch"
+- [x] Smarta förslag (regelbaserat, förklarade skäl): favoriter, inte lagat på länge, snabbt på kvällar med aktiviteter i
+      kalendern (16:30–19:00), annat än skollunchen, varierar veckan, använder det ni har hemma, respekterar allergier/kost (ADR-018)
+- [x] Inköpslista från matsedeln med förhandsvisning ("3 nya, 1 ändrad"), sammanslagning, Hemma-lager, enskilt recept → lista
+- [x] Flera listor, snabbtillägg ("mjölk, 2 gurka och pasta"), avdelningar i butikens gångordning, egna butiker med egen ordning,
+      inlärd avdelning när användaren rättar, egna priser, dela som text, basvaror från köphistorik (ADR-019)
+- [x] Butiksläge: stor text, avbockat sjunker till "I vagnen", ångra, skärmen hålls vaken, "Klart!"-animation
+- [x] Streckkodsskanning (CameraX + ML Kit) → Open Food Facts → vara; okänd kod → användaren namnger varan
+- [x] "Jag handlar nu": synligt för familjen ("Sara handlar nu – lägg till det du behöver"), förnyas medan butiksläget är öppet,
+      aviserar i butiksläget när någon annan lägger till en vara. (Push till låst telefon kommer med FCM i fas 3.)
+- [x] ViewModel-tester mot riktiga repositories (ADR-017): Mat 21, Handla 10; Roborazzi: veckovy (ljust/mörkt/150 %), dagsark,
+      bibliotek, receptvy, inköpslista (ljust/mörkt), butiksläge
+- [x] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (ShoppingListGeneratorTest, MealDataTest, MealsViewModelTest)
 
 ## Fas 3 – Integrationer & notiser
 - [ ] ICS-prenumerationer
@@ -79,11 +92,14 @@ Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestor
   (nytt regeltest), (2) lämnings-/hämtningstider konverterades inte till enhetens tidszon, (3) engelska strängar med `\'`
   visades bokstavligt (nytt strängtest), (4) regeltesterna rensade demoappens data på delad emulator (eget projekt-id).
 
-Nästa steg (fas 2): UI i `feature-meals` (veckomatsedel med skollunch och krockmarkering, dagsark med förslag, receptbibliotek, receptvy med skalning och näring, redigerare, import från länk) och `feature-shopping` (listor per avdelning, snabbtillägg, butiksläge, "Jag handlar nu", skanning + Open Food Facts, Hemma-lager, butiker med gångordning). Rutter läggs till i `shared/app` och strängar i sv + en.
+Nästa steg (fas 3): ICS-prenumerationer (UI + WorkManager var 6:e h), tvåvägs enhetskalender (CalendarContract), eget ICS-flöde
+(Cloud Function med hemlig token), hämta/lämna-förfrågningar, FCM + lokala påminnelser + morgonnotis + tysta timmar +
+notiskanaler, två Glance-widgets, uppgifter/sysslor med rotation och fördelningsvy, export/radering (Cloud Function).
 
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.
 - iOS kan inte kompileras på Windows; verifieras i CI (macOS-runner).
 - Hjälpare (t.ex. morfar) kan inte ändra lämning/hämtning direkt, bara svara på förfrågningar (ADR-015).
 - Redigeras en händelse på en telefon i annan tidszon visas händelsens egna klockslag i redigeraren (kalendern visar omräknat).
-- Delade bilder (SEND image/*) och recept-länkar tas emot först i fas 2.
+- Delade bilder (SEND image/*) som bilaga till händelse/anteckning återstår (kräver Firebase Storage, görs i fas 3).
+- Livsmedelsmatchningen är ordbaserad: ovanliga ingredienser kan behöva rättas för hand en gång (sparas sedan för familjen).

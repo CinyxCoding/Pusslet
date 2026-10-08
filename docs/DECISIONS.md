@@ -137,3 +137,34 @@ tillsammans med notiserna.
 gebundlade har inga värdbibliotek för Robolectric), fast klocka 2026-10-08 07:10 Europe/Stockholm, demofamiljen och en
 inspelad SMHI-prognos. Testerna klickar sig fram och fotograferar Idag (ljust/mörkt/engelska/150 % text), kalendern och detaljvyn.
 **Konsekvens:** Testerna är också röktester av DI och datalagret. De tar ~1 min; körs i CI med `verifyRoborazziDemoDebug`.
+
+## ADR-017 – ViewModel-tester mot riktiga repositories (`:shared:testing`)
+**Kontext:** Briefen kräver att ViewModels testas med fejkade repositories. Våra repositories är tunna lager över
+`DocumentStore`; att fejka varje repository separat skulle testa fejkarna snarare än appen.
+**Beslut:** En liten modul `:shared:testing` (bara `commonTest`-beroende för feature-modulerna) med minnesbaserade DAO:er,
+`InMemorySyncLocalStore`, fejkad livsmedelsdatabas/produktuppslag/skollunch, en flyttbar klocka och `TestGraph` som bygger
+de riktiga repositories. `viewModelTest {}` byter `Dispatchers.Main` mot testschemaläggaren.
+**Konsekvens:** Testerna kör samma kod som appen (inkl. synkstämpling och mjuk radering) utan nätverk eller databas. Tidsstyrda
+loopar i ViewModels (närvaro, basvaror) har en injicerbar takt (`tickMillis = 0` i test).
+
+## ADR-018 – Allergi- och kostkontroll av recept är regelbaserad och varnar
+**Kontext:** Allergier/kost är opt-in och känsliga. Förslag ska "respektera allergier/kostval" – utan AI (ADR-001).
+**Beslut:** `RecipeDietCheck` matchar ordstammar i ingrediensnamn (ord som börjar eller slutar med stammen, så att
+sammansättningar som "vispgrädde" fångas men "rostad lök" inte blir ost), med undantagslistor ("kokosmjölk", "majstortilla").
+Recept med en allergen som någon i familjen undviker föreslås aldrig; recept som bryter en kost rankas lågt och märks
+"Passar inte alla: Fisk (Ella)". Appen säger tydligt att kontrollen kan missa saker.
+**Konsekvens:** Förutsägbart och förklarbart. Kontrollen är en hjälp, inte en garanti – ordlistorna går att utöka.
+
+## ADR-019 – Basvaror från lokal köphistorik
+**Kontext:** "Basvaror föreslås automatiskt baserat på historik/intervall."
+**Beslut:** Varje avbockning loggas i `purchase_log` (bara på enheten, synkas inte). `StapleSuggester` slår ihop köp inom
+12 h till ett tillfälle, kräver minst tre tillfällen, ett typiskt (median-)intervall på 1–28 dagar och föreslår varan när
+≥ 90 % av intervallet gått. Långt förbi (> 4×) räknas som att familjen slutat köpa den. "Inte nu" gömmer förslaget i tre dygn.
+**Konsekvens:** Inga persondata lämnar telefonen för att räkna fram förslag; två telefoner i samma familj kan föreslå lite olika.
+
+## ADR-020 – "Gör dubbelt" ger rester nästa dag
+**Kontext:** Kärnan skapade rester som lunch, appen som middag – två sanningar.
+**Beslut:** `MealPlanner.leftoversFor` är enda regeln: nästa dags middag blir rester om den är ledig, annars en matlåda (lunch).
+Resterna behåller receptkopplingen men handlas aldrig för (den dubbla satsen räknas på originalmiddagen). Stängs "Gör dubbelt"
+av tas resterna bort om ingen ändrat dem. Favoritveckor appliceras från söndag och bakåt så att samma regel gäller.
+**Konsekvens:** Restdagen syns direkt i veckovyn (som standard visas bara middag).

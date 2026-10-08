@@ -47,6 +47,7 @@ import se.pusslet.data.usecase.CalendarFeeds
 import se.pusslet.data.usecase.DataPrivacy
 import se.pusslet.data.usecase.DeviceCalendarExport
 import se.pusslet.data.usecase.HandoffAssigner
+import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
@@ -96,6 +97,7 @@ val dataModule: Module = module {
     single { DeviceCalendarExport(get(), get(), get()) }
     single { ReminderSync(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { TodayPlans(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { HandoffRequests(get(), get(), get(), get(), get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

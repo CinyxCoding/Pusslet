@@ -19,7 +19,7 @@ async function seedFamily(fid: string, people: { uid: string; memberId: string; 
     await family.collection("access").doc(p.uid).set({ memberId: p.memberId, role: p.role });
     await family.collection("members").doc(p.memberId).set({ displayName: p.memberId, uid: p.uid });
     await db().doc(`users/${p.uid}`).set({ familyIds: [fid] }, { merge: true });
-    await db().doc(`users/${p.uid}/devices/d1`).set({ token: "fcm" });
+    await db().doc(`users/${p.uid}/devices/d1`).set({ fcmToken: "fcm" });
   }
   await family.collection("events").doc("e1").set({ title: "Fotboll" });
   await family.collection("shoppingLists").doc("l1").collection("items").doc("i1").set({ name: "Mjölk" });

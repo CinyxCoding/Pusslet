@@ -60,6 +60,8 @@ data class NotificationContent(
     val actions: List<NotificationCompat.Action> = emptyList(),
     /** Notifications of the same group are bundled ("3 ändringar i kalendern"). */
     val group: String? = null,
+    /** Quiet hours: shown, but without sound or vibration. */
+    val silent: Boolean = false,
 )
 
 object Notifications {
@@ -104,6 +106,7 @@ object Notifications {
             builder.setStyle(NotificationCompat.BigTextStyle().bigText(content.text))
         }
         content.group?.let { builder.setGroup(it) }
+        builder.setSilent(content.silent)
         content.actions.forEach(builder::addAction)
         try {
             NotificationManagerCompat.from(context).notify(id, builder.build())

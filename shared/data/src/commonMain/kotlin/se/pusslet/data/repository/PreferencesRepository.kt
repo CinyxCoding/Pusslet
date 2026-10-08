@@ -59,6 +59,9 @@ object Prefs {
     val DismissedStaples = PrefKey("shopping.dismissedStaples", MapSerializer(String.serializer(), Long.serializer()), emptyMap())
     val RecentQuickAdds = PrefKey("quickadd.recent", ListSerializer(String.serializer()), emptyList())
     val DeviceId = PrefKey("device.id", String.serializer(), "")
+
+    /** The FCM registration token of this install (given to the backend only under the signed-in account). */
+    val PushToken = PrefKey("push.token", String.serializer(), "")
 }
 
 class PreferencesRepository(private val dao: PreferenceDao, private val json: Json = Json { ignoreUnknownKeys = true }) {

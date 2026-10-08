@@ -131,4 +131,93 @@ class NotificationsTest {
         scheduler.replaceAll(listOf(a.copy(at = a.at + 1.hours)))
         assertTrue(queued().single().id != firstId, "a moved, so it is rescheduled")
     }
+
+    @Test
+    fun handoffRequestCanBeAnsweredFromTheNotification() = runBlocking {
+        start()
+        val koin = GlobalContext.get()
+        val calendar = koin.get<se.pusslet.data.repository.CalendarRepository>()
+        val event = calendar.events.first().first { it.pickUp != null && DemoSeed.SIMON in it.participantIds }
+        val date = event.start.date
+        // Someone else asks; the demo phone belongs to Sara.
+        val request = se.pusslet.core.model.HandoffRequest("req-1", event.id, date, HandoffKind.PickUp, fromMemberId = DemoSeed.JOHAN)
+        calendar.saveHandoffRequest(request)
+        val requests = koin.get<se.pusslet.data.usecase.HandoffRequests>()
+        val alert = requests.alertFor(request, koin.get<se.pusslet.data.repository.FamilyRepository>().people.first().associateBy { it.id })
+        AndroidFamilyAlerts(context, this, koin.get(), koin.get(), koin.get()).handoffRequest(requireNotNull(alert))
+        withTimeout(5_000) { while (posted().isEmpty()) kotlinx.coroutines.delay(20) }
+        val n = posted().single()
+        assertEquals("Kan du hämta Simon?", n.extras.getString(NotificationCompat.EXTRA_TITLE))
+        assertEquals(listOf("Jag tar det", "Kan inte"), n.actions.map { it.title.toString() })
+
+        n.actions.first().actionIntent.send()
+        org.robolectric.shadows.ShadowLooper.idleMainLooper()
+        withTimeout(5_000) {
+            while (calendar.handoffRequests.first().single { it.id == "req-1" }.status == se.pusslet.core.model.RequestStatus.Pending) {
+                kotlinx.coroutines.delay(20)
+                org.robolectric.shadows.ShadowLooper.idleMainLooper()
+            }
+        }
+        assertEquals(se.pusslet.core.model.RequestStatus.Accepted, calendar.handoffRequests.first().single { it.id == "req-1" }.status)
+    }
+
+    /** The real Android alerts instead of the test environment's silent ones. */
+    private fun useAndroidAlerts(scope: kotlinx.coroutines.CoroutineScope) {
+        val koin = GlobalContext.get()
+        org.koin.core.context.loadKoinModules(
+            org.koin.dsl.module {
+                single<se.pusslet.data.usecase.FamilyAlerts> { AndroidFamilyAlerts(context, scope, koin.get(), koin.get(), koin.get()) }
+            },
+        )
+    }
+
+    private suspend fun awaitPosted(count: Int) = withTimeout(5_000) {
+        while (posted().size < count ||
+            posted().any { it.extras.getString(NotificationCompat.EXTRA_TITLE) == null }
+        ) {
+            kotlinx.coroutines.delay(20)
+        }
+    }
+
+    @Test
+    fun pushesBecomeNotificationsAndListAdditionsAreMerged() = runBlocking {
+        start()
+        useAndroidAlerts(this)
+        val service = org.robolectric.Robolectric.setupService(PussletMessagingService::class.java)
+
+        fun push(vararg pairs: Pair<String, String>) =
+            service.onMessageReceived(com.google.firebase.messaging.RemoteMessage.Builder("test").setData(mapOf(*pairs)).build())
+
+        push(
+            "type" to "handoff_request",
+            "requestId" to "r9",
+            "fromName" to "Johan",
+            "kind" to "pickup",
+            "children" to "Simon",
+            "eventId" to "e",
+            "eventTitle" to "Fotboll",
+            "date" to "2026-10-08",
+            "time" to "18:15",
+        )
+        awaitPosted(1)
+        assertEquals("Kan du hämta Simon?", posted().single().extras.getString(NotificationCompat.EXTRA_TITLE))
+
+        push("type" to "shopping_added", "listId" to "l1", "byName" to "Johan", "name" to "Mjölk", "date" to "2026-10-08")
+        awaitPosted(2)
+        push("type" to "shopping_added", "listId" to "l1", "byName" to "Johan", "name" to "Bröd", "date" to "2026-10-08")
+        withTimeout(5_000) {
+            while (posted().none {
+                    it.extras.getString(NotificationCompat.EXTRA_TITLE) == "Johan lade till 2 saker"
+                }
+            ) {
+                kotlinx.coroutines.delay(20)
+            }
+        }
+        val shopping = posted().filter { it.channelId == "shopping" }
+        assertEquals(1, shopping.size, "one notification per list, updated")
+        assertEquals(
+            listOf("Johan lade till Mjölk", "Johan lade till Bröd"),
+            shopping.single().extras.getCharSequenceArray(NotificationCompat.EXTRA_TEXT_LINES)?.map { it.toString() },
+        )
+    }
 }

@@ -23,3 +23,4 @@ export const health = onRequest({ cors: false }, (_req, res) => {
 
 export { calendarFeed, revokeCalendarFeeds } from "./feeds.js";
 export { deleteAccount, deleteFamily } from "./privacy.js";
+export { pushEventChange, pushHandoffAnswer, pushHandoffRequest, pushShoppingItem } from "./push.js";

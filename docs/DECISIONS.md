@@ -106,3 +106,34 @@ fler `LunchMenuProvider`-implementationer.
 **Kontext:** Få enhetslokala inställningar (valt språk, senast valda vy m.m.). DataStore för KMP är fortfarande alfa i 1.3.
 **Beslut:** En liten `preferences`-tabell i Room.
 **Konsekvens:** Ett beroende mindre, allt lokalt state på ett ställe (och i samma export).
+
+## ADR-013 – Inget Google Services-plugin; Firebase-konfiguration läses vid bygget
+**Kontext:** `google-services.json` finns bara hos ägaren (gitignorerad). Pluginet kräver filen för varje variant, och demo-
+varianten ska köra mot emulatorerna helt utan nycklar.
+**Beslut:** `composeApp/build.gradle.kts` läser `src/<flavor>/google-services.json` om den finns och lägger projekt-id, app-id,
+API-nyckel, sändar-id, bucket och OAuth-webbklient (typ 3) i `BuildConfig`. `FirebaseSetup` initierar `FirebaseApp` manuellt.
+Saknas filen körs appen lokalt (`BackendMode.LocalOnly`); demo använder projektet `demo-pusslet` och emulatorerna.
+**Konsekvens:** Bygget fungerar på en ren maskin och i CI utan hemligheter. Crashlytics-pluginet (fas 4) behöver mappningsfilen
+via sin egen konfiguration.
+
+## ADR-014 – Skanner: CameraX + ML Kit (gebundlad modell) i egen aktivitet
+**Kontext:** QR-koder för inbjudningar och EAN-koder i butiksläget. Googles Code Scanner kräver Play-tjänstmodulen och ger ingen
+kontroll över UI:t.
+**Beslut:** `ScannerActivity` med CameraX-förhandsvisning och ML Kit `barcode-scanning` (modellen följer med appen). Kamera-
+behörighet begärs först när användaren trycker "Skanna". Bilder analyseras på enheten och sparas aldrig.
+**Konsekvens:** ~2–3 MB större APK per ABI; fungerar utan nätverk. Data Safety: ingen bild lämnar enheten.
+
+## ADR-015 – Vårdnadshavare/hjälpare (t.ex. morfar) ändrar inte händelser
+**Kontext:** Reglerna låter hjälpare läsa delade händelser, bocka av packning, svara på hämtförfrågningar och markera delade
+uppgifter klara – men inte skriva händelser.
+**Beslut:** UI:t döljer redigering och "Jag tar det" för hjälpare. De svarar på förfrågningar (`handoffRequests`), och föräldrar
+ser svaret. Att låta hjälpare ändra just `dropOff`/`pickUp` kräver override-dokument per tillfälle; det utvärderas i fas 3
+tillsammans med notiserna.
+**Konsekvens:** Enkel och säker behörighetsmodell nu; en känd begränsning listas i PROGRESS.
+
+## ADR-016 – Skärmdumpstester kör den riktiga app-grafen
+**Kontext:** Skärmdumpar av tomma skal fångar inte de fel som spelar roll (texter som bryts, avatarer som klipps vid stor text).
+**Beslut:** `TestEnvironment` startar Koin med de riktiga modulerna, Room i minnet via ramverkets SQLite-drivrutin (den
+gebundlade har inga värdbibliotek för Robolectric), fast klocka 2026-10-08 07:10 Europe/Stockholm, demofamiljen och en
+inspelad SMHI-prognos. Testerna klickar sig fram och fotograferar Idag (ljust/mörkt/engelska/150 % text), kalendern och detaljvyn.
+**Konsekvens:** Testerna är också röktester av DI och datalagret. De tar ~1 min; körs i CI med `verifyRoborazziDemoDebug`.

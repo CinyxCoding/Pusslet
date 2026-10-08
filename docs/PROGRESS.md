@@ -19,17 +19,18 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] iOS-target kompilerar (verifieras i macOS-jobbet i CI; går inte att bygga på Windows)
 
 ## Fas 1 – Familj, kalender, Idag
-- [ ] Auth (e-post + Google Sign-In; anonym i demo)
-- [ ] Skapa/gå med i familj via länk/QR
-- [ ] Barnprofiler med Skolverket-lookup
-- [ ] Kalender: dag/vecka/månad/agenda (UI saknas) – RRULE-motor, ICS-parser och veckonummer klara med tester
+- [x] Auth: e-post, anonym i demo; Google Sign-In via Credential Manager (aktiveras när ägaren lagt in OAuth-klienten)
+- [x] Skapa/gå med i familj via länk/QR (App Links + pusslet://, kod, skanner)
+- [x] Barnprofiler med Skolverket-lookup, storlekar, kontakter, kost (opt-in)
+- [x] Kalender: dag/vecka/månad/agenda med veckonummer, personfilter, lager, redigering (en gång/hela serien) och detaljvy
 - [x] Svenska helgdagar lokalt (inkl. klämdagar, aftnar) – korskontrollerat mot Googles helgdagsflöde (11 år)
-- [x] Vårdnadsschema + överlämningskort (domänlogik + tester) – 🟡 UI saknas
-- [ ] Idag-vy: tidslinje, ska-med-idag, SMHI-väder, klädråd
-- [x] Svensk snabbinmatningsparser (81 testfall) – 🟡 UI (förhandsgranskning) saknas
-- [x] Synkmotor (11 tvåenhetstester mot fejkad backend) + säkerhetsregler + 23 regeltester mot emulatorn
+- [x] Vårdnadsschema + överlämningskort (UI + delning)
+- [x] Idag-vy: tidslinje, ska-med-idag, SMHI-väder, klädråd, kontextkort, mat, uppgifter
+- [x] Svensk snabbinmatning (81 parsertester) med bekräftelsekort, osäkra fält markerade, Ångra
+- [x] Synkmotor (11 tvåenhetstester mot fejkad backend) + säkerhetsregler + 25 regeltester mot emulatorn
 - [x] Seed-data "Familjen Lind" (DemoSeed)
-- [ ] ✅ Två emulatorer i samma familj ser varandras ändringar, fungerar offline
+- [x] ✅ Två enheter i samma familj ser varandras ändringar, fungerar offline – verifierat 2026-10-08 på API 36-emulator + "andra enhet" via klient-SDK mot Firestore-emulatorn (se nedan). Två samtidiga Android-emulatorer ryms inte i maskinens 8 GB RAM
+
 
 ## Fas 2 – Mat & handla
 - [ ] Receptbibliotek, URL-import (JSON-LD), portionsskalning/enhetskonvertering
@@ -66,10 +67,23 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 ## Fas 5 – V2
 - [ ] Barnvy & veckopeng · kalas/presenter · sök · flerhushållsdelning · fler lunchleverantörer
 
-## Status vid senaste avbrott (2026-10-08)
-Klart: domänkärnan i `shared/core` (veckor, helgdagar, RRULE/ICS, parser, vårdnad, packregler, klädråd, konflikter, uppgiftsrotation, Idag-planerare), datalagret i `shared/data` (Room-dokumentlager, utkö, synkmotor, Firestore-adapter, repositories, adaptrar för SMHI/Skolverket/skolmaten/Livsmedelsverket/Open Food Facts/ICS, demodata, AppCoordinator, Koin), Firestore-regler.
-Nästa steg: (1) koppla in Koin-moduler och Firebase-init per flavor i `composeApp`, (2) UI för Idag/Kalender/Familj/onboarding/snabbinmatning med strängresurser, (3) Fas 2–4.
+## Verifiering fas 1 (2026-10-08)
+Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestore):
+- Demofamiljen seedas lokalt och synkas upp (13 händelser, 3 medlemmar, 2 barn, 8 uppgifter …), alla skrivningar stämplade.
+- "Johans telefon" (`functions/scripts/second-device.mjs`) går med via inbjudan genom reglerna och lägger till en händelse →
+  syns direkt på Android, och konfliktdetektorn flaggar att Simon har förskola samtidigt.
+- Android i flygplansläge, Johan byter titel → syns ~5 s efter återanslutning.
+- Android i flygplansläge, "Jag tar det" → visas lokalt direkt, köas, når servern ~3 s efter återanslutning som fältvis
+  ändring (Johans titel bevaras).
+- Buggar som hittades och rättades: (1) regeln för `members` nekade anslutning som tar över en befintlig medlem
+  (nytt regeltest), (2) lämnings-/hämtningstider konverterades inte till enhetens tidszon, (3) engelska strängar med `\'`
+  visades bokstavligt (nytt strängtest), (4) regeltesterna rensade demoappens data på delad emulator (eget projekt-id).
+
+Nästa steg: fas 2 (mat & handla).
 
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.
 - iOS kan inte kompileras på Windows; verifieras i CI (macOS-runner).
+- Hjälpare (t.ex. morfar) kan inte ändra lämning/hämtning direkt, bara svara på förfrågningar (ADR-015).
+- Redigeras en händelse på en telefon i annan tidszon visas händelsens egna klockslag i redigeraren (kalendern visar omräknat).
+- Delade bilder (SEND image/*) och recept-länkar tas emot först i fas 2.

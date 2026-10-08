@@ -26,6 +26,20 @@ Android-emulatorn når datorn via `10.0.2.2`. För en fysisk enhet: sätt `pussl
 ### Android-emulator
 Skapa en AVD i Android Studio (Device Manager → Pixel 8, API 36, Google APIs-avbild). Kör sedan `installDemoDebug`.
 
+### Testa synk mellan två enheter
+Två Android-emulatorer kräver mycket minne (>12 GB RAM rekommenderas). Med en emulator kan
+`functions/scripts/second-device.mjs` spela "Johans telefon": den går med i demofamiljen genom en riktig inbjudan
+(säkerhetsreglerna gäller precis som för en enhet) och skriver händelser.
+
+```bash
+cd functions
+node scripts/second-device.mjs join                         # efter att demo-appen startats en gång
+node scripts/second-device.mjs add "Tandläkare Simon" 14:00 15:00
+node scripts/second-device.mjs rename <eventId> "Ny titel"  # prova med appen i flygplansläge
+```
+Regeltesterna (`npm test`) använder ett eget projekt-id (`demo-pusslet-rules`), så de rensar aldrig demoappens data även om
+de körs mot samma emulator.
+
 ## 2. Manuella steg för ägaren
 
 > Allt i appen är byggt så att detta kan göras sist. Inget av stegen behövs för demo-flavorn.

@@ -22,7 +22,7 @@ jobs:
           java-version: 21
       - uses: gradle/actions/setup-gradle@v6
       - name: Lint (ktlint + detekt)
-        run: ./gradlew ktlintCheck detekt --continue
+        run: ./gradlew ktlintCheck detekt compileCommonMainKotlinMetadata --continue
       - name: Unit tests (shared modules + app incl. screenshot tests)
         run: ./gradlew testAndroidHostTest :composeApp:testDemoDebugUnitTest --continue
       - name: Assemble demo debug + prod release

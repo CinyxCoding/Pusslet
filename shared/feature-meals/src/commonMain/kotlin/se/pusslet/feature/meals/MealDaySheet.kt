@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -23,8 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -51,7 +48,6 @@ import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.Stepper
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.format.formatDateLong
-import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.weekdayName
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
@@ -83,12 +79,8 @@ internal fun MealDaySheet(
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.semantics { heading() },
             )
-            sheet.busy.forEach { occ ->
-                Text(
-                    stringResource(Res.string.meals_busy, occ.event.title, formatTime(occ.start.time)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            if (sheet.busy.isNotEmpty()) {
+                Text(busyText(sheet.busy), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (sheet.meal.entry != null) {
                 CurrentMeal(sheet, canEdit, weekDays, onServings, onCookDouble, onClear, onMove, onOpenRecipe)
@@ -117,7 +109,7 @@ private fun CurrentMeal(
     val entry = sheet.meal.entry ?: return
     SectionCard(null) {
         Text(entry.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        sheet.meal.clashes.forEach { c -> WarningLine(stringResource(Res.string.today_clash, c.child.name, c.dish.lowercase())) }
+        ClashLines(sheet.meal.clashes)
         if (sheet.meal.conflicts.isNotEmpty()) WarningLine(conflictText(sheet.meal.conflicts))
         sheet.meal.recipe?.let { r ->
             TextButton(onClick = { onOpenRecipe(r.id) }) { Text(stringResource(Res.string.meals_open_recipe)) }
@@ -213,16 +205,13 @@ private fun SuggestionRow(s: MealSuggestion, onClick: () -> Unit) {
                 )
             }
         }
+        // Why it is suggested, in plain words – suggestions are never a black box.
         if (s.reasons.isNotEmpty()) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                s.reasons.forEach { r ->
-                    SuggestionChip(
-                        onClick = onClick,
-                        label = { Text(stringResource(Labels.reason(r)), style = MaterialTheme.typography.labelSmall) },
-                        colors = SuggestionChipDefaults.suggestionChipColors(),
-                    )
-                }
-            }
+            Text(
+                s.reasons.map { stringResource(Labels.reason(it)) }.joinToString(" · "),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
         }
     }
 }

@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,7 +28,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,8 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -159,7 +155,6 @@ fun RecipeScreen(
                     .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
                 verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
-                Text(recipe.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
                 Meta(recipe)
                 if (state.conflicts.isNotEmpty()) {
                     Column {
@@ -211,9 +206,7 @@ private fun Meta(recipe: se.pusslet.core.model.Recipe) {
         recipe.tags.forEach { add(stringResource(Labels.recipeTag(it))) }
     }
     if (chips.isEmpty()) return
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        chips.forEach { SuggestionChip(onClick = {}, label = { Text(it) }, enabled = false) }
-    }
+    Text(chips.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
@@ -221,46 +214,40 @@ private fun Actions(state: RecipeUiState, onPlan: (kotlinx.datetime.LocalDate) -
     var planMenu by remember { mutableStateOf(false) }
     var listMenu by remember { mutableStateOf(false) }
     val today = state.planDays.firstOrNull()
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        Box(Modifier.weight(1f)) {
-            Button(onClick = { planMenu = true }, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.touchTarget)) {
-                Text(stringResource(Res.string.recipe_plan))
-            }
-            DropdownMenu(expanded = planMenu, onDismissRequest = { planMenu = false }) {
-                Text(
-                    stringResource(Res.string.recipe_plan_pick_day),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(Spacing.md),
-                )
-                state.planDays.forEach { d ->
-                    val label = if (today != null &&
-                        d.toEpochDays() - today.toEpochDays() < 2
-                    ) {
-                        relativeDay(d, today)
-                    } else {
-                        weekdayName(d.dayOfWeek)
-                    }
-                    DropdownMenuItem(text = { Text(label.replaceFirstChar { it.uppercase() }) }, onClick = {
-                        planMenu = false
-                        onPlan(d)
-                    })
-                }
+    Box {
+        Button(onClick = { planMenu = true }, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.touchTarget)) {
+            Text(stringResource(Res.string.recipe_plan))
+        }
+        DropdownMenu(expanded = planMenu, onDismissRequest = { planMenu = false }) {
+            Text(
+                stringResource(Res.string.recipe_plan_pick_day),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(Spacing.md),
+            )
+            state.planDays.forEach { d ->
+                val soon = today != null && d.toEpochDays() - today.toEpochDays() < 2
+                val label = if (soon && today != null) relativeDay(d, today) else weekdayName(d.dayOfWeek)
+                DropdownMenuItem(text = { Text(label.replaceFirstChar { it.uppercase() }) }, onClick = {
+                    planMenu = false
+                    onPlan(d)
+                })
             }
         }
-        if (state.lists.isNotEmpty()) {
-            Box(Modifier.weight(1f)) {
-                OutlinedButton(onClick = {
-                    if (state.lists.size == 1) onAddToList(state.lists.first().id) else listMenu = true
-                }, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.touchTarget)) {
-                    Text(stringResource(Res.string.recipe_add_to_list))
-                }
-                DropdownMenu(expanded = listMenu, onDismissRequest = { listMenu = false }) {
-                    state.lists.forEach { l ->
-                        DropdownMenuItem(text = { Text(l.name) }, onClick = {
-                            listMenu = false
-                            onAddToList(l.id)
-                        })
-                    }
+    }
+    if (state.lists.isNotEmpty()) {
+        Box {
+            OutlinedButton(
+                onClick = { if (state.lists.size == 1) onAddToList(state.lists.first().id) else listMenu = true },
+                modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.touchTarget),
+            ) {
+                Text(stringResource(Res.string.recipe_add_to_list))
+            }
+            DropdownMenu(expanded = listMenu, onDismissRequest = { listMenu = false }) {
+                state.lists.forEach { l ->
+                    DropdownMenuItem(text = { Text(l.name) }, onClick = {
+                        listMenu = false
+                        onAddToList(l.id)
+                    })
                 }
             }
         }

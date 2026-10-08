@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -312,9 +311,7 @@ private fun DayCard(day: MealDay, isToday: Boolean, canEdit: Boolean, onOpen: (M
                 }
             }
             day.meals.forEach { meal -> MealRow(meal, showSlot = day.meals.size > 1, canEdit = canEdit, onClick = { onOpen(meal.slot) }) }
-            day.busy.firstOrNull()?.let { occ ->
-                Note(stringResource(Res.string.meals_busy, occ.event.title, formatTime(occ.start.time)), PussletIcons.CalendarMonth)
-            }
+            if (day.busy.isNotEmpty()) Note(busyText(day.busy), PussletIcons.CalendarMonth)
             val withDishes = day.lunches.filter { it.dishes.isNotEmpty() }
             if (withDishes.isNotEmpty()) {
                 Column(Modifier.padding(horizontal = Spacing.lg)) {
@@ -323,9 +320,10 @@ private fun DayCard(day: MealDay, isToday: Boolean, canEdit: Boolean, onOpen: (M
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    withDishes.forEach { l ->
+                    // Siblings at the same school usually eat the same thing: one line for both.
+                    withDishes.groupBy { it.dishes.first() }.forEach { (dish, list) ->
                         Text(
-                            stringResource(Res.string.meals_lunch_line, l.child.name, l.dishes.first()),
+                            stringResource(Res.string.meals_lunch_line, joinNames(list.map { it.child.name }), dish),
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
@@ -341,9 +339,8 @@ private fun DayCard(day: MealDay, isToday: Boolean, canEdit: Boolean, onOpen: (M
 private fun MealRow(meal: PlannedMeal, showSlot: Boolean, canEdit: Boolean, onClick: () -> Unit) {
     val entry = meal.entry
     Column(
-        Modifier.fillMaxWidth().heightIn(
-            min = Spacing.touchTarget,
-        ).clickable(onClick = onClick).padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+        // Padding rather than a minimum height keeps short rows tidy while staying above 48 dp.
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = Spacing.lg, vertical = Spacing.md),
         verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -393,8 +390,23 @@ private fun MealRow(meal: PlannedMeal, showSlot: Boolean, canEdit: Boolean, onCl
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        meal.clashes.forEach { c -> WarningLine(stringResource(Res.string.today_clash, c.child.name, c.dish.lowercase())) }
+        ClashLines(meal.clashes)
         if (meal.conflicts.isNotEmpty()) WarningLine(conflictText(meal.conflicts))
+    }
+}
+
+/** "Fotboll 17:30 och Kundmöte 15:45 – ta något snabbt". */
+@Composable
+internal fun busyText(busy: List<se.pusslet.core.model.EventOccurrence>): String = stringResource(
+    Res.string.meals_busy,
+    joinNames(busy.sortedBy { it.start }.map { stringResource(Res.string.meals_activity, it.event.title, formatTime(it.start.time)) }),
+)
+
+/** "Ella och Simon har redan ätit köttbullar till lunch" – one line per dish, not per child. */
+@Composable
+internal fun ClashLines(clashes: List<LunchClash>) {
+    clashes.groupBy { it.dish.lowercase() }.forEach { (dish, list) ->
+        WarningLine(stringResource(Res.string.today_clash, joinNames(list.map { it.child.name }), dish))
     }
 }
 

@@ -629,7 +629,8 @@
     <string name="meals_cook_double_body">Dubbel sats – resten blir middag nästa dag.</string>
     <string name="meals_leftovers_from">Rester från %1$s</string>
     <string name="meals_servings_short">%1$d port.</string>
-    <string name="meals_busy">%1$s %2$s – ta något snabbt</string>
+    <string name="meals_busy">%1$s – ta något snabbt</string>
+    <string name="meals_activity">%1$s %2$s</string>
     <string name="meals_lunch_line">%1$s: %2$s</string>
     <string name="meals_diet_warning">Passar inte alla: %1$s</string>
     <string name="meals_conflict_item">%1$s (%2$s)</string>

@@ -131,9 +131,18 @@ data class ShoppingList(
     val sortIndex: Int = 0,
 )
 
-/** Where a line on the shopping list came from, so regenerating from the meal plan does not duplicate it. */
+/**
+ * Where a line on the shopping list came from, so regenerating from the meal plan does not duplicate it.
+ * [quantity]/[unit] remember this source's share, so manual additions survive a regeneration.
+ */
 @Serializable
-data class ItemSource(val recipeId: String? = null, val mealDate: LocalDate? = null, val label: String = "")
+data class ItemSource(
+    val recipeId: String? = null,
+    val mealDate: LocalDate? = null,
+    val label: String = "",
+    val quantity: Double? = null,
+    val unit: MeasureUnit? = null,
+)
 
 /** Each item is its own document (fewer conflicts when the whole family adds at once). */
 @Serializable

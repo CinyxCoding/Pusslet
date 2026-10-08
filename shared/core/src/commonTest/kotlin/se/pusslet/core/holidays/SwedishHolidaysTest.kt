@@ -109,7 +109,7 @@ class SwedishHolidaysTest {
     @Test
     fun squeezeDays2026() {
         // Friday after Ascension Day.
-        assertEquals(listOf(LocalDate(2026, 5, 15)), SwedishHolidays.squeezeDays(2026).filter { it.monthNumber == 5 })
+        assertEquals(listOf(LocalDate(2026, 5, 15)), SwedishHolidays.squeezeDays(2026).filter { it.month == kotlinx.datetime.Month.MAY })
         assertTrue(SwedishHolidays.isSqueezeDay(LocalDate(2026, 5, 15)))
         assertFalse(SwedishHolidays.isSqueezeDay(LocalDate(2026, 5, 13)))
     }
@@ -126,6 +126,4 @@ class SwedishHolidaysTest {
         val list = SwedishHolidays.inRange(LocalDate(2026, 12, 30), LocalDate(2027, 1, 2))
         assertEquals(listOf(HolidayId.NewYearsEve, HolidayId.NewYearsDay), list.map { it.id })
     }
-
-    private val LocalDate.monthNumber: Int get() = month.ordinal + 1
 }

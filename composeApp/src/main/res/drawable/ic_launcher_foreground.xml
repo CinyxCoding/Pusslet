@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A single calm puzzle piece: the family's day, put together. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#4A6851"
+        android:pathData="M33,41 L45,41 A6,6 0 1,1 57,41 L69,41 L69,53 A6,6 0 1,1 69,65 L69,77 L33,77 Z" />
+</vector>

@@ -1,0 +1,1682 @@
+{
+ "_meta": {
+  "totalRecords": 62,
+  "offset": 0,
+  "limit": 62,
+  "count": 62
+ },
+ "_links": [],
+ "livsmedel": [
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 123,
+   "version": "2026-06-29T00:22:03.86",
+   "namn": "Mjölk fett 3% berikad",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2024 Inlånade värden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/123/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/123/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/123/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 1725,
+   "version": "2026-06-29T01:03:02.75",
+   "namn": "Gräddersättning pulver fett 35%",
+   "vetenskapligtNamn": "",
+   "projekt": "2025 Fetter, mejeri och ägg",
+   "analys": "I det analyserade provet från 2025 ingår: Nestle Coffee mate (33%), Completa Coffee whitener (33%), Nutshell Creamer (17%), Douwe Egberts Creamer (17%)",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/1725/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1725/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1725/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 339,
+   "version": "2026-06-29T00:27:52.94",
+   "namn": "Gurka",
+   "vetenskapligtNamn": "Cucumis sativus L.",
+   "projekt": "2012 Grönsaker och rotfrukter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/339/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/339/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/339/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 2,
+   "livsmedelsTyp": "Beräknat",
+   "nummer": 445,
+   "version": "2026-06-29T11:16:37.5",
+   "namn": "Gurka inlagd m. lag hemlagad",
+   "vetenskapligtNamn": "",
+   "projekt": "2014 Beräknade livsmedel",
+   "tillagningsmetod": "Kalla rätter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/445/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/445/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/445/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/445/ingredienser?sprak=1",
+     "rel": "ingredienser",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 845,
+   "version": "2026-06-29T00:39:33.42",
+   "namn": "Pasta okokt",
+   "vetenskapligtNamn": "",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/845/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/845/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/845/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 846,
+   "version": "2026-06-29T00:39:34.6",
+   "namn": "Pasta kokt u. salt",
+   "vetenskapligtNamn": "",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/846/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/846/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/846/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 364,
+   "version": "2026-07-01T09:12:00.447",
+   "namn": "Tomat",
+   "vetenskapligtNamn": "Lycopersicon esculentum Mill.",
+   "projekt": "2012 Grönsaker och rotfrukter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/364/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/364/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/364/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 365,
+   "version": "2026-06-29T00:28:37.03",
+   "namn": "Tomat torkad m. olja",
+   "vetenskapligtNamn": "",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/365/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/365/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/365/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 344,
+   "version": "2026-06-29T00:28:01.427",
+   "namn": "Lök gul",
+   "vetenskapligtNamn": "Allium cepa L.  ",
+   "projekt": "2012 Grönsaker och rotfrukter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/344/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/344/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/344/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 385,
+   "version": "2026-06-29T00:29:15.027",
+   "namn": "Lök gul frysvara",
+   "vetenskapligtNamn": "Allium cepa L.  ",
+   "projekt": "2023 Uppdatering av jodvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/385/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/385/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/385/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 371,
+   "version": "2026-06-29T00:28:46.47",
+   "namn": "Vitlök",
+   "vetenskapligtNamn": "Allium sativum L.",
+   "projekt": "2024 Inlånade värden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/371/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/371/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/371/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 2,
+   "livsmedelsTyp": "Beräknat",
+   "nummer": 6469,
+   "version": "2026-06-29T02:16:05.23",
+   "namn": "Vitlökssås m. örter hemlagad",
+   "vetenskapligtNamn": "",
+   "projekt": "2024 Beräknade livsmedel",
+   "tillagningsmetod": "Kalla rätter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/6469/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/6469/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/6469/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/6469/ingredienser?sprak=1",
+     "rel": "ingredienser",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 230,
+   "version": "2026-06-29T00:25:41.15",
+   "namn": "Potatis höst rå",
+   "vetenskapligtNamn": "Solanum tuberosum  ",
+   "projekt": "2009 Potatis",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/230/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/230/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/230/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 231,
+   "version": "2026-06-29T00:25:43.9",
+   "namn": "Potatis höst kokt m. salt",
+   "vetenskapligtNamn": "Solanum tuberosum  ",
+   "projekt": "2009 Potatis",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/231/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/231/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/231/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 2,
+   "livsmedelsTyp": "Beräknat",
+   "nummer": 258,
+   "version": "2026-06-29T01:13:13.527",
+   "namn": "Laxpudding",
+   "vetenskapligtNamn": "",
+   "projekt": "2014 Beräknade livsmedel",
+   "tillagningsmetod": "Ugn eller grill",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/258/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/258/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/258/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/258/ingredienser?sprak=1",
+     "rel": "ingredienser",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 1255,
+   "version": "2026-06-29T00:49:26.76",
+   "namn": "Lax odlad Norge fjordlax rå",
+   "vetenskapligtNamn": "Salmo salar",
+   "projekt": "2018 Fisk och skaldjur",
+   "analys": "Analysvärdena är ett aggregat av lax fryst, lax kyld och lax från fiskdisk, ldb nummer: 6225, 3800 och 6174. Alla analyserade under 2018. ",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/1255/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1255/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1255/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 224,
+   "version": "2026-07-01T10:00:05.077",
+   "namn": "Riskaka fullkorn solrosfrön majs fett 4% ",
+   "vetenskapligtNamn": "",
+   "projekt": "2004 Barn stora",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/224/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/224/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/224/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 225,
+   "version": "2026-06-29T00:25:34.447",
+   "namn": "Riskaka fullkorn smaksatt fett 18% ",
+   "vetenskapligtNamn": "",
+   "projekt": "2004 Barn stora",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/225/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/225/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/225/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 1225,
+   "version": "2026-06-29T00:48:12.89",
+   "namn": "Ägg rått",
+   "vetenskapligtNamn": "Gallus gallus domesticus L.",
+   "projekt": "2025 Fetter, mejeri och ägg",
+   "analys": "I det analyserade provet från 2025 ingår: Ägg insamlat från 20 olika äggproducenter baserat på värphönans ålder, i samarbete med Svenska ägg",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/1225/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1225/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1225/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 1226,
+   "version": "2026-06-29T00:48:16.643",
+   "namn": "Äggula rå",
+   "vetenskapligtNamn": "Gallus gallus domesticus L.",
+   "projekt": "2025 Fetter, mejeri och ägg",
+   "analys": "I det analyserade provet från 2025 ingår: Ägg insamlat från 20 olika äggproducenter baserat på värphönans ålder, i samarbete med Svenska ägg",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/1226/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1226/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1226/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 29,
+   "version": "2026-06-29T00:19:10.03",
+   "namn": "Smör fett 80%",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2025 Fetter, mejeri och ägg",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/29/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/29/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/29/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 30,
+   "version": "2026-06-29T00:19:12.393",
+   "namn": "Smör extrasaltat fett 80%",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2025 Fetter, mejeri och ägg",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/30/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/30/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/30/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 77,
+   "version": "2026-06-29T00:20:28.5",
+   "namn": "Ost hårdost fett 10%",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2000 ost, julskinka",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/77/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/77/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/77/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 78,
+   "version": "2026-06-29T00:20:30.547",
+   "namn": "Ost hårdost fett 23%",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2000 ost, julskinka",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/78/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/78/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/78/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 289,
+   "version": "2026-06-29T00:27:01.797",
+   "namn": "Morot",
+   "vetenskapligtNamn": "Daucus carota L. ssp. sativa (Hoffm.) Schübl. & Mart.",
+   "projekt": "2012 Grönsaker och rotfrukter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/289/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/289/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/289/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 299,
+   "version": "2026-06-29T00:27:20.677",
+   "namn": "Morot konserv. m. lag",
+   "vetenskapligtNamn": "",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/299/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/299/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/299/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 553,
+   "version": "2026-06-29T00:32:30.257",
+   "namn": "Banan",
+   "vetenskapligtNamn": "Musa acuminata Colla",
+   "projekt": "2019 Frukt och grönsaker",
+   "analys": "Värden inlånade från Department of Health (2013). Nutrient analysis of fruit and vegetables, 2013. I analysen ingick vanliga, ekologiska och kravmärkta bananer, förpackade och i lösvikt. ",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/553/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/553/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/553/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 575,
+   "version": "2026-06-29T00:33:07.12",
+   "namn": "Banan kokbanan",
+   "vetenskapligtNamn": "Musa x paradisiaca L.",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/575/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/575/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/575/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 588,
+   "version": "2026-06-29T00:33:28.58",
+   "namn": "Äpple m. skal",
+   "vetenskapligtNamn": "Malus domestica",
+   "projekt": "2014 Grönsaker, frukt och svamp",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/588/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/588/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/588/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 589,
+   "version": "2026-06-29T00:33:30.623",
+   "namn": "Äpple u. skal ",
+   "vetenskapligtNamn": "Malus domestica",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/589/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/589/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/589/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 2,
+   "livsmedelsTyp": "Beräknat",
+   "nummer": 185,
+   "version": "2026-06-29T11:16:37.5",
+   "namn": "Bröd fullkorn korn fibrer 3%",
+   "vetenskapligtNamn": "",
+   "projekt": "2014 Beräknade livsmedel",
+   "tillagningsmetod": "Ugn eller grill",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/185/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/185/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/185/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/185/ingredienser?sprak=1",
+     "rel": "ingredienser",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 2,
+   "livsmedelsTyp": "Beräknat",
+   "nummer": 186,
+   "version": "2026-06-29T01:44:50.05",
+   "namn": "Bröd vitt fullkorn graham typ scones",
+   "vetenskapligtNamn": "",
+   "projekt": "2014 Beräknade livsmedel",
+   "tillagningsmetod": "Ugn eller grill",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/186/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/186/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/186/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/186/ingredienser?sprak=1",
+     "rel": "ingredienser",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 359,
+   "version": "2026-06-29T00:28:27.667",
+   "namn": "Sockerärtor",
+   "vetenskapligtNamn": "Pisum sativum var. sativum",
+   "projekt": "2012 Grönsaker och rotfrukter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/359/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/359/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/359/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 1892,
+   "version": "2026-06-29T01:08:56.21",
+   "namn": "Socker",
+   "vetenskapligtNamn": "Beta vulgaris L. var. altissima Döll.",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/1892/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1892/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1892/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 490,
+   "version": "2026-06-29T00:31:13.577",
+   "namn": "Saltgurka u. lag",
+   "vetenskapligtNamn": "",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/490/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/490/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/490/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 1273,
+   "version": "2026-06-29T00:50:14.313",
+   "namn": "Saltsill rå",
+   "vetenskapligtNamn": "Clupea harengus (L.)",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/1273/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1273/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1273/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 350,
+   "version": "2026-06-29T00:28:10.693",
+   "namn": "Paprika grön",
+   "vetenskapligtNamn": "Capsicum annuum L. var. annuum",
+   "projekt": "2014 Grönsaker, frukt och svamp",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/350/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/350/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/350/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 351,
+   "version": "2026-06-29T00:28:12.463",
+   "namn": "Paprika röd",
+   "vetenskapligtNamn": "Capsicum annuum L. var. annuum",
+   "projekt": "2014 Grönsaker, frukt och svamp",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/351/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/351/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/351/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 325,
+   "version": "2026-06-30T15:19:44.153",
+   "namn": "Broccoli",
+   "vetenskapligtNamn": "Brassica oleracea convar. botrytis var. italica",
+   "projekt": "2025 Beräknade livsmedel",
+   "analys": "Värden inlånade från Norge. Kielland E. (2024) Analyser av næringsstoffer i norske og importerte grønnsaker.Kartlegging av tungmetaller, nitrat, nitritt og per- og polyfluor. Mattilsynet og Havforskningsinstituttet. Livsmedlet avser ett aggregerat värde för fäska broccoli från södra och östra regionerna i Norge.",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/325/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/325/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/325/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 326,
+   "version": "2026-06-30T15:25:57.297",
+   "namn": "Broccoli frysvara",
+   "vetenskapligtNamn": "Brassica oleracea var. botrytis L",
+   "projekt": "2025 Beräknade livsmedel",
+   "analys": "Värden inlånade från Danmark. Næringsstofindhold i frosne frugter og grøntsager, 2023. Livsmedlet avser ett aggregerat värde för frysta broccoli från både EU- och icke-EU-länder. Libvsmedlet inhandlades under både höst och vår.",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/326/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/326/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/326/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 905,
+   "version": "2026-06-29T00:40:27.527",
+   "namn": "Tofu fast",
+   "vetenskapligtNamn": "Glycine max (L.) Merr.",
+   "projekt": "2020 Riksmaten småbarn inlånade värden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/905/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/905/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/905/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 884,
+   "version": "2026-06-29T00:40:09.313",
+   "namn": "Linser torkade",
+   "vetenskapligtNamn": "Lens culinaris Medik ssp.culinaris",
+   "projekt": "2024 Inlånade värden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/884/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/884/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/884/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 2,
+   "livsmedelsTyp": "Beräknat",
+   "nummer": 677,
+   "version": "2026-06-29T11:16:37.5",
+   "namn": "Havregrynsgröt fullkorn",
+   "vetenskapligtNamn": "Avena sativa L.",
+   "projekt": "2014 Beräknade livsmedel",
+   "tillagningsmetod": "Kokning",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/677/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/677/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/677/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/677/ingredienser?sprak=1",
+     "rel": "ingredienser",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 702,
+   "version": "2026-06-29T00:36:49.773",
+   "namn": "Havregryn fullkorn",
+   "vetenskapligtNamn": "Avena sativa L.",
+   "projekt": "2016 Spannmål",
+   "analys": "I det analyserade provet från 2016 ingår: Axa (33 %), Gyllenhammar (18 %), Coop änglamark ekologiska (12 %), Garant (10 %), Ica (8 %), Coop (7 %), Favorit (7 %), Coop X-tra (6 %).",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/702/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/702/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/702/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 124,
+   "version": "2026-06-29T00:22:07.157",
+   "namn": "Yoghurt naturell fett 3% berikad",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2016 Mejeri",
+   "analys": "I det analyserade provet från 2016 för detta aggregat ingår yoghurt sommar: Arla mild yoghurt (56 %), Skånemejerier naturell yoghurt (15 %), Skånemejerier A-yoghurt (9 %), Norrmejerier mild yoghurt (6 %), Skånemejerier mild yoghurt (6 %), Coop mild yoghurt (5 %), Norrmejerier naturell yoghurt (4 %) och yoghurt vinter: Arla mild yoghurt berikad med D-vitamin (53 %), Skånemejerier naturell yoghurt berikad med D-vitamin (15 %), Skånemejerier A-yoghurt (10 %), Norrmejerier mild yoghurt (6 %), Skånemejerier mild yoghurt (6 %), Coop mild yoghurt (5 %), Norrmejerier naturell yoghurt berikad med D-vitamin (4 %).",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/124/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/124/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/124/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 135,
+   "version": "2026-06-29T00:22:35.577",
+   "namn": "Yoghurt naturell lätt fett 0,5% berikad",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2024 Mejeri, fisk och skaldjur",
+   "analys": "I det analyserade provet från 2024 ingår: Lätt mild yoghurt naturell Arla (56%), Lätt mild yoghurt naturell eko Arla (27%), Lättyoghurt naturell ICA (12%), Mild naturell yoghurt Garant (6%).",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/135/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/135/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/135/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 114,
+   "version": "2026-06-29T00:21:41.32",
+   "namn": "Filmjölk fett 3% berikad",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2016 Mejeri",
+   "analys": "I det analyserade provet från 2016 ingår för detta aggregat från filmjölk sommar: Skånemejerier A-fil (18 %), Skånemejerier fil (17 %), Arla fil berikad med D vitamin (15 %), Norrmejerier fil berikad med D vitamin (11 %), Bollnäsfil (10 %), Falköping fil (9 %), Coop fil berikad med D vitamin (7 %), Ica fil berikad med D vitamin (7 %), Grådö fil (6 %) och från filmjölk vinter: Skånemejerier A-fil berikad med D-vitamin (18 %), Arla fil  berikad med D-vitamin (15 %), Skånemejerier fil berikad med D-vitamin (17 %), Norrmejerier fil berikad med D-vitamin (11 %), Bollnäs fil (11 %), Falköping fil (9 %), Coop A-fil  berikad med D-vitamin (7 %), Grådö fil (6 %), Ica fil (7 %).",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/114/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/114/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/114/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 119,
+   "version": "2026-06-29T00:21:52.827",
+   "namn": "Filmjölk långfil fett 3% berikad",
+   "vetenskapligtNamn": "Bos taurus",
+   "projekt": "2023 Uppdatering av jodvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/119/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/119/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/119/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 2,
+   "livsmedelsTyp": "Beräknat",
+   "nummer": 1236,
+   "version": "2026-06-29T01:13:13.527",
+   "namn": "Torsksufflé",
+   "vetenskapligtNamn": "",
+   "projekt": "2014 Beräknade livsmedel",
+   "tillagningsmetod": "Ugn eller grill",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/1236/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1236/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1236/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1236/ingredienser?sprak=1",
+     "rel": "ingredienser",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 1246,
+   "version": "2026-06-29T00:48:57.88",
+   "namn": "Torsk rå",
+   "vetenskapligtNamn": "Gadus morhua",
+   "projekt": "2010 Fisk, skaldjur och fiskprodukter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/1246/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1246/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/1246/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 361,
+   "version": "2026-06-29T00:28:31.3",
+   "namn": "Spenat frysvara",
+   "vetenskapligtNamn": "Spinacia oleracea L",
+   "projekt": "2012 Grönsaker och rotfrukter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/361/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/361/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/361/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 431,
+   "version": "2026-06-29T00:30:50.867",
+   "namn": "Spenatsoppa veg. hemlagad",
+   "vetenskapligtNamn": "",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/431/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/431/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/431/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 354,
+   "version": "2026-06-29T00:28:18.007",
+   "namn": "Purjolök",
+   "vetenskapligtNamn": "Allium porrum L.",
+   "projekt": "2012 Grönsaker och rotfrukter",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/354/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/354/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/354/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 2,
+   "livsmedelsTyp": "Beräknat",
+   "nummer": 452,
+   "version": "2026-06-29T11:16:37.5",
+   "namn": "Purjolök kokt m. salt",
+   "vetenskapligtNamn": "Allium porrum L.",
+   "projekt": "2014 Beräknade livsmedel",
+   "tillagningsmetod": "Kokning",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/452/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/452/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/452/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/452/ingredienser?sprak=1",
+     "rel": "ingredienser",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 559,
+   "version": "2026-06-29T00:32:40.747",
+   "namn": "Citron",
+   "vetenskapligtNamn": "Citrus limon (L.)",
+   "projekt": "2020 Riksmaten småbarn inlånade värden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/559/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/559/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/559/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 602,
+   "version": "2026-06-29T00:33:45.293",
+   "namn": "Citronskal",
+   "vetenskapligtNamn": "Citrus limon (L.)",
+   "projekt": "1989",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/602/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/602/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/602/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 35,
+   "version": "2026-06-29T00:19:22.1",
+   "namn": "Olivolja",
+   "vetenskapligtNamn": "Olea europaea L. var.",
+   "projekt": "2011 Olja ",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/35/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/35/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/35/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 4659,
+   "version": "2026-06-29T01:49:22.613",
+   "namn": "Olivolja extra jungfruolja",
+   "vetenskapligtNamn": "Olea europaea L. var.",
+   "projekt": "2011 Olja ",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/4659/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/4659/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/4659/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 2189,
+   "version": "2026-06-29T01:17:02.11",
+   "namn": "Rapsolja",
+   "vetenskapligtNamn": "Brassica napus L. ssp. Napus",
+   "projekt": "2011 Olja ",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/2189/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/2189/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/2189/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 4661,
+   "version": "2026-06-29T01:49:25.03",
+   "namn": "Rapsolja kallpressad",
+   "vetenskapligtNamn": "Brassica napus L. ssp. Napus",
+   "projekt": "2011 Olja ",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/4661/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/4661/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/4661/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 34,
+   "version": "2026-06-29T00:19:20.123",
+   "namn": "Majsolja",
+   "vetenskapligtNamn": "Zea mays L.",
+   "projekt": "2011 Olja ",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/34/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/34/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/34/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  },
+  {
+   "livsmedelsTypId": 1,
+   "livsmedelsTyp": "Analyserat",
+   "nummer": 345,
+   "version": "2026-06-29T00:28:03.883",
+   "namn": "Majskolv",
+   "vetenskapligtNamn": "Zea mays L.",
+   "projekt": "2023 Uppdatering av laktosvärden",
+   "links": [
+    {
+     "href": "/api/v1/livsmedel/345/naringsvarden?sprak=1",
+     "rel": "naringvarden",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/345/klassificeringar?sprak=1",
+     "rel": "klassificeringar",
+     "method": "GET"
+    },
+    {
+     "href": "/api/v1/livsmedel/345/ravaror?sprak=1",
+     "rel": "ravaror",
+     "method": "GET"
+    }
+   ]
+  }
+ ]
+}

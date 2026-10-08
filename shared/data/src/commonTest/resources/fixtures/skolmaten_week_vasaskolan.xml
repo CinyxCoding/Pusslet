@@ -1,0 +1,48 @@
+
+              <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+                  <channel>
+                  <atom:link href="https://skolmaten.se/vasaskolan" rel="self" type="application/rss+xml" />
+                      <title>Skolmaten - Vasaskolan</title>
+                      <description>Menyinformation för skolan</description>
+                      <link>https://skolmaten.se/vasaskolan</link>
+                      <language>sv</language>
+                      <copyright>© https://skolmaten.se</copyright>
+                      
+              <item>
+                  <title>Måndag - Vecka 41</title>
+                  <description><![CDATA[Grillkorv serveras med potatismos]]></description>
+                  <link>https://skolmaten.se/vasaskolan</link>
+                  <guid isPermaLink="false">f0e9759d-7249-4d1f-a895-3bff8a986bc1</guid>
+                  <pubDate>Mon, 05 Oct 2026 00:00:00 GMT</pubDate>
+               </item>
+              <item>
+                  <title>Tisdag - Vecka 41</title>
+                  <description><![CDATA[Pasta med pesto, <br/>Vegofärssås serveras med pasta]]></description>
+                  <link>https://skolmaten.se/vasaskolan</link>
+                  <guid isPermaLink="false">71c0f675-fa0c-4edb-a4fc-e838079f8f4b</guid>
+                  <pubDate>Tue, 06 Oct 2026 00:00:00 GMT</pubDate>
+               </item>
+              <item>
+                  <title>Onsdag - Vecka 41</title>
+                  <description><![CDATA[Stekt fisk med curry/paprikatäcke serveras med kokt/stekt potatis och remouladsås, <br/>Panerad rotselleri serveras med kokt/stekt potatis och remouladsås]]></description>
+                  <link>https://skolmaten.se/vasaskolan</link>
+                  <guid isPermaLink="false">e5c2a882-2bd1-4ffa-9ead-0c85aa1e972a</guid>
+                  <pubDate>Wed, 07 Oct 2026 00:00:00 GMT</pubDate>
+               </item>
+              <item>
+                  <title>Torsdag - Vecka 41</title>
+                  <description><![CDATA[Tomatsoppa serveras med mjukt bröd, färskost och hummus]]></description>
+                  <link>https://skolmaten.se/vasaskolan</link>
+                  <guid isPermaLink="false">faf47e4c-0898-41cf-ae99-49798f1267d5</guid>
+                  <pubDate>Thu, 08 Oct 2026 00:00:00 GMT</pubDate>
+               </item>
+              <item>
+                  <title>Fredag - Vecka 41</title>
+                  <description><![CDATA[Kycklinggryta med curry och kokos serveras med kornris/potatis]]></description>
+                  <link>https://skolmaten.se/vasaskolan</link>
+                  <guid isPermaLink="false">5bc34144-d494-49d5-a1ad-a1a0f4a5d621</guid>
+                  <pubDate>Fri, 09 Oct 2026 00:00:00 GMT</pubDate>
+               </item>
+                  </channel>
+              </rss>
+          

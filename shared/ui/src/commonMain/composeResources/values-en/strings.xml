@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pusslet</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">Today</string>
+    <string name="nav_calendar">Calendar</string>
+    <string name="nav_meals">Meals</string>
+    <string name="nav_shopping">Shopping</string>
+    <string name="nav_more">More</string>
+    <string name="quick_add">Add</string>
+    <string name="quick_add_description">Quick add: type what is happening</string>
+    <string name="navigate_back">Back</string>
+
+    <!-- Placeholders used until a feature is wired up -->
+    <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
+    <string name="empty_calendar">The calendar is empty for now.</string>
+    <string name="empty_meals">No meal plan for this week yet.</string>
+    <string name="empty_shopping">The shopping list is empty. Nice!</string>
+    <string name="empty_more">Family, tasks and settings live here.</string>
+</resources>

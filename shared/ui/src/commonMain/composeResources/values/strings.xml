@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Pusslet</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">Idag</string>
+    <string name="nav_calendar">Kalender</string>
+    <string name="nav_meals">Mat</string>
+    <string name="nav_shopping">Handla</string>
+    <string name="nav_more">Mer</string>
+    <string name="quick_add">Lägg till</string>
+    <string name="quick_add_description">Snabbinmatning: skriv vad som ska hända</string>
+    <string name="navigate_back">Tillbaka</string>
+
+    <!-- Placeholders used until a feature is wired up -->
+    <string name="empty_today">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
+    <string name="empty_calendar">Kalendern är tom än så länge.</string>
+    <string name="empty_meals">Ingen matsedel planerad den här veckan.</string>
+    <string name="empty_shopping">Inköpslistan är tom. Skönt!</string>
+    <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
+</resources>

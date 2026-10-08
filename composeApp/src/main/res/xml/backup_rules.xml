@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and lower. The local database is a cache of the family's cloud data; no secrets are backed up. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="." />
+</full-backup-content>

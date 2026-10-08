@@ -1,0 +1,45 @@
+# Gradle / build
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+local.properties
+captures/
+*.hprof
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+.vscode/
+
+# Android
+*.apk
+*.aab
+*.keystore
+*.jks
+keystore.properties
+# Real Firebase configs are per-developer secrets; never commit them.
+google-services.json
+GoogleService-Info.plist
+
+# iOS
+iosApp/build/
+iosApp/*.xcodeproj/xcuserdata/
+iosApp/*.xcworkspace/xcuserdata/
+xcuserdata/
+Pods/
+
+# Node / Firebase
+node_modules/
+functions/lib/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+database-debug.log*
+pubsub-debug.log*
+.firebase/
+emulator-data/
+
+# Roborazzi output (golden images are committed under src/test/snapshots)
+**/build/outputs/roborazzi/

@@ -45,11 +45,6 @@ firebase emulators:start --project demo-pusslet  # local backend for the demo fl
 ```
 iOS targets only compile on macOS (`./gradlew :shared:app:linkDebugFrameworkIosSimulatorArm64`); CI has a macOS job.
 
-### Local machine quirk (this Windows dev box)
-JDK AF_UNIX sockets fail in `%TEMP%` here, which breaks the Gradle daemon ("Unable to establish loopback connection").
-Workaround: `export JAVA_TOOL_OPTIONS="-Djdk.net.unixdomain.tmpdir=C:\Users\ermhad001\.gradle\udtmp"` and
-`export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"` before running `./gradlew`.
-
 ## Conventions
 - Kotlin official style, ktlint + detekt (config in `.editorconfig`, `config/detekt/detekt.yml`). Max line 140.
 - Time: `kotlin.time.Instant`/`Clock`, `kotlinx.datetime` `LocalDate`/`LocalTime`. Inject `Clock` and `TimeZone`; never call `Clock.System` inside domain logic.

@@ -29,7 +29,8 @@ class SkolmatenRssProvider(private val fetcher: CachedFetcher, private val zone:
             LunchProviderType.Skolmaten -> slugOf(source.reference)?.let { "https://skolmaten.se/api/4/rss/week/$it?locale=sv" }
             else -> source.reference.trim().takeIf { it.startsWith("https://") }
         } ?: return null
-        val raw = fetcher.get("lunch:$url", url, maxAge = 20.hours, force = force) { it.contains("<rss") || it.contains("<item") } ?: return null
+        val raw =
+            fetcher.get("lunch:$url", url, maxAge = 20.hours, force = force) { it.contains("<rss") || it.contains("<item") } ?: return null
         val name = if (source.provider == LunchProviderType.Skolmaten) "skolmaten.se" else url.substringAfter("://").substringBefore('/')
         return Sourced(RssLunchParser.parse(raw.value, zone, name), raw.fetchedAt, raw.stale, raw.error)
     }
@@ -49,9 +50,10 @@ class SkolmatenRssProvider(private val fetcher: CachedFetcher, private val zone:
 
 /** Minimal RSS 2.0 reader for lunch feeds: one item per school day, dishes in the description. */
 object RssLunchParser {
-    private val item = Regex("""<item>(.*?)</item>""", RegexOption.DOT_MATCHES_ALL)
-    private val pubDate = Regex("""<pubDate>(.*?)</pubDate>""", RegexOption.DOT_MATCHES_ALL)
-    private val description = Regex("""<description>(.*?)</description>""", RegexOption.DOT_MATCHES_ALL)
+    // [\s\S] instead of DOT_MATCHES_ALL, which is JVM-only.
+    private val item = Regex("""<item>([\s\S]*?)</item>""")
+    private val pubDate = Regex("""<pubDate>([\s\S]*?)</pubDate>""")
+    private val description = Regex("""<description>([\s\S]*?)</description>""")
     private val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
     fun parse(xml: String, zone: TimeZone, sourceName: String): List<SchoolLunch> = item.findAll(xml).mapNotNull { m ->
@@ -67,14 +69,22 @@ object RssLunchParser {
 
     /** "Mon, 05 Oct 2026 00:00:00 GMT" (midnight UTC means that school day). */
     fun parseRfc822Date(value: String, zone: TimeZone): LocalDate? {
-        val m = Regex("""(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?\s*(GMT|UTC|Z|[+-]\d{4})?""").find(value) ?: return null
+        val m =
+            Regex("""(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?\s*(GMT|UTC|Z|[+-]\d{4})?""").find(value)
+                ?: return null
         val (d, mon, y) = m.destructured
         val month = months.indexOf(mon.replaceFirstChar { it.uppercase() }) + 1
         if (month == 0) return null
         val date = runCatching { LocalDate(y.toInt(), month, d.toInt()) }.getOrNull() ?: return null
         val hour = m.groupValues[4].toIntOrNull() ?: 0
         // Feeds publish midnight UTC for the school day; only a real time-of-day should shift the date.
-        return if (hour == 0) date else Instant.parse("${date}T${m.groupValues[4]}:${m.groupValues[5]}:${m.groupValues[6]}Z").toLocalDateTime(zone).date
+        return if (hour ==
+            0
+        ) {
+            date
+        } else {
+            Instant.parse("${date}T${m.groupValues[4]}:${m.groupValues[5]}:${m.groupValues[6]}Z").toLocalDateTime(zone).date
+        }
     }
 
     private fun decodeEntities(s: String) = s.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")

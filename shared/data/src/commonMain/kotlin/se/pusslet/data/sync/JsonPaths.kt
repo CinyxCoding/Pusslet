@@ -20,8 +20,8 @@ object JsonPaths {
             val before = old?.get(key)
             val after = new[key]
             if (key in mapFields && (before == null || before is JsonObject) && (after == null || after is JsonObject)) {
-                val b = before as? JsonObject ?: JsonObject(emptyMap())
-                val a = after as? JsonObject ?: JsonObject(emptyMap())
+                val b = before ?: JsonObject(emptyMap())
+                val a = after ?: JsonObject(emptyMap())
                 for (sub in (b.keys + a.keys)) {
                     if (b[sub] != a[sub]) result["$key.$sub"] = a[sub]
                 }

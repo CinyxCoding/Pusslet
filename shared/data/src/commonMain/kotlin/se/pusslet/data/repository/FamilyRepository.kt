@@ -34,7 +34,9 @@ class FamilyRepository(
 ) {
     val family: Flow<Family?> = docs.observeAll(Collections.Family, Family.serializer()).map { it.firstOrNull() }
 
-    val members: Flow<List<Member>> = docs.observeAll(Collections.Members, Member.serializer()).map { list -> list.sortedBy { it.displayName } }
+    val members: Flow<List<Member>> = docs.observeAll(Collections.Members, Member.serializer()).map { list ->
+        list.sortedBy { it.displayName }
+    }
 
     val children: Flow<List<Child>> = docs.observeAll(Collections.Children, Child.serializer())
         .map { list -> list.sortedWith(compareBy<Child>({ it.birthDate == null }, { it.birthDate }).thenBy { it.firstName }) }
@@ -48,7 +50,10 @@ class FamilyRepository(
 
     val diets: Flow<List<DietProfile>> = docs.observeAll(Collections.Diets, DietProfile.serializer())
 
-    val settings: Flow<FamilySettings> = docs.observe(Collections.Settings, SETTINGS_DOC, FamilySettings.serializer()).map { it ?: FamilySettings() }
+    val settings: Flow<FamilySettings> = docs.observe(Collections.Settings, SETTINGS_DOC, FamilySettings.serializer()).map {
+        it
+            ?: FamilySettings()
+    }
 
     /** Creates a family on this device. Works offline and without an account; syncing starts once signed in. */
     suspend fun createFamily(name: String, myName: String, myColor: MemberColor = MemberColor.Sage, demo: Boolean = false): Family {
@@ -58,7 +63,13 @@ class FamilyRepository(
         val family = Family(id = familyId, name = name.trim(), createdBy = uid.orEmpty(), createdAt = clock.now())
         sessions.update { it.copy(familyId = familyId, memberId = memberId, role = Role.Parent, uid = uid ?: it.uid, demo = demo) }
         docs.put(Collections.Family, familyId, family, Family.serializer(), familyId)
-        docs.put(Collections.Members, memberId, Member(memberId, myName.trim(), Role.Parent, myColor, uid = uid, joinedAt = clock.now()), Member.serializer(), familyId)
+        docs.put(
+            Collections.Members,
+            memberId,
+            Member(memberId, myName.trim(), Role.Parent, myColor, uid = uid, joinedAt = clock.now()),
+            Member.serializer(),
+            familyId,
+        )
         return family
     }
 

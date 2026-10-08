@@ -70,5 +70,11 @@ object LocalOnlyFamilyRemote : FamilyRemote {
 
     override suspend fun revokeCalendarFeed(token: String) = unavailable()
 
-    override suspend fun createHandoverShare(token: String, familyId: String, uid: String, payload: JsonObject, expiresAt: Instant) = unavailable()
+    override suspend fun createHandoverShare(
+        token: String,
+        familyId: String,
+        uid: String,
+        payload: JsonObject,
+        expiresAt: Instant,
+    ) = unavailable()
 }

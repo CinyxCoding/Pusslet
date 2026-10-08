@@ -77,7 +77,14 @@ class LivsmedelsverketFoodDatabase(
             val response = http.get("$BASE/livsmedel/$number/naringsvarden?sprak=1")
             if (!response.status.isSuccess()) return null
             val values = parseNutrients(response.bodyAsText())
-            dao.putNutrients(FoodNutrientsEntity(number, food.version, json.encodeToString(NutrientValues.serializer(), values), clock.now().toEpochMilliseconds()))
+            dao.putNutrients(
+                FoodNutrientsEntity(
+                    number,
+                    food.version,
+                    json.encodeToString(NutrientValues.serializer(), values),
+                    clock.now().toEpochMilliseconds(),
+                ),
+            )
             values
         } catch (e: CancellationException) {
             throw e
@@ -93,7 +100,10 @@ class LivsmedelsverketFoodDatabase(
 
     fun parseNutrients(body: String): NutrientValues {
         val rows = json.decodeFromString(kotlinx.serialization.builtins.ListSerializer(NutrientRow.serializer()), body)
-        fun value(code: String, unit: String? = null) = rows.firstOrNull { it.euroFIRkod == code && (unit == null || it.enhet == unit) }?.varde
+
+        fun value(code: String, unit: String? = null) = rows.firstOrNull {
+            it.euroFIRkod == code && (unit == null || it.enhet == unit)
+        }?.varde
         return NutrientValues(
             energyKcal = value("ENERC", "kcal"),
             energyKj = value("ENERC", "kJ"),
@@ -106,7 +116,8 @@ class LivsmedelsverketFoodDatabase(
         )
     }
 
-    @Serializable private data class ListItem(val nummer: Int, val namn: String, val version: String = "", val livsmedelsTyp: String? = null)
+    @Serializable
+    private data class ListItem(val nummer: Int, val namn: String, val version: String = "", val livsmedelsTyp: String? = null)
 
     @Serializable private data class ListResponse(val livsmedel: List<ListItem> = emptyList())
 

@@ -34,7 +34,12 @@ class InMemoryRemoteStore(private val startTime: Long = 1_000_000L) : RemoteStor
 
     fun snapshot(familyId: String, docPath: String): JsonObject? = docs[fullPath(familyId, docPath)]?.data
 
-    override fun listen(familyId: String, path: String, sinceServerTime: Long?, filter: RemoteFilter?): Flow<List<RemoteDoc>> = channelFlow {
+    override fun listen(
+        familyId: String,
+        path: String,
+        sinceServerTime: Long?,
+        filter: RemoteFilter?,
+    ): Flow<List<RemoteDoc>> = channelFlow {
         online.first { it }
         val prefix = fullPath(familyId, path)
         // Subscribe before taking the snapshot so nothing written in between is missed.
@@ -45,7 +50,10 @@ class InMemoryRemoteStore(private val startTime: Long = 1_000_000L) : RemoteStor
             }
         }
         val initial = mutex.withLock {
-            docs.values.filter { matches(it, prefix, path.isEmpty()) && (sinceServerTime == null || it.updatedAt > sinceServerTime) && passes(it, filter) }
+            docs.values.filter {
+                matches(it, prefix, path.isEmpty()) && (sinceServerTime == null || it.updatedAt > sinceServerTime) &&
+                    passes(it, filter)
+            }
         }
         send(initial.map { toRemote(it) })
     }
@@ -56,8 +64,17 @@ class InMemoryRemoteStore(private val startTime: Long = 1_000_000L) : RemoteStor
         val doc = mutex.withLock {
             val key = fullPath(familyId, docPath)
             val time = ++clock
-            val stamped = fields.mapValues { (_, v) -> if (v is JsonPrimitive && v.isString && v.content == MetaFields.SERVER_TIMESTAMP) JsonPrimitive(time) else v } +
-                mapOf(MetaFields.UPDATED_AT to JsonPrimitive(time), MetaFields.UPDATED_BY to JsonPrimitive(uid))
+            val stamped =
+                fields.mapValues { (_, v) ->
+                    if (v is JsonPrimitive && v.isString &&
+                        v.content == MetaFields.SERVER_TIMESTAMP
+                    ) {
+                        JsonPrimitive(time)
+                    } else {
+                        v
+                    }
+                } +
+                    mapOf(MetaFields.UPDATED_AT to JsonPrimitive(time), MetaFields.UPDATED_BY to JsonPrimitive(uid))
             val base = docs[key]?.data ?: JsonObject(emptyMap())
             val next = Doc(key, JsonPaths.overlay(base, stamped), time)
             docs[key] = next

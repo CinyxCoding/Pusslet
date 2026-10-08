@@ -41,6 +41,8 @@ data class BackendConfig(
     val seedDemoData: Boolean,
     val versionName: String,
     val emulatorHost: String = "10.0.2.2",
+    /** Host for invite links (https://<linkHost>/join/<code>). */
+    val linkHost: String = "pusslet.web.app",
 )
 
 /**
@@ -61,6 +63,10 @@ class AppCoordinator(
     private val clock: Clock = Clock.System,
 ) {
     private val log = Logger.withTag("App")
+    private val _ready = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    /** True once the session is restored (and the demo family seeded): the UI can decide between onboarding and Today. */
+    val ready: kotlinx.coroutines.flow.StateFlow<Boolean> = _ready
 
     fun start() {
         scope.launch {
@@ -69,6 +75,7 @@ class AppCoordinator(
                 seed.seed(clock.todayIn(zone))
                 prefs.set(Prefs.OnboardingDone, true)
             }
+            _ready.value = true
             if (config.mode == BackendMode.Emulator && auth.currentUser.value == null && auth.available) {
                 runCatching { auth.signInAnonymously() }.onFailure { log.i { "Emulator not reachable yet; staying local" } }
             }
@@ -105,7 +112,7 @@ class AppCoordinator(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RemotePermissionException) {
-                log.w { "Family bootstrap refused; syncing what the rules allow" }
+                log.w(e) { "Family bootstrap refused; syncing what the rules allow" }
                 break
             } catch (e: Exception) {
                 log.i { "Family bootstrap waiting for network (${e::class.simpleName})" }

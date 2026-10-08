@@ -91,7 +91,13 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore) : FamilyRemote {
 
     override suspend fun registerDevice(uid: String, deviceId: String, fcmToken: String, locale: String, quietHours: String?) = guard {
         db.document("users/$uid/devices/$deviceId").set(
-            mapOf("fcmToken" to fcmToken, "platform" to "android", "locale" to locale, "quietHours" to quietHours, "updatedAt" to FieldValue.serverTimestamp()),
+            mapOf(
+                "fcmToken" to fcmToken,
+                "platform" to "android",
+                "locale" to locale,
+                "quietHours" to quietHours,
+                "updatedAt" to FieldValue.serverTimestamp(),
+            ),
         ).await()
         Unit
     }
@@ -106,7 +112,13 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore) : FamilyRemote {
         Unit
     }
 
-    override suspend fun createHandoverShare(token: String, familyId: String, uid: String, payload: JsonObject, expiresAt: Instant) = guard {
+    override suspend fun createHandoverShare(
+        token: String,
+        familyId: String,
+        uid: String,
+        payload: JsonObject,
+        expiresAt: Instant,
+    ) = guard {
         db.document("handoverShares/$token").set(
             mapOf(
                 "familyId" to familyId,

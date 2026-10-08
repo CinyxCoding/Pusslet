@@ -34,11 +34,21 @@ class SkolverketSchoolRegistry(private val fetcher: CachedFetcher, private val j
         val all = runCatching { parseList(raw.value) }.getOrNull() ?: return null
         val q = query.trim().lowercase()
         val filtered = if (q.isEmpty()) all else all.filter { q in it.name.lowercase() }.sortedBy { !it.name.lowercase().startsWith(q) }
-        return Sourced(filtered.sortedWith(compareBy({ q.isNotEmpty() && !it.name.lowercase().startsWith(q) }, { it.name })), raw.fetchedAt, raw.stale, raw.error)
+        return Sourced(
+            filtered.sortedWith(
+                compareBy({
+                    q.isNotEmpty() && !it.name.lowercase().startsWith(q)
+                }, { it.name }),
+            ),
+            raw.fetchedAt,
+            raw.stale,
+            raw.error,
+        )
     }
 
     override suspend fun details(code: String): SchoolUnitDetails? {
-        val raw = fetcher.get("skolverket:unit:$code", "$BASE/school-units/$code", maxAge = 30.days) { it.contains("\"data\"") } ?: return null
+        val raw =
+            fetcher.get("skolverket:unit:$code", "$BASE/school-units/$code", maxAge = 30.days) { it.contains("\"data\"") } ?: return null
         return runCatching { parseDetails(raw.value) }.getOrNull()
     }
 

@@ -2,8 +2,8 @@ package se.pusslet.data.sync
 
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -46,7 +46,13 @@ class DocumentStore(
     private val familyIdFlow: Flow<String?> = sessions.session.map { it.familyId }.distinctUntilChanged()
 
     fun <T> observeAll(spec: CollectionSpec, serializer: KSerializer<T>): Flow<List<T>> = familyIdFlow.flatMapLatest { fid ->
-        if (fid == null) flowOf(emptyList()) else local.observeCollection(fid, spec.key).map { rows -> rows.mapNotNull { decode(it, serializer) } }
+        if (fid ==
+            null
+        ) {
+            flowOf(emptyList())
+        } else {
+            local.observeCollection(fid, spec.key).map { rows -> rows.mapNotNull { decode(it, serializer) } }
+        }
     }
 
     fun <T> observe(spec: CollectionSpec, id: String, serializer: KSerializer<T>): Flow<T?> = familyIdFlow.flatMapLatest { fid ->
@@ -128,7 +134,15 @@ class DocumentStore(
             val combined = JsonPaths.combine(JsonPaths.decode(json.parseToJsonElement(last.fieldsJson).jsonObject), fields)
             local.replaceOutboxFields(last.id, JsonPaths.encode(combined).toString())
         } else {
-            local.appendOutbox(OutboxEntity(familyId = fid, collection = spec.key, docId = id, fieldsJson = JsonPaths.encode(fields).toString(), createdAt = now))
+            local.appendOutbox(
+                OutboxEntity(
+                    familyId = fid,
+                    collection = spec.key,
+                    docId = id,
+                    fieldsJson = JsonPaths.encode(fields).toString(),
+                    createdAt = now,
+                ),
+            )
         }
     }
 

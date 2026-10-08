@@ -33,8 +33,12 @@ import java.util.Date
  * Writes use `set(..., mergeFieldPaths)` so exactly the changed fields (or map keys) are replaced.
  */
 class FirestoreRemoteStore(private val db: FirebaseFirestore) : RemoteStore {
-
-    override fun listen(familyId: String, path: String, sinceServerTime: Long?, filter: RemoteFilter?): Flow<List<RemoteDoc>> = callbackFlow {
+    override fun listen(
+        familyId: String,
+        path: String,
+        sinceServerTime: Long?,
+        filter: RemoteFilter?,
+    ): Flow<List<RemoteDoc>> = callbackFlow {
         val registration = if (path.isEmpty()) {
             db.document("families/$familyId").addSnapshotListener(MetadataChanges.EXCLUDE) { snap, error ->
                 when {
@@ -112,18 +116,18 @@ class FirestoreRemoteStore(private val db: FirebaseFirestore) : RemoteStore {
     }
 
     companion object {
-    /** Nested values: nulls stay null (FieldValue.delete is only valid at the top of a merge path). */
-    fun plain(value: JsonElement): Any? = when (value) {
-        JsonNull -> null
-        is JsonPrimitive -> when {
-            value.isString -> value.content
-            value.booleanOrNull != null -> value.booleanOrNull
-            value.longOrNull != null -> value.longOrNull
-            else -> value.doubleOrNull
+        /** Nested values: nulls stay null (FieldValue.delete is only valid at the top of a merge path). */
+        fun plain(value: JsonElement): Any? = when (value) {
+            JsonNull -> null
+            is JsonPrimitive -> when {
+                value.isString -> value.content
+                value.booleanOrNull != null -> value.booleanOrNull
+                value.longOrNull != null -> value.longOrNull
+                else -> value.doubleOrNull
+            }
+            is JsonObject -> value.mapValues { (_, v) -> plain(v) }
+            is JsonArray -> value.map { plain(it) }
         }
-        is JsonObject -> value.mapValues { (_, v) -> plain(v) }
-        is JsonArray -> value.map { plain(it) }
-    }
 
         fun toPlain(obj: JsonObject): Map<String, Any?> = obj.mapValues { (_, v) -> plain(v) }
 

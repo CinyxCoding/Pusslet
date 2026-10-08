@@ -28,7 +28,10 @@ class SubscriptionSync(
         val raw = fetcher.get("icsraw:${sub.id}", url, maxAge = 6.hours, force = force) { it.contains("BEGIN:VCALENDAR") }
             ?: return SubscriptionStatus(sub.id, 0, null, "unreachable")
         val calendar = parser.parse(raw.value, "ics:${sub.id}:", zone)
-        fetcher.store(CalendarRepository.subscriptionCacheKey(sub.id), json.encodeToString(ListSerializer(Event.serializer()), calendar.events))
+        fetcher.store(
+            CalendarRepository.subscriptionCacheKey(sub.id),
+            json.encodeToString(ListSerializer(Event.serializer()), calendar.events),
+        )
         return SubscriptionStatus(sub.id, calendar.events.size, raw.fetchedAt, raw.error)
     }
 

@@ -50,31 +50,7 @@ class CachedFetcher(
             return Sourced(cached.body, Instant.fromEpochMilliseconds(cached.fetchedAt), stale = false, error = cached.lastError)
         }
         return try {
-            val response = http.get(url) {
-                cached?.etag?.let { header(HttpHeaders.IfNoneMatch, it) }
-                cached?.lastModified?.let { header(HttpHeaders.IfModifiedSince, it) }
-            }
-            when {
-                response.status == HttpStatusCode.NotModified && cached != null -> {
-                    cache.put(cached.copy(fetchedAt = now.toEpochMilliseconds(), lastError = null))
-                    Sourced(cached.body, now)
-                }
-                response.status.isSuccess() -> {
-                    val body = response.bodyAsText()
-                    if (!validate(body)) throw SourceException("Unexpected content from ${hostOf(url)}")
-                    cache.put(
-                        CacheEntryEntity(
-                            key = key,
-                            body = body,
-                            fetchedAt = now.toEpochMilliseconds(),
-                            etag = response.headers[HttpHeaders.ETag],
-                            lastModified = response.headers[HttpHeaders.LastModified],
-                        ),
-                    )
-                    Sourced(body, now)
-                }
-                else -> throw SourceException("HTTP ${response.status.value} from ${hostOf(url)}")
-            }
+            download(key, url, cached, validate)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -86,6 +62,36 @@ class CachedFetcher(
             } else {
                 null
             }
+        }
+    }
+
+    /** One HTTP round trip with conditional headers; throws [SourceException] for anything but fresh, valid content. */
+    private suspend fun download(key: String, url: String, cached: CacheEntryEntity?, validate: (String) -> Boolean): Sourced<String> {
+        val now = clock.now()
+        val response = http.get(url) {
+            cached?.etag?.let { header(HttpHeaders.IfNoneMatch, it) }
+            cached?.lastModified?.let { header(HttpHeaders.IfModifiedSince, it) }
+        }
+        return when {
+            response.status == HttpStatusCode.NotModified && cached != null -> {
+                cache.put(cached.copy(fetchedAt = now.toEpochMilliseconds(), lastError = null))
+                Sourced(cached.body, now)
+            }
+            response.status.isSuccess() -> {
+                val body = response.bodyAsText()
+                if (!validate(body)) throw SourceException("Unexpected content from ${hostOf(url)}")
+                cache.put(
+                    CacheEntryEntity(
+                        key = key,
+                        body = body,
+                        fetchedAt = now.toEpochMilliseconds(),
+                        etag = response.headers[HttpHeaders.ETag],
+                        lastModified = response.headers[HttpHeaders.LastModified],
+                    ),
+                )
+                Sourced(body, now)
+            }
+            else -> throw SourceException("HTTP ${response.status.value} from ${hostOf(url)}")
         }
     }
 

@@ -85,7 +85,9 @@ class SyncEngine(
                             .distinctUntilChanged()
                             .collectLatest { parentIds ->
                                 coroutineScope {
-                                    parentIds.forEach { pid -> launch { listenLoop(target, spec, "${loc.parentRemotePath}/$pid/${loc.subPath}", pid) } }
+                                    parentIds.forEach { pid ->
+                                        launch { listenLoop(target, spec, "${loc.parentRemotePath}/$pid/${loc.subPath}", pid) }
+                                    }
                                 }
                             }
                     }
@@ -106,20 +108,38 @@ class SyncEngine(
 
     private suspend fun listenLoop(target: Target, spec: CollectionSpec, path: String, parentId: String?) {
         var backoff = INITIAL_BACKOFF_MS
-        val filter = if (target.role != Role.Parent && spec.caregiverFilterField != null) RemoteFilter(spec.caregiverFilterField, true) else null
+        val filter = if (target.role != Role.Parent &&
+            spec.caregiverFilterField != null
+        ) {
+            RemoteFilter(spec.caregiverFilterField, true)
+        } else {
+            null
+        }
         while (true) {
             try {
                 val since = local.watermark(target.familyId, path)?.let { it - WATERMARK_OVERLAP_MS }
                 remote.listen(target.familyId, path, since, filter).collect { batch ->
                     applyRemote(target.familyId, spec, path, batch, parentId)
                     backoff = INITIAL_BACKOFF_MS
-                    _status.update { s -> s.copy(state = if (s.pendingWrites > 0) SyncState.Pushing else SyncState.Synced, lastSyncedAt = clock.now().toEpochMilliseconds(), lastError = null) }
+                    _status.update { s ->
+                        s.copy(
+                            state = if (s.pendingWrites >
+                                0
+                            ) {
+                                SyncState.Pushing
+                            } else {
+                                SyncState.Synced
+                            },
+                            lastSyncedAt = clock.now().toEpochMilliseconds(),
+                            lastError = null,
+                        )
+                    }
                 }
                 return
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RemotePermissionException) {
-                log.w { "Listener for ${spec.key} denied by rules" }
+                log.w(e) { "Listener for ${spec.key} denied by rules" }
                 _status.update { it.copy(lastError = "permission:${spec.key}") }
                 return
             } catch (e: Exception) {
@@ -153,7 +173,16 @@ class SyncEngine(
                 val pendingFields = pending.fold(emptyMap<String, kotlinx.serialization.json.JsonElement?>()) { acc, e ->
                     JsonPaths.combine(acc, JsonPaths.decode(json.parseToJsonElement(e.fieldsJson).jsonObject))
                 }
-                val merged = if (pendingFields.isEmpty()) data else JsonPaths.overlay(data, pendingFields.filterKeys { it !in MetaFields.all })
+                val merged = if (pendingFields.isEmpty()) {
+                    data
+                } else {
+                    JsonPaths.overlay(
+                        data,
+                        pendingFields.filterKeys {
+                            it !in MetaFields.all
+                        },
+                    )
+                }
                 val remoteDeleted = JsonPaths.millis(doc.data[MetaFields.DELETED_AT])
                 val localDeletePending = pendingFields.containsKey(MetaFields.DELETED_AT)
                 local.upsert(
@@ -165,7 +194,10 @@ class SyncEngine(
                         updatedAt = doc.updatedAt,
                         updatedBy = (doc.data[MetaFields.UPDATED_BY] as? JsonPrimitive)?.contentOrNull,
                         deletedAt = when {
-                            localDeletePending -> pendingFields[MetaFields.DELETED_AT]?.let { existing?.deletedAt ?: clock.now().toEpochMilliseconds() }
+                            localDeletePending -> pendingFields[MetaFields.DELETED_AT]?.let {
+                                existing?.deletedAt
+                                    ?: clock.now().toEpochMilliseconds()
+                            }
                             else -> remoteDeleted
                         },
                         pending = pending.isNotEmpty(),
@@ -225,7 +257,7 @@ class SyncEngine(
                     throw e
                 } catch (e: RemotePermissionException) {
                     // Permanent: keep the local value, stop retrying this change.
-                    log.w { "Write to ${entry.collection} denied; dropping change" }
+                    log.w(e) { "Write to ${entry.collection} denied; dropping change" }
                     local.transaction {
                         local.deleteOutbox(entry.id)
                         if (local.outboxFor(target.familyId, entry.collection, entry.docId).isEmpty()) {
@@ -252,7 +284,9 @@ class SyncEngine(
         is RemoteLocation.Flat -> "${loc.path}/$docId"
         is RemoteLocation.Nested -> {
             val row = local.get(familyId, spec.key, docId)
-            val parent = row?.let { runCatching { json.parseToJsonElement(it.json).jsonObject[loc.parentField] }.getOrNull() } as? JsonPrimitive
+            val parent = row?.let {
+                runCatching { json.parseToJsonElement(it.json).jsonObject[loc.parentField] }.getOrNull()
+            } as? JsonPrimitive
             parent?.contentOrNull?.let { "${loc.parentRemotePath}/$it/${loc.subPath}/$docId" }
         }
     }

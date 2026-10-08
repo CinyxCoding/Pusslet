@@ -49,11 +49,22 @@ object Collections {
     val ShoppingLists = CollectionSpec("shoppingLists", RemoteLocation.Flat("shoppingLists"))
     val ShoppingItems = CollectionSpec(
         "shoppingItems",
-        RemoteLocation.Nested(parentCollection = "shoppingLists", parentRemotePath = "shoppingLists", parentField = "listId", subPath = "items"),
+        RemoteLocation.Nested(
+            parentCollection = "shoppingLists",
+            parentRemotePath = "shoppingLists",
+            parentField = "listId",
+            subPath = "items",
+        ),
     )
     val Stores = CollectionSpec("stores", RemoteLocation.Flat("stores"))
     val Pantry = CollectionSpec("pantry", RemoteLocation.Flat("pantry"))
-    val Tasks = CollectionSpec("tasks", RemoteLocation.Flat("tasks"), mapFields = setOf("completions"), caregiverFilterField = "sharedWithCaregivers")
+    val Tasks =
+        CollectionSpec(
+            "tasks",
+            RemoteLocation.Flat("tasks"),
+            mapFields = setOf("completions"),
+            caregiverFilterField = "sharedWithCaregivers",
+        )
     val Subscriptions = CollectionSpec("icsSubscriptions", RemoteLocation.Flat("icsSubscriptions"), parentsOnly = true)
     val HandoffRequests = CollectionSpec("handoffRequests", RemoteLocation.Flat("handoffRequests"))
     val Presence = CollectionSpec("presence", RemoteLocation.Flat("presence"))
@@ -64,9 +75,29 @@ object Collections {
     val SchoolLunches = CollectionSpec("schoolLunches", RemoteLocation.Flat("schoolLunches"), mapFields = setOf("days"))
 
     val all: List<CollectionSpec> = listOf(
-        Family, Members, Children, Custody, Events, PackingRules, PackingChecks, MealPlans, FavoriteWeeks, Recipes,
-        ShoppingLists, ShoppingItems, Stores, Pantry, Tasks, Subscriptions, HandoffRequests, Presence, Settings, Diets,
-        AisleOverrides, IngredientMappings, SchoolLunches,
+        Family,
+        Members,
+        Children,
+        Custody,
+        Events,
+        PackingRules,
+        PackingChecks,
+        MealPlans,
+        FavoriteWeeks,
+        Recipes,
+        ShoppingLists,
+        ShoppingItems,
+        Stores,
+        Pantry,
+        Tasks,
+        Subscriptions,
+        HandoffRequests,
+        Presence,
+        Settings,
+        Diets,
+        AisleOverrides,
+        IngredientMappings,
+        SchoolLunches,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

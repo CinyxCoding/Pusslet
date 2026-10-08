@@ -54,7 +54,13 @@ class JsonPathsTest {
 
     @Test
     fun combineLetsWholeFieldWritesReplaceEarlierSubPaths() {
-        val combined = JsonPaths.combine(mapOf("entries.mon" to JsonPrimitive(1)), mapOf("entries" to JsonPrimitive(2), "title" to JsonPrimitive("t")))
+        val combined = JsonPaths.combine(
+            mapOf("entries.mon" to JsonPrimitive(1)),
+            mapOf(
+                "entries" to JsonPrimitive(2),
+                "title" to JsonPrimitive("t"),
+            ),
+        )
         assertEquals(mapOf("entries" to JsonPrimitive(2), "title" to JsonPrimitive("t")), combined)
     }
 

@@ -28,6 +28,9 @@ data class Session(
 interface SessionProvider {
     val session: StateFlow<Session>
 
+    /** False until the stored session has been read at start-up. */
+    val loaded: StateFlow<Boolean>
+
     suspend fun update(transform: (Session) -> Session)
 }
 
@@ -35,10 +38,13 @@ interface SessionProvider {
 class SessionRepository(private val prefs: PreferenceDao, private val json: Json = Json { ignoreUnknownKeys = true }) : SessionProvider {
     private val state = MutableStateFlow(Session())
     override val session: StateFlow<Session> = state.asStateFlow()
+    private val isLoaded = MutableStateFlow(false)
+    override val loaded: StateFlow<Boolean> = isLoaded.asStateFlow()
 
     suspend fun load(): Session {
         val stored = prefs.get(KEY)?.let { runCatching { json.decodeFromString(Session.serializer(), it) }.getOrNull() }
         state.value = stored ?: Session()
+        isLoaded.value = true
         return state.value
     }
 
@@ -57,6 +63,7 @@ class SessionRepository(private val prefs: PreferenceDao, private val json: Json
 class FixedSessionProvider(initial: Session) : SessionProvider {
     private val state = MutableStateFlow(initial)
     override val session: StateFlow<Session> = state.asStateFlow()
+    override val loaded: StateFlow<Boolean> = MutableStateFlow(true)
 
     override suspend fun update(transform: (Session) -> Session) {
         state.value = transform(state.value)

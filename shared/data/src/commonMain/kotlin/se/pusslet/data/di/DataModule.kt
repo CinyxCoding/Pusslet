@@ -17,6 +17,7 @@ import se.pusslet.data.AppCoordinator
 import se.pusslet.data.db.PussletDatabase
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.LunchRepository
 import se.pusslet.data.repository.MealRepository
 import se.pusslet.data.repository.PackingRepository
 import se.pusslet.data.repository.PreferencesRepository
@@ -42,6 +43,9 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.RoomSyncLocalStore
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.data.usecase.DataPrivacy
+import se.pusslet.data.usecase.HandoffAssigner
+import se.pusslet.data.usecase.QuickAddExecutor
 import kotlin.time.Clock
 
 val AppScope = named("appScope")
@@ -74,6 +78,10 @@ val dataModule: Module = module {
     single { RecipeRepository(get()) }
     single { ShoppingRepository(get(), get(), get(), get()) }
     single { TaskRepository(get()) }
+    single { LunchRepository(get(), get(), get()) }
+    single { HandoffAssigner(get()) }
+    single { DataPrivacy(get(), get(), get(), get()) }
+    single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

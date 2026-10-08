@@ -98,14 +98,24 @@ class CalendarRepository(
         docs.update(Collections.Events, seriesId, Event.serializer()) { it.copy(exDates = (it.exDates + date).distinct()) }
     }
 
-    suspend fun saveSubscription(sub: CalendarSubscription) = docs.put(Collections.Subscriptions, sub.id, sub, CalendarSubscription.serializer())
+    suspend fun saveSubscription(sub: CalendarSubscription) = docs.put(
+        Collections.Subscriptions,
+        sub.id,
+        sub,
+        CalendarSubscription.serializer(),
+    )
 
     suspend fun deleteSubscription(id: String) {
         docs.delete(Collections.Subscriptions, id)
         cache.deletePrefix(subscriptionCacheKey(id))
     }
 
-    suspend fun saveHandoffRequest(request: HandoffRequest) = docs.put(Collections.HandoffRequests, request.id, request, HandoffRequest.serializer())
+    suspend fun saveHandoffRequest(request: HandoffRequest) = docs.put(
+        Collections.HandoffRequests,
+        request.id,
+        request,
+        HandoffRequest.serializer(),
+    )
 
     /** Cached, parsed events of one subscription (written by the ICS sync worker). */
     fun subscriptionEvents(id: String): Flow<List<Event>> = cache.observe(subscriptionCacheKey(id)).map { entry ->
@@ -124,7 +134,9 @@ class CalendarRepository(
                 combine(enabled.map { sub -> subscriptionEvents(sub.id).map { sub to it } }) { pairs ->
                     pairs.flatMap { (sub, evs) ->
                         EventExpander.expand(
-                            evs.map { e -> e.copy(participantIds = (e.participantIds + sub.personIds).distinct(), sharedWithCaregivers = true) },
+                            evs.map { e ->
+                                e.copy(participantIds = (e.participantIds + sub.personIds).distinct(), sharedWithCaregivers = true)
+                            },
                             from,
                             to,
                             zone,

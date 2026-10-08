@@ -3,6 +3,7 @@ package se.pusslet.data.repository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.Serializable
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.FavoriteWeek
@@ -25,7 +26,6 @@ import se.pusslet.data.db.PurchaseLogEntity
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.Collections
 import se.pusslet.data.sync.DocumentStore
-import kotlinx.serialization.Serializable
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 
@@ -50,9 +50,13 @@ class MealRepository(private val docs: DocumentStore) {
     val weeks: Flow<List<MealPlanWeek>> = docs.observeAll(Collections.MealPlans, MealPlanWeek.serializer())
     val favorites: Flow<List<FavoriteWeek>> = docs.observeAll(Collections.FavoriteWeeks, FavoriteWeek.serializer())
 
-    fun week(week: IsoWeek): Flow<MealPlanWeek> = docs.observe(Collections.MealPlans, week.key, MealPlanWeek.serializer()).map { it ?: MealPlanWeek(week) }
+    fun week(week: IsoWeek): Flow<MealPlanWeek> = docs.observe(Collections.MealPlans, week.key, MealPlanWeek.serializer()).map {
+        it
+            ?: MealPlanWeek(week)
+    }
 
-    suspend fun getWeek(week: IsoWeek): MealPlanWeek = docs.get(Collections.MealPlans, week.key, MealPlanWeek.serializer()) ?: MealPlanWeek(week)
+    suspend fun getWeek(week: IsoWeek): MealPlanWeek =
+        docs.get(Collections.MealPlans, week.key, MealPlanWeek.serializer()) ?: MealPlanWeek(week)
 
     suspend fun setEntry(entry: MealEntry) {
         val week = entry.date.isoWeek
@@ -109,7 +113,11 @@ class MealRepository(private val docs: DocumentStore) {
 }
 
 class RecipeRepository(private val docs: DocumentStore) {
-    val recipes: Flow<List<Recipe>> = docs.observeAll(Collections.Recipes, Recipe.serializer()).map { it.sortedBy { r -> r.title.lowercase() } }
+    val recipes: Flow<List<Recipe>> = docs.observeAll(Collections.Recipes, Recipe.serializer()).map {
+        it.sortedBy { r ->
+            r.title.lowercase()
+        }
+    }
 
     fun recipe(id: String): Flow<Recipe?> = docs.observe(Collections.Recipes, id, Recipe.serializer())
 
@@ -127,7 +135,12 @@ class RecipeRepository(private val docs: DocumentStore) {
 
     suspend fun rememberMapping(name: String, foodNumber: Int) {
         val key = name.trim().lowercase()
-        docs.put(Collections.IngredientMappings, key.hashCode().toUInt().toString(16), IngredientMapping(key, foodNumber), IngredientMapping.serializer())
+        docs.put(
+            Collections.IngredientMappings,
+            key.hashCode().toUInt().toString(16),
+            IngredientMapping(key, foodNumber),
+            IngredientMapping.serializer(),
+        )
     }
 }
 
@@ -143,7 +156,11 @@ class ShoppingRepository(
     private val sessions: SessionProvider,
     private val clock: Clock = Clock.System,
 ) {
-    val lists: Flow<List<ShoppingList>> = docs.observeAll(Collections.ShoppingLists, ShoppingList.serializer()).map { it.sortedBy { l -> l.sortIndex } }
+    val lists: Flow<List<ShoppingList>> = docs.observeAll(Collections.ShoppingLists, ShoppingList.serializer()).map {
+        it.sortedBy { l ->
+            l.sortIndex
+        }
+    }
     val items: Flow<List<ShoppingItem>> = docs.observeAll(Collections.ShoppingItems, ShoppingItem.serializer())
     val stores: Flow<List<Store>> = docs.observeAll(Collections.Stores, Store.serializer())
     val pantry: Flow<List<PantryItem>> = docs.observeAll(Collections.Pantry, PantryItem.serializer())
@@ -156,7 +173,9 @@ class ShoppingRepository(
     suspend fun saveList(list: ShoppingList) = docs.put(Collections.ShoppingLists, list.id, list, ShoppingList.serializer())
 
     suspend fun deleteList(id: String) {
-        docs.getAll(Collections.ShoppingItems, ShoppingItem.serializer()).filter { it.listId == id }.forEach { docs.delete(Collections.ShoppingItems, it.id) }
+        docs.getAll(Collections.ShoppingItems, ShoppingItem.serializer()).filter {
+            it.listId == id
+        }.forEach { docs.delete(Collections.ShoppingItems, it.id) }
         docs.delete(Collections.ShoppingLists, id)
     }
 
@@ -166,7 +185,10 @@ class ShoppingRepository(
 
     suspend fun deleteItem(id: String) = docs.delete(Collections.ShoppingItems, id)
 
-    suspend fun getItems(listId: String): List<ShoppingItem> = docs.getAll(Collections.ShoppingItems, ShoppingItem.serializer()).filter { it.listId == listId }
+    suspend fun getItems(listId: String): List<ShoppingItem> = docs.getAll(Collections.ShoppingItems, ShoppingItem.serializer()).filter {
+        it.listId ==
+            listId
+    }
 
     suspend fun setChecked(item: ShoppingItem, checked: Boolean) {
         val me = sessions.session.value.memberId
@@ -174,7 +196,14 @@ class ShoppingRepository(
         saveItem(item.copy(checked = checked, checkedAt = if (checked) now else null, checkedBy = if (checked) me else null))
         if (checked) {
             val fid = sessions.session.value.familyId ?: return
-            purchases.insert(PurchaseLogEntity(familyId = fid, normalizedName = item.name.trim().lowercase(), displayName = item.name, boughtAt = now.toEpochMilliseconds()))
+            purchases.insert(
+                PurchaseLogEntity(
+                    familyId = fid,
+                    normalizedName = item.name.trim().lowercase(),
+                    displayName = item.name,
+                    boughtAt = now.toEpochMilliseconds(),
+                ),
+            )
         }
     }
 
@@ -221,5 +250,10 @@ class TaskRepository(private val docs: DocumentStore) {
 
     suspend fun delete(id: String) = docs.delete(Collections.Tasks, id)
 
-    suspend fun update(id: String, transform: (FamilyTask) -> FamilyTask) = docs.update(Collections.Tasks, id, FamilyTask.serializer(), transform)
+    suspend fun update(id: String, transform: (FamilyTask) -> FamilyTask) = docs.update(
+        Collections.Tasks,
+        id,
+        FamilyTask.serializer(),
+        transform,
+    )
 }

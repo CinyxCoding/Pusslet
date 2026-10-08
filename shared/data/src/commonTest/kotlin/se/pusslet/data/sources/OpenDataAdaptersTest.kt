@@ -125,7 +125,17 @@ class OpenDataAdaptersTest {
     @Test
     fun skolmatenUsesNewEndpointAndRejectsHtml() = runTest {
         var html = false
-        val http = MockHttp { if (html) ok("<!DOCTYPE html><div id=\"app\"></div>", "text/html") else ok(readFixture("skolmaten_week_vasaskolan.xml"), "application/rss+xml") }
+        val http =
+            MockHttp {
+                if (html) {
+                    ok(
+                        "<!DOCTYPE html><div id=\"app\"></div>",
+                        "text/html",
+                    )
+                } else {
+                    ok(readFixture("skolmaten_week_vasaskolan.xml"), "application/rss+xml")
+                }
+            }
         val provider = SkolmatenRssProvider(CachedFetcher(http.client, FakeCacheDao()), stockholm)
         val result = assertNotNull(provider.lunches(LunchSource(LunchProviderType.Skolmaten, "https://skolmaten.se/vasaskolan")))
         assertEquals(5, result.value.size)
@@ -144,7 +154,14 @@ class OpenDataAdaptersTest {
     fun livsmedelListAndNutrients() = runTest {
         val dao = FakeFoodDao()
         val http = MockHttp { req ->
-            if (req.url.encodedPath.endsWith("/naringsvarden")) ok(readFixture("livsmedel_123_naringsvarden.json")) else ok(readFixture("livsmedel_sample.json"))
+            if (req.url.encodedPath.endsWith(
+                    "/naringsvarden",
+                )
+            ) {
+                ok(readFixture("livsmedel_123_naringsvarden.json"))
+            } else {
+                ok(readFixture("livsmedel_sample.json"))
+            }
         }
         val db = LivsmedelsverketFoodDatabase(http.client, dao)
         assertTrue(db.ensureLoaded())

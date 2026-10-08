@@ -203,8 +203,18 @@ class SyncEngineTest {
 
         a.link.online.value = false
         b.link.online.value = false
-        a.docs.put(Collections.MealPlans, week.key, MealPlanWeek(week).with(MealEntry(LocalDate(2026, 10, 12), title = "Tacos")), MealPlanWeek.serializer())
-        b.docs.put(Collections.MealPlans, week.key, MealPlanWeek(week).with(MealEntry(LocalDate(2026, 10, 13), title = "Fisk")), MealPlanWeek.serializer())
+        a.docs.put(
+            Collections.MealPlans,
+            week.key,
+            MealPlanWeek(week).with(MealEntry(LocalDate(2026, 10, 12), title = "Tacos")),
+            MealPlanWeek.serializer(),
+        )
+        b.docs.put(
+            Collections.MealPlans,
+            week.key,
+            MealPlanWeek(week).with(MealEntry(LocalDate(2026, 10, 13), title = "Fisk")),
+            MealPlanWeek.serializer(),
+        )
         a.link.online.value = true
         b.link.online.value = true
         settle()
@@ -269,8 +279,12 @@ class SyncEngineTest {
         a.start(backgroundScope)
         settle()
         a.docs.put(Collections.Events, "e1", event("e1", "Ok"), Event.serializer())
-        a.docs.put(Collections.Subscriptions, "s1", se.pusslet.core.model.CalendarSubscription("s1", "Skolan", "https://x"),
-            se.pusslet.core.model.CalendarSubscription.serializer())
+        a.docs.put(
+            Collections.Subscriptions,
+            "s1",
+            se.pusslet.core.model.CalendarSubscription("s1", "Skolan", "https://x"),
+            se.pusslet.core.model.CalendarSubscription.serializer(),
+        )
         settle()
         assertEquals(0, a.local.nextOutbox(FAMILY, 10).size)
         assertNotNull(server.snapshot(FAMILY, "events/e1"))

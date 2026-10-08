@@ -61,11 +61,12 @@ object Collections {
     val Diets = CollectionSpec("dietProfiles", RemoteLocation.Flat("dietProfiles"))
     val AisleOverrides = CollectionSpec("aisleOverrides", RemoteLocation.Flat("aisleOverrides"))
     val IngredientMappings = CollectionSpec("ingredientMappings", RemoteLocation.Flat("ingredientMappings"))
+    val SchoolLunches = CollectionSpec("schoolLunches", RemoteLocation.Flat("schoolLunches"), mapFields = setOf("days"))
 
     val all: List<CollectionSpec> = listOf(
         Family, Members, Children, Custody, Events, PackingRules, PackingChecks, MealPlans, FavoriteWeeks, Recipes,
         ShoppingLists, ShoppingItems, Stores, Pantry, Tasks, Subscriptions, HandoffRequests, Presence, Settings, Diets,
-        AisleOverrides, IngredientMappings,
+        AisleOverrides, IngredientMappings, SchoolLunches,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

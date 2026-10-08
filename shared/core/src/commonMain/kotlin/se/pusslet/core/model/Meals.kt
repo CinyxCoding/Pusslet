@@ -168,3 +168,24 @@ data class FavoriteWeek(
 
 /** Today's school lunch for a child. */
 data class SchoolLunch(val date: LocalDate, val dishes: List<String>, val source: String)
+
+/** Manually entered school lunches (fallback when no feed exists). Document id: "{childId}_{week}". Merged per day. */
+@Serializable
+data class ManualLunchWeek(
+    val childId: String,
+    val week: IsoWeek,
+    /** ISO date -> dishes separated by newlines. */
+    val days: Map<String, String> = emptyMap(),
+) {
+    val docId: String get() = docId(childId, week)
+
+    fun lunches(source: String): List<SchoolLunch> = days.mapNotNull { (date, text) ->
+        val d = runCatching { LocalDate.parse(date) }.getOrNull() ?: return@mapNotNull null
+        val dishes = text.split('\n').map { it.trim() }.filter { it.isNotEmpty() }
+        if (dishes.isEmpty()) null else SchoolLunch(d, dishes, source)
+    }
+
+    companion object {
+        fun docId(childId: String, week: IsoWeek) = "${childId}_${week.key}"
+    }
+}

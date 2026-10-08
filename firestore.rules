@@ -68,7 +68,7 @@ service cloud.firestore {
     function caregiverReadable(collection) {
       return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
         'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings', 'dietProfiles',
-        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks'];
+        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches'];
     }
     function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
 

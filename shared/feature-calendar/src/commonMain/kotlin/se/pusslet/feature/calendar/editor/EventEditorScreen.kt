@@ -361,6 +361,7 @@ private fun PackingSection(items: List<String>, onAdd: (String) -> Unit, onRemov
 @Composable
 private fun ReminderField(minutes: Int?, onChange: (Int?) -> Unit) {
     var open by remember { mutableStateOf(false) }
+    val platform = se.pusslet.ui.platform.LocalPlatformActions.current
     Column {
         ValueField(stringResource(Res.string.event_reminder), reminderLabel(minutes), onClick = { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -368,6 +369,10 @@ private fun ReminderField(minutes: Int?, onChange: (Int?) -> Unit) {
                 DropdownMenuItem(text = { Text(reminderLabel(m)) }, onClick = {
                     onChange(m)
                     open = false
+                    // Asked in context: only when someone actually wants a reminder.
+                    if (m != null && !platform.hasPermission(se.pusslet.ui.platform.AppPermission.Notifications)) {
+                        platform.requestPermission(se.pusslet.ui.platform.AppPermission.Notifications) {}
+                    }
                 })
             }
         }

@@ -11,6 +11,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import kotlinx.datetime.LocalDate
+import se.pusslet.android.notify.Notifications
 import se.pusslet.android.platform.AndroidPlatformActions
 import se.pusslet.core.util.InviteCodes
 import se.pusslet.data.usecase.RecipeImporter
@@ -43,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         parse(intent)?.let { incoming = it }
     }
 
-    private fun parse(intent: Intent?): IncomingIntent? = when (intent?.action) {
+    private fun parse(intent: Intent?): IncomingIntent? = openEvent(intent) ?: when (intent?.action) {
         Intent.ACTION_VIEW -> intent.data?.let { uri ->
             if (uri.scheme.equals("webcal", ignoreCase = true) || uri.scheme.equals("webcals", ignoreCase = true)) {
                 IncomingIntent.SharedLink(uri.toString())
@@ -55,6 +57,13 @@ class MainActivity : AppCompatActivity() {
             it.isNotBlank()
         }?.let(::sharedText)
         else -> null
+    }
+
+    /** From a notification: open that event occurrence. */
+    private fun openEvent(intent: Intent?): IncomingIntent? {
+        val id = intent?.getStringExtra(Notifications.EXTRA_EVENT_ID) ?: return null
+        val date = intent.getStringExtra(Notifications.EXTRA_DATE)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
+        return IncomingIntent.OpenEvent(id, date)
     }
 
     /** A shared page ("Krämig kycklinggryta https://…") goes to recipe import; anything else to quick add. */

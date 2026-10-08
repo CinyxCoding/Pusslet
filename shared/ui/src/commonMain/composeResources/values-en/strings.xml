@@ -977,6 +977,47 @@
     <string name="privacy_local_only">Everything is only on this phone, so removing the family here deletes it all.</string>
     <string name="privacy_failed">Could not delete right now – nothing was removed. Check your connection and try again.</string>
 
+    <!-- Notifications -->
+    <string name="notify_channel_reminders">Reminders</string>
+    <string name="notify_channel_reminders_desc">Reminders you set on events and to-dos.</string>
+    <string name="notify_channel_handoffs">Drop-off and pick-up</string>
+    <string name="notify_channel_handoffs_desc">Time to drop off or pick up, and requests to take over.</string>
+    <string name="notify_channel_morning">Morning brief</string>
+    <string name="notify_channel_morning_desc">The day at a glance in the morning.</string>
+    <string name="notify_channel_shopping">Shopping list</string>
+    <string name="notify_channel_shopping_desc">When someone adds something while you are shopping.</string>
+    <string name="notify_channel_family">Family updates</string>
+    <string name="notify_channel_family_desc">When someone else changes the calendar.</string>
+    <string name="notify_event_starts">Starts at %1$s</string>
+    <string name="notify_dropoff_title">Time to drop off %1$s</string>
+    <string name="notify_pickup_title">Time to pick up %1$s</string>
+    <string name="notify_dropoff_title_plain">Time to drop off</string>
+    <string name="notify_pickup_title_plain">Time to pick up</string>
+    <string name="notify_handoff_text">%1$s · %2$s</string>
+    <string name="notify_task_text">To do today</string>
+    <string name="notify_morning_title">Good morning! %1$s, week %2$d</string>
+    <string name="notify_morning_weather">%1$d–%2$d° %3$s</string>
+    <string name="notify_morning_event">%1$s %2$s</string>
+    <string name="notify_morning_more">+ %1$d more in the calendar</string>
+    <string name="notify_morning_packing">To bring: %1$s</string>
+    <string name="notify_morning_dinner">Dinner: %1$s</string>
+    <string name="notify_morning_tasks">%1$d things on your list</string>
+    <string name="notify_morning_quiet">Nothing special planned today. Enjoy!</string>
+    <string name="notify_item_child">%1$s (%2$s)</string>
+    <string name="notify_handoff_request_title">Can you %1$s?</string>
+    <string name="notify_handoff_request_pickup">pick up %1$s</string>
+    <string name="notify_handoff_request_dropoff">drop off %1$s</string>
+    <string name="notify_handoff_request_text">%1$s asks: %2$s %3$s</string>
+    <string name="notify_handoff_accept">I'll take it</string>
+    <string name="notify_handoff_decline">Can't</string>
+    <string name="notify_handoff_answered_yes">%1$s will take it: %2$s</string>
+    <string name="notify_handoff_answered_no">%1$s can't: %2$s</string>
+    <string name="notify_shopping_added">%1$s added %2$s</string>
+    <string name="notify_shopping_added_many">%1$s added %2$d things</string>
+    <string name="notify_event_changed">%1$s changed %2$s</string>
+    <string name="notify_event_added">%1$s added %2$s</string>
+    <string name="notify_events_changed_many">%1$d changes in the calendar</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
     <string name="empty_calendar">The calendar is empty for now.</string>

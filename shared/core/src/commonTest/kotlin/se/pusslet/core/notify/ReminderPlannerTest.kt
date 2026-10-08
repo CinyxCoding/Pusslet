@@ -41,8 +41,12 @@ class ReminderPlannerTest {
         reminders = listOf(60),
     )
 
-    private fun plan(me: String, vararg o: EventOccurrence, tasks: List<FamilyTask> = emptyList(), settings: ReminderSettings = ReminderSettings()) =
-        ReminderPlanner.plan(me, adults, o.toList(), tasks, settings, now, zone)
+    private fun plan(
+        me: String,
+        vararg o: EventOccurrence,
+        tasks: List<FamilyTask> = emptyList(),
+        settings: ReminderSettings = ReminderSettings(),
+    ) = ReminderPlanner.plan(me, adults, o.toList(), tasks, settings, now, zone)
 
     @Test
     fun eventRemindersAndHandOffsGoToTheAdultsInvolved() {
@@ -64,8 +68,24 @@ class ReminderPlannerTest {
 
     @Test
     fun anEventWithoutAdultsRemindsEveryParentAndOthersAreLeftAlone() {
-        val dentist = Event("tand", "Tandläkare Ella", LocalDateTime(today, LocalTime(14, 0)), LocalDateTime(today, LocalTime(15, 0)), participantIds = listOf("ella"), reminders = listOf(30))
-        val saraMeeting = Event("mote", "Saras möte", LocalDateTime(today, LocalTime(9, 0)), LocalDateTime(today, LocalTime(10, 0)), participantIds = listOf("sara"), reminders = listOf(15))
+        val dentist =
+            Event(
+                "tand",
+                "Tandläkare Ella",
+                LocalDateTime(today, LocalTime(14, 0)),
+                LocalDateTime(today, LocalTime(15, 0)),
+                participantIds = listOf("ella"),
+                reminders = listOf(30),
+            )
+        val saraMeeting =
+            Event(
+                "mote",
+                "Saras möte",
+                LocalDateTime(today, LocalTime(9, 0)),
+                LocalDateTime(today, LocalTime(10, 0)),
+                participantIds = listOf("sara"),
+                reminders = listOf(15),
+            )
         assertEquals(1, plan("johan", occ(dentist)).size)
         assertTrue(plan("johan", occ(saraMeeting)).isEmpty())
         assertTrue(plan("sara", occ(saraMeeting, EventSource.Device)).isEmpty(), "only family events are reminded here")
@@ -73,9 +93,17 @@ class ReminderPlannerTest {
 
     @Test
     fun pastAndFarAwayRemindersAreSkipped() {
-        val morning = football.copy(start = LocalDateTime(today, LocalTime(7, 30)), end = LocalDateTime(today, LocalTime(8, 0)), dropOff = null, pickUp = null)
+        val morning = football.copy(
+            start = LocalDateTime(today, LocalTime(7, 30)),
+            end = LocalDateTime(today, LocalTime(8, 0)),
+            dropOff = null,
+            pickUp = null,
+        )
         assertTrue(plan("sara", occ(morning)).isEmpty(), "the reminder time (06:30) has passed")
-        val later = football.copy(start = LocalDateTime(LocalDate(2026, 10, 12), LocalTime(17, 30)), end = LocalDateTime(LocalDate(2026, 10, 12), LocalTime(18, 30)))
+        val later = football.copy(
+            start = LocalDateTime(LocalDate(2026, 10, 12), LocalTime(17, 30)),
+            end = LocalDateTime(LocalDate(2026, 10, 12), LocalTime(18, 30)),
+        )
         assertTrue(plan("sara", occ(later)).isEmpty(), "beyond 48 hours")
     }
 

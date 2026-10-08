@@ -51,13 +51,15 @@ import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
+import se.pusslet.data.usecase.ReminderSync
+import se.pusslet.data.usecase.TodayPlans
 import kotlin.time.Clock
 
 val AppScope = named("appScope")
 
 /**
  * Platform-independent bindings. The platform module must provide: [PussletDatabase], HttpClient, RemoteStore,
- * FamilyRemote, AuthRepository, CloudFunctions, DeviceCalendarSource and BackendConfig.
+ * FamilyRemote, AuthRepository, CloudFunctions, DeviceCalendarSource, NotificationScheduler and BackendConfig.
  */
 val dataModule: Module = module {
     single(AppScope) { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
@@ -92,6 +94,8 @@ val dataModule: Module = module {
     single { RecipeNutrition(get(), get()) }
     single { CalendarFeeds(get(), get(), get(), get(), get(), get(), get()) }
     single { DeviceCalendarExport(get(), get(), get()) }
+    single { ReminderSync(get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { TodayPlans(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

@@ -978,6 +978,47 @@
     <string name="privacy_local_only">Allt finns bara på den här telefonen, så att ta bort familjen härifrån raderar allt.</string>
     <string name="privacy_failed">Det gick inte att radera just nu – inget har tagits bort. Kontrollera nätet och försök igen.</string>
 
+    <!-- Notifications -->
+    <string name="notify_channel_reminders">Påminnelser</string>
+    <string name="notify_channel_reminders_desc">Påminnelser du lagt på händelser och uppgifter.</string>
+    <string name="notify_channel_handoffs">Lämna och hämta</string>
+    <string name="notify_channel_handoffs_desc">Dags att lämna eller hämta, och frågor om någon kan ta det.</string>
+    <string name="notify_channel_morning">Morgonkollen</string>
+    <string name="notify_channel_morning_desc">Dagens sammanfattning på morgonen.</string>
+    <string name="notify_channel_shopping">Inköpslistan</string>
+    <string name="notify_channel_shopping_desc">När någon lägger till något medan du handlar.</string>
+    <string name="notify_channel_family">Ändringar i familjen</string>
+    <string name="notify_channel_family_desc">När någon annan ändrar i kalendern.</string>
+    <string name="notify_event_starts">Börjar %1$s</string>
+    <string name="notify_dropoff_title">Dags att lämna %1$s</string>
+    <string name="notify_pickup_title">Dags att hämta %1$s</string>
+    <string name="notify_dropoff_title_plain">Dags att lämna</string>
+    <string name="notify_pickup_title_plain">Dags att hämta</string>
+    <string name="notify_handoff_text">%1$s · %2$s</string>
+    <string name="notify_task_text">Att göra idag</string>
+    <string name="notify_morning_title">God morgon! %1$s, vecka %2$d</string>
+    <string name="notify_morning_weather">%1$d–%2$d° %3$s</string>
+    <string name="notify_morning_event">%1$s %2$s</string>
+    <string name="notify_morning_more">+ %1$d till i kalendern</string>
+    <string name="notify_morning_packing">Ska med: %1$s</string>
+    <string name="notify_morning_dinner">Middag: %1$s</string>
+    <string name="notify_morning_tasks">%1$d saker på din lista</string>
+    <string name="notify_morning_quiet">Inget särskilt planerat idag. Njut!</string>
+    <string name="notify_item_child">%1$s (%2$s)</string>
+    <string name="notify_handoff_request_title">Kan du %1$s?</string>
+    <string name="notify_handoff_request_pickup">hämta %1$s</string>
+    <string name="notify_handoff_request_dropoff">lämna %1$s</string>
+    <string name="notify_handoff_request_text">%1$s frågar: %2$s %3$s</string>
+    <string name="notify_handoff_accept">Jag tar det</string>
+    <string name="notify_handoff_decline">Kan inte</string>
+    <string name="notify_handoff_answered_yes">%1$s tar det: %2$s</string>
+    <string name="notify_handoff_answered_no">%1$s kan inte: %2$s</string>
+    <string name="notify_shopping_added">%1$s lade till %2$s</string>
+    <string name="notify_shopping_added_many">%1$s lade till %2$d saker</string>
+    <string name="notify_event_changed">%1$s ändrade %2$s</string>
+    <string name="notify_event_added">%1$s lade till %2$s</string>
+    <string name="notify_events_changed_many">%1$d ändringar i kalendern</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
     <string name="empty_calendar">Kalendern är tom än så länge.</string>

@@ -6,6 +6,8 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyTask
@@ -18,11 +20,14 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /** A notification this phone should show at [at]. [key] is stable, so re-planning replaces instead of duplicating. */
+@Serializable
 sealed interface PlannedNotification {
     val key: String
     val at: Instant
 
     /** "Fotboll börjar 17:30" – the reminder set on the event. */
+    @Serializable
+    @SerialName("eventreminder")
     data class EventReminder(
         override val key: String,
         override val at: Instant,
@@ -33,6 +38,8 @@ sealed interface PlannedNotification {
     ) : PlannedNotification
 
     /** "Dags att hämta Simon 16:00" for whoever drops off or picks up. */
+    @Serializable
+    @SerialName("handoff")
     data class Handoff(
         override val key: String,
         override val at: Instant,
@@ -43,6 +50,8 @@ sealed interface PlannedNotification {
         val childIds: List<String>,
     ) : PlannedNotification
 
+    @Serializable
+    @SerialName("taskdue")
     data class TaskDue(
         override val key: String,
         override val at: Instant,
@@ -52,6 +61,8 @@ sealed interface PlannedNotification {
     ) : PlannedNotification
 
     /** "Morgonkollen": built from the day's plan when it fires. */
+    @Serializable
+    @SerialName("morning")
     data class Morning(override val key: String, override val at: Instant, val date: LocalDate) : PlannedNotification
 }
 
@@ -97,54 +108,78 @@ object ReminderPlanner {
         now: Instant,
         zone: TimeZone,
     ): List<PlannedNotification> {
-        val until = now + horizon
-        fun relevant(at: Instant) = at > now && at <= until
-        val result = mutableListOf<PlannedNotification>()
+        val window = Window(now, now + horizon, zone)
+        val family = occurrences.filter { it.source == EventSource.Family && !it.allDay }
+        return (
+            family.flatMap { eventReminders(it, me, adultIds, window) } +
+                family.flatMap { handoffs(it, me, adultIds, window) } +
+                taskReminders(tasks, me, settings.quietHours, window) +
+                morning(settings, window)
+        ).sortedBy { it.at }
+    }
 
-        for (o in occurrences.filter { it.source == EventSource.Family }) {
-            val e = o.event
-            val adultsInvolved = (e.participantIds.filter { it in adultIds } + listOfNotNull(e.dropOff?.personId, e.pickUp?.personId)).toSet()
-            val concernsMe = me in adultsInvolved || adultsInvolved.isEmpty()
-            if (concernsMe && !o.allDay) {
-                val start = o.start.toInstant(zone)
-                e.reminders.distinct().forEach { minutes ->
-                    val at = start - minutes.minutes
-                    if (relevant(at)) {
-                        result += PlannedNotification.EventReminder("event:${o.key}:$minutes", at, e.id, o.occurrenceDate, e.title, o.start)
-                    }
-                }
+    private class Window(val now: Instant, val until: Instant, val zone: TimeZone) {
+        val today: LocalDate = now.toLocalDateTime(zone).date
+
+        fun contains(at: Instant) = at > now && at <= until
+    }
+
+    /** The event's own reminders, for the adults it concerns (all parents when no adult is named). */
+    private fun eventReminders(o: EventOccurrence, me: String, adultIds: Set<String>, w: Window): List<PlannedNotification> {
+        val e = o.event
+        val involved = (e.participantIds.filter { it in adultIds } + listOfNotNull(e.dropOff?.personId, e.pickUp?.personId)).toSet()
+        if (involved.isNotEmpty() && me !in involved) return emptyList()
+        val start = o.start.toInstant(w.zone)
+        return e.reminders.distinct().mapNotNull { minutes ->
+            val at = start - minutes.minutes
+            if (w.contains(
+                    at,
+                )
+            ) {
+                PlannedNotification.EventReminder("event:${o.key}:$minutes", at, e.id, o.occurrenceDate, e.title, o.start)
+            } else {
+                null
             }
-            val children = e.participantIds.filter { it !in adultIds }
-            listOf(HandoffKind.DropOff to e.dropOff?.personId, HandoffKind.PickUp to e.pickUp?.personId).forEach { (kind, who) ->
-                if (who != me || o.allDay) return@forEach
-                val time = if (kind == HandoffKind.DropOff) o.dropOffTime() else o.pickUpTime()
-                time ?: return@forEach
-                val day = if (kind == HandoffKind.PickUp) o.end.date else o.start.date
-                val at = LocalDateTime(day, time).toInstant(zone) - handoffLead
-                if (relevant(at)) {
-                    result += PlannedNotification.Handoff("handoff:${o.key}:${kind.name}", at, e.id, o.occurrenceDate, kind, time, children)
-                }
+        }
+    }
+
+    /** "Dags att lämna/hämta" for whoever is assigned, [handoffLead] before. */
+    private fun handoffs(o: EventOccurrence, me: String, adultIds: Set<String>, w: Window): List<PlannedNotification> {
+        val e = o.event
+        val children = e.participantIds.filter { it !in adultIds }
+        return listOf(HandoffKind.DropOff to e.dropOff?.personId, HandoffKind.PickUp to e.pickUp?.personId).mapNotNull { (kind, who) ->
+            val time =
+                (if (kind == HandoffKind.DropOff) o.dropOffTime() else o.pickUpTime())?.takeIf { who == me } ?: return@mapNotNull null
+            val day = if (kind == HandoffKind.PickUp) o.end.date else o.start.date
+            val at = LocalDateTime(day, time).toInstant(w.zone) - handoffLead
+            if (w.contains(
+                    at,
+                )
+            ) {
+                PlannedNotification.Handoff("handoff:${o.key}:${kind.name}", at, e.id, o.occurrenceDate, kind, time, children)
+            } else {
+                null
+            }
+        }
+    }
+
+    /** Tasks with a time, for whoever is responsible that day; they can wait until quiet hours end. */
+    private fun taskReminders(tasks: List<FamilyTask>, me: String, quiet: QuietHours?, w: Window): List<PlannedNotification> =
+        tasks.flatMap { t ->
+            val time = t.dueTime ?: return@flatMap emptyList()
+            TaskScheduler.occurrences(t, w.today, w.today.plusDays(2)).mapNotNull { occ ->
+                val date = occ.date?.takeIf { !occ.done && occ.assigneeId == me } ?: return@mapNotNull null
+                val due = LocalDateTime(date, time).toInstant(w.zone)
+                val at = quiet?.deferred(due, w.zone) ?: due
+                if (w.contains(at)) PlannedNotification.TaskDue("task:${t.id}:$date", at, t.id, t.title, date) else null
             }
         }
 
-        val today = now.toLocalDateTime(zone).date
-        for (t in tasks.filter { it.dueTime != null }) {
-            val time = t.dueTime ?: continue
-            TaskScheduler.occurrences(t, today, today.plusDays(2)).forEach { occ ->
-                val date = occ.date ?: return@forEach
-                if (occ.done || occ.assigneeId != me) return@forEach
-                val due = LocalDateTime(date, time).toInstant(zone)
-                val at = settings.quietHours?.deferred(due, zone) ?: due
-                if (relevant(at)) result += PlannedNotification.TaskDue("task:${t.id}:$date", at, t.id, t.title, date)
-            }
+    private fun morning(settings: ReminderSettings, w: Window): List<PlannedNotification> {
+        if (!settings.morningEnabled) return emptyList()
+        return listOf(w.today, w.today.plusDays(1)).mapNotNull { d ->
+            val at = LocalDateTime(d, settings.morningTime).toInstant(w.zone)
+            if (w.contains(at)) PlannedNotification.Morning("morning:$d", at, d) else null
         }
-
-        if (settings.morningEnabled) {
-            listOf(today, today.plusDays(1)).forEach { d ->
-                val at = LocalDateTime(d, settings.morningTime).toInstant(zone)
-                if (relevant(at)) result += PlannedNotification.Morning("morning:$d", at, d)
-            }
-        }
-        return result.sortedBy { it.at }
     }
 }

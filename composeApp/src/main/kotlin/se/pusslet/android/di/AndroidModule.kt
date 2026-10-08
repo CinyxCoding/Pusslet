@@ -5,6 +5,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import se.pusslet.android.calendar.AndroidDeviceCalendarSource
+import se.pusslet.android.notify.WorkManagerNotificationScheduler
 import se.pusslet.core.AppConfig
 import se.pusslet.data.BackendConfig
 import se.pusslet.data.BackendMode
@@ -24,6 +25,7 @@ import se.pusslet.data.remote.LocalOnlyFamilyRemote
 import se.pusslet.data.repository.DeviceCalendarSource
 import se.pusslet.data.sync.OfflineRemoteStore
 import se.pusslet.data.sync.RemoteStore
+import se.pusslet.data.usecase.NotificationScheduler
 
 /** Android implementations of the platform interfaces the shared code needs. */
 fun androidModule(config: BackendConfig): Module = module {
@@ -31,6 +33,7 @@ fun androidModule(config: BackendConfig): Module = module {
     single { createDatabase(androidContext()) }
     single { createHttpClient(AppConfig.userAgent(config.versionName)) }
     single<DeviceCalendarSource> { AndroidDeviceCalendarSource(androidContext(), get()) }
+    single<NotificationScheduler> { WorkManagerNotificationScheduler(androidContext(), get()) }
 
     if (config.mode == BackendMode.LocalOnly) {
         single<RemoteStore> { OfflineRemoteStore }

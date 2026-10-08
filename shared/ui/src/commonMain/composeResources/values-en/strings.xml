@@ -150,7 +150,7 @@
     <string name="card_squeeze_day">Bridge day %1$s – day off or after-school care?</string>
     <string name="card_handover">Changeover %1$s: the children move to %2$s</string>
     <string name="card_action_ask">Ask for help</string>
-    <string name="card_action_take">I\'ll take it</string>
+    <string name="card_action_take">I'll take it</string>
     <string name="card_action_add_task">Add a to-do</string>
     <string name="card_action_open">Show</string>
     <string name="card_today">today</string>
@@ -187,10 +187,10 @@
     <string name="weather_source">Forecast: SMHI</string>
 
     <!-- Holidays -->
-    <string name="holiday_NewYearsDay">New Year\'s Day</string>
+    <string name="holiday_NewYearsDay">New Year's Day</string>
     <string name="holiday_TwelfthNight">Twelfth Night</string>
     <string name="holiday_Epiphany">Epiphany</string>
-    <string name="holiday_ValentinesDay">Valentine\'s Day</string>
+    <string name="holiday_ValentinesDay">Valentine's Day</string>
     <string name="holiday_ShroveTuesday">Shrove Tuesday</string>
     <string name="holiday_MaundyThursday">Maundy Thursday</string>
     <string name="holiday_GoodFriday">Good Friday</string>
@@ -200,15 +200,15 @@
     <string name="holiday_WalpurgisNight">Walpurgis Night</string>
     <string name="holiday_MayDay">May Day</string>
     <string name="holiday_AscensionDay">Ascension Day</string>
-    <string name="holiday_MothersDay">Mother\'s Day</string>
+    <string name="holiday_MothersDay">Mother's Day</string>
     <string name="holiday_WhitsunEve">Whitsun Eve</string>
     <string name="holiday_WhitSunday">Whit Sunday</string>
     <string name="holiday_NationalDay">National Day of Sweden</string>
     <string name="holiday_MidsummerEve">Midsummer Eve</string>
     <string name="holiday_MidsummerDay">Midsummer Day</string>
-    <string name="holiday_AllSaintsEve">All Saints\' Eve</string>
-    <string name="holiday_AllSaintsDay">All Saints\' Day</string>
-    <string name="holiday_FathersDay">Father\'s Day</string>
+    <string name="holiday_AllSaintsEve">All Saints' Eve</string>
+    <string name="holiday_AllSaintsDay">All Saints' Day</string>
+    <string name="holiday_FathersDay">Father's Day</string>
     <string name="holiday_FirstAdvent">First Sunday of Advent</string>
     <string name="holiday_SecondAdvent">Second Sunday of Advent</string>
     <string name="holiday_ThirdAdvent">Third Sunday of Advent</string>
@@ -217,7 +217,7 @@
     <string name="holiday_ChristmasEve">Christmas Eve</string>
     <string name="holiday_ChristmasDay">Christmas Day</string>
     <string name="holiday_BoxingDay">Boxing Day</string>
-    <string name="holiday_NewYearsEve">New Year\'s Eve</string>
+    <string name="holiday_NewYearsEve">New Year's Eve</string>
     <string name="holiday_DaylightSavingStart">Summer time starts</string>
     <string name="holiday_DaylightSavingEnd">Summer time ends</string>
 
@@ -245,7 +245,7 @@
     <string name="repeat_custom">Custom pattern</string>
 
     <!-- Quick add -->
-    <string name="quickadd_title">What\'s happening?</string>
+    <string name="quickadd_title">What's happening?</string>
     <string name="quickadd_hint">E.g. “Simon football Tue 17:30 every week”</string>
     <string name="quickadd_interpreted">I understood this as…</string>
     <string name="quickadd_uncertain">Check the highlighted parts – tap to change.</string>
@@ -339,7 +339,7 @@
 
     <!-- Onboarding -->
     <string name="onboarding_welcome_title">Welcome to %1$s</string>
-    <string name="onboarding_welcome_body">The family\'s everyday puzzle in one place: who picks up, what to bring and what\'s for dinner.</string>
+    <string name="onboarding_welcome_body">The family's everyday puzzle in one place: who picks up, what to bring and what's for dinner.</string>
     <string name="onboarding_create">Create our family</string>
     <string name="onboarding_join">I have an invite</string>
     <string name="onboarding_demo">Explore with an example family</string>
@@ -352,13 +352,13 @@
     <string name="onboarding_children_title">Which children are in the family?</string>
     <string name="onboarding_children_body">A first name is enough. Year of birth improves clothing tips but is optional.</string>
     <string name="onboarding_add_child">Add child</string>
-    <string name="onboarding_child_name">Child\'s first name</string>
+    <string name="onboarding_child_name">Child's first name</string>
     <string name="onboarding_child_birth_year">Year of birth</string>
     <string name="onboarding_place_title">Where do you live?</string>
     <string name="onboarding_place_body">Only used for the weather forecast. Choose the nearest town.</string>
     <string name="onboarding_place_search">Search town</string>
     <string name="onboarding_done_title">All set!</string>
-    <string name="onboarding_done_body">Start with this week\'s events using +. Fill in the rest whenever it suits you.</string>
+    <string name="onboarding_done_body">Start with this week's events using +. Fill in the rest whenever it suits you.</string>
     <string name="onboarding_start">Get started</string>
 
     <!-- Join -->
@@ -421,11 +421,11 @@
     <string name="child_school">School or preschool</string>
     <string name="child_class">Class or group</string>
     <string name="child_lunch">School lunch</string>
-    <string name="lunch_none">Don\'t show</string>
+    <string name="lunch_none">Don't show</string>
     <string name="lunch_skolmaten">skolmaten.se</string>
     <string name="lunch_rss">Own RSS link</string>
     <string name="lunch_manual">Enter it myself</string>
-    <string name="lunch_reference_hint">The school\'s page on skolmaten.se or a link</string>
+    <string name="lunch_reference_hint">The school's page on skolmaten.se or a link</string>
     <string name="child_sizes">Clothing sizes</string>
     <string name="size_pants">Trousers</string>
     <string name="size_top">Top</string>
@@ -444,7 +444,7 @@
     <!-- School picker -->
     <string name="school_municipality">Municipality</string>
     <string name="school_search">Search school</string>
-    <string name="school_not_found">Can\'t find the school? Type the name yourself.</string>
+    <string name="school_not_found">Can't find the school? Type the name yourself.</string>
     <string name="school_free_text">Use “%1$s”</string>
     <string name="school_source">Source: the Swedish National Agency for Education</string>
     <string name="school_preschool_note">Preschools are not in the national register – type the name yourself.</string>
@@ -486,7 +486,7 @@
     <string name="custody_households">The homes</string>
     <string name="custody_household_a">First home</string>
     <string name="custody_household_b">Second home</string>
-    <string name="custody_household_hint">E.g. At dad\'s</string>
+    <string name="custody_household_hint">E.g. At dad's</string>
     <string name="custody_anchor">First day in the first home</string>
     <string name="custody_handover_time">Changeover at</string>
     <string name="custody_exceptions">Exceptions (holidays)</string>
@@ -500,7 +500,7 @@
     <string name="handover_upcoming">Coming up</string>
     <string name="handover_note">Message to the other home</string>
     <string name="handover_share">Share with the other home</string>
-    <string name="handover_share_explain">Only what is shown here is shared – nothing else of the family\'s information.</string>
+    <string name="handover_share_explain">Only what is shown here is shared – nothing else of the family's information.</string>
     <string name="handover_nothing">Nothing special this time.</string>
 
     <!-- More -->
@@ -538,7 +538,7 @@
     <string name="settings_device_calendars">Show my own calendars</string>
     <string name="settings_device_calendars_body">So clashes with work show up. Needs calendar permission.</string>
     <string name="settings_export_calendar">Put family events in</string>
-    <string name="settings_export_none">Don\'t export</string>
+    <string name="settings_export_none">Don't export</string>
     <string name="settings_export_app_calendar">A separate Pusslet calendar</string>
     <string name="settings_crash_reports">Send crash reports</string>
     <string name="settings_crash_reports_body">Anonymous technical details when the app crashes. Off by default.</string>
@@ -591,12 +591,12 @@
 
     <!-- Privacy -->
     <string name="privacy_title">Privacy and your data</string>
-    <string name="privacy_summary">The family\'s information is stored on the phone and – once you sign in – with Google Firebase within the EU. Children only need a first name. Nothing is sold, no ads, no AI.</string>
+    <string name="privacy_summary">The family's information is stored on the phone and – once you sign in – with Google Firebase within the EU. Children only need a first name. Nothing is sold, no ads, no AI.</string>
     <string name="privacy_sensitive">Allergies and diet are only stored if you actively choose so, and can be removed at any time.</string>
     <string name="privacy_export">Export all data</string>
     <string name="privacy_export_body">A file (JSON) with everything about the family on this phone.</string>
     <string name="privacy_delete_family">Delete the family</string>
-    <string name="privacy_delete_family_body">Removes all of the family\'s information for all members. Cannot be undone.</string>
+    <string name="privacy_delete_family_body">Removes all of the family's information for all members. Cannot be undone.</string>
     <string name="privacy_delete_account">Delete my account</string>
     <string name="privacy_delete_account_body">Removes your account and your link to the family.</string>
     <string name="privacy_delete_confirm">Are you completely sure? This cannot be undone.</string>

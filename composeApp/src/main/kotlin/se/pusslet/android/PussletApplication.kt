@@ -6,6 +6,7 @@ import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import se.pusslet.android.di.androidModule
+import se.pusslet.android.work.BackgroundWork
 import se.pusslet.core.AppConfig
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.di.dataModule
@@ -21,5 +22,6 @@ class PussletApplication : Application() {
             modules(listOf(androidModule(backend), dataModule) + appModules)
         }
         get<AppCoordinator>().start()
+        BackgroundWork.schedule(this)
     }
 }

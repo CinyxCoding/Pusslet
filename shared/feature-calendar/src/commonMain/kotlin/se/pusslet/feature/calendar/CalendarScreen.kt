@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -85,6 +86,7 @@ fun CalendarRoute(
     onOpenOccurrence: (EventOccurrence) -> Unit,
     onNewEvent: (LocalDate) -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
+    onSubscriptions: () -> Unit = {},
     viewModel: CalendarViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -100,6 +102,7 @@ fun CalendarRoute(
         onToggleLayer = viewModel::toggleLayer,
         onOpenOccurrence = onOpenOccurrence,
         onNewEvent = onNewEvent,
+        onSubscriptions = onSubscriptions,
     )
 }
 
@@ -116,12 +119,13 @@ fun CalendarScreen(
     onToggleLayer: (CalendarLayer) -> Unit = {},
     onOpenOccurrence: (EventOccurrence) -> Unit = {},
     onNewEvent: (LocalDate) -> Unit = {},
+    onSubscriptions: () -> Unit = {},
 ) {
     val anchor = state.anchor ?: return
     val today = state.today ?: anchor
     val people = state.people.associateBy { it.id }
     Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
-        Header(state, anchor, onStep, onToday, onToggleLayer)
+        Header(state, anchor, onStep, onToday, onToggleLayer, onSubscriptions)
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = Spacing.screenHorizontal)) {
             val views = listOf(
                 CalendarView.Day to Res.string.calendar_view_day,
@@ -175,6 +179,7 @@ private fun Header(
     onStep: (Boolean) -> Unit,
     onToday: () -> Unit,
     onToggleLayer: (CalendarLayer) -> Unit,
+    onSubscriptions: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.xs, vertical = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
@@ -224,6 +229,11 @@ private fun Header(
                         onClick = { onToggleLayer(layer) },
                     )
                 }
+                HorizontalDivider()
+                DropdownMenuItem(text = { Text(stringResource(Res.string.subs_manage)) }, onClick = {
+                    menu = false
+                    onSubscriptions()
+                })
             }
         }
     }

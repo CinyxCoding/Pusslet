@@ -7,6 +7,9 @@ sealed interface IncomingIntent {
     /** Text shared to Pusslet (e.g. a message from school) opens quick add with the text filled in. */
     data class SharedText(val text: String) : IncomingIntent
 
-    /** A shared web link (typically a recipe page) opens the recipe import. */
-    data class SharedLink(val url: String) : IncomingIntent
+    /** A shared web link: calendar feeds (webcal://, .ics) open the subscriptions, other pages the recipe import. */
+    data class SharedLink(val url: String) : IncomingIntent {
+        val isCalendarFeed: Boolean
+            get() = url.startsWith("webcal", ignoreCase = true) || url.substringBefore('?').endsWith(".ics", ignoreCase = true)
+    }
 }

@@ -22,6 +22,7 @@ import se.pusslet.data.db.CacheDao
 import se.pusslet.data.sync.Collections
 import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.DomainJson
+import kotlin.time.Instant
 
 data class DeviceCalendar(
     val id: Long,
@@ -68,6 +69,9 @@ object NoDeviceCalendars : DeviceCalendarSource {
     override fun changes(): Flow<Unit> = flowOf()
 }
 
+/** Status of one subscribed feed for the settings list. */
+data class FeedStatus(val eventCount: Int, val fetchedAt: Instant?, val lastError: String?)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalendarRepository(
     private val docs: DocumentStore,
@@ -108,6 +112,14 @@ class CalendarRepository(
     suspend fun deleteSubscription(id: String) {
         docs.delete(Collections.Subscriptions, id)
         cache.deletePrefix(subscriptionCacheKey(id))
+        cache.deletePrefix(subscriptionRawKey(id))
+    }
+
+    /** How many events a subscription has, when it was last fetched and whether the last attempt failed. */
+    fun subscriptionStatus(
+        id: String,
+    ): Flow<FeedStatus> = combine(subscriptionEvents(id), cache.observe(subscriptionRawKey(id))) { evs, raw ->
+        FeedStatus(evs.size, raw?.fetchedAt?.let { Instant.fromEpochMilliseconds(it) }, raw?.lastError)
     }
 
     suspend fun saveHandoffRequest(request: HandoffRequest) = docs.put(
@@ -169,5 +181,8 @@ class CalendarRepository(
 
     companion object {
         fun subscriptionCacheKey(id: String) = "ics:$id"
+
+        /** The downloaded feed itself (CachedFetcher keeps fetchedAt and the last error here). */
+        fun subscriptionRawKey(id: String) = "icsraw:$id"
     }
 }

@@ -1,13 +1,16 @@
 package se.pusslet.data.sources
 
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import se.pusslet.core.ics.CalendarFeedParser
+import se.pusslet.core.ics.FeedWindow
 import se.pusslet.core.model.CalendarSubscription
 import se.pusslet.core.model.Event
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.sync.DomainJson
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
@@ -21,18 +24,24 @@ class SubscriptionSync(
     private val fetcher: CachedFetcher,
     private val parser: CalendarFeedParser,
     private val zone: TimeZone,
+    private val clock: Clock = Clock.System,
     private val json: Json = DomainJson,
 ) {
     suspend fun refresh(sub: CalendarSubscription, force: Boolean = false): SubscriptionStatus {
         val url = normalizeUrl(sub.url) ?: return SubscriptionStatus(sub.id, 0, null, "invalid-url")
-        val raw = fetcher.get("icsraw:${sub.id}", url, maxAge = 6.hours, force = force) { it.contains("BEGIN:VCALENDAR") }
-            ?: return SubscriptionStatus(sub.id, 0, null, "unreachable")
+        val raw =
+            fetcher.get(CalendarRepository.subscriptionRawKey(sub.id), url, maxAge = 6.hours, force = force) {
+                it.contains("BEGIN:VCALENDAR")
+            }
+                ?: return SubscriptionStatus(sub.id, 0, null, "unreachable")
         val calendar = parser.parse(raw.value, "ics:${sub.id}:", zone)
+        // Years of history are dropped: the calendar decodes this list every time it is shown.
+        val events = FeedWindow.relevant(calendar.events, clock.todayIn(zone))
         fetcher.store(
             CalendarRepository.subscriptionCacheKey(sub.id),
-            json.encodeToString(ListSerializer(Event.serializer()), calendar.events),
+            json.encodeToString(ListSerializer(Event.serializer()), events),
         )
-        return SubscriptionStatus(sub.id, calendar.events.size, raw.fetchedAt, raw.error)
+        return SubscriptionStatus(sub.id, events.size, raw.fetchedAt, raw.error)
     }
 
     suspend fun refreshAll(subs: List<CalendarSubscription>, force: Boolean = false): List<SubscriptionStatus> =

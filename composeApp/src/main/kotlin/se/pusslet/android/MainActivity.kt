@@ -44,7 +44,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun parse(intent: Intent?): IncomingIntent? = when (intent?.action) {
-        Intent.ACTION_VIEW -> intent.data?.let(::joinCode)?.let { IncomingIntent.JoinCode(it) }
+        Intent.ACTION_VIEW -> intent.data?.let { uri ->
+            if (uri.scheme.equals("webcal", ignoreCase = true) || uri.scheme.equals("webcals", ignoreCase = true)) {
+                IncomingIntent.SharedLink(uri.toString())
+            } else {
+                joinCode(uri)?.let { IncomingIntent.JoinCode(it) }
+            }
+        }
         Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf {
             it.isNotBlank()
         }?.let(::sharedText)

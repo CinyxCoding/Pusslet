@@ -96,7 +96,7 @@ val dataModule: Module = module {
     single<FoodDatabase> { LivsmedelsverketFoodDatabase(get(), get(), get()) }
     single<ProductLookup> { OpenFoodFactsLookup(get()) }
     single<CalendarFeedParser> { IcsParser() }
-    single { SubscriptionSync(get(), get(), get()) }
+    single { SubscriptionSync(get(), get(), get(), get()) }
     single { SwedishQuickAddParser() }
 
     single { DemoSeed(get(), get(), get()) }

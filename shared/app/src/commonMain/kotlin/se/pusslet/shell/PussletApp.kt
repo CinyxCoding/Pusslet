@@ -47,6 +47,7 @@ import se.pusslet.data.usecase.QuickAddOutcome
 import se.pusslet.feature.calendar.CalendarRoute
 import se.pusslet.feature.calendar.details.EventDetailsRoute
 import se.pusslet.feature.calendar.editor.EventEditorRoute
+import se.pusslet.feature.calendar.subscriptions.SubscriptionsRoute
 import se.pusslet.feature.family.FamilyRoute
 import se.pusslet.feature.family.child.ChildEditorRoute
 import se.pusslet.feature.family.custody.CustodyEditorRoute
@@ -149,7 +150,9 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
                 quickAdd.start(incoming.text)
                 showQuickAdd = true
             }
-            is IncomingIntent.SharedLink -> navigator.navigate(Route.RecipeEditor(link = true, url = incoming.url))
+            is IncomingIntent.SharedLink -> navigator.navigate(
+                if (incoming.isCalendarFeed) Route.Subscriptions(incoming.url) else Route.RecipeEditor(link = true, url = incoming.url),
+            )
             null -> return@LaunchedEffect
         }
         onIncomingHandled()
@@ -212,9 +215,12 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                 )
             }
             entry<Route.Calendar> {
-                CalendarRoute(onOpenOccurrence = openOccurrence, onNewEvent = {
-                    navigator.navigate(Route.EventEditor(date = it))
-                }, contentPadding = padding)
+                CalendarRoute(
+                    onOpenOccurrence = openOccurrence,
+                    onNewEvent = { navigator.navigate(Route.EventEditor(date = it)) },
+                    contentPadding = padding,
+                    onSubscriptions = { navigator.navigate(Route.Subscriptions()) },
+                )
             }
             entry<Route.Meals> {
                 MealsRoute(
@@ -298,6 +304,7 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
             entry<Route.Join> { r -> JoinRoute(initialCode = r.code, onBack = navigator::goBack, onJoined = navigator::reset) }
             entry<Route.Custody> { r -> CustodyEditorRoute(r.scheduleId, onDone = navigator::goBack) }
             entry<Route.Handover> { r -> HandoverRoute(r.scheduleId, onBack = navigator::goBack) }
+            entry<Route.Subscriptions> { r -> SubscriptionsRoute(onBack = navigator::goBack, prefilledUrl = r.url) }
             entry<Route.Settings> { SettingsRoute(onBack = navigator::goBack) }
             entry<Route.Account> { AccountRoute(onBack = navigator::goBack) }
             entry<Route.AboutData> { AboutDataRoute(onBack = navigator::goBack) }

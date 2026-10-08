@@ -61,7 +61,7 @@ import se.pusslet.core.model.LunchSource
 import se.pusslet.core.model.MemberColor
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.feature.family.school.SchoolPickerDialog
-import se.pusslet.ui.components.ColorBadge
+import se.pusslet.ui.components.ColorPicker
 import se.pusslet.ui.components.DatePickerSheet
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.PussletTopBar
@@ -284,21 +284,6 @@ fun ChildEditorRoute(childId: String?, onDone: () -> Unit, viewModel: ChildEdito
             confirmButton = { TextButton(onClick = viewModel::delete) { Text(stringResource(Res.string.action_delete)) } },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_cancel)) } },
         )
-    }
-}
-
-@Composable
-fun ColorPicker(selected: MemberColor, onPick: (MemberColor) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        MemberColor.entries.forEachIndexed { i, c ->
-            val label = stringResource(Res.string.color_label, i + 1)
-            Row(
-                Modifier.selectable(selected = c == selected, role = Role.RadioButton) { onPick(c) }.heightIn(min = 48.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ColorBadge(c, if (c == selected) "✓" else "", label, size = 40.dp)
-            }
-        }
     }
 }
 

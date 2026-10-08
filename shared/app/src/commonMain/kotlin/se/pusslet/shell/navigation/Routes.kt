@@ -40,6 +40,9 @@ sealed interface Route {
 
     @Serializable data class Handover(val scheduleId: String) : Route
 
+    /** ICS subscriptions; [url] pre-fills the add dialog (a shared webcal:// link). */
+    @Serializable data class Subscriptions(val url: String? = null) : Route
+
     @Serializable data object Settings : Route
 
     @Serializable data object AboutData : Route

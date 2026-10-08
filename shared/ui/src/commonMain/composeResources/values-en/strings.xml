@@ -938,6 +938,25 @@
     <string name="workload_bar">%1$s: %2$d</string>
     <string name="workload_empty">Nothing recorded in the last four weeks yet. Tick off to-dos and set who drops off and picks up, and it shows here.</string>
 
+    <!-- Subscriptions -->
+    <string name="subs_title">Subscriptions</string>
+    <string name="subs_manage">Subscriptions …</string>
+    <string name="subs_body">Calendars from school, clubs or work. Pusslet fetches them every six hours and shows them in the calendar – they are changed where they come from.</string>
+    <string name="subs_add">Add a calendar</string>
+    <string name="subs_name">Name (e.g. Football U15)</string>
+    <string name="subs_url">Link to the calendar</string>
+    <string name="subs_url_hint">The subscription link (webcal:// or https://) from e.g. the school platform, laget.se or TimeEdit.</string>
+    <string name="subs_invalid_url">The link should start with https:// or webcal://</string>
+    <string name="subs_for">For</string>
+    <string name="subs_color">Colour</string>
+    <string name="subs_status">%1$d events · fetched %2$s</string>
+    <string name="subs_never">Not fetched yet</string>
+    <string name="subs_stale">Could not update – showing what was fetched %1$s</string>
+    <string name="subs_failed">Could not be fetched. Check the link.</string>
+    <string name="subs_refresh">Update now</string>
+    <string name="subs_delete_confirm">Remove %1$s? Its events disappear from the calendar.</string>
+    <string name="subs_empty">No subscriptions yet. Add the school's or the club's calendar to see everything in one place.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
     <string name="empty_calendar">The calendar is empty for now.</string>

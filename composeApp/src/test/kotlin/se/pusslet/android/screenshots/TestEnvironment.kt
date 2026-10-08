@@ -47,6 +47,9 @@ import kotlin.time.Instant
 object TestEnvironment {
     val zone: TimeZone = TimeZone.of("Europe/Stockholm")
 
+    /** Serves the real public feed subset (Kubernetes community calendar) for subscription tests. */
+    const val PUBLIC_ICS_URL = "https://calendar.example.org/kubernetes.ics"
+
     /** Thursday 8 October 2026, 07:10 in Stockholm (week 41) – matches the recorded forecast. */
     val now: Instant = Instant.parse("2026-10-08T05:10:00Z")
 
@@ -96,6 +99,12 @@ object TestEnvironment {
             val url = request.url.toString()
             if ("smhi.se" in url && "/point/" in url) {
                 respond(fixture("smhi_snow1g_stockholm.json"), HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+            } else if (url == PUBLIC_ICS_URL) {
+                respond(
+                    fixture("ics_kubernetes_community_subset.ics"),
+                    HttpStatusCode.OK,
+                    headersOf(HttpHeaders.ContentType, "text/calendar"),
+                )
             } else {
                 respond("", HttpStatusCode.NotFound)
             }

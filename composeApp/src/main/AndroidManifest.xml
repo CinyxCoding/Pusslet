@@ -51,7 +51,16 @@
                 <data android:scheme="pusslet" android:host="join" />
             </intent-filter>
 
-            <!-- Share to the app: links go to recipe import, other text to quick add. -->
+            <!-- "Prenumerera" links on school and club sites. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="webcal" />
+                <data android:scheme="webcals" />
+            </intent-filter>
+
+            <!-- Share to the app: calendar links go to subscriptions, other links to recipe import, text to quick add. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />

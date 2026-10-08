@@ -939,6 +939,25 @@
     <string name="workload_bar">%1$s: %2$d</string>
     <string name="workload_empty">Inget registrerat de senaste fyra veckorna än. Bocka av uppgifter och ange vem som lämnar och hämtar, så syns det här.</string>
 
+    <!-- Subscriptions -->
+    <string name="subs_title">Prenumerationer</string>
+    <string name="subs_manage">Prenumerationer …</string>
+    <string name="subs_body">Kalendrar från skolan, föreningen eller jobbet. Pusslet hämtar dem automatiskt var sjätte timme och visar dem i kalendern – de ändras där de kommer ifrån.</string>
+    <string name="subs_add">Lägg till kalender</string>
+    <string name="subs_name">Namn (t.ex. Fotboll P15)</string>
+    <string name="subs_url">Länk till kalendern</string>
+    <string name="subs_url_hint">Prenumerationslänken (webcal:// eller https://) från t.ex. skolplattformen, laget.se eller TimeEdit.</string>
+    <string name="subs_invalid_url">Länken ska börja med https:// eller webcal://</string>
+    <string name="subs_for">Gäller</string>
+    <string name="subs_color">Färg</string>
+    <string name="subs_status">%1$d händelser · hämtat %2$s</string>
+    <string name="subs_never">Inte hämtat än</string>
+    <string name="subs_stale">Kunde inte uppdateras – visar det som hämtades %1$s</string>
+    <string name="subs_failed">Kunde inte hämtas. Kontrollera länken.</string>
+    <string name="subs_refresh">Uppdatera nu</string>
+    <string name="subs_delete_confirm">Ta bort %1$s? Händelserna försvinner från kalendern.</string>
+    <string name="subs_empty">Inga prenumerationer än. Lägg till skolans eller föreningens kalender så syns allt på ett ställe.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
     <string name="empty_calendar">Kalendern är tom än så länge.</string>

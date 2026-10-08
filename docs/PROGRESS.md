@@ -57,7 +57,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (ShoppingListGeneratorTest, MealDataTest, MealsViewModelTest)
 
 ## Fas 3 – Integrationer & notiser
-- [ ] ICS-prenumerationer
+- [x] ICS-prenumerationer – lista med status (antal händelser, senast hämtat, fel i klartext), lägg till/ändra (namn, länk,
+      vem den gäller, färg), av/på, uppdatera nu; WorkManager hämtar var 6:e timme med nät; webcal://-länkar och delade
+      .ics-länkar öppnar dialogen. Gamla händelser gallras (FeedWindow) så att även stora flöden går snabbt
 - [ ] Tvåvägs enhetskalender (CalendarContract)
 - [ ] Eget ICS-flöde (Cloud Function)
 - [ ] Konfliktdetektering, hämta/lämna-förfrågningar
@@ -69,6 +71,10 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
       startdatum visades felaktigt på rotationens måndag
 - [ ] Export/radering av data
 - [ ] ✅ Publik test-ICS visas korrekt (återkommande + tidszoner); familjehändelser syns i enhetens kalender
+      – första halvan klar: Kubernetes-communityns publika Google-kalender (15 643 händelser, 24 MB, parsas på 0,8 s) – ett
+      urval ordagranna rader som fixtur: veckomöte 10:00 Los Angeles visas 19:00 → 18:00 (vecka 44, mellan EU:s och USA:s
+      sommartidsbyte) → 19:00; varannan-vecka-serie med EXDATE och RECURRENCE-ID. Verifierat genom WorkManager-workern till
+      kalendervyn (SubscriptionRefreshWorkerTest + skärmdump `calendar_subscription_week44`)
 
 ## Fas 4 – Polish & Play-beredskap
 - [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)

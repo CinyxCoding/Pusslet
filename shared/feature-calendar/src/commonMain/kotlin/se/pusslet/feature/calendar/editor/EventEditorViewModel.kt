@@ -15,6 +15,8 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+import se.pusslet.core.recurrence.RepeatOption
+import se.pusslet.core.recurrence.SimpleRepeat
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.Handoff
@@ -31,8 +33,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 
 /** The repeat choices offered in the editor. [Custom] keeps an imported/parsed rule that does not fit the others. */
-enum class RepeatOption { None, Daily, Weekdays, Weekly, Biweekly, Monthly, Yearly, Custom }
-
 data class EventDraft(
     val title: String = "",
     val allDay: Boolean = false,
@@ -264,49 +264,9 @@ class EventEditorViewModel(
         private const val LAST_SUGGESTED_HOUR = 22
         val reminderOptions: List<Int?> = listOf(null, 10, 30, 60, 120, 24 * 60)
 
-        fun ruleFor(d: EventDraft): String? {
-            val day = d.startDate.dayOfWeek
-            return when (d.repeat) {
-                RepeatOption.None -> null
-                RepeatOption.Daily -> RRule.daily().format()
-                RepeatOption.Weekdays -> RRule.weekly(
-                    DayOfWeek.MONDAY,
-                    DayOfWeek.TUESDAY,
-                    DayOfWeek.WEDNESDAY,
-                    DayOfWeek.THURSDAY,
-                    DayOfWeek.FRIDAY,
-                ).format()
-                RepeatOption.Weekly -> RRule.weekly(day).format()
-                RepeatOption.Biweekly -> RRule.weekly(day, interval = 2).format()
-                RepeatOption.Monthly -> RRule.monthlyOnDay(d.startDate.day).format()
-                RepeatOption.Yearly -> RRule.yearly().format()
-                RepeatOption.Custom -> d.customRule
-            }
-        }
+        fun ruleFor(d: EventDraft): String? = SimpleRepeat.ruleFor(d.repeat, d.startDate, d.customRule)
 
-        /** Maps a stored RRULE to the editor's simple choices; anything richer stays [RepeatOption.Custom] and is kept as-is. */
-        fun repeatOf(rrule: String?, start: LocalDate): Pair<RepeatOption, String?> {
-            if (rrule.isNullOrBlank()) return RepeatOption.None to null
-            val rule = RRule.parse(rrule) ?: return RepeatOption.Custom to rrule
-            val bounded = rule.count != null || rule.until != null
-            val plain = !bounded && rule.byMonth.isEmpty() && rule.bySetPos.isEmpty() && rule.unsupported.isEmpty()
-            val days = rule.byDay.map { it.day }
-            val onStartDay = days.isEmpty() || days == listOf(start.dayOfWeek)
-            val onStartDate = rule.byDay.isEmpty() && (rule.byMonthDay.isEmpty() || rule.byMonthDay == listOf(start.day))
-            val option = when {
-                !plain -> RepeatOption.Custom
-                rule.freq == Frequency.DAILY && rule.interval == 1 && days.isEmpty() -> RepeatOption.Daily
-                rule.freq == Frequency.WEEKLY && rule.interval == 1 && days.toSet() == WEEKDAYS -> RepeatOption.Weekdays
-                rule.freq == Frequency.WEEKLY && rule.interval == 1 && onStartDay -> RepeatOption.Weekly
-                rule.freq == Frequency.WEEKLY && rule.interval == 2 && onStartDay -> RepeatOption.Biweekly
-                rule.freq == Frequency.MONTHLY && rule.interval == 1 && onStartDate -> RepeatOption.Monthly
-                rule.freq == Frequency.YEARLY && rule.interval == 1 && days.isEmpty() && rule.byMonthDay.isEmpty() -> RepeatOption.Yearly
-                else -> RepeatOption.Custom
-            }
-            return option to rrule.takeIf { option == RepeatOption.Custom }
-        }
-
-        private val WEEKDAYS = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
+        fun repeatOf(rrule: String?, start: LocalDate): Pair<RepeatOption, String?> = SimpleRepeat.repeatOf(rrule, start)
 
         fun draftOf(e: Event): EventDraft {
             val (repeat, custom) = repeatOf(e.rrule, e.start.date)

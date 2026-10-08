@@ -43,8 +43,8 @@ import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.EventTags
-import se.pusslet.core.recurrence.RepeatOption
 import se.pusslet.core.model.FamilyPerson
+import se.pusslet.core.recurrence.RepeatOption
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.DateField

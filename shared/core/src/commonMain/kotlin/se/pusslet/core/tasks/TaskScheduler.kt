@@ -39,7 +39,13 @@ object TaskScheduler {
         }
         val anchor = task.due ?: task.rotation?.anchorWeek?.monday ?: from
         val start = LocalDateTime(anchor, LocalTime(0, 0))
-        return RecurrenceExpander.expand(rule, start, from, to).map { dt ->
+        // Without a due date the anchor is only a reference point (the rotation's Monday), not an occurrence itself –
+        // "dammsuga på lördagar" must not show up on that Monday just because RFC 5545 counts DTSTART.
+        val days = rule.byDay.map { it.day }.toSet()
+        val artificialStart = task.due == null
+        return RecurrenceExpander.expand(rule, start, from, to).filter { dt ->
+            !artificialStart || days.isEmpty() || dt.date.dayOfWeek in days
+        }.map { dt ->
             val d = dt.date
             TaskOccurrence(task, d, assigneeFor(task, d), task.completions.containsKey(d.toString()))
         }

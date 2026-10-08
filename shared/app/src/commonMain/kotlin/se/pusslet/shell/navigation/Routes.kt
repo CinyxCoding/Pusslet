@@ -50,6 +50,11 @@ sealed interface Route {
 
     @Serializable data object Tasks : Route
 
+    /** Edit a task, or create one ([chore] starts a new household chore). */
+    @Serializable data class TaskEditor(val taskId: String? = null, val chore: Boolean = false) : Route
+
+    @Serializable data object Workload : Route
+
     @Serializable data class StoreMode(val listId: String) : Route
 
     @Serializable data object Pantry : Route

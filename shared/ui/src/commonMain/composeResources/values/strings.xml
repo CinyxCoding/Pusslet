@@ -891,6 +891,54 @@
     <string name="unit_portion">port</string>
     <string name="decimal_separator">,</string>
 
+    <!-- Tasks -->
+    <string name="tasks_filter_mine">Mina</string>
+    <string name="tasks_filter_all">Alla</string>
+    <string name="tasks_filter_chores">Sysslor</string>
+    <string name="tasks_add_hint">Ny uppgift – t.ex. fixa cykeln</string>
+    <string name="tasks_new">Ny uppgift</string>
+    <string name="tasks_new_chore">Ny syssla</string>
+    <string name="tasks_upcoming">Kommande</string>
+    <string name="tasks_undated">När det passar</string>
+    <string name="tasks_done">Klart</string>
+    <string name="tasks_empty">Inget att göra just nu. Skönt!</string>
+    <string name="tasks_anyone">Vem som helst</string>
+    <string name="task_kind_chore">Syssla</string>
+    <string name="task_category">Sort</string>
+    <string name="category_general">Allmänt</string>
+    <string name="category_household">Hemmet</string>
+    <string name="category_kids">Barnen</string>
+    <string name="category_errand">Ärenden</string>
+    <string name="category_gift">Presenter</string>
+    <string name="category_homework">Läxor</string>
+    <string name="category_school">Skolan</string>
+    <string name="task_edit_title">Ändra uppgift</string>
+    <string name="task_title_required">Skriv vad som ska göras</string>
+    <string name="task_assignee">Vem gör det?</string>
+    <string name="task_set_date">Välj datum</string>
+    <string name="task_clear_date">Ta bort datum</string>
+    <string name="task_add_time">Lägg till tid</string>
+    <string name="task_rotation">Turas om</string>
+    <string name="task_rotation_body">Turen går vidare automatiskt. Den som står först börjar.</string>
+    <string name="task_rotation_weekly">Byter varje vecka</string>
+    <string name="task_rotation_biweekly">Byter varannan vecka</string>
+    <string name="task_rotating">Turas om: %1$s</string>
+    <string name="task_next_turn">%1$s nästa gång</string>
+    <string name="task_checklist">Checklista</string>
+    <string name="task_checklist_add">Lägg till punkt</string>
+    <string name="task_checklist_remove">Ta bort %1$s</string>
+    <string name="task_delete_confirm">Ta bort uppgiften för hela familjen?</string>
+    <string name="task_linked_event">Hör till: %1$s</string>
+    <string name="workload_title">Fördelning</string>
+    <string name="workload_body">Hur uppgifter, sysslor, lämningar och hämtningar har delats de senaste fyra veckorna. Till för att prata om – inte för att räkna poäng.</string>
+    <string name="workload_period">%1$s – %2$s</string>
+    <string name="workload_tasks">Uppgifter</string>
+    <string name="workload_chores">Sysslor</string>
+    <string name="workload_dropoffs">Lämningar</string>
+    <string name="workload_pickups">Hämtningar</string>
+    <string name="workload_bar">%1$s: %2$d</string>
+    <string name="workload_empty">Inget registrerat de senaste fyra veckorna än. Bocka av uppgifter och ange vem som lämnar och hämtar, så syns det här.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
     <string name="empty_calendar">Kalendern är tom än så länge.</string>

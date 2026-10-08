@@ -890,6 +890,54 @@
     <string name="unit_portion">serving</string>
     <string name="decimal_separator">.</string>
 
+    <!-- Tasks -->
+    <string name="tasks_filter_mine">Mine</string>
+    <string name="tasks_filter_all">Everyone</string>
+    <string name="tasks_filter_chores">Chores</string>
+    <string name="tasks_add_hint">New to-do – e.g. fix the bike</string>
+    <string name="tasks_new">New to-do</string>
+    <string name="tasks_new_chore">New chore</string>
+    <string name="tasks_upcoming">Coming up</string>
+    <string name="tasks_undated">Whenever it suits</string>
+    <string name="tasks_done">Done</string>
+    <string name="tasks_empty">Nothing to do right now. Nice!</string>
+    <string name="tasks_anyone">Anyone</string>
+    <string name="task_kind_chore">Chore</string>
+    <string name="task_category">Kind</string>
+    <string name="category_general">General</string>
+    <string name="category_household">Home</string>
+    <string name="category_kids">Kids</string>
+    <string name="category_errand">Errands</string>
+    <string name="category_gift">Gifts</string>
+    <string name="category_homework">Homework</string>
+    <string name="category_school">School</string>
+    <string name="task_edit_title">Edit to-do</string>
+    <string name="task_title_required">Write what needs doing</string>
+    <string name="task_assignee">Who does it?</string>
+    <string name="task_set_date">Pick a date</string>
+    <string name="task_clear_date">Remove date</string>
+    <string name="task_add_time">Add a time</string>
+    <string name="task_rotation">Take turns</string>
+    <string name="task_rotation_body">The turn passes on by itself. The first person starts.</string>
+    <string name="task_rotation_weekly">Changes every week</string>
+    <string name="task_rotation_biweekly">Changes every other week</string>
+    <string name="task_rotating">Taking turns: %1$s</string>
+    <string name="task_next_turn">%1$s next time</string>
+    <string name="task_checklist">Checklist</string>
+    <string name="task_checklist_add">Add an item</string>
+    <string name="task_checklist_remove">Remove %1$s</string>
+    <string name="task_delete_confirm">Delete this to-do for the whole family?</string>
+    <string name="task_linked_event">Belongs to: %1$s</string>
+    <string name="workload_title">Sharing the load</string>
+    <string name="workload_body">How to-dos, chores, drop-offs and pick-ups were shared over the last four weeks. Something to talk about – not a score.</string>
+    <string name="workload_period">%1$s – %2$s</string>
+    <string name="workload_tasks">To-dos</string>
+    <string name="workload_chores">Chores</string>
+    <string name="workload_dropoffs">Drop-offs</string>
+    <string name="workload_pickups">Pick-ups</string>
+    <string name="workload_bar">%1$s: %2$d</string>
+    <string name="workload_empty">Nothing recorded in the last four weeks yet. Tick off to-dos and set who drops off and picks up, and it shows here.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
     <string name="empty_calendar">The calendar is empty for now.</string>

@@ -69,7 +69,9 @@ import se.pusslet.feature.shopping.PantryRoute
 import se.pusslet.feature.shopping.ShoppingRoute
 import se.pusslet.feature.shopping.StoreModeRoute
 import se.pusslet.feature.shopping.StoresRoute
-import se.pusslet.feature.tasks.TasksScreen
+import se.pusslet.feature.tasks.TaskEditorRoute
+import se.pusslet.feature.tasks.TasksRoute
+import se.pusslet.feature.tasks.WorkloadRoute
 import se.pusslet.feature.today.TodayRoute
 import se.pusslet.shell.navigation.AppNavigator
 import se.pusslet.shell.navigation.Route
@@ -257,7 +259,16 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
             entry<Route.Pantry> { PantryRoute(onBack = navigator::goBack) }
             entry<Route.Stores> { StoresRoute(onBack = navigator::goBack) }
             entry<Route.More> { MoreScreen(onOpen = { navigator.navigate(it.route()) }, contentPadding = padding) }
-            entry<Route.Tasks> { TasksScreen() }
+            entry<Route.Tasks> {
+                TasksRoute(
+                    onBack = navigator::goBack,
+                    onEdit = { navigator.navigate(Route.TaskEditor(it)) },
+                    onNew = { navigator.navigate(Route.TaskEditor(chore = it)) },
+                    onWorkload = { navigator.navigate(Route.Workload) },
+                )
+            }
+            entry<Route.TaskEditor> { r -> TaskEditorRoute(r.taskId, r.chore, onDone = navigator::goBack) }
+            entry<Route.Workload> { WorkloadRoute(onBack = navigator::goBack) }
             entry<Route.EventEditor> { r -> EventEditorRoute(r.eventId, r.date, r.occurrenceDate, onDone = navigator::goBack) }
             entry<Route.EventDetails> { r ->
                 EventDetailsRoute(

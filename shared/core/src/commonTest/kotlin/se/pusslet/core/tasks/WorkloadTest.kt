@@ -78,4 +78,24 @@ class WorkloadTest {
     }
 
     private fun LocalDate.plusDaysLocal(n: Int) = LocalDate.fromEpochDays(toEpochDays() + n)
+
+    @Test
+    fun aRotatingChoreWithoutDueDateOnlyHappensOnItsDays() {
+        val week = se.pusslet.core.time.IsoWeek.of(today)
+        val chore = FamilyTask(
+            "c",
+            "Dammsuga",
+            kind = TaskKind.Chore,
+            rrule = "FREQ=WEEKLY;BYDAY=SA",
+            rotation = se.pusslet.core.model.ChoreRotation(listOf("sara", "johan"), 1, week),
+        )
+        val dates = TaskScheduler.occurrences(chore, week.monday, week.monday.plusDaysLocal(13)).map { it.date }
+        assertEquals(listOf(LocalDate(2026, 10, 10), LocalDate(2026, 10, 17)), dates)
+        assertEquals(
+            listOf("sara", "johan"),
+            TaskScheduler.occurrences(chore, week.monday, week.monday.plusDaysLocal(13)).map {
+                it.assigneeId
+            },
+        )
+    }
 }

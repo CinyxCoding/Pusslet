@@ -80,7 +80,14 @@ object WeatherMath {
         (p.frozenPart ?: 0) >= 50 || p.precipitationType in setOf(5, 6, 8) || (p.precipitationType == null && p.temperature <= 0.0)
 
     /** Summarises the daytime window [fromHour, toHour) of [date] in [zone]; null if the forecast does not cover it. */
-    fun summarize(forecast: Forecast, date: LocalDate, zone: TimeZone, fromHour: Int = 7, toHour: Int = 17, now: Instant? = null): DaySummary? {
+    fun summarize(
+        forecast: Forecast,
+        date: LocalDate,
+        zone: TimeZone,
+        fromHour: Int = 7,
+        toHour: Int = 17,
+        now: Instant? = null,
+    ): DaySummary? {
         val day = forecast.points.filter { p ->
             val local = p.time.toLocalDateTime(zone)
             local.date == date && local.hour in fromHour until toHour

@@ -80,8 +80,28 @@ enum class Aisle {
     companion object {
         /** Walking order of a typical Swedish supermarket: fruit & veg first, frozen and household near the tills. */
         val defaultOrder: List<Aisle> = listOf(
-            Produce, Bakery, Deli, Meat, Fish, Cheese, Dairy, Eggs, Pantry, Canned, SpicesAndSauces, Baking,
-            Breakfast, Drinks, SnacksAndSweets, Frozen, Baby, Hygiene, Household, Pets, Pharmacy, Other,
+            Produce,
+            Bakery,
+            Deli,
+            Meat,
+            Fish,
+            Cheese,
+            Dairy,
+            Eggs,
+            Pantry,
+            Canned,
+            SpicesAndSauces,
+            Baking,
+            Breakfast,
+            Drinks,
+            SnacksAndSweets,
+            Frozen,
+            Baby,
+            Hygiene,
+            Household,
+            Pets,
+            Pharmacy,
+            Other,
         )
     }
 }

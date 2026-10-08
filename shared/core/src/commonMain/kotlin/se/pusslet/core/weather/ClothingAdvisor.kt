@@ -70,7 +70,13 @@ object ClothingRules {
         // Warm
         ClothingRule(ClothingAdvice.TShirt, feelsAtLeast = 17.0, priority = 22),
         ClothingRule(ClothingAdvice.SunHatAndWater, maxAtLeast = 22.0, needsDry = true, priority = 8),
-        ClothingRule(ClothingAdvice.Sunscreen, maxAtLeast = 22.0, needsDry = true, months = setOf(Month.MAY, Month.JUNE, Month.JULY, Month.AUGUST), priority = 9),
+        ClothingRule(
+            ClothingAdvice.Sunscreen,
+            maxAtLeast = 22.0,
+            needsDry = true,
+            months = setOf(Month.MAY, Month.JUNE, Month.JULY, Month.AUGUST),
+            priority = 9,
+        ),
         // Dark mornings
         ClothingRule(ClothingAdvice.Reflective, maxAge = 12, months = darkMonths, priority = 40),
     )
@@ -100,8 +106,14 @@ object ClothingAdvisor {
             .distinct()
             .let { list ->
                 // Rain gear already covers a light jacket; a winter overall covers fleece.
-                list.filterNot { (it == ClothingAdvice.LightJacket || it == ClothingAdvice.WindProof) && ClothingAdvice.RainGearAndBoots in list }
-                    .filterNot { it == ClothingAdvice.Fleece && (ClothingAdvice.WinterOverall in list || ClothingAdvice.WinterJacket in list) }
+                list.filterNot {
+                    (it == ClothingAdvice.LightJacket || it == ClothingAdvice.WindProof) &&
+                        ClothingAdvice.RainGearAndBoots in list
+                }
+                    .filterNot {
+                        it == ClothingAdvice.Fleece &&
+                            (ClothingAdvice.WinterOverall in list || ClothingAdvice.WinterJacket in list)
+                    }
             }
             .take(maxItems)
     }

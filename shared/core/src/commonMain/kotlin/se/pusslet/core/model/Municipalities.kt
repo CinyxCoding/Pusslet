@@ -306,6 +306,7 @@ object Municipalities {
     fun search(query: String): List<Municipality> {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return all
-        return all.filter { it.name.lowercase().startsWith(q) } + all.filter { !it.name.lowercase().startsWith(q) && q in it.name.lowercase() }
+        return all.filter { it.name.lowercase().startsWith(q) } +
+            all.filter { !it.name.lowercase().startsWith(q) && q in it.name.lowercase() }
     }
 }

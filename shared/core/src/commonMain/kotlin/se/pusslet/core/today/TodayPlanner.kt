@@ -134,7 +134,9 @@ object TodayPlanner {
         val clothing = if (weather == null) {
             emptyList()
         } else {
-            input.children.map { c -> ChildClothing(FamilyPerson.of(c), ClothingAdvisor.advise(weather, ClothingAdvisor.ageOn(c.birthDate, today))) }
+            input.children.map { c ->
+                ChildClothing(FamilyPerson.of(c), ClothingAdvisor.advise(weather, ClothingAdvisor.ageOn(c.birthDate, today)))
+            }
         }
 
         val timeline = buildTimeline(todays, byId)
@@ -146,7 +148,13 @@ object TodayPlanner {
         val lunches = childPeople.mapNotNull { c ->
             input.lunches[c.id]?.firstOrNull { it.date == today }?.let { ChildLunch(c, it.dishes) }
         }
-        val clash = if (dinner == null) emptyMap() else lunches.associate { it.child.id to MealClash.between(it.dishes, dinner.title) }.filterValues { it.isNotEmpty() }
+        val clash = if (dinner ==
+            null
+        ) {
+            emptyMap()
+        } else {
+            lunches.associate { it.child.id to MealClash.between(it.dishes, dinner.title) }.filterValues { it.isNotEmpty() }
+        }
 
         val custody = input.custody.map { s ->
             CustodyToday(
@@ -222,10 +230,13 @@ object TodayPlanner {
         val week = input.occurrences.filter { it.start.date in today.plusDays(1)..horizon }
         week.filter { o -> o.event.tags.any { it.equals(EventTags.STUDY_DAY, true) } }
             .distinctBy { it.start.date }
-            .forEach { o -> cards += ContextCard.StudyDay(o.start.date, children.filter { it.id in o.event.participantIds }, o.event.title) }
+            .forEach { o ->
+                cards += ContextCard.StudyDay(o.start.date, children.filter { it.id in o.event.participantIds }, o.event.title)
+            }
         week.filter { o -> o.event.tags.any { it.equals(EventTags.PARTY, true) } }.forEach { o ->
             val giftTasks = input.tasks.filter { t ->
-                t.linkedEventId == o.event.id || (t.category == TaskCategory.Gift && t.due != null && t.due <= o.start.date && t.due >= today)
+                t.linkedEventId == o.event.id ||
+                    (t.category == TaskCategory.Gift && t.due != null && t.due <= o.start.date && t.due >= today)
             }
             if (giftTasks.none { it.done }) cards += ContextCard.PartyGift(o.start.date, o.event.title, giftTasks.firstOrNull()?.id)
         }
@@ -235,7 +246,10 @@ object TodayPlanner {
 
         // Custody handover today or tomorrow.
         input.custody.forEach { s ->
-            CustodyCalculator.nextHandover(s, today)?.takeIf { it.date <= today.plusDays(1) }?.let { cards += ContextCard.HandoverSoon(it, s) }
+            CustodyCalculator.nextHandover(s, today)?.takeIf { it.date <= today.plusDays(1) }?.let {
+                cards +=
+                    ContextCard.HandoverSoon(it, s)
+            }
         }
         return cards
     }

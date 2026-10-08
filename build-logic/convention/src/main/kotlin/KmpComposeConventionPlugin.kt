@@ -19,6 +19,13 @@ class KmpComposeConventionPlugin : Plugin<Project> {
             (this as ExtensionAware).extensions.configure<KotlinMultiplatformAndroidLibraryTarget>("android") {
                 androidResources { enable = true }
             }
+            compilerOptions {
+                freeCompilerArgs.addAll(
+                    "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                    "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+                    "-opt-in=org.jetbrains.compose.resources.ExperimentalResourceApi",
+                )
+            }
             sourceSets.getByName("commonMain").dependencies {
                 implementation(libs.findLibrary("compose-runtime").get())
                 implementation(libs.findLibrary("compose-foundation").get())

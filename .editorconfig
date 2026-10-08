@@ -25,6 +25,8 @@ ktlint_standard_when-entry-bracing = disabled
 ktlint_standard_then-spacing = disabled
 ij_kotlin_allow_trailing_comma = true
 ij_kotlin_allow_trailing_comma_on_call_site = true
+# Generated Compose resource accessors are imported with a wildcard.
+ij_kotlin_packages_to_use_import_on_demand = se.pusslet.ui.resources.*,java.util.*,kotlinx.android.synthetic.**
 
 [*.{json,yml,yaml,ts,js,toml}]
 indent_size = 2

@@ -45,7 +45,10 @@ class SwedishQuickAddParser {
             when {
                 main is QuickAddAction.CreateEvent && packing != null -> {
                     val item = capitalize(extra.substring(packing.range.last + 1).trim())
-                    if (item.isNotEmpty()) actions[0] = (actions[0] as QuickAddAction.CreateEvent).let { it.copy(packingItems = it.packingItems + item) }
+                    if (item.isNotEmpty()) {
+                        actions[0] =
+                            (actions[0] as QuickAddAction.CreateEvent).let { it.copy(packingItems = it.packingItems + item) }
+                    }
                 }
                 main is QuickAddAction.CreateEvent && startsWithTaskVerb(lower) -> {
                     val sub = parseClause(extra, ctx, mutableSetOf())
@@ -102,7 +105,11 @@ class SwedishQuickAddParser {
         if (lower.split(' ').size > 5) return false
         if (DATE_OR_TIME_HINT.containsMatchIn(lower)) return false
         if (startsWithTaskVerb(lower)) return false
-        if (lower.split(' ').any { it in SwedishLexicon.activityTags || it in SwedishLexicon.pickupVerbs || it in SwedishLexicon.dropoffVerbs }) {
+        if (lower.split(' ').any {
+                it in SwedishLexicon.activityTags || it in SwedishLexicon.pickupVerbs ||
+                    it in SwedishLexicon.dropoffVerbs
+            }
+        ) {
             return false
         }
         return true
@@ -118,6 +125,8 @@ class SwedishQuickAddParser {
     private fun splitClauses(text: String): List<String> =
         text.split(Regex("""(?<!\d),|,(?!\d)|;|\n""")).map { it.trim() }.filter { it.isNotEmpty() }
 
+    // Rule table: one branch per kind of phrase, each covered by SwedishQuickAddParserTest.
+    @Suppress("CyclomaticComplexMethod")
     private fun parseClause(clause: String, ctx: QuickAddContext, uncertain: MutableSet<UncertainField>): QuickAddAction {
         val scan = Scan(clause)
 
@@ -137,8 +146,9 @@ class SwedishQuickAddParser {
 
         // Handoff: "Johan hämtar imorgon", "jag lämnar Simon på fredag".
         if (handoff != null) {
-            val adult = persons.firstOrNull { !it.person.isChild && !it.isRecipient }?.person?.id ?: persons.firstOrNull { it.isSelf }?.person?.id
-                ?: ctx.currentUserId
+            val adult =
+                persons.firstOrNull { !it.person.isChild && !it.isRecipient }?.person?.id ?: persons.firstOrNull { it.isSelf }?.person?.id
+                    ?: ctx.currentUserId
             if (adult != null) {
                 val date = dateInfo?.date ?: recurrence?.days?.firstOrNull()?.let { nextWeekday(ctx, it, null) } ?: ctx.today.also {
                     uncertain += UncertainField.Date
@@ -324,6 +334,8 @@ class SwedishQuickAddParser {
 
     private data class RecurrenceInfo(val freq: Frequency, val interval: Int = 1, val days: Set<DayOfWeek> = emptySet())
 
+    // One early return per recognised recurrence phrase ("varje tisdag", "varannan vecka" …).
+    @Suppress("ReturnCount")
     private fun extractRecurrence(scan: Scan): RecurrenceInfo? {
         scan.find(WEEKDAYS_MON_FRI)?.let {
             scan.take(it.range)
@@ -380,6 +392,8 @@ class SwedishQuickAddParser {
         val weekOnly: Boolean = false,
     )
 
+    // One early return per date phrase, in priority order ("nästa vecka" before "vecka 17", etc.).
+    @Suppress("ReturnCount", "CyclomaticComplexMethod")
     private fun extractDate(scan: Scan, ctx: QuickAddContext, recurrence: RecurrenceInfo?): DateInfo? {
         val today = ctx.today
         scan.consume(DEADLINE_WORD)
@@ -481,7 +495,11 @@ class SwedishQuickAddParser {
             val date = if (thisMonth != null && thisMonth >= today) {
                 thisMonth
             } else {
-                val next = LocalDate(today.year, today.month, 1).plusDays(RecurrenceExpander.monthLength(today.year, today.month.ordinal + 1))
+                val next = LocalDate(
+                    today.year,
+                    today.month,
+                    1,
+                ).plusDays(RecurrenceExpander.monthLength(today.year, today.month.ordinal + 1))
                 runCatching { LocalDate(next.year, next.month, day) }.getOrNull()
             }
             return date?.let { DateInfo(it, uncertain = true) }
@@ -492,7 +510,13 @@ class SwedishQuickAddParser {
     /** Next date (today or later) in [month]/[day]; rolls to next year if already passed. */
     private fun futureDate(today: LocalDate, month: Int, day: Int): LocalDate? {
         val thisYear = runCatching { LocalDate(today.year, month, day) }.getOrNull()
-        return if (thisYear != null && thisYear >= today.minusDays(1)) thisYear else runCatching { LocalDate(today.year + 1, month, day) }.getOrNull()
+        return if (thisYear != null &&
+            thisYear >= today.minusDays(1)
+        ) {
+            thisYear
+        } else {
+            runCatching { LocalDate(today.year + 1, month, day) }.getOrNull()
+        }
     }
 
     private fun nextWeekday(ctx: QuickAddContext, day: DayOfWeek, time: LocalTime?): LocalDate {
@@ -509,6 +533,7 @@ class SwedishQuickAddParser {
 
     private data class TimeInfo(val start: LocalTime, val end: LocalTime?, val uncertain: Boolean)
 
+    @Suppress("ReturnCount") // One early return per time phrase, in priority order.
     private fun extractTimes(scan: Scan, hasDateContext: Boolean): TimeInfo? {
         scan.find(BETWEEN_TIMES)?.let { m ->
             scan.take(m.range)
@@ -582,7 +607,10 @@ class SwedishQuickAddParser {
     private fun extractLocation(scan: Scan): String {
         val m = scan.find(LOCATION_IN_CLAUSE) ?: return ""
         // Only treat "på/i X" as a place when X is capitalised in the original text ("på Vallen", "i Uppsala").
-        val original = scan.originalAt(m.groups[2]?.range ?: return "")
+        // MatchGroup.range is JVM-only; the place is the last group and the end boundary is zero-width,
+        // so it always ends where the match ends.
+        val place = m.groupValues[2]
+        val original = scan.originalAt((m.range.last + 1 - place.length)..m.range.last)
         if (original.firstOrNull()?.isUpperCase() != true) return ""
         scan.take(m.range)
         return original
@@ -615,7 +643,7 @@ class SwedishQuickAddParser {
         private val orig = original.toCharArray()
         private val low = original.lowercase().let { if (it.length == original.length) it.toCharArray() else original.toCharArray() }
 
-        fun find(regex: Regex): MatchResult? = regex.find(String(low))
+        fun find(regex: Regex): MatchResult? = regex.find(low.concatToString())
 
         fun take(range: IntRange) {
             for (i in range) {
@@ -630,11 +658,11 @@ class SwedishQuickAddParser {
             return m.groupValues.getOrNull(1)?.ifEmpty { m.value } ?: m.value
         }
 
-        fun originalAt(range: IntRange): String = String(orig, range.first, range.last - range.first + 1)
+        fun originalAt(range: IntRange): String = orig.concatToString(range.first, range.last + 1)
 
-        fun remaining(): String = String(orig).replace(Regex("""\s+"""), " ").trim()
+        fun remaining(): String = orig.concatToString().replace(Regex("""\s+"""), " ").trim()
 
-        fun remainingLower(): String = String(low).replace(Regex("""\s+"""), " ").trim()
+        fun remainingLower(): String = low.concatToString().replace(Regex("""\s+"""), " ").trim()
     }
 
     private companion object {
@@ -661,7 +689,8 @@ class SwedishQuickAddParser {
         val TASK_HINT = Regex("""$B(kom ihåg|glöm inte|måste|remember to)$E""")
         val REMINDER_PREFIX = Regex("""^(kom ihåg att|kom ihåg|glöm inte att|måste|remember to)\s+""", RegexOption.IGNORE_CASE)
         val DATE_OR_TIME_HINT = Regex(
-            """$B(idag|i dag|imorgon|i morgon|övermorgon|ikväll|i kväll|helgen|kl|klockan|v\.?\s*\d|vecka|nästa|varje|varannan|$WD)$E|\d{1,2}[:.]\d{2}|\d{1,2}/\d{1,2}""",
+            """$B(idag|i dag|imorgon|i morgon|övermorgon|ikväll|i kväll|helgen|kl|klockan|v\.?\s*\d|vecka|nästa|varje|varannan|$WD)$E""" +
+                """|\d{1,2}[:.]\d{2}|\d{1,2}/\d{1,2}""",
         )
 
         val PICKUP = Regex("""$B(hämtar|hämtning(?:en)?|picks up)$E""")
@@ -672,11 +701,14 @@ class SwedishQuickAddParser {
         val DROPOFF_IMPERATIVE = Regex("""$B(lämna|drop off)$E(?!\s+(in|tillbaka|ut)$E)""")
         val HANDOFF_FILLER = Regex("""$B(på (förskolan|skolan|fritids|dagis)|från (förskolan|skolan|fritids|dagis))$E""")
 
-        val WEEKDAYS_MON_FRI = Regex("""$B(varje vardag|alla vardagar|vardagar|vardagarna|weekdays|(mån(dag)?|må)\s*[-–]\s*(fre(dag)?))$E""")
+        val WEEKDAYS_MON_FRI =
+            Regex("""$B(varje vardag|alla vardagar|vardagar|vardagarna|weekdays|(mån(dag)?|må)\s*[-–]\s*(fre(dag)?))$E""")
         val EVERY_DAY = Regex("""$B(varje dag|dagligen|every day|daily)$E""")
         val EVERY_WEEKDAY_LIST = Regex("""$B(varje|varannan|every other|every)\s+($WD)((\s*(,|och|&|and)\s*($WD))*)$E""")
         val PLURAL_WEEKDAYS = Regex(
-            """$B(?:på\s+)?(${alt(SwedishLexicon.weekdayPlurals.keys)})((\s*(,|och|&|and)\s*(${alt(SwedishLexicon.weekdayPlurals.keys)}))*)$E""",
+            """$B(?:på\s+)?(${alt(
+                SwedishLexicon.weekdayPlurals.keys,
+            )})((\s*(,|och|&|and)\s*(${alt(SwedishLexicon.weekdayPlurals.keys)}))*)$E""",
         )
         val EVERY_OTHER_WEEK = Regex("""$B(varannan vecka|var annan vecka|every other week|biweekly)$E""")
         val EVERY_NTH_WEEK = Regex("""$B(?:var|every)\s+(\d+|tredje|fjärde|andra)(?::?e|:a)?\s+(vecka|week)$E""")
@@ -699,7 +731,11 @@ class SwedishQuickAddParser {
         val WEEKDAY_EXPR = Regex("""$B(?:(nästa|kommande|på|next|on|den här|denna)\s+)?($WD)\.?$E""")
         val DAY_OF_MONTH = Regex("""$B(?:den)\s+(\d{1,2})(?::e|:a)?$E""")
 
-        val BETWEEN_TIMES = Regex("""$B(?:mellan|från|from)\s+(?:kl\.?\s*)?(\d{1,2})(?:[:.](\d{2}))?\s+(?:och|till|to|-)\s+(?:kl\.?\s*)?(\d{1,2})(?:[:.](\d{2}))?$E""")
+        val BETWEEN_TIMES =
+            Regex(
+                """$B(?:mellan|från|from)\s+(?:kl\.?\s*)?(\d{1,2})(?:[:.](\d{2}))?""" +
+                    """\s+(?:och|till|to|-)\s+(?:kl\.?\s*)?(\d{1,2})(?:[:.](\d{2}))?$E""",
+            )
         val TIME_RANGE = Regex("""$B(?:kl\.?\s*|klockan\s*)?(\d{1,2})(?:[:.](\d{2}))?\s*(?:-|–|till|to)\s*(\d{1,2})(?:[:.](\d{2}))?$E""")
         val HALF_QUARTER = Regex("""$B(?:kl\.?\s*)?(halv|kvart över|kvart i)\s+(\d{1,2}|$HOUR_WORDS)$E""")
         val SINGLE_TIME = Regex("""$B(?:kl\.?|klockan|at)\s*(\d{1,2})(?:[:.](\d{2}))?$E|$B(\d{1,2})[:.](\d{2})$E""")

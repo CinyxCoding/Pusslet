@@ -9,15 +9,50 @@ import se.pusslet.core.model.MainComponent
 object DishKeywords {
     /** stem -> canonical key. Longer stems are checked first. */
     private val stems: List<Pair<String, String>> = listOf(
-        "köttbull" to "köttbullar", "vegobull" to "köttbullar", "fiskpinn" to "fisk", "fiskgratäng" to "fisk",
-        "falukorv" to "korv", "korv" to "korv", "taco" to "tacos", "tortilla" to "tacos", "lasagne" to "lasagne",
-        "spaghetti" to "pasta", "pasta" to "pasta", "makaron" to "pasta", "penne" to "pasta", "nudl" to "nudlar",
-        "pannkak" to "pannkakor", "plätt" to "pannkakor", "pizza" to "pizza", "hamburgare" to "hamburgare", "burgare" to "hamburgare",
-        "kyckling" to "kyckling", "lax" to "lax", "torsk" to "fisk", "sej" to "fisk", "fisk" to "fisk", "räk" to "skaldjur",
-        "ärtsoppa" to "ärtsoppa", "soppa" to "soppa", "gryta" to "gryta", "pytt" to "pytt", "gratäng" to "gratäng",
-        "risotto" to "risotto", "curry" to "curry", "chili" to "chili", "köttfärs" to "köttfärs", "blodpudding" to "blodpudding",
-        "kåldolm" to "kåldolmar", "biff" to "biff", "schnitzel" to "schnitzel", "fläsk" to "fläsk", "omelett" to "ägg",
-        "äggröra" to "ägg", "falafel" to "falafel", "halloumi" to "halloumi", "gröt" to "gröt",
+        "köttbull" to "köttbullar",
+        "vegobull" to "köttbullar",
+        "fiskpinn" to "fisk",
+        "fiskgratäng" to "fisk",
+        "falukorv" to "korv",
+        "korv" to "korv",
+        "taco" to "tacos",
+        "tortilla" to "tacos",
+        "lasagne" to "lasagne",
+        "spaghetti" to "pasta",
+        "pasta" to "pasta",
+        "makaron" to "pasta",
+        "penne" to "pasta",
+        "nudl" to "nudlar",
+        "pannkak" to "pannkakor",
+        "plätt" to "pannkakor",
+        "pizza" to "pizza",
+        "hamburgare" to "hamburgare",
+        "burgare" to "hamburgare",
+        "kyckling" to "kyckling",
+        "lax" to "lax",
+        "torsk" to "fisk",
+        "sej" to "fisk",
+        "fisk" to "fisk",
+        "räk" to "skaldjur",
+        "ärtsoppa" to "ärtsoppa",
+        "soppa" to "soppa",
+        "gryta" to "gryta",
+        "pytt" to "pytt",
+        "gratäng" to "gratäng",
+        "risotto" to "risotto",
+        "curry" to "curry",
+        "chili" to "chili",
+        "köttfärs" to "köttfärs",
+        "blodpudding" to "blodpudding",
+        "kåldolm" to "kåldolmar",
+        "biff" to "biff",
+        "schnitzel" to "schnitzel",
+        "fläsk" to "fläsk",
+        "omelett" to "ägg",
+        "äggröra" to "ägg",
+        "falafel" to "falafel",
+        "halloumi" to "halloumi",
+        "gröt" to "gröt",
     ).sortedByDescending { it.first.length }
 
     fun of(text: String): Set<String> {
@@ -39,7 +74,9 @@ object DishKeywords {
         return when {
             keys.any { it in setOf("fisk", "lax", "fiskpinnar", "skaldjur") } -> MainComponent.Fish
             "kyckling" in keys -> MainComponent.Chicken
-            keys.any { it in setOf("köttbullar", "köttfärs", "tacos", "lasagne", "hamburgare", "kåldolmar", "chili") } -> MainComponent.MincedMeat
+            keys.any {
+                it in setOf("köttbullar", "köttfärs", "tacos", "lasagne", "hamburgare", "kåldolmar", "chili")
+            } -> MainComponent.MincedMeat
             "korv" in keys -> MainComponent.Sausage
             keys.any { it in setOf("fläsk", "schnitzel") } -> MainComponent.Pork
             "biff" in keys -> MainComponent.Beef

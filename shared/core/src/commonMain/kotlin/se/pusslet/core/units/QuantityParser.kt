@@ -11,10 +11,32 @@ object QuantityParser {
     private val unicodeFractions = mapOf('¼' to 0.25, '½' to 0.5, '¾' to 0.75, '⅓' to 1.0 / 3, '⅔' to 2.0 / 3, '⅛' to 0.125)
 
     private val numberWords = mapOf(
-        "en" to 1.0, "ett" to 1.0, "två" to 2.0, "tva" to 2.0, "tre" to 3.0, "fyra" to 4.0, "fem" to 5.0, "sex" to 6.0,
-        "sju" to 7.0, "åtta" to 8.0, "nio" to 9.0, "tio" to 10.0, "elva" to 11.0, "tolv" to 12.0, "ett par" to 2.0,
-        "några" to 3.0, "en halv" to 0.5, "ett halvt" to 0.5, "halv" to 0.5, "halvt" to 0.5, "one" to 1.0, "two" to 2.0,
-        "three" to 3.0, "a" to 1.0, "an" to 1.0, "half" to 0.5,
+        "en" to 1.0,
+        "ett" to 1.0,
+        "två" to 2.0,
+        "tva" to 2.0,
+        "tre" to 3.0,
+        "fyra" to 4.0,
+        "fem" to 5.0,
+        "sex" to 6.0,
+        "sju" to 7.0,
+        "åtta" to 8.0,
+        "nio" to 9.0,
+        "tio" to 10.0,
+        "elva" to 11.0,
+        "tolv" to 12.0,
+        "ett par" to 2.0,
+        "några" to 3.0,
+        "en halv" to 0.5,
+        "ett halvt" to 0.5,
+        "halv" to 0.5,
+        "halvt" to 0.5,
+        "one" to 1.0,
+        "two" to 2.0,
+        "three" to 3.0,
+        "a" to 1.0,
+        "an" to 1.0,
+        "half" to 0.5,
     )
 
     private val approx = Regex("""^(ca\.?|c:a|cirka|ungefär|about|approx\.?)\s+""", RegexOption.IGNORE_CASE)

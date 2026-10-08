@@ -46,6 +46,8 @@ class IcsParser : CalendarFeedParser {
         fun all(name: String) = props.filter { it.name == name }
     }
 
+    // Straight walk over RFC 5545 properties; each branch handles one property.
+    @Suppress("CyclomaticComplexMethod")
     override fun parse(text: String, idPrefix: String, fallbackZone: TimeZone): IcsCalendar {
         val lines = unfold(text).mapNotNull { parseLine(it) }
         val warnings = ArrayList<String>()
@@ -281,12 +283,13 @@ class IcsParser : CalendarFeedParser {
 
         /** ISO 8601 / RFC 5545 duration: P1D, PT1H30M, P1W, -PT15M. */
         fun parseDuration(v: String): Duration? {
-            val m = Regex("""^([+-])?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$""").matchEntire(v.trim()) ?: return null
-            val (sign, w, d, h, min, s) = m.destructured
-            val total = (w.toLongOrNull() ?: 0) * 7.days.inWholeSeconds + (d.toLongOrNull() ?: 0) * 1.days.inWholeSeconds +
-                (h.toLongOrNull() ?: 0) * 1.hours.inWholeSeconds + (min.toLongOrNull() ?: 0) * 1.minutes.inWholeSeconds +
-                (s.toLongOrNull() ?: 0)
-            return (if (sign == "-") -total else total).seconds
+            val m =
+                Regex("""^([+-])?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$""").matchEntire(v.trim()) ?: return null
+
+            fun part(group: Int): Long = m.groupValues[group].toLongOrNull() ?: 0
+            val total = part(2) * 7.days.inWholeSeconds + part(3) * 1.days.inWholeSeconds +
+                part(4) * 1.hours.inWholeSeconds + part(5) * 1.minutes.inWholeSeconds + part(6)
+            return (if (m.groupValues[1] == "-") -total else total).seconds
         }
 
         private fun parseOffset(v: String): UtcOffset? {

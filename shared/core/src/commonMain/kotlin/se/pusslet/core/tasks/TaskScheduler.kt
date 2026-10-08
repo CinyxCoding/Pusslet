@@ -1,14 +1,14 @@
 package se.pusslet.core.tasks
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.TaskKind
 import se.pusslet.core.recurrence.RRule
 import se.pusslet.core.recurrence.RecurrenceExpander
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.minusDays
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
 
 /** One concrete thing to do on a date (recurring tasks expanded, rotations resolved). */
 data class TaskOccurrence(

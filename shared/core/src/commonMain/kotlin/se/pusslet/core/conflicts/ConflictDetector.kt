@@ -74,7 +74,11 @@ object ConflictDetector {
                 if (handoff == null) continue
                 val time = handoff.time ?: if (kind == HandoffKind.PickUp) o.end.time else o.start.time
                 val at = LocalDateTime(date, time)
-                val busy = today.filter { other -> other !== o && overlaps(other, at, slackMinutes) && other.event.participantIds.none { it in kids } }
+                val busy = today.filter { other ->
+                    other !== o && overlaps(other, at, slackMinutes) &&
+                        other.event.participantIds.none { it in kids }
+                }
+
                 fun busyWith(personId: String) = busy.firstOrNull { personId in it.event.participantIds }
                 val assigned = handoff.personId
                 if (assigned == null) {
@@ -93,9 +97,11 @@ object ConflictDetector {
         // Children in two activities at once.
         for (child in children) {
             val mine = today.filter { child in it.event.participantIds && !it.allDay }.sortedBy { it.start }
-            for (i in mine.indices) for (j in i + 1 until mine.size) {
-                if (mine[i].end > mine[j].start && mine[i].event.id != mine[j].event.id) {
-                    result += Conflict.DoubleBooked(date, mine[i], mine[j], child)
+            for (i in mine.indices) {
+                for (j in i + 1 until mine.size) {
+                    if (mine[i].end > mine[j].start && mine[i].event.id != mine[j].event.id) {
+                        result += Conflict.DoubleBooked(date, mine[i], mine[j], child)
+                    }
                 }
             }
         }
@@ -107,8 +113,22 @@ object ConflictDetector {
         val minutes = at.hour * 60 + at.minute
         val startDay = o.start.date
         val endDay = o.end.date
-        val startMin = if (startDay < at.date) Int.MIN_VALUE else if (startDay > at.date) Int.MAX_VALUE else o.start.hour * 60 + o.start.minute
-        val endMin = if (endDay > at.date) Int.MAX_VALUE else if (endDay < at.date) Int.MIN_VALUE else o.end.hour * 60 + o.end.minute
+        val startMin = if (startDay <
+            at.date
+        ) {
+            Int.MIN_VALUE
+        } else if (startDay > at.date) {
+            Int.MAX_VALUE
+        } else {
+            o.start.hour * 60 + o.start.minute
+        }
+        val endMin = if (endDay > at.date) {
+            Int.MAX_VALUE
+        } else if (endDay < at.date) {
+            Int.MIN_VALUE
+        } else {
+            o.end.hour * 60 + o.end.minute
+        }
         return startMin < minutes + slackMinutes && endMin > minutes - slackMinutes
     }
 }

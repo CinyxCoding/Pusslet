@@ -22,13 +22,25 @@ data class NutrientValues(
     val sugars: Double? = null,
 ) {
     operator fun plus(o: NutrientValues) = NutrientValues(
-        add(energyKcal, o.energyKcal), add(energyKj, o.energyKj), add(protein, o.protein), add(fat, o.fat),
-        add(carbohydrates, o.carbohydrates), add(fiber, o.fiber), add(salt, o.salt), add(sugars, o.sugars),
+        add(energyKcal, o.energyKcal),
+        add(energyKj, o.energyKj),
+        add(protein, o.protein),
+        add(fat, o.fat),
+        add(carbohydrates, o.carbohydrates),
+        add(fiber, o.fiber),
+        add(salt, o.salt),
+        add(sugars, o.sugars),
     )
 
     fun scaled(factor: Double) = NutrientValues(
-        energyKcal?.times(factor), energyKj?.times(factor), protein?.times(factor), fat?.times(factor),
-        carbohydrates?.times(factor), fiber?.times(factor), salt?.times(factor), sugars?.times(factor),
+        energyKcal?.times(factor),
+        energyKj?.times(factor),
+        protein?.times(factor),
+        fat?.times(factor),
+        carbohydrates?.times(factor),
+        fiber?.times(factor),
+        salt?.times(factor),
+        sugars?.times(factor),
     )
 
     companion object {
@@ -45,20 +57,67 @@ data class NutrientValues(
 object GramEstimator {
     /** g per ml for common ingredients (water-like = 1.0). Matched on a word in the ingredient name. */
     private val densities = linkedMapOf(
-        "vetemjöl" to 0.6, "mjöl" to 0.6, "socker" to 0.85, "strösocker" to 0.85, "florsocker" to 0.55, "ris" to 0.85,
-        "havregryn" to 0.4, "olja" to 0.92, "olivolja" to 0.92, "smör" to 0.95, "honung" to 1.4, "sirap" to 1.4,
-        "kakao" to 0.45, "salt" to 1.2, "riven ost" to 0.4, "ost" to 0.45, "grädde" to 1.0, "mjölk" to 1.03,
-        "crème fraiche" to 1.0, "creme fraiche" to 1.0, "yoghurt" to 1.03, "krossade tomater" to 1.05, "buljong" to 1.0,
-        "vatten" to 1.0, "linser" to 0.85, "bönor" to 0.75, "pasta" to 0.45, "majs" to 0.75, "ärtor" to 0.65,
+        "vetemjöl" to 0.6,
+        "mjöl" to 0.6,
+        "socker" to 0.85,
+        "strösocker" to 0.85,
+        "florsocker" to 0.55,
+        "ris" to 0.85,
+        "havregryn" to 0.4,
+        "olja" to 0.92,
+        "olivolja" to 0.92,
+        "smör" to 0.95,
+        "honung" to 1.4,
+        "sirap" to 1.4,
+        "kakao" to 0.45,
+        "salt" to 1.2,
+        "riven ost" to 0.4,
+        "ost" to 0.45,
+        "grädde" to 1.0,
+        "mjölk" to 1.03,
+        "crème fraiche" to 1.0,
+        "creme fraiche" to 1.0,
+        "yoghurt" to 1.03,
+        "krossade tomater" to 1.05,
+        "buljong" to 1.0,
+        "vatten" to 1.0,
+        "linser" to 0.85,
+        "bönor" to 0.75,
+        "pasta" to 0.45,
+        "majs" to 0.75,
+        "ärtor" to 0.65,
     )
 
     /** Typical edible weight in grams per piece. */
     private val pieces = linkedMapOf(
-        "vitlöksklyfta" to 5.0, "vitlök" to 5.0, "ägg" to 55.0, "gul lök" to 100.0, "rödlök" to 90.0, "lök" to 100.0,
-        "gurka" to 350.0, "tomat" to 100.0, "potatis" to 100.0, "morot" to 70.0, "morötter" to 70.0, "paprika" to 150.0,
-        "banan" to 120.0, "äpple" to 150.0, "citron" to 100.0, "lime" to 60.0, "avokado" to 150.0, "zucchini" to 250.0,
-        "kycklingfilé" to 125.0, "kycklingbröst" to 125.0, "tortilla" to 40.0, "tortillabröd" to 40.0, "purjolök" to 200.0,
-        "broccoli" to 400.0, "blomkål" to 600.0, "sötpotatis" to 300.0, "champinjon" to 15.0, "kruka basilika" to 25.0,
+        "vitlöksklyfta" to 5.0,
+        "vitlök" to 5.0,
+        "ägg" to 55.0,
+        "gul lök" to 100.0,
+        "rödlök" to 90.0,
+        "lök" to 100.0,
+        "gurka" to 350.0,
+        "tomat" to 100.0,
+        "potatis" to 100.0,
+        "morot" to 70.0,
+        "morötter" to 70.0,
+        "paprika" to 150.0,
+        "banan" to 120.0,
+        "äpple" to 150.0,
+        "citron" to 100.0,
+        "lime" to 60.0,
+        "avokado" to 150.0,
+        "zucchini" to 250.0,
+        "kycklingfilé" to 125.0,
+        "kycklingbröst" to 125.0,
+        "tortilla" to 40.0,
+        "tortillabröd" to 40.0,
+        "purjolök" to 200.0,
+        "broccoli" to 400.0,
+        "blomkål" to 600.0,
+        "sötpotatis" to 300.0,
+        "champinjon" to 15.0,
+        "kruka basilika" to 25.0,
     )
 
     fun grams(ingredient: Ingredient): Double? {
@@ -149,5 +208,7 @@ object FoodMatcher {
     }
 
     fun best(ingredientName: String, candidates: List<Food>, limit: Int = 5): List<Food> =
-        candidates.map { it to score(ingredientName, it) }.filter { it.second > 1.0 }.sortedByDescending { it.second }.take(limit).map { it.first }
+        candidates.map {
+            it to score(ingredientName, it)
+        }.filter { it.second > 1.0 }.sortedByDescending { it.second }.take(limit).map { it.first }
 }

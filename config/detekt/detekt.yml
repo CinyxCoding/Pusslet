@@ -11,6 +11,8 @@ complexity:
   CyclomaticComplexMethod:
     allowedComplexity: 25
     ignoreAnnotated: ['Composable']
+    # Exhaustive enum-to-resource mappings are tables, not logic.
+    ignoreSimpleWhenEntries: true
   TooManyFunctions:
     allowedFunctionsPerFile: 40
     allowedFunctionsPerClass: 40
@@ -40,8 +42,13 @@ style:
     maxLineLength: 140
   ReturnCount:
     max: 6
+    # Early "return null" guards are the readable way to write the parsers.
+    excludeGuardClauses: true
   ForbiddenComment:
     active: false
+  WildcardImport:
+    # Generated Compose resource accessors (Res.string.*) are imported with a wildcard.
+    excludeImports: ['se.pusslet.ui.resources.*']
   UnusedPrivateFunction:
     ignoreAnnotated: ['Preview']
   DestructuringDeclarationWithTooManyEntries:

@@ -30,6 +30,7 @@ import kotlin.test.assertTrue
 class CustodyAndPackingTest {
     private val ahmed = Household("a", "Hos pappa", listOf("ahmed"))
     private val lisa = Household("b", "Hos mamma")
+
     private fun d(s: String) = LocalDate.parse(s)
 
     // Handover on Mondays; week 41 (Mon 2026-10-05) the children are with Ahmed.
@@ -72,7 +73,12 @@ class CustodyAndPackingTest {
         val days = (0 until 14).joinToString("") { CustodyCalculator.householdOn(s, d("2026-10-05").plusDays(it))?.id.orEmpty() }
         assertEquals("aabbaaabbaabbb", days)
         val custom = alternating.copy(pattern = CustodyPatternType.Custom, customCycle = listOf(0, 1, 1))
-        assertEquals("abbabb", (0 until 6).joinToString("") { CustodyCalculator.householdOn(custom, d("2026-10-05").plusDays(it))?.id.orEmpty() })
+        assertEquals(
+            "abbabb",
+            (0 until 6).joinToString("") {
+                CustodyCalculator.householdOn(custom, d("2026-10-05").plusDays(it))?.id.orEmpty()
+            },
+        )
     }
 
     @Test
@@ -130,11 +136,19 @@ class CustodyAndPackingTest {
     fun packingForTaggedEventAndOneOffItems() {
         val lunchbox = PackingRule("r3", "Matsäck", trigger = PackingTrigger.EventTag(EventTags.TRIP))
         val trip = Event(
-            "e1", "Skogsutflykt", LocalDateTime.parse("2026-10-09T00:00"), LocalDateTime.parse("2026-10-10T00:00"),
-            allDay = true, participantIds = listOf("simon"), tags = listOf("utflykt"), packingItems = listOf("Regnkläder"),
+            "e1",
+            "Skogsutflykt",
+            LocalDateTime.parse("2026-10-09T00:00"),
+            LocalDateTime.parse("2026-10-10T00:00"),
+            allDay = true,
+            participantIds = listOf("simon"),
+            tags = listOf("utflykt"),
+            packingItems = listOf("Regnkläder"),
         )
         val occ = EventExpander.expand(listOf(trip), d("2026-10-09"), d("2026-10-09"), TimeZone.of("Europe/Stockholm"))
-        val checks = mapOf(PackingChecks.docId(d("2026-10-09"), "simon") to PackingChecks(d("2026-10-09"), "simon", mapOf("rule:r3" to true)))
+        val checks = mapOf(
+            PackingChecks.docId(d("2026-10-09"), "simon") to PackingChecks(d("2026-10-09"), "simon", mapOf("rule:r3" to true)),
+        )
         val items = PackingPlanner.itemsFor(d("2026-10-09"), listOf(ella, simon), listOf(lunchbox), occ, checks = checks)
         assertTrue(items.getValue("ella").isEmpty())
         val simonItems = items.getValue("simon")
@@ -147,8 +161,14 @@ class CustodyAndPackingTest {
     @Test
     fun packingOnHandoverDays() {
         val bag = PackingRule("r4", "Mjukisdjuret Kanin", childId = "ella", trigger = PackingTrigger.Handover)
-        assertEquals(1, PackingPlanner.itemsFor(d("2026-10-12"), listOf(ella), listOf(bag), emptyList(), listOf(alternating)).getValue("ella").size)
-        assertEquals(0, PackingPlanner.itemsFor(d("2026-10-13"), listOf(ella), listOf(bag), emptyList(), listOf(alternating)).getValue("ella").size)
+        assertEquals(
+            1,
+            PackingPlanner.itemsFor(d("2026-10-12"), listOf(ella), listOf(bag), emptyList(), listOf(alternating)).getValue("ella").size,
+        )
+        assertEquals(
+            0,
+            PackingPlanner.itemsFor(d("2026-10-13"), listOf(ella), listOf(bag), emptyList(), listOf(alternating)).getValue("ella").size,
+        )
     }
 
     @Test
@@ -160,8 +180,12 @@ class CustodyAndPackingTest {
             FamilyTask("t2", "Betala elräkningen", category = TaskCategory.Household),
         )
         val football = Event(
-            "f", "Fotboll", LocalDateTime.parse("2026-10-13T17:30"), LocalDateTime.parse("2026-10-13T18:30"),
-            participantIds = listOf("ella"), rrule = "FREQ=WEEKLY;BYDAY=TU",
+            "f",
+            "Fotboll",
+            LocalDateTime.parse("2026-10-13T17:30"),
+            LocalDateTime.parse("2026-10-13T18:30"),
+            participantIds = listOf("ella"),
+            rrule = "FREQ=WEEKLY;BYDAY=TU",
         )
         val occ = EventExpander.expand(listOf(football), h.date, d("2026-10-18"), TimeZone.of("Europe/Stockholm"))
         val card = HandoverCardBuilder.build(h, listOf(ella, simon), rules, tasks, occ, d("2026-10-18"))

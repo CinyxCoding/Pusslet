@@ -110,9 +110,17 @@ data class RRule(
             return if (v.endsWith("Z")) local.toInstant(TimeZone.UTC).toLocalDateTime(zone) else local
         }
 
-        internal fun parseDate(v: String): LocalDate = LocalDate(v.substring(0, 4).toInt(), v.substring(4, 6).toInt(), v.substring(6, 8).toInt())
+        internal fun parseDate(v: String): LocalDate = LocalDate(
+            v.substring(0, 4).toInt(),
+            v.substring(4, 6).toInt(),
+            v.substring(6, 8).toInt(),
+        )
 
-        internal fun parseTime(v: String): LocalTime = LocalTime(v.substring(0, 2).toInt(), v.substring(2, 4).toInt(), v.substring(4, 6).toInt())
+        internal fun parseTime(v: String): LocalTime = LocalTime(
+            v.substring(0, 2).toInt(),
+            v.substring(2, 4).toInt(),
+            v.substring(4, 6).toInt(),
+        )
 
         internal fun formatLocal(dt: LocalDateTime): String {
             fun p(n: Int, w: Int = 2) = n.toString().padStart(w, '0')
@@ -120,7 +128,10 @@ data class RRule(
         }
 
         /** Convenience builders for the UI. */
-        fun weekly(vararg days: DayOfWeek, interval: Int = 1): RRule = RRule(Frequency.WEEKLY, interval, byDay = days.map { WeekdayNum(it) })
+        fun weekly(
+            vararg days: DayOfWeek,
+            interval: Int = 1,
+        ): RRule = RRule(Frequency.WEEKLY, interval, byDay = days.map { WeekdayNum(it) })
 
         fun daily(interval: Int = 1): RRule = RRule(Frequency.DAILY, interval)
 

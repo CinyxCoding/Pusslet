@@ -1,0 +1,321 @@
+package se.pusslet.feature.settings
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalTime
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.model.Place
+import se.pusslet.core.model.SwedishPlaces
+import se.pusslet.data.BackendConfig
+import se.pusslet.data.repository.AppTheme
+import se.pusslet.data.repository.CalendarRepository
+import se.pusslet.data.repository.DeviceCalendar
+import se.pusslet.data.repository.DeviceCalendarSource
+import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.MorningBrief
+import se.pusslet.data.repository.PreferencesRepository
+import se.pusslet.data.repository.Prefs
+import se.pusslet.data.repository.TimeWindow
+import se.pusslet.ui.components.PussletTopBar
+import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.SwitchRow
+import se.pusslet.ui.components.TimeField
+import se.pusslet.ui.components.ValueField
+import se.pusslet.ui.format.formatTime
+import se.pusslet.ui.platform.AppPermission
+import se.pusslet.ui.platform.LocalPlatformActions
+import se.pusslet.ui.resources.*
+import se.pusslet.ui.theme.Spacing
+
+data class SettingsUiState(
+    val theme: AppTheme = AppTheme.System,
+    val dynamicColor: Boolean = false,
+    val place: Place? = null,
+    val morning: MorningBrief = MorningBrief(),
+    val quietEnabled: Boolean = true,
+    val quiet: TimeWindow = TimeWindow(LocalTime(21, 0), LocalTime(6, 30)),
+    val readCalendars: Set<Long> = emptySet(),
+    val exportCalendar: Long = -1,
+    val crashReports: Boolean = false,
+    val version: String = "",
+)
+
+class SettingsViewModel(
+    private val prefs: PreferencesRepository,
+    private val family: FamilyRepository,
+    private val deviceCalendars: DeviceCalendarSource,
+    private val calendar: CalendarRepository,
+    config: BackendConfig,
+) : ViewModel() {
+    val calendars = MutableStateFlow<List<DeviceCalendar>>(emptyList())
+
+    private val appearance =
+        combine(prefs.observe(Prefs.Theme), prefs.observe(Prefs.DynamicColor), family.settings) { t, d, s -> Triple(t, d, s.weatherPlace) }
+    private val notify =
+        combine(prefs.observe(Prefs.Morning), prefs.observe(Prefs.QuietHoursEnabled), prefs.observe(Prefs.QuietHours)) { m, qe, q ->
+            Triple(m, qe, q)
+        }
+    private val cal =
+        combine(
+            prefs.observe(Prefs.DeviceCalendarsRead),
+            prefs.observe(Prefs.DeviceCalendarExport),
+            prefs.observe(Prefs.CrashReportsConsent),
+        ) {
+            r,
+            e,
+            c,
+            ->
+            Triple(r, e, c)
+        }
+
+    val state: StateFlow<SettingsUiState> = combine(appearance, notify, cal) { a, n, c ->
+        SettingsUiState(a.first, a.second, a.third, n.first, n.second, n.third, c.first, c.second, c.third, config.versionName)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState(version = config.versionName))
+
+    fun loadCalendars() {
+        viewModelScope.launch { calendars.value = deviceCalendars.calendars() }
+    }
+
+    fun setTheme(t: AppTheme) = launch { prefs.set(Prefs.Theme, t) }
+
+    fun setDynamic(v: Boolean) = launch { prefs.set(Prefs.DynamicColor, v) }
+
+    fun setPlace(p: Place) = launch { family.saveSettings { it.copy(weatherPlace = p) } }
+
+    fun setMorning(m: MorningBrief) = launch { prefs.set(Prefs.Morning, m) }
+
+    fun setQuietEnabled(v: Boolean) = launch { prefs.set(Prefs.QuietHoursEnabled, v) }
+
+    fun setQuiet(w: TimeWindow) = launch { prefs.set(Prefs.QuietHours, w) }
+
+    fun toggleReadCalendar(id: Long) = launch { prefs.update(Prefs.DeviceCalendarsRead) { if (id in it) it - id else it + id } }
+
+    fun setCrashReports(v: Boolean) = launch { prefs.set(Prefs.CrashReportsConsent, v) }
+
+    /** Picks (or creates) the calendar family events are written to, and exports right away. */
+    fun setExport(id: Long?, appCalendarName: String) = launch {
+        val target = when (id) {
+            null -> -1L
+            APP_CALENDAR -> deviceCalendars.ensureAppCalendar(appCalendarName) ?: -1L
+            else -> id
+        }
+        prefs.set(Prefs.DeviceCalendarExport, target)
+        if (target >= 0) {
+            val events = calendar.events.first()
+            deviceCalendars.exportEvents(target, events)
+        }
+        calendars.value = deviceCalendars.calendars()
+    }
+
+    private fun launch(block: suspend () -> Unit) {
+        viewModelScope.launch { block() }
+    }
+
+    companion object {
+        const val APP_CALENDAR = -2L
+    }
+}
+
+@Composable
+fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel()) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val calendars by viewModel.calendars.collectAsStateWithLifecycle()
+    val platform = LocalPlatformActions.current
+    var pickPlace by remember { mutableStateOf(false) }
+    var language by remember { mutableStateOf(platform.currentLanguage()) }
+    val appCalendarName = stringResource(Res.string.app_name)
+    Scaffold(topBar = { PussletTopBar(stringResource(Res.string.settings_title), onBack = onBack) }) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(Spacing.screenHorizontal),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            SectionCard(stringResource(Res.string.settings_appearance)) {
+                Text(stringResource(Res.string.settings_theme), style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    listOf(
+                        AppTheme.System to Res.string.theme_system,
+                        AppTheme.Light to Res.string.theme_light,
+                        AppTheme.Dark to Res.string.theme_dark,
+                    ).forEach { (t, label) ->
+                        FilterChip(selected = state.theme == t, onClick = {
+                            viewModel.setTheme(t)
+                        }, label = { Text(stringResource(label)) })
+                    }
+                }
+                SwitchRow(stringResource(Res.string.settings_dynamic_color), state.dynamicColor, viewModel::setDynamic)
+                Text(stringResource(Res.string.settings_language), style = MaterialTheme.typography.labelLarge)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    listOf(
+                        "" to Res.string.language_system,
+                        "sv" to Res.string.language_sv,
+                        "en" to Res.string.language_en,
+                    ).forEach { (tag, label) ->
+                        FilterChip(selected = language == tag, onClick = {
+                            language = tag
+                            platform.setLanguage(tag)
+                        }, label = { Text(stringResource(label)) })
+                    }
+                }
+            }
+            SectionCard(stringResource(Res.string.settings_weather_place)) {
+                ValueField(
+                    stringResource(Res.string.settings_weather_place),
+                    state.place?.name?.ifBlank { null } ?: stringResource(Res.string.settings_weather_place_none),
+                    onClick = { pickPlace = true },
+                )
+            }
+            SectionCard(stringResource(Res.string.settings_notifications)) {
+                SwitchRow(
+                    stringResource(Res.string.settings_morning),
+                    state.morning.enabled,
+                    { on ->
+                        if (on && !platform.hasPermission(AppPermission.Notifications)) {
+                            platform.requestPermission(AppPermission.Notifications) { granted ->
+                                if (granted) viewModel.setMorning(state.morning.copy(enabled = true))
+                            }
+                        } else {
+                            viewModel.setMorning(state.morning.copy(enabled = on))
+                        }
+                    },
+                    supporting = stringResource(Res.string.settings_morning_body, formatTime(state.morning.time)),
+                )
+                if (state.morning.enabled) {
+                    TimeField(stringResource(Res.string.field_time), state.morning.time, {
+                        viewModel.setMorning(state.morning.copy(time = it))
+                    })
+                }
+                SwitchRow(
+                    stringResource(Res.string.settings_quiet_hours),
+                    state.quietEnabled,
+                    viewModel::setQuietEnabled,
+                    supporting = stringResource(
+                        Res.string.settings_quiet_hours_body,
+                        formatTime(state.quiet.start),
+                        formatTime(state.quiet.end),
+                    ),
+                )
+                if (state.quietEnabled) {
+                    TimeField(stringResource(Res.string.field_start), state.quiet.start, {
+                        viewModel.setQuiet(state.quiet.copy(start = it))
+                    })
+                    TimeField(stringResource(Res.string.field_end), state.quiet.end, { viewModel.setQuiet(state.quiet.copy(end = it)) })
+                }
+            }
+            SectionCard(stringResource(Res.string.settings_calendars)) {
+                val hasPermission = platform.hasPermission(AppPermission.Calendar)
+                SwitchRow(
+                    stringResource(Res.string.settings_device_calendars),
+                    hasPermission && calendars.isNotEmpty(),
+                    { on ->
+                        if (on) platform.requestPermission(AppPermission.Calendar) { granted -> if (granted) viewModel.loadCalendars() }
+                    },
+                    supporting = stringResource(Res.string.settings_device_calendars_body),
+                )
+                androidx.compose.runtime.LaunchedEffect(hasPermission) { if (hasPermission) viewModel.loadCalendars() }
+                calendars.filter { !it.ownedByApp }.forEach { c ->
+                    SwitchRow(c.name, c.id in state.readCalendars, { viewModel.toggleReadCalendar(c.id) }, supporting = c.accountName)
+                }
+                if (hasPermission) {
+                    Text(stringResource(Res.string.settings_export_calendar), style = MaterialTheme.typography.labelLarge)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                        FilterChip(selected = state.exportCalendar < 0, onClick = {
+                            viewModel.setExport(null, appCalendarName)
+                        }, label = { Text(stringResource(Res.string.settings_export_none)) })
+                        val app = calendars.firstOrNull { it.ownedByApp }
+                        FilterChip(
+                            selected = app != null && state.exportCalendar == app.id,
+                            onClick = { viewModel.setExport(app?.id ?: SettingsViewModel.APP_CALENDAR, appCalendarName) },
+                            label = { Text(stringResource(Res.string.settings_export_app_calendar)) },
+                        )
+                        calendars.filter { it.writable && !it.ownedByApp }.forEach { c ->
+                            FilterChip(selected = state.exportCalendar == c.id, onClick = {
+                                viewModel.setExport(c.id, appCalendarName)
+                            }, label = { Text(c.name) })
+                        }
+                    }
+                }
+            }
+            SectionCard(null) {
+                SwitchRow(
+                    stringResource(Res.string.settings_crash_reports),
+                    state.crashReports,
+                    viewModel::setCrashReports,
+                    supporting = stringResource(Res.string.settings_crash_reports_body),
+                )
+            }
+            Text(
+                stringResource(Res.string.settings_version, state.version),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    if (pickPlace) PlacePickerDialog(onDismiss = { pickPlace = false }, onPick = { viewModel.setPlace(it) })
+}
+
+@Composable
+fun PlacePickerDialog(onDismiss: () -> Unit, onPick: (Place) -> Unit) {
+    var query by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) } },
+        title = { Text(stringResource(Res.string.settings_weather_place)) },
+        text = {
+            Column {
+                OutlinedTextField(query, {
+                    query = it
+                }, label = {
+                    Text(stringResource(Res.string.onboarding_place_search))
+                }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                LazyColumn(Modifier.heightIn(max = 320.dp)) {
+                    items(SwedishPlaces.search(query), key = { it.name }) { p ->
+                        Text(
+                            p.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
+                                onPick(p)
+                                onDismiss()
+                            }.padding(vertical = Spacing.md),
+                        )
+                    }
+                }
+            }
+        },
+    )
+}

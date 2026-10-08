@@ -1,0 +1,193 @@
+package se.pusslet.core.model
+
+import kotlinx.datetime.LocalDate
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlin.time.Instant
+
+@Serializable
+data class Family(
+    val id: String,
+    val name: String,
+    val timeZoneId: String = "Europe/Stockholm",
+    val createdBy: String = "",
+    val createdAt: Instant? = null,
+)
+
+@Serializable
+enum class Role {
+    /** Full access. */
+    @SerialName("parent")
+    Parent,
+
+    /** Other adult (e.g. a grandparent): sees and checks off what is shared with them. */
+    @SerialName("caregiver")
+    Caregiver,
+
+    /** V2: simplified child view. */
+    @SerialName("child")
+    Child,
+}
+
+/** An adult with an account. The id is the Firebase uid. */
+@Serializable
+data class Member(
+    val id: String,
+    val displayName: String,
+    val role: Role = Role.Parent,
+    val color: MemberColor = MemberColor.Sage,
+    val joinedAt: Instant? = null,
+    /** The invite used to join; validated by security rules on create. */
+    val inviteCode: String? = null,
+)
+
+/** A child profile. Children never need an account; only a first name is required (data minimisation). */
+@Serializable
+data class Child(
+    val id: String,
+    val firstName: String,
+    val color: MemberColor = MemberColor.Ocean,
+    /** A single emoji or null to show the initial. No photos are needed. */
+    val avatar: String? = null,
+    /** Optional; used only for age-based clothing advice. */
+    val birthDate: LocalDate? = null,
+    val school: SchoolRef? = null,
+    val className: String? = null,
+    val lunch: LunchSource? = null,
+    val sizes: List<ClothingSize> = emptyList(),
+    val contacts: List<Contact> = emptyList(),
+    val notes: String = "",
+    /** Households the child lives in (prepared for shared custody across two families). */
+    val householdIds: List<String> = emptyList(),
+)
+
+@Serializable
+enum class SchoolKind {
+    @SerialName("preschool")
+    Preschool,
+
+    @SerialName("school")
+    School,
+
+    @SerialName("other")
+    Other,
+}
+
+@Serializable
+data class SchoolRef(
+    val name: String,
+    /** Skolverket skolenhetskod (8 digits), null for preschools and free-text entries. */
+    val schoolUnitCode: String? = null,
+    val municipalityCode: String? = null,
+    val kind: SchoolKind = SchoolKind.School,
+)
+
+@Serializable
+enum class LunchProviderType {
+    @SerialName("skolmaten")
+    Skolmaten,
+
+    /** Any RSS feed URL the user pastes. */
+    @SerialName("rss")
+    Rss,
+
+    @SerialName("manual")
+    Manual,
+}
+
+@Serializable
+data class LunchSource(val provider: LunchProviderType, val reference: String = "")
+
+@Serializable
+enum class ClothingCategory {
+    @SerialName("pants")
+    Pants,
+
+    @SerialName("top")
+    Top,
+
+    @SerialName("shoes")
+    Shoes,
+
+    @SerialName("outerwear")
+    Outerwear,
+}
+
+/** One size observation; the list keeps the history so you can see when shoes got too small. */
+@Serializable
+data class ClothingSize(val category: ClothingCategory, val size: String, val notedOn: LocalDate)
+
+@Serializable
+data class Contact(
+    val name: String,
+    /** Free text like "Lärare", "Fritids", "Veras mamma". */
+    val relation: String = "",
+    val phone: String? = null,
+    val email: String? = null,
+)
+
+/** Anyone an event or task can be about: adult members and children share one id space. */
+data class FamilyPerson(
+    val id: String,
+    val name: String,
+    val color: MemberColor,
+    val isChild: Boolean,
+    val role: Role? = null,
+    val avatar: String? = null,
+    val birthDate: LocalDate? = null,
+) {
+    /** Colour is never the only signal: UI shows this initial (or the avatar emoji) on the colour. */
+    val initial: String get() = avatar ?: name.trim().take(1).uppercase().ifEmpty { "?" }
+
+    companion object {
+        fun of(member: Member) = FamilyPerson(member.id, member.displayName, member.color, isChild = false, role = member.role)
+
+        fun of(child: Child) = FamilyPerson(
+            child.id,
+            child.firstName,
+            child.color,
+            isChild = true,
+            avatar = child.avatar,
+            birthDate = child.birthDate,
+        )
+    }
+}
+
+/** Opt-in sensitive data. Used only to filter recipes and warn; can be deleted at any time. */
+@Serializable
+data class DietProfile(
+    val personId: String,
+    val allergies: Set<Allergen> = emptySet(),
+    val diets: Set<Diet> = emptySet(),
+    val otherNotes: String = "",
+    /** When the family agreed to store this information (shown in the privacy view). */
+    val consentedAt: Instant? = null,
+)
+
+@Serializable
+enum class Allergen {
+    Milk,
+    Lactose,
+    Egg,
+    Gluten,
+    Peanut,
+    TreeNuts,
+    Fish,
+    Shellfish,
+    Soy,
+    Sesame,
+    Celery,
+    Mustard,
+    Lupin,
+    Sulphites,
+}
+
+@Serializable
+enum class Diet {
+    Vegetarian,
+    Vegan,
+    Pescetarian,
+    Halal,
+    NoPork,
+    Kosher,
+}

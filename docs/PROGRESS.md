@@ -15,7 +15,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] `CLAUDE.md`, `docs/BRIEF.md`, `docs/DECISIONS.md`, `docs/PROGRESS.md`, `docs/SETUP.md`
 - [x] Testanrop mot Livsmedelsdatabasen, SMHI SNOW1g, Skolverket, skolmaten-RSS, Open Food Facts → fixturer
 - [x] ✅ `./gradlew :composeApp:assembleDemoDebug` bygger
-- [x] Skalet renderar (Robolectric + Roborazzi-skärmdumpar ljust/mörkt/engelska). Start på riktig emulator: se Kända begränsningar
+- [x] ✅ Appen startar på emulator (API 36, AVD `pusslet_api36`) och visar navigationen; per-app-språk sv fungerar. Skalet har även Roborazzi-skärmdumpar (ljust/mörkt/engelska)
 - [ ] iOS-target kompilerar (verifieras i macOS-jobbet i CI; går inte att bygga på Windows)
 
 ## Fas 1 – Familj, kalender, Idag
@@ -67,5 +67,5 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Barnvy & veckopeng · kalas/presenter · sök · flerhushållsdelning · fler lunchleverantörer
 
 ## Kända begränsningar / buggar
-- Ingen Android-systemavbild finns installerad på utvecklingsmaskinen, så appen har ännu inte startats på emulator.
+- Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.
 - iOS kan inte kompileras på Windows; verifieras i CI (macOS-runner).

@@ -118,11 +118,19 @@ fun PussletApp(
     shell: ShellViewModel = koinViewModel(),
 ) {
     val state by shell.state.collectAsStateWithLifecycle()
+    // Onboarding stays on screen after the family is created, for its "Klart!" step, until the user taps "Kom igång".
+    var onboarding by rememberSaveable { mutableStateOf(false) }
     PussletTheme(themeMode = state.theme, dynamicColor = state.dynamicColor) {
         Surface(Modifier.fillMaxSize()) {
             when {
                 !state.ready -> LoadingBox()
-                !state.onboarded -> OnboardingFlow(incoming, onIncomingHandled)
+                !state.onboarded || onboarding -> OnboardingFlow(
+                    incoming,
+                    onIncomingHandled,
+                    familyReady = state.onboarded,
+                    onCreating = { onboarding = true },
+                    onFinished = { onboarding = false },
+                )
                 else -> MainShell(incoming, onIncomingHandled, state.offlineWithChanges)
             }
         }
@@ -130,7 +138,13 @@ fun PussletApp(
 }
 
 @Composable
-private fun OnboardingFlow(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) {
+private fun OnboardingFlow(
+    incoming: IncomingIntent?,
+    onIncomingHandled: () -> Unit,
+    familyReady: Boolean,
+    onCreating: () -> Unit,
+    onFinished: () -> Unit,
+) {
     var joinCode by rememberSaveable { mutableStateOf<String?>(null) }
     var joining by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(incoming) {
@@ -141,10 +155,9 @@ private fun OnboardingFlow(incoming: IncomingIntent?, onIncomingHandled: () -> U
         }
     }
     if (joining) {
-        // Joining finishes by marking onboarding done; the shell then switches to the main UI by itself.
-        JoinRoute(initialCode = joinCode, onBack = { joining = false }, onJoined = {})
+        JoinRoute(initialCode = joinCode, onBack = { joining = false }, onJoined = onFinished)
     } else {
-        OnboardingRoute(onJoin = { joining = true }, onFinished = {})
+        OnboardingRoute(onJoin = { joining = true }, onFinished = onFinished, familyReady = familyReady, onCreating = onCreating)
     }
 }
 

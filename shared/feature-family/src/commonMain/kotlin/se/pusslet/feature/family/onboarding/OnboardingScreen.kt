@@ -65,13 +65,18 @@ import se.pusslet.ui.theme.Spacing
 fun OnboardingRoute(
     onJoin: () -> Unit,
     onFinished: () -> Unit,
+    /** The family already exists (e.g. the app was restarted on the last step): show "Klart!", never the welcome. */
+    familyReady: Boolean = false,
+    /** Called right before the family is created, so the caller keeps onboarding open for its last step. */
+    onCreating: () -> Unit = {},
     viewModel: OnboardingViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val platform = LocalPlatformActions.current
     val defaultName = stringResource(Res.string.onboarding_default_family_name, state.myName.trim())
     Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
-        when (state.step) {
+        val step = if (familyReady && state.step == OnboardingStep.Welcome) OnboardingStep.Done else state.step
+        when (step) {
             OnboardingStep.Welcome -> Welcome(
                 onCreate = { viewModel.go(OnboardingStep.Family) },
                 onJoin = onJoin,
@@ -84,8 +89,8 @@ fun OnboardingRoute(
                 total = 3,
                 canContinue = state.canContinue && !state.saving,
                 onBack = viewModel::back,
-                onNext = { viewModel.next(defaultName) },
-                onSkip = if (state.step != OnboardingStep.Family) ({ viewModel.next(defaultName) }) else null,
+                onNext = { viewModel.next(defaultName, onCreating) },
+                onSkip = if (state.step != OnboardingStep.Family) ({ viewModel.next(defaultName, onCreating) }) else null,
             ) {
                 when (state.step) {
                     OnboardingStep.Family -> FamilyStep(state, viewModel)

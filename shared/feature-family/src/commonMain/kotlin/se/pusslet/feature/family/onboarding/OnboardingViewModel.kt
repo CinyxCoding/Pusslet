@@ -64,11 +64,14 @@ class OnboardingViewModel(
     }
 
     /** [defaultFamilyName] is used when the family name was left empty ("Familjen Sara"). */
-    fun next(defaultFamilyName: String) {
+    fun next(defaultFamilyName: String, onCreating: () -> Unit = {}) {
         val s = _state.value
         if (!s.canContinue) return
         when (s.step) {
-            OnboardingStep.Place -> finish(defaultFamilyName)
+            OnboardingStep.Place -> {
+                onCreating()
+                finish(defaultFamilyName)
+            }
             OnboardingStep.Done -> Unit
             else -> _state.update { it.copy(step = OnboardingStep.entries[it.step.ordinal + 1]) }
         }

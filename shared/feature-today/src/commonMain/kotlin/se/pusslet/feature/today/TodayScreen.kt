@@ -1,5 +1,6 @@
 package se.pusslet.feature.today
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -20,7 +21,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -149,18 +150,41 @@ private fun cardKey(card: ContextCard): String = when (card) {
     is ContextCard.HandoverSoon -> "handover-${card.schedule.id}-${card.handover.date}"
 }
 
+/** "Vecka 41" as a plain label: it is information, not a button. */
+@Composable
+private fun WeekBadge(text: String) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = MaterialTheme.colorScheme.surface,
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = Spacing.sm, vertical = Spacing.xs),
+        )
+    }
+}
+
 @Composable
 private fun Header(state: TodayUiState, plan: TodayPlan, onSearch: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            Text(
-                formatDateLong(plan.date).replaceFirstChar { it.uppercase() },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f, fill = false),
-            )
-            SuggestionChip(onClick = {}, label = { Text(weekLong(plan.week.week)) })
-            Spacer(Modifier.weight(1f))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // The date gets all the room the week badge leaves; the search button stays at the end.
+            Row(
+                Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                Text(
+                    formatDateLong(plan.date).replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                WeekBadge(weekLong(plan.week.week))
+            }
             IconButton(onClick = onSearch) {
                 Icon(Icons.Filled.Search, contentDescription = stringResource(Res.string.search_title))
             }

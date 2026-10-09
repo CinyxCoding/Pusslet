@@ -33,6 +33,18 @@ jobs:
         with:
           name: test-reports
           path: '**/build/reports/tests/**'
+      # The goldens are recorded on Windows; text may render a pixel differently on Linux, so this step warns rather
+      # than fails until it has been stable in CI. The diff images show what changed.
+      - name: Screenshot goldens (compare)
+        id: goldens
+        continue-on-error: true
+        run: ./gradlew :composeApp:verifyRoborazziDemoDebug
+      - name: Upload screenshot diffs
+        if: steps.goldens.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: screenshot-diffs
+          path: composeApp/build/outputs/roborazzi/**
 
   ios:
     name: iOS – compile shared framework

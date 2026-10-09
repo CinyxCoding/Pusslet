@@ -39,7 +39,8 @@ Use Git Bash (or any POSIX shell) from the repo root. JDK: Android Studio's bund
 ./gradlew ktlintCheck detekt                     # lint (ktlintFormat to auto-fix)
 ./gradlew build                                  # everything incl. lint, tests, all variants
 ./gradlew :composeApp:bundleProdRelease          # release AAB (needs signing config, see docs/SETUP.md)
-./gradlew :composeApp:recordRoborazziDemoDebug   # re-record screenshot goldens
+./gradlew :composeApp:recordRoborazziDemoDebug   # re-record screenshot goldens (look at them before committing)
+./gradlew :composeApp:verifyRoborazziDemoDebug   # compare against the goldens (plain test runs do not)
 cd functions && npm ci && npm test               # Firestore rules + functions tests (starts emulators)
 firebase emulators:start --project demo-pusslet  # local backend for the demo flavor
 ```

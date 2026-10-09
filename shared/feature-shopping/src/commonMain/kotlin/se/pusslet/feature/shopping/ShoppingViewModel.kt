@@ -183,10 +183,9 @@ class ShoppingViewModel(
     }
 
     init {
-        launch {
-            prefs.get(Prefs.ActiveShoppingList).takeIf { it.isNotEmpty() }?.let {
-                if (selectedId.value == null) selectedId.value = it
-            }
+        // Follows the active list, also when it is chosen elsewhere (a search hit, the widget).
+        viewModelScope.launch {
+            prefs.observe(Prefs.ActiveShoppingList).collect { if (it.isNotEmpty()) selectedId.value = it }
         }
     }
 

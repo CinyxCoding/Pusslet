@@ -14,7 +14,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
@@ -68,6 +72,7 @@ fun TodayRoute(
     onPlanDinner: (LocalDate) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHandover: (String) -> Unit,
+    onSearch: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -83,6 +88,7 @@ fun TodayRoute(
         onPlanDinner = onPlanDinner,
         onOpenSettings = onOpenSettings,
         onOpenHandover = onOpenHandover,
+        onSearch = onSearch,
     )
 }
 
@@ -98,6 +104,7 @@ fun TodayScreen(
     onPlanDinner: (LocalDate) -> Unit = {},
     onOpenSettings: () -> Unit = {},
     onOpenHandover: (String) -> Unit = {},
+    onSearch: () -> Unit = {},
 ) {
     val plan = state.plan
     if (state.loading || plan == null) {
@@ -114,7 +121,7 @@ fun TodayScreen(
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        item(key = "header") { Header(state, plan) }
+        item(key = "header") { Header(state, plan, onSearch) }
         item(key = "weather") { WeatherCard(state, plan, onOpenSettings) }
         items(plan.cards, key = { cardKey(it) }) { card ->
             ContextCardView(card, state, onTakeHandoff, onAddGiftTask, onOpenOccurrence, onOpenHandover)
@@ -136,15 +143,20 @@ private fun cardKey(card: ContextCard): String = when (card) {
 }
 
 @Composable
-private fun Header(state: TodayUiState, plan: TodayPlan) {
+private fun Header(state: TodayUiState, plan: TodayPlan, onSearch: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Text(
                 formatDateLong(plan.date).replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f, fill = false),
             )
             SuggestionChip(onClick = {}, label = { Text(weekLong(plan.week.week)) })
+            Spacer(Modifier.weight(1f))
+            IconButton(onClick = onSearch) {
+                Icon(Icons.Filled.Search, contentDescription = stringResource(Res.string.search_title))
+            }
         }
         val greeting = stringResource(
             when (plan.greeting) {

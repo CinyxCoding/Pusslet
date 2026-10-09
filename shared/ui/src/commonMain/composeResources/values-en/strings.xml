@@ -1026,4 +1026,20 @@
     <!-- Free tier limits (only shown when premium is switched on, docs/MONETIZATION.md) -->
     <string name="subs_limit_title">More calendars come with Premium</string>
     <string name="subs_limit_body">The free version has room for %1$d subscriptions. Remove one to add a new one.</string>
+
+    <!-- Search (V2) -->
+    <string name="search_title">Search</string>
+    <string name="search_hint">Events, recipes, to-dos, items …</string>
+    <string name="search_start">Search the family's calendar, recipes, to-do lists, shopping lists and the children's contacts. Everything is searched on the phone.</string>
+    <string name="search_nothing">Nothing found for “%1$s”.</string>
+    <string name="search_events">Events</string>
+    <string name="search_recipes">Recipes</string>
+    <string name="search_tasks">To-dos</string>
+    <string name="search_items">On shopping lists</string>
+    <string name="search_contacts">Contacts</string>
+    <string name="search_line">%1$s · %2$s</string>
+    <string name="search_done">done</string>
+    <string name="search_in_trolley">in the trolley</string>
+    <string name="more_search">Search</string>
+    <string name="more_search_body">Events, recipes, to-dos, items and contacts</string>
 </resources>

@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,13 +27,14 @@ import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
-enum class MoreDestination { Family, Tasks, Settings, Account, AboutData, Privacy }
+enum class MoreDestination { Search, Family, Tasks, Settings, Account, AboutData, Privacy }
 
 private data class MoreItem(val dest: MoreDestination, val title: StringResource, val body: StringResource?, val icon: ImageVector)
 
 @Composable
 fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues = PaddingValues()) {
     val items = listOf(
+        MoreItem(MoreDestination.Search, Res.string.more_search, Res.string.more_search_body, Icons.Filled.Search),
         MoreItem(MoreDestination.Family, Res.string.more_family, Res.string.more_family_body, PussletIcons.Family),
         MoreItem(MoreDestination.Tasks, Res.string.more_tasks, Res.string.more_tasks_body, PussletIcons.Task),
         MoreItem(MoreDestination.Settings, Res.string.more_settings, null, Icons.Filled.Settings),

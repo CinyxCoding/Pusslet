@@ -90,6 +90,8 @@ import se.pusslet.shell.navigation.TopLevelTab
 import se.pusslet.shell.navigation.rememberAppNavigator
 import se.pusslet.shell.quickadd.QuickAddSheet
 import se.pusslet.shell.quickadd.QuickAddViewModel
+import se.pusslet.shell.search.SearchNavigation
+import se.pusslet.shell.search.SearchRoute
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.resources.Res
@@ -267,7 +269,24 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                     },
                     onOpenSettings = { navigator.navigate(Route.Settings) },
                     onOpenHandover = { navigator.navigate(Route.Handover(it)) },
+                    onSearch = { navigator.navigate(Route.Search) },
                     contentPadding = padding,
+                )
+            }
+            entry<Route.Search> {
+                SearchRoute(
+                    onBack = navigator::goBack,
+                    open = object : SearchNavigation {
+                        override fun event(occurrence: EventOccurrence) = openOccurrence(occurrence)
+
+                        override fun recipe(id: String) = navigator.navigate(Route.Recipe(id))
+
+                        override fun task(id: String) = navigator.navigate(Route.TaskEditor(id))
+
+                        override fun list(id: String) = navigator.selectTab(TopLevelTab.Shopping)
+
+                        override fun child(id: String) = navigator.navigate(Route.ChildEditor(id))
+                    },
                 )
             }
             entry<Route.Calendar> {
@@ -383,6 +402,7 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
 }
 
 private fun MoreDestination.route(): Route = when (this) {
+    MoreDestination.Search -> Route.Search
     MoreDestination.Family -> Route.Family
     MoreDestination.Tasks -> Route.Tasks
     MoreDestination.Settings -> Route.Settings

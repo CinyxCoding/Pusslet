@@ -12,10 +12,12 @@ import se.pusslet.feature.tasks.tasksModule
 import se.pusslet.feature.today.todayModule
 import se.pusslet.shell.ShellViewModel
 import se.pusslet.shell.quickadd.QuickAddViewModel
+import se.pusslet.shell.search.SearchViewModel
 
 val shellModule: Module = module {
     viewModel { ShellViewModel(get(), get(), get(), get()) }
     viewModel { QuickAddViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { SearchViewModel(get(), get(), get(), get()) }
 }
 
 /** Every UI module; platform code adds its own module plus `dataModule`. */

@@ -27,5 +27,8 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel.navigation3)
             implementation(libs.kermit)
         }
+        commonTest.dependencies {
+            implementation(projects.shared.testing)
+        }
     }
 }

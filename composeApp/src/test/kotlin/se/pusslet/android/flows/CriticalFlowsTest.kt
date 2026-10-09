@@ -133,4 +133,15 @@ class CriticalFlowsTest {
         listOf("Bananer", "Gurka", "Mjölk", "Kaffe", "Blöjor storlek 5").forEach { tap(it) }
         waitFor("Allt på listan är i vagnen.")
     }
+
+    @Test
+    fun searchFindsAnEventAndOpensIt() {
+        launch(seed = true, waitFor = "Ella")
+        compose.onNodeWithContentDescription("Sök").performClick()
+        waitFor("Sök i familjens kalender")
+        compose.onAllNodes(hasSetTextAction()).onFirst().performTextInput("fotbol")
+        waitFor("Händelser")
+        tap("Fotboll")
+        waitFor("Lämning och hämtning")
+    }
 }

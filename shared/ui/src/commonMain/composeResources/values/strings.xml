@@ -1027,4 +1027,20 @@
     <!-- Free tier limits (only shown when premium is switched on, docs/MONETIZATION.md) -->
     <string name="subs_limit_title">Fler kalendrar ingår i Premium</string>
     <string name="subs_limit_body">Gratisversionen har plats för %1$d prenumerationer. Ta bort en för att lägga till en ny.</string>
+
+    <!-- Search (V2) -->
+    <string name="search_title">Sök</string>
+    <string name="search_hint">Händelser, recept, att göra, varor …</string>
+    <string name="search_start">Sök i familjens kalender, recept, att göra-listor, inköpslistor och barnens kontakter. Allt söks på telefonen.</string>
+    <string name="search_nothing">Hittade inget för ”%1$s”.</string>
+    <string name="search_events">Händelser</string>
+    <string name="search_recipes">Recept</string>
+    <string name="search_tasks">Att göra</string>
+    <string name="search_items">På inköpslistor</string>
+    <string name="search_contacts">Kontakter</string>
+    <string name="search_line">%1$s · %2$s</string>
+    <string name="search_done">klar</string>
+    <string name="search_in_trolley">i vagnen</string>
+    <string name="more_search">Sök</string>
+    <string name="more_search_body">Händelser, recept, att göra, varor och kontakter</string>
 </resources>

@@ -52,6 +52,7 @@ import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.data.usecase.CalendarFeeds
 import se.pusslet.data.usecase.DataPrivacy
 import se.pusslet.data.usecase.DeviceCalendarExport
+import se.pusslet.data.usecase.FamilySearch
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.MealShopping
@@ -101,6 +102,7 @@ val dataModule: Module = module {
     single<Entitlements> { AllUnlockedEntitlements }
     single<BillingRepository> { NoBilling }
     single { AttachmentHousekeeping(get(), get(), get(), get()) }
+    single { FamilySearch(get(), get(), get(), get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get(), get()) }

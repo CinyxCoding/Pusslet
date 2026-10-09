@@ -170,6 +170,9 @@ Lanseringsförberedelser (2026-10-09): App Check inkopplat (ADR-031), integritet
 Nästa steg (ägaren): allt i briefen är byggt. Det som återstår kräver ägaren – Firebase-projekt och
 `google-services.json`, uppladdningsnyckel, riktiga telefoner (FCM, Google Kalender), iOS-länkning i macOS-jobbet i CI
 och Play Console (testare i 14 dagar). Se `docs/SETUP.md` avsnitt 1–5.
+**Före det stängda testet** (Play kräver policyadressen, och testarna lägger in riktiga uppgifter): fyll i
+personuppgiftsansvarig, adress, e-post och datum i `docs/PRIVACY.md` och kontaktuppgiften i `AppConfig.CONTACT`.
+Tills dess fungerar allt med platshållarna – policysidan publiceras bara inte.
 
 ## Verifiering fas 5: andra hemmet (2026-10-09)
 Demo-APK på emulatorn (Pixel 9 Pro, API 37, utan fönster) mot Firebase-emulatorerna (auth + firestore), med

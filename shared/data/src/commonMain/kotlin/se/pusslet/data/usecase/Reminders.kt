@@ -132,7 +132,7 @@ class TodayPlans(
                 now = now,
                 zone = zone,
                 me = sessions.session.value.memberId,
-                people = family.people.first(),
+                people = family.everyone.first(),
                 children = family.children.first(),
                 occurrences = calendar.occurrences(date, date.plusDays(LOOK_AHEAD_DAYS), zone).first(),
                 packingRules = packing.rules.first(),

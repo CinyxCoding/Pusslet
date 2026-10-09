@@ -73,7 +73,7 @@ class CalendarViewModel(
 
     private val filters = combine(prefs.observe(Prefs.CalendarPersonFilter), prefs.observe(Prefs.CalendarLayers)) { f, l -> f to l }
 
-    val state: StateFlow<CalendarUiState> = combine(window, occurrences, family.people, family.custody, filters) {
+    val state: StateFlow<CalendarUiState> = combine(window, occurrences, family.everyone, family.custody, filters) {
         w,
         occ,
         people,

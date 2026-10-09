@@ -105,7 +105,7 @@ class TodayViewModel(
         val custody: List<se.pusslet.core.model.CustodySchedule>,
     )
 
-    private val household: Flow<Household> = combine(family.people, family.children, family.family, family.custody) { p, c, f, cu ->
+    private val household: Flow<Household> = combine(family.everyone, family.children, family.family, family.custody) { p, c, f, cu ->
         Household(p, c, f?.name.orEmpty(), cu)
     }
 

@@ -163,12 +163,26 @@ Demo-APK på emulatorn (Pixel 9 Pro, API 37) utan backend:
 Nästa steg (fas 5, V2): sök, kalas och presenter, barnvy med sysslor och veckopeng, fler lunchleverantörer och
 flerhushållsdelning fullt ut.
 
+## Verifiering fas 5: andra hemmet (2026-10-09)
+Demo-APK på emulatorn (Pixel 9 Pro, API 37, utan fönster) mot Firebase-emulatorerna (auth + firestore), med
+`functions/scripts/other-home.mjs` som "Lina" i ett annat hem (går genom säkerhetsreglerna som en telefon):
+- Sara delar Ella → koden visas; Lina går med med koden → appen visar "Delas med Lina". Lina ser Ella, hennes
+  händelser och packningsregler i utrymmet men kan inte läsa familjen Linds egna händelser.
+- Linas "Simning med mamma" syns på Saras Idag och i detaljerna ("Delas med andra hemmet", Lina hämtar). En ny
+  tandläkartid för Ella via snabbinmatningen hamnar i utrymmet av sig själv och syns för Lina.
+- "Sluta dela": Lina har kvar utrymmet (bara hennes hem och hon själv), Sara har kvar en egen kopia.
+- Buggar som hittades och rättades: (1) "Sluta dela" försökte dölja hemmets vuxna som aldrig gått med i utrymmet –
+  reglerna nekade hela batchen; nu bara de som finns där. (2) Idag visade "Ingen har tagit hämtningen" när andra hemmet
+  hämtar – Idag, kalendern, påminnelser och förfrågningar känner nu igen andra hemmets vuxna. (3) Texterna pekade på
+  "Mer → Familj" men menyn heter "Familjen".
+
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.
 - iOS kan inte kompileras på Windows; verifieras i CI (macOS-runner).
 - Hjälpare (t.ex. morfar) kan inte ändra lämning/hämtning direkt, bara svara på förfrågningar (ADR-015).
 - Redigeras en händelse på en telefon i annan tidszon visas händelsens egna klockslag i redigeraren (kalendern visar omräknat).
 - Delade bilder syns bara på telefonen som sparade dem (ADR-025).
+- Hjälpare (morfar) ser inte det som delas med andra hemmet – de är bara med i sitt eget hem (ADR-030).
 - Kortet "Studiedag på fredag" säger veckodagen även när studiedagen är idag (fixas i fas 4).
 - Notiser och widgets byggs med telefonens språk; har man valt ett annat språk i appen på Android 12 eller äldre kan de
   komma på systemspråket.

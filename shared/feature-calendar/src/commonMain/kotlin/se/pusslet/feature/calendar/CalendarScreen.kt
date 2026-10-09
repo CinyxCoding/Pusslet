@@ -151,9 +151,11 @@ fun CalendarScreen(
                 )
             }
         }
-        if (state.people.isNotEmpty()) {
+        // The other home's adults are named on shared events but are not a filter of this family's calendar.
+        val filterable = state.people.filter { !it.otherHome }
+        if (filterable.isNotEmpty()) {
             PersonChips(
-                state.people,
+                filterable,
                 state.personFilter,
                 onTogglePerson,
                 Modifier.padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),

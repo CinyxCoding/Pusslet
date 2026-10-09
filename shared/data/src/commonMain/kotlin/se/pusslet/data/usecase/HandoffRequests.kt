@@ -85,7 +85,7 @@ class HandoffRequests(
     fun watch(scope: CoroutineScope, alerts: FamilyAlerts) {
         scope.launch {
             var seen: Map<String, RequestStatus>? = null
-            combine(calendar.handoffRequests, family.people) { requests, people -> requests to people }.collect { (requests, people) ->
+            combine(calendar.handoffRequests, family.everyone) { requests, people -> requests to people }.collect { (requests, people) ->
                 val me = sessions.session.value.memberId
                 val previous = seen
                 seen = requests.associate { it.id to it.status }

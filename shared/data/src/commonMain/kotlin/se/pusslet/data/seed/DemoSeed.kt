@@ -4,12 +4,15 @@ import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.isoDayNumber
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.Allergen
+import se.pusslet.core.model.Allowance
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.ChoreRotation
 import se.pusslet.core.model.ClothingCategory
 import se.pusslet.core.model.ClothingSize
+import se.pusslet.core.model.Completion
 import se.pusslet.core.model.Contact
 import se.pusslet.core.model.DietProfile
 import se.pusslet.core.model.Event
@@ -486,7 +489,41 @@ class DemoSeed(private val family: FamilyRepository, private val docs: DocumentS
                 rrule = "FREQ=WEEKLY;BYDAY=MO,TH",
                 rotation = ChoreRotation(listOf(JOHAN, sara), 1, today.isoWeek),
             ),
+            // Barnläge: Ella has cleared the table every day this week; the latest one waits for a parent.
+            FamilyTask(
+                "t-duka",
+                "Duka av efter middagen",
+                kind = TaskKind.Chore,
+                category = TaskCategory.Kids,
+                assigneeId = ELLA,
+                due = monday,
+                rrule = "FREQ=DAILY",
+                stars = 1,
+                completions = (0 until today.dayOfWeek.isoDayNumber - 1).associate { i ->
+                    d(i).toString() to Completion(ELLA, clock.now(), approved = i < today.dayOfWeek.isoDayNumber - 2)
+                },
+            ),
+            FamilyTask(
+                "t-rummet",
+                "Städa rummet",
+                kind = TaskKind.Chore,
+                category = TaskCategory.Kids,
+                assigneeId = ELLA,
+                rrule = "FREQ=WEEKLY;BYDAY=SA",
+                stars = 3,
+            ),
+            FamilyTask(
+                "t-leksaker",
+                "Plocka undan leksakerna",
+                kind = TaskKind.Chore,
+                category = TaskCategory.Kids,
+                assigneeId = SIMON,
+                due = monday,
+                rrule = "FREQ=DAILY",
+                stars = 1,
+            ),
         ).forEach { put(Collections.Tasks, it.id, it, FamilyTask.serializer()) }
+        put(Collections.Allowances, ELLA, Allowance(ELLA, weekly = 20, perStar = 5), Allowance.serializer())
 
         family.saveSettings { FamilySettings(weatherPlace = Place("Stockholm", 59.3293, 18.0686), defaultStoreId = "s-ica") }
     }

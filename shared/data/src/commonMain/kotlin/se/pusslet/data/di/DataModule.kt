@@ -50,12 +50,14 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.RoomSyncLocalStore
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.data.usecase.AllowanceRepository
 import se.pusslet.data.usecase.CalendarFeeds
 import se.pusslet.data.usecase.DataPrivacy
 import se.pusslet.data.usecase.DeviceCalendarExport
 import se.pusslet.data.usecase.FamilySearch
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HandoffRequests
+import se.pusslet.data.usecase.KidChoreActions
 import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
@@ -105,6 +107,8 @@ val dataModule: Module = module {
     single { AttachmentHousekeeping(get(), get(), get(), get()) }
     single { FamilySearch(get(), get(), get(), get(), get(), get(), get()) }
     single { WishRepository(get(), get(), get(), get()) }
+    single { KidChoreActions(get(), get()) }
+    single { AllowanceRepository(get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get(), get()) }

@@ -1,5 +1,6 @@
 package se.pusslet.feature.calendar
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.datetime.LocalDateTime
@@ -18,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PartyViewModelTest {
     private fun vm(g: TestGraph) = PartyViewModel(g.calendar, g.tasks, g.family, g.sessions, g.ids, g.clock, g.zone)
 

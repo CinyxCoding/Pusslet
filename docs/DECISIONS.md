@@ -248,3 +248,16 @@ till föräldrar. "Köpt" bockar även av presentuppgiften från snabbinmatninge
 som även hjälpare kan läsa och där de får markera "köpt" – inget annat (reglerna + regeltest), så två morföräldrar inte
 köper samma sak. Inbjudan delas som text via telefonens delningsmeny; inga gästers kontaktuppgifter sparas.
 **Konsekvens:** Gästlistan är bara namn och svar. Barnets egen vy (fas 5) ska inte visa "köpt" på önskelistan.
+
+## ADR-028 – Barnläge, stjärnor och veckopeng utan barnkonton
+**Kontext:** BRIEF: barnets förenklade vy (mina sysslor, mina stjärnor, mitt schema) och veckopeng där föräldern godkänner.
+Barn har inga konton (dataminimering) och reglerna kan inte skilja ett barn från den vuxna vars telefon det lånar.
+**Beslut:** Barnläge öppnas från Mer på en förälders telefon eller en familjeplatta och visar ett barn: dagens händelser
+(och vem som hämtar), sysslor tilldelade barnet (även i turordning) och veckans stjärnor. "Klar!" sparas som en
+avbockning som väntar (`Completion.approved = false`, för engångsuppgifter `FamilyTask.approved`); en förälder
+godkänner eller säger "inte klart" under Uppgifter, och ett Idag-kort påminner. Stjärnor räknas på sysslans datum och på
+den som hade turen. Veckopeng (`allowances`, bara föräldrar läser) = grundbelopp + kr per godkänd stjärna, med "utbetald"
+per vecka som slås ihop per vecka. Man lämnar barnläge med ett långt tryck. `KidChores` i kärnan bär reglerna.
+**Konsekvens:** Barnet "är" alltid den inloggade vuxna mot servern – godkännandet är en familjeöverenskommelse, inte en
+säkerhetsgräns. Ett eget barnkonto kan läggas till senare med en barnroll i reglerna.
+

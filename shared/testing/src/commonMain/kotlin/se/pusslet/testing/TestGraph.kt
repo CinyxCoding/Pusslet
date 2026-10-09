@@ -40,6 +40,7 @@ import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
 import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.InMemorySyncLocalStore
+import se.pusslet.data.usecase.AllowanceRepository
 import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
@@ -71,6 +72,7 @@ class TestGraph(
     val files = FakeAttachmentFiles(clock)
     val attachments = AttachmentRepository(docs, files, ids, clock)
     val wishes = WishRepository(docs, sessions, ids, clock)
+    val allowances = AllowanceRepository(docs, clock)
     val packing = PackingRepository(docs)
     val lunchProvider = FakeLunchProvider()
     val lunches = LunchRepository(docs, lunchProvider, family)

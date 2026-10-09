@@ -1,6 +1,7 @@
 package se.pusslet.feature.tasks
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -41,6 +43,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.TaskKind
+import se.pusslet.core.tasks.PendingApproval
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.tasks.TaskScheduler
 import se.pusslet.core.time.plusDays
@@ -50,6 +53,8 @@ import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PersonAvatar
 import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.components.PussletTopBar
+import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.SmallAction
 import se.pusslet.ui.format.formatDateShort
 import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.joinNames
@@ -63,10 +68,23 @@ fun TasksRoute(
     onEdit: (String) -> Unit,
     onNew: (chore: Boolean) -> Unit,
     onWorkload: () -> Unit,
+    onAllowance: () -> Unit = {},
     viewModel: TasksViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    TasksScreen(state, onBack, onEdit, onNew, onWorkload, viewModel::setFilter, viewModel::setDone, viewModel::quickAdd)
+    TasksScreen(
+        state,
+        onBack,
+        onEdit,
+        onNew,
+        onWorkload,
+        viewModel::setFilter,
+        viewModel::setDone,
+        viewModel::quickAdd,
+        onApprove = viewModel::approve,
+        onReject = viewModel::reject,
+        onAllowance = onAllowance,
+    )
 }
 
 @Composable
@@ -79,6 +97,9 @@ fun TasksScreen(
     onFilter: (TaskFilter) -> Unit = {},
     onDone: (TaskOccurrence, Boolean) -> Unit = { _, _ -> },
     onQuickAdd: (String) -> Unit = {},
+    onApprove: (PendingApproval) -> Unit = {},
+    onReject: (PendingApproval) -> Unit = {},
+    onAllowance: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -128,6 +149,9 @@ fun TasksScreen(
                         FilterChip(selected = state.filter == f, onClick = { onFilter(f) }, label = { Text(stringResource(label)) })
                     }
                 }
+            }
+            if (state.approvals.isNotEmpty() || (state.canEdit && state.hasChildren)) {
+                item(key = "kids") { KidsCard(state, onApprove, onReject, onAllowance) }
             }
             if (state.canEdit) item(key = "add") { QuickAddField(onQuickAdd) }
             if (state.isEmpty) item(key = "empty") { EmptyState(stringResource(Res.string.tasks_empty)) }
@@ -238,3 +262,33 @@ private fun QuickAddField(onAdd: (String) -> Unit) {
 }
 
 private const val DAYS_PER_WEEK = 7
+
+/** The children's ticks waiting for a parent, and the way to veckopeng. */
+@Composable
+private fun KidsCard(
+    state: TasksUiState,
+    onApprove: (PendingApproval) -> Unit,
+    onReject: (PendingApproval) -> Unit,
+    onAllowance: () -> Unit,
+) {
+    SectionCard(
+        stringResource(Res.string.kids_title),
+        modifier = Modifier.padding(vertical = Spacing.sm),
+        action = { SmallAction(stringResource(Res.string.allowance_title)) { onAllowance() } },
+    ) {
+        if (state.approvals.isEmpty()) {
+            Text(stringResource(Res.string.kids_nothing_to_approve), style = MaterialTheme.typography.bodyMedium)
+        }
+        state.approvals.forEach { p ->
+            val who = state.people[p.childId]?.name.orEmpty()
+            Column {
+                Text(stringResource(Res.string.kids_done_line, who, p.task.title), style = MaterialTheme.typography.bodyLarge)
+                if (p.stars > 0) Text(stringResource(Res.string.stars_count, p.stars), style = MaterialTheme.typography.bodyMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Button(onClick = { onApprove(p) }) { Text(stringResource(Res.string.kids_approve)) }
+                    TextButton(onClick = { onReject(p) }) { Text(stringResource(Res.string.kids_reject)) }
+                }
+            }
+        }
+    }
+}

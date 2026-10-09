@@ -120,7 +120,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Kalas och presenter (ADR-027) – OSA med sista dag, presentidé, budget, köpt (bockar presentuppgiften), eget kalas med
       gästlista och delbar inbjudan, Idag-kort och notiser (present tre dagar innan, OSA kvällen före), önskelistor per barn
       som morföräldrar kan bocka av. 4 regel-, 1 planerar-, 1 Idag-, 3 VM-tester, regeltest för önskelistor, skärmdumpar
-- [ ] Barnvy och veckopeng
+- [x] Barnvy och veckopeng (ADR-028) – barnläge (dagen, mina sysslor, stjärnor, veckopeng hittills; lämnas med långt
+      tryck), sysslor och uppgifter kan ges till barn med 0–5 stjärnor, föräldrar godkänner eller säger "inte klart"
+      (Uppgifter + Idag-kort), veckopeng per barn med utbetalda veckor. 3 kärn-, 3 VM-, 1 Idag-test, skärmdumpar
 - [ ] Fler lunchleverantörer
 - [ ] Flerhushållsdelning fullt ut
 

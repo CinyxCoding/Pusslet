@@ -84,6 +84,9 @@ import se.pusslet.feature.shopping.StoresRoute
 import se.pusslet.feature.tasks.TaskEditorRoute
 import se.pusslet.feature.tasks.TasksRoute
 import se.pusslet.feature.tasks.WorkloadRoute
+import se.pusslet.feature.tasks.kid.AllowanceRoute
+import se.pusslet.feature.tasks.kid.KidModeRoute
+import se.pusslet.feature.tasks.kid.KidPickerRoute
 import se.pusslet.feature.today.TodayRoute
 import se.pusslet.shell.navigation.AppNavigator
 import se.pusslet.shell.navigation.Route
@@ -271,6 +274,7 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                     onOpenSettings = { navigator.navigate(Route.Settings) },
                     onOpenHandover = { navigator.navigate(Route.Handover(it)) },
                     onSearch = { navigator.navigate(Route.Search) },
+                    onOpenTasks = { navigator.navigate(Route.Tasks) },
                     contentPadding = padding,
                 )
             }
@@ -347,6 +351,7 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                     onEdit = { navigator.navigate(Route.TaskEditor(it)) },
                     onNew = { navigator.navigate(Route.TaskEditor(chore = it)) },
                     onWorkload = { navigator.navigate(Route.Workload) },
+                    onAllowance = { navigator.navigate(Route.Allowance) },
                 )
             }
             entry<Route.TaskEditor> { r ->
@@ -363,6 +368,14 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                     }
                 })
             }
+            entry<Route.KidPicker> {
+                KidPickerRoute(onBack = navigator::goBack, onPick = { id ->
+                    navigator.goBack()
+                    navigator.navigate(Route.KidMode(id))
+                })
+            }
+            entry<Route.KidMode> { r -> KidModeRoute(r.childId, onExit = navigator::goBack) }
+            entry<Route.Allowance> { AllowanceRoute(onBack = navigator::goBack) }
             entry<Route.Workload> { WorkloadRoute(onBack = navigator::goBack) }
             entry<Route.EventEditor> { r -> EventEditorRoute(r.eventId, r.date, r.occurrenceDate, onDone = navigator::goBack) }
             entry<Route.EventDetails> { r ->
@@ -408,6 +421,7 @@ private fun MoreDestination.route(): Route = when (this) {
     MoreDestination.Search -> Route.Search
     MoreDestination.Family -> Route.Family
     MoreDestination.Tasks -> Route.Tasks
+    MoreDestination.KidMode -> Route.KidPicker
     MoreDestination.Settings -> Route.Settings
     MoreDestination.Account -> Route.Account
     MoreDestination.AboutData -> Route.AboutData

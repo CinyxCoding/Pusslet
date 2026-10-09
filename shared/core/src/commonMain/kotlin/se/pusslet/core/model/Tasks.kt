@@ -52,8 +52,9 @@ data class ChoreRotation(
     val anchorWeek: IsoWeek,
 )
 
+/** [approved] is false while a child's "Klar!" waits for a parent (barnläge). */
 @Serializable
-data class Completion(val doneBy: String?, val doneAt: Instant?)
+data class Completion(val doneBy: String?, val doneAt: Instant?, val approved: Boolean = true)
 
 @Serializable
 data class FamilyTask(
@@ -79,6 +80,10 @@ data class FamilyTask(
     val note: String = "",
     val createdBy: String? = null,
     val createdAt: Instant? = null,
+    /** Stars a child earns for this chore once a parent has approved it (0 = no stars). */
+    val stars: Int = 0,
+    /** For one-off tasks: false while a child's "Klar!" waits for a parent. */
+    val approved: Boolean = true,
 )
 
 @Serializable

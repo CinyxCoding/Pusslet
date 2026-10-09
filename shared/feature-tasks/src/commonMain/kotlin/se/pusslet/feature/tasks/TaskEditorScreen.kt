@@ -56,6 +56,7 @@ import se.pusslet.core.recurrence.RepeatOption
 import se.pusslet.ui.components.DateField
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PersonChips
+import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SwitchRow
@@ -228,9 +229,10 @@ private fun WhoSection(state: TaskEditorState, onEdit: ((TaskDraft) -> TaskDraft
                 supporting = stringResource(Res.string.task_rotation_body),
             )
         }
+        val everyone = state.adults + state.children
         if (d.kind == TaskKind.Chore && d.rotation.isNotEmpty()) {
-            PersonChips(state.adults, d.rotation.toSet(), onToggleRotation)
-            val order = d.rotation.mapNotNull { id -> state.adults.firstOrNull { it.id == id }?.name }
+            PersonChips(everyone, d.rotation.toSet(), onToggleRotation)
+            val order = d.rotation.mapNotNull { id -> everyone.firstOrNull { it.id == id }?.name }
             Text(order.mapIndexed { i, n -> "${i + 1}. $n" }.joinToString("  "), style = MaterialTheme.typography.bodyMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 FilterChip(d.rotationWeeks == 1, {
@@ -242,12 +244,29 @@ private fun WhoSection(state: TaskEditorState, onEdit: ((TaskDraft) -> TaskDraft
             }
         } else {
             PersonChips(
-                state.adults,
+                everyone,
                 setOfNotNull(d.assigneeId),
                 { id -> onEdit { it.copy(assigneeId = if (it.assigneeId == id) null else id) } },
                 allLabel = stringResource(Res.string.tasks_anyone),
                 onAll = { onEdit { it.copy(assigneeId = null) } },
             )
+        }
+        val childIds = state.children.map { it.id }.toSet()
+        if (d.assigneeId in childIds || d.rotation.any { it in childIds }) StarsRow(d.stars) { v -> onEdit { it.copy(stars = v) } }
+    }
+}
+
+/** "Stjärnor: ⭐⭐" with − and + (0–5), shown when a child does the chore. */
+@Composable
+private fun StarsRow(stars: Int, onChange: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Text(stringResource(Res.string.task_stars), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        IconButton(onClick = { onChange((stars - 1).coerceAtLeast(0)) }, enabled = stars > 0) {
+            Icon(PussletIcons.Remove, contentDescription = stringResource(Res.string.task_stars_less))
+        }
+        Text(stringResource(Res.string.stars_count, stars), style = MaterialTheme.typography.titleMedium)
+        IconButton(onClick = { onChange((stars + 1).coerceAtMost(MAX_STARS)) }, enabled = stars < MAX_STARS) {
+            Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.task_stars_more))
         }
     }
 }

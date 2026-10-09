@@ -65,6 +65,13 @@ sealed interface Route {
 
     @Serializable data object Workload : Route
 
+    @Serializable data object KidPicker : Route
+
+    /** Barnläge for one child (no bottom bar; leaving takes a long press). */
+    @Serializable data class KidMode(val childId: String) : Route
+
+    @Serializable data object Allowance : Route
+
     @Serializable data class StoreMode(val listId: String) : Route
 
     @Serializable data object Pantry : Route

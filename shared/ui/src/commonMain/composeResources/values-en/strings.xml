@@ -1087,4 +1087,39 @@
     <string name="wish_taken">Bought</string>
     <string name="wish_taken_by">Bought by %1$s</string>
     <string name="wish_remove">Remove %1$s</string>
+
+    <!-- Child view, stars and pocket money (V2) -->
+    <string name="task_stars">Stars for the children</string>
+    <string name="task_stars_less">Fewer stars</string>
+    <string name="task_stars_more">More stars</string>
+    <string name="stars_count">%1$d ⭐</string>
+    <string name="kid_hello">Hi %1$s!</string>
+    <string name="kid_today">Today</string>
+    <string name="kid_nothing_today">Nothing special today.</string>
+    <string name="kid_picks_up">%1$s picks you up</string>
+    <string name="kid_chores">My chores</string>
+    <string name="kid_no_chores">No chores right now!</string>
+    <string name="kid_done">Done!</string>
+    <string name="kid_undo">Undo</string>
+    <string name="kid_well_done">Well done! ⭐</string>
+    <string name="kid_stars_week">%1$d ⭐ this week</string>
+    <string name="kid_waiting">%1$d ⭐ waiting for a grown-up to check</string>
+    <string name="kid_allowance">Pocket money so far: %1$d kr</string>
+    <string name="kid_exit">Leave child view</string>
+    <string name="kid_exit_hint">Hold the button down for a moment.</string>
+    <string name="kid_mode">Child view</string>
+    <string name="kid_mode_body">A simple view for a child: the day, the chores and the stars</string>
+    <string name="kid_mode_pick">Who will use the phone?</string>
+    <string name="kids_title">The children</string>
+    <string name="kids_nothing_to_approve">Nothing to approve right now.</string>
+    <string name="kids_done_line">%1$s: %2$s</string>
+    <string name="kids_approve">Approve</string>
+    <string name="kids_reject">Not done yet</string>
+    <string name="card_chores_to_approve">%1$s ticked off chores (%2$d) – take a look and approve</string>
+    <string name="allowance_title">Pocket money</string>
+    <string name="allowance_body">A base amount per week plus kronor per approved star. Tick when the week has been paid.</string>
+    <string name="allowance_weekly">Kr per week</string>
+    <string name="allowance_per_star">Kr per star</string>
+    <string name="allowance_week_line">%1$d ⭐ · %2$d kr</string>
+    <string name="allowance_paid">Paid</string>
 </resources>

@@ -10,6 +10,7 @@ import se.pusslet.core.meals.DishKeywords
 import se.pusslet.core.meals.MealClash
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.ChoreRotation
+import se.pusslet.core.model.Completion
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilyPerson
@@ -173,6 +174,24 @@ class TodayPlannerTest {
         assertTrue(later.none { it is ContextCard.PartyRsvp }, "more than three days left: no nagging yet")
         val bought = TodayPlanner.build(withParty(PartyDetails(rsvp = Rsvp.Yes, gift = GiftPlan(bought = true)))).cards
         assertTrue(bought.none { it is ContextCard.PartyGift || it is ContextCard.PartyRsvp })
+    }
+
+    @Test
+    fun aChildsTickWaitingForAParentGetsACard() {
+        val base = input()
+        val chore = FamilyTask(
+            "duka",
+            "Duka av",
+            kind = TaskKind.Chore,
+            assigneeId = "ella",
+            due = tuesday,
+            rrule = "FREQ=DAILY",
+            stars = 1,
+            completions = mapOf(tuesday.toString() to Completion("ella", null, approved = false)),
+        )
+        val card = TodayPlanner.build(base.copy(tasks = base.tasks + chore)).cards.filterIsInstance<ContextCard.ChoresToApprove>().single()
+        assertEquals(listOf("Ella"), card.children.map { it.name })
+        assertEquals(1, card.count)
     }
 
     @Test

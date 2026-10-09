@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.dp
  * Kept small on purpose instead of pulling in the multi-megabyte extended icon set.
  */
 object PussletIcons {
+    val Remove: ImageVector by lazy { icon("Remove", "M19,13H5v-2h14v2z") }
+
     val Restaurant: ImageVector by lazy {
         icon(
             "Restaurant",

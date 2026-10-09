@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,7 +28,7 @@ import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
-enum class MoreDestination { Search, Family, Tasks, Settings, Account, AboutData, Privacy }
+enum class MoreDestination { Search, Family, Tasks, KidMode, Settings, Account, AboutData, Privacy }
 
 private data class MoreItem(val dest: MoreDestination, val title: StringResource, val body: StringResource?, val icon: ImageVector)
 
@@ -37,6 +38,7 @@ fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues 
         MoreItem(MoreDestination.Search, Res.string.more_search, Res.string.more_search_body, Icons.Filled.Search),
         MoreItem(MoreDestination.Family, Res.string.more_family, Res.string.more_family_body, PussletIcons.Family),
         MoreItem(MoreDestination.Tasks, Res.string.more_tasks, Res.string.more_tasks_body, PussletIcons.Task),
+        MoreItem(MoreDestination.KidMode, Res.string.kid_mode, Res.string.kid_mode_body, Icons.Filled.Star),
         MoreItem(MoreDestination.Settings, Res.string.more_settings, null, Icons.Filled.Settings),
         MoreItem(MoreDestination.Account, Res.string.more_account, null, Icons.Filled.AccountCircle),
         MoreItem(MoreDestination.AboutData, Res.string.more_about_data, null, Icons.Filled.Info),

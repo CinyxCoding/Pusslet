@@ -40,6 +40,7 @@ import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.PackingReason
+import se.pusslet.core.model.Role
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.ContextCard
 import se.pusslet.core.today.Greeting
@@ -73,6 +74,7 @@ fun TodayRoute(
     onOpenSettings: () -> Unit,
     onOpenHandover: (String) -> Unit,
     onSearch: () -> Unit = {},
+    onOpenTasks: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -89,6 +91,7 @@ fun TodayRoute(
         onOpenSettings = onOpenSettings,
         onOpenHandover = onOpenHandover,
         onSearch = onSearch,
+        onOpenTasks = onOpenTasks,
     )
 }
 
@@ -105,6 +108,7 @@ fun TodayScreen(
     onOpenSettings: () -> Unit = {},
     onOpenHandover: (String) -> Unit = {},
     onSearch: () -> Unit = {},
+    onOpenTasks: () -> Unit = {},
 ) {
     val plan = state.plan
     if (state.loading || plan == null) {
@@ -124,7 +128,7 @@ fun TodayScreen(
         item(key = "header") { Header(state, plan, onSearch) }
         item(key = "weather") { WeatherCard(state, plan, onOpenSettings) }
         items(plan.cards, key = { cardKey(it) }) { card ->
-            ContextCardView(card, state, onTakeHandoff, onAddGiftTask, onOpenOccurrence, onOpenHandover)
+            ContextCardView(card, state, onTakeHandoff, onAddGiftTask, onOpenOccurrence, onOpenHandover, onOpenTasks)
         }
         item(key = "timeline") { TimelineCard(plan, onOpenOccurrence) }
         if (plan.packing.isNotEmpty()) item(key = "packing") { PackingCard(plan, onTogglePacking) }
@@ -139,6 +143,7 @@ private fun cardKey(card: ContextCard): String = when (card) {
     is ContextCard.StudyDay -> "study-${card.date}"
     is ContextCard.PartyGift -> "party-${card.date}-${card.eventTitle}"
     is ContextCard.PartyRsvp -> "rsvp-${card.occurrence.key}"
+    is ContextCard.ChoresToApprove -> "approve"
     is ContextCard.SqueezeDay -> "squeeze-${card.date}"
     is ContextCard.HandoverSoon -> "handover-${card.schedule.id}-${card.handover.date}"
 }
@@ -261,6 +266,7 @@ private fun ContextCardView(
     onAddGiftTask: (EventOccurrence, String) -> Unit,
     onOpenOccurrence: (EventOccurrence) -> Unit,
     onOpenHandover: (String) -> Unit,
+    onOpenTasks: () -> Unit,
 ) {
     val plan = state.plan ?: return
     val people = state.people
@@ -328,6 +334,15 @@ private fun ContextCardView(
                     null
                 },
             )
+        }
+        is ContextCard.ChoresToApprove -> if (state.me?.role == Role.Parent) {
+            Banner(
+                stringResource(Res.string.card_chores_to_approve, joinNames(card.children.map { it.name }), card.count),
+                kind = BannerKind.Info,
+                actions = { SmallAction(stringResource(Res.string.card_action_open)) { onOpenTasks() } },
+            )
+        } else {
+            Unit
         }
         is ContextCard.PartyRsvp -> Banner(
             stringResource(Res.string.card_party_rsvp, card.occurrence.event.title, cardDay(card.by, plan.date)),

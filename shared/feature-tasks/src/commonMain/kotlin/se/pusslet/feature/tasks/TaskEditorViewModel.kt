@@ -44,6 +44,8 @@ data class TaskDraft(
     val checklist: List<ChecklistItem> = emptyList(),
     val sharedWithCaregivers: Boolean = false,
     val note: String = "",
+    /** Stars for a child doing it (barnläge). */
+    val stars: Int = 0,
 )
 
 enum class TaskError { TitleRequired }
@@ -53,6 +55,7 @@ data class TaskEditorState(
     val isNew: Boolean = true,
     val draft: TaskDraft = TaskDraft(),
     val adults: List<FamilyPerson> = emptyList(),
+    val children: List<FamilyPerson> = emptyList(),
     val linkedEventTitle: String? = null,
     val today: LocalDate? = null,
     val errors: Set<TaskError> = emptySet(),
@@ -78,7 +81,8 @@ class TaskEditorViewModel(
         if (loaded) return
         loaded = true
         viewModelScope.launch {
-            val adults = family.people.first().filter { !it.isChild }
+            val people = family.people.first()
+            val adults = people.filter { !it.isChild }
             val task = taskId?.let { tasks.get(it) }
             original = task
             val draft = task?.let(::draftOf) ?: TaskDraft(
@@ -89,7 +93,15 @@ class TaskEditorViewModel(
                 due = if (chore) clock.todayIn(zone) else null,
             )
             val linked = task?.linkedEventId?.let { calendar.event(it)?.title }
-            _state.value = TaskEditorState(false, task == null, draft, adults, linked, clock.todayIn(zone))
+            _state.value = TaskEditorState(
+                false,
+                task == null,
+                draft,
+                adults,
+                people.filter { it.isChild },
+                linked,
+                clock.todayIn(zone),
+            )
         }
     }
 
@@ -159,6 +171,7 @@ class TaskEditorViewModel(
             rotation = rotation,
             sharedWithCaregivers = d.sharedWithCaregivers,
             note = d.note.trim(),
+            stars = if (involvesChild(d)) d.stars.coerceIn(0, MAX_STARS) else 0,
             // Turning a one-off task into a repeating one starts it fresh.
             done = if (rrule != null) false else base.done,
         )
@@ -181,9 +194,19 @@ class TaskEditorViewModel(
             checklist = t.checklist,
             sharedWithCaregivers = t.sharedWithCaregivers,
             note = t.note,
+            stars = t.stars,
         )
+    }
+
+    /** Stars only make sense when a child does the task (alone or taking turns). */
+    private fun involvesChild(d: TaskDraft): Boolean {
+        val children = _state.value.children.map { it.id }.toSet()
+        return d.assigneeId in children || d.rotation.any { it in children }
     }
 
     /** Helpers may only tick off shared tasks; the editor is for parents. */
     val canEdit: Boolean get() = sessions.session.value.role != Role.Caregiver
 }
+
+/** More than five stars for one chore makes the weekly total meaningless. */
+const val MAX_STARS = 5

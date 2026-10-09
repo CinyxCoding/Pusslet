@@ -167,7 +167,7 @@ service cloud.firestore {
             || collection == 'handoffRequests'
             || (collection == 'presence' && docId == myMemberId(fid))
             || (collection == 'tasks' && resource != null && sharedWithCaregivers()
-                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']))
+                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist', 'approved']))
             || (collection == 'wishes' && resource != null && onlyChanges(['taken', 'takenBy']));
         }
 

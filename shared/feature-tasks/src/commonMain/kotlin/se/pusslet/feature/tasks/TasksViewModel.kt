@@ -17,6 +17,8 @@ import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.TaskKind
+import se.pusslet.core.tasks.KidChores
+import se.pusslet.core.tasks.PendingApproval
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.tasks.TaskScheduler
 import se.pusslet.core.time.minusDays
@@ -25,6 +27,7 @@ import se.pusslet.core.util.IdGenerator
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.TaskRepository
 import se.pusslet.data.session.SessionProvider
+import se.pusslet.data.usecase.KidChoreActions
 import kotlin.time.Clock
 
 enum class TaskFilter { Mine, All, Chores }
@@ -41,6 +44,9 @@ data class TasksUiState(
     val people: Map<String, FamilyPerson> = emptyMap(),
     val me: String? = null,
     val canEdit: Boolean = true,
+    /** Children's "Klar!" waiting for a parent (barnläge). */
+    val approvals: List<PendingApproval> = emptyList(),
+    val hasChildren: Boolean = false,
 ) {
     val isEmpty: Boolean get() = overdue.isEmpty() && todayItems.isEmpty() && upcoming.isEmpty() && undated.isEmpty()
 }
@@ -58,6 +64,7 @@ class TasksViewModel(
     private val zone: TimeZone,
 ) : ViewModel() {
     private val filter = MutableStateFlow(TaskFilter.Mine)
+    private val kid = KidChoreActions(tasks, clock)
     private val me get() = sessions.session.value.memberId
     private val role get() = sessions.session.value.role
 
@@ -88,6 +95,12 @@ class TasksViewModel(
             people = people.associateBy { it.id },
             me = me,
             canEdit = role != Role.Caregiver,
+            approvals = if (role == Role.Parent) {
+                KidChores.pending(all, people.filter { it.isChild }.map { it.id }.toSet(), zone)
+            } else {
+                emptyList()
+            },
+            hasChildren = people.any { it.isChild },
         )
     }
 
@@ -110,6 +123,14 @@ class TasksViewModel(
     private fun TaskOccurrence.isBefore(d: LocalDate) = date?.let { it < d } ?: false
 
     private fun TaskOccurrence.isAfter(d: LocalDate) = date?.let { it > d } ?: false
+
+    fun approve(p: PendingApproval) {
+        viewModelScope.launch { kid.approve(p) }
+    }
+
+    fun reject(p: PendingApproval) {
+        viewModelScope.launch { kid.reject(p) }
+    }
 
     fun setFilter(f: TaskFilter) {
         filter.value = f

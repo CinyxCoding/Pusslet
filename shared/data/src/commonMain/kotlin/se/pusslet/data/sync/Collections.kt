@@ -77,6 +77,9 @@ object Collections {
     val SchoolLunches = CollectionSpec("schoolLunches", RemoteLocation.Flat("schoolLunches"), mapFields = setOf("days"))
     val Wishes = CollectionSpec("wishes", RemoteLocation.Flat("wishes"))
 
+    /** Veckopeng settings and paid weeks, one document per child; family money is for parents only. */
+    val Allowances = CollectionSpec("allowances", RemoteLocation.Flat("allowances"), mapFields = setOf("paidWeeks"), parentsOnly = true)
+
     /** Pictures attached on this phone (ADR-025). The location is never used. */
     val Attachments = CollectionSpec("attachments", RemoteLocation.Flat("attachments"), localOnly = true)
 
@@ -105,6 +108,7 @@ object Collections {
         IngredientMappings,
         SchoolLunches,
         Wishes,
+        Allowances,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

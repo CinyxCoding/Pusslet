@@ -42,9 +42,13 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.model.AttachmentOwner
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.data.usecase.QuickAddOutcome
 import se.pusslet.feature.calendar.CalendarRoute
+import se.pusslet.feature.calendar.attachments.AttachImageRoute
+import se.pusslet.feature.calendar.attachments.AttachOutcome
+import se.pusslet.feature.calendar.attachments.AttachmentsRoute
 import se.pusslet.feature.calendar.details.EventDetailsRoute
 import se.pusslet.feature.calendar.editor.EventEditorRoute
 import se.pusslet.feature.calendar.subscriptions.SubscriptionsRoute
@@ -84,6 +88,7 @@ import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_undo
+import se.pusslet.ui.resources.attach_failed
 import se.pusslet.ui.resources.nav_calendar
 import se.pusslet.ui.resources.nav_meals
 import se.pusslet.ui.resources.nav_more
@@ -152,6 +157,14 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
             }
             is IncomingIntent.OpenEvent -> navigator.navigate(Route.EventDetails(incoming.eventId, incoming.occurrenceDate))
             is IncomingIntent.OpenTab -> navigator.selectTab(incoming.tab)
+            is IncomingIntent.SharedImage -> {
+                val file = incoming.fileName
+                if (file != null) {
+                    navigator.navigate(Route.AttachImage(file))
+                } else {
+                    scope.launch { snackbar.showSnackbar(getString(Res.string.attach_failed)) }
+                }
+            }
             is IncomingIntent.SharedLink -> navigator.navigate(
                 if (incoming.isCalendarFeed) Route.Subscriptions(incoming.url) else Route.RecipeEditor(link = true, url = incoming.url),
             )
@@ -275,7 +288,20 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                     onWorkload = { navigator.navigate(Route.Workload) },
                 )
             }
-            entry<Route.TaskEditor> { r -> TaskEditorRoute(r.taskId, r.chore, onDone = navigator::goBack) }
+            entry<Route.TaskEditor> { r ->
+                TaskEditorRoute(r.taskId, r.chore, onDone = navigator::goBack, attachments = {
+                    r.taskId?.let { AttachmentsRoute(AttachmentOwner.Task, it) }
+                })
+            }
+            entry<Route.AttachImage> { r ->
+                AttachImageRoute(r.fileName, onBack = navigator::goBack, onDone = { outcome ->
+                    navigator.goBack()
+                    when (outcome) {
+                        is AttachOutcome.ToEvent -> navigator.navigate(Route.EventDetails(outcome.eventId, outcome.occurrenceDate))
+                        is AttachOutcome.ToNote -> navigator.navigate(Route.TaskEditor(outcome.taskId))
+                    }
+                })
+            }
             entry<Route.Workload> { WorkloadRoute(onBack = navigator::goBack) }
             entry<Route.EventEditor> { r -> EventEditorRoute(r.eventId, r.date, r.occurrenceDate, onDone = navigator::goBack) }
             entry<Route.EventDetails> { r ->

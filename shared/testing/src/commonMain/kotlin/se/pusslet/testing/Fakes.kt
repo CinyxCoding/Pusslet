@@ -14,6 +14,7 @@ import se.pusslet.data.db.PreferenceDao
 import se.pusslet.data.db.PreferenceEntity
 import se.pusslet.data.db.PurchaseLogDao
 import se.pusslet.data.db.PurchaseLogEntity
+import se.pusslet.data.repository.AttachmentFiles
 import se.pusslet.data.sources.FoodDatabase
 import se.pusslet.data.sources.LunchMenuProvider
 import se.pusslet.data.sources.ProductInfo
@@ -124,4 +125,27 @@ class FakeProductLookup(val products: MutableMap<String, ProductInfo> = mutableM
         asked += barcode
         return products[barcode]
     }
+}
+
+/** Pretend attachment folder: file name -> last modified. */
+class FakeAttachmentFiles(private val clock: Clock) : AttachmentFiles {
+    val stored = mutableMapOf<String, Instant>()
+    val deleted = mutableListOf<String>()
+
+    /** A picture "copied in" by the platform. */
+    fun add(fileName: String, modified: Instant = clock.now()) {
+        stored[fileName] = modified
+    }
+
+    override suspend fun delete(fileName: String) {
+        stored.remove(fileName)
+        deleted += fileName
+    }
+
+    override suspend fun deleteAll() {
+        deleted += stored.keys
+        stored.clear()
+    }
+
+    override suspend fun list(): Map<String, Instant> = stored.toMap()
 }

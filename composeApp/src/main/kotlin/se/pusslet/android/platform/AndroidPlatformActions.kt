@@ -14,8 +14,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
+import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -27,6 +30,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import kotlinx.coroutines.launch
 import se.pusslet.android.BuildConfig
+import se.pusslet.android.attachments.AndroidAttachmentFiles
 import se.pusslet.android.scanner.ScannerActivity
 import se.pusslet.ui.platform.AppPermission
 import se.pusslet.ui.platform.CoarseLocation
@@ -37,7 +41,10 @@ import java.io.IOException
  * Android side of [PlatformActions]. Must be created in `onCreate` (before the activity is started) because it
  * registers activity-result launchers. Every permission is requested only when the user uses the feature.
  */
-class AndroidPlatformActions(private val activity: ComponentActivity) : PlatformActions {
+class AndroidPlatformActions(
+    private val activity: ComponentActivity,
+    private val attachments: AndroidAttachmentFiles,
+) : PlatformActions {
     private val log = Logger.withTag("Platform")
 
     private var pendingPermission: ((Boolean) -> Unit)? = null
@@ -71,7 +78,7 @@ class AndroidPlatformActions(private val activity: ComponentActivity) : Platform
 
     override fun openUrl(url: String) {
         try {
-            activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            activity.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
         } catch (e: ActivityNotFoundException) {
             log.w(e) { "No app can open links" }
         }
@@ -198,6 +205,20 @@ class AndroidPlatformActions(private val activity: ComponentActivity) : Platform
                 null
             }
             onResult(token)
+        }
+    }
+
+    override fun loadImage(fileName: String, thumbnail: Boolean, onResult: (ImageBitmap?) -> Unit) {
+        activity.lifecycleScope.launch { onResult(attachments.load(fileName, thumbnail)?.asImageBitmap()) }
+    }
+
+    override fun openImage(fileName: String) {
+        val uri = attachments.shareableUri(fileName) ?: return
+        val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, "image/jpeg").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        try {
+            activity.startActivity(view)
+        } catch (e: ActivityNotFoundException) {
+            log.w { "No picture viewer: ${e::class.simpleName}" }
         }
     }
 

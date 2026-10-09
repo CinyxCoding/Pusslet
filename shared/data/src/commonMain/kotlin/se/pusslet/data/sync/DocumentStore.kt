@@ -93,7 +93,7 @@ class DocumentStore(
         val now = clock.now().toEpochMilliseconds()
         local.transaction {
             val existing = local.get(fid, spec.key, id) ?: return@transaction
-            local.upsert(existing.copy(deletedAt = now, pending = true, localUpdatedAt = now))
+            local.upsert(existing.copy(deletedAt = now, pending = !spec.localOnly, localUpdatedAt = now))
             enqueue(fid, spec, id, mapOf(MetaFields.DELETED_AT to JsonPrimitive(MetaFields.SERVER_TIMESTAMP)), now)
         }
         changeSignal.trySend(Unit)
@@ -117,7 +117,7 @@ class DocumentStore(
                     updatedAt = existing?.updatedAt,
                     updatedBy = existing?.updatedBy,
                     deletedAt = null,
-                    pending = true,
+                    pending = !spec.localOnly,
                     localUpdatedAt = now,
                 ),
             )
@@ -128,7 +128,7 @@ class DocumentStore(
 
     /** Appends to the outbox, folding into the newest unsent entry for the same document when possible. */
     private suspend fun enqueue(fid: String, spec: CollectionSpec, id: String, fields: Map<String, JsonElement?>, now: Long) {
-        if (fields.isEmpty()) return
+        if (fields.isEmpty() || spec.localOnly) return
         val last = local.outboxFor(fid, spec.key, id).lastOrNull()
         if (last != null && last.attempts == 0) {
             val combined = JsonPaths.combine(JsonPaths.decode(json.parseToJsonElement(last.fieldsJson).jsonObject), fields)

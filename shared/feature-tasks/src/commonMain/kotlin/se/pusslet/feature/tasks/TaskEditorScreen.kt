@@ -66,7 +66,14 @@ import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
 @Composable
-fun TaskEditorRoute(taskId: String?, chore: Boolean, onDone: () -> Unit, viewModel: TaskEditorViewModel = koinViewModel()) {
+fun TaskEditorRoute(
+    taskId: String?,
+    chore: Boolean,
+    onDone: () -> Unit,
+    /** Pictures kept with the note on this phone (filled in by the app shell). */
+    attachments: @Composable () -> Unit = {},
+    viewModel: TaskEditorViewModel = koinViewModel(),
+) {
     LaunchedEffect(taskId) { viewModel.load(taskId, chore) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.done) { if (state.done) onDone() }
@@ -79,6 +86,7 @@ fun TaskEditorRoute(taskId: String?, chore: Boolean, onDone: () -> Unit, viewMod
         onRemoveChecklist = viewModel::removeChecklistItem,
         onSave = viewModel::save,
         onDelete = viewModel::delete,
+        attachments = attachments,
     )
 }
 
@@ -92,6 +100,7 @@ fun TaskEditorScreen(
     onRemoveChecklist: (String) -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit,
+    attachments: @Composable () -> Unit = {},
 ) {
     var confirmDelete by remember { mutableStateOf(false) }
     Scaffold(
@@ -149,6 +158,7 @@ fun TaskEditorScreen(
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
             )
+            attachments()
             SwitchRow(stringResource(Res.string.event_shared_caregivers), d.sharedWithCaregivers, { v ->
                 onEdit { it.copy(sharedWithCaregivers = v) }
             })

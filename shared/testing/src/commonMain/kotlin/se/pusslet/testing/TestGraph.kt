@@ -24,6 +24,7 @@ import se.pusslet.core.model.Role
 import se.pusslet.core.util.SequentialIdGenerator
 import se.pusslet.data.remote.LocalOnlyAuthRepository
 import se.pusslet.data.remote.LocalOnlyFamilyRemote
+import se.pusslet.data.repository.AttachmentRepository
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -56,7 +57,8 @@ class TestGraph(
     val clock = MutableClock(now)
     val sessions = FixedSessionProvider(Session(familyId = "f-test", memberId = memberId, uid = "u-$memberId", role = role))
     val ids = SequentialIdGenerator()
-    val docs = DocumentStore(InMemorySyncLocalStore(), sessions, clock)
+    val local = InMemorySyncLocalStore()
+    val docs = DocumentStore(local, sessions, clock)
     val prefs = PreferencesRepository(FakePreferenceDao())
     val purchases = FakePurchaseLogDao()
     val family = FamilyRepository(docs, sessions, LocalOnlyFamilyRemote, LocalOnlyAuthRepository(), ids, clock)
@@ -65,6 +67,8 @@ class TestGraph(
     val recipes = RecipeRepository(docs)
     val shopping = ShoppingRepository(docs, purchases, sessions, clock)
     val tasks = TaskRepository(docs)
+    val files = FakeAttachmentFiles(clock)
+    val attachments = AttachmentRepository(docs, files, ids, clock)
     val packing = PackingRepository(docs)
     val lunchProvider = FakeLunchProvider()
     val lunches = LunchRepository(docs, lunchProvider, family)

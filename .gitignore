@@ -43,3 +43,6 @@ emulator-data/
 
 # Roborazzi output (golden images are committed under src/test/snapshots)
 **/build/outputs/roborazzi/
+
+# JVM crash logs
+hs_err_pid*.log

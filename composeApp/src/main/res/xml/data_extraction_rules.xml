@@ -2,6 +2,8 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="sharedpref" path="." />
+        <!-- Pictures can show children and addresses; they stay on the phone (ADR-025). -->
+        <exclude domain="file" path="attachments/" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="sharedpref" path="." />

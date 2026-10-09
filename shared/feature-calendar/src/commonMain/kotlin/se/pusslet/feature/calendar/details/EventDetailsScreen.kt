@@ -46,6 +46,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.model.AttachmentOwner
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
@@ -58,6 +59,7 @@ import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.usecase.HandoffAssigner
+import se.pusslet.feature.calendar.attachments.AttachmentsRoute
 import se.pusslet.feature.calendar.editor.PersonPicker
 import se.pusslet.feature.calendar.editor.reminderLabel
 import se.pusslet.ui.components.AvatarStack
@@ -191,7 +193,9 @@ fun EventDetailsRoute(
             onBack()
         }
     }
-    EventDetailsScreen(state, onBack, onEdit, viewModel::take, viewModel::assign, viewModel::requestHelp)
+    EventDetailsScreen(state, onBack, onEdit, viewModel::take, viewModel::assign, viewModel::requestHelp) { o ->
+        AttachmentsRoute(AttachmentOwner.Event, o.event.seriesId ?: o.event.id)
+    }
 }
 
 @Composable
@@ -202,6 +206,8 @@ fun EventDetailsScreen(
     onTake: (HandoffKind) -> Unit,
     onAssign: (HandoffKind, String?) -> Unit,
     onRequest: (HandoffKind) -> Unit,
+    /** Pictures attached on this phone (ADR-025). */
+    attachments: @Composable (EventOccurrence) -> Unit = {},
 ) {
     val o = state.occurrence
     var askScope by remember { mutableStateOf(false) }
@@ -294,6 +300,7 @@ fun EventDetailsScreen(
             if (o.event.note.isNotBlank()) {
                 SectionCard(stringResource(Res.string.event_note)) { Text(o.event.note, style = MaterialTheme.typography.bodyLarge) }
             }
+            attachments(o)
             if (o.source == EventSource.Family && !o.event.sharedWithCaregivers) {
                 Text(
                     stringResource(Res.string.event_private_hint),

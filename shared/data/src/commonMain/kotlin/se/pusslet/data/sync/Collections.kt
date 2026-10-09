@@ -24,6 +24,7 @@ sealed interface RemoteLocation {
  * @param mapFields fields merged per key (per-key last-write-wins) instead of replaced as a whole.
  * @param caregiverFilterField caregivers only read documents where this boolean field is true.
  * @param parentsOnly caregivers do not read this collection at all.
+ * @param localOnly kept on this phone only: never queued for upload and not part of [Collections.all].
  */
 data class CollectionSpec(
     val key: String,
@@ -31,6 +32,7 @@ data class CollectionSpec(
     val mapFields: Set<String> = emptySet(),
     val caregiverFilterField: String? = null,
     val parentsOnly: Boolean = false,
+    val localOnly: Boolean = false,
 ) {
     fun visibleTo(role: Role): Boolean = role == Role.Parent || !parentsOnly
 }
@@ -73,6 +75,9 @@ object Collections {
     val AisleOverrides = CollectionSpec("aisleOverrides", RemoteLocation.Flat("aisleOverrides"))
     val IngredientMappings = CollectionSpec("ingredientMappings", RemoteLocation.Flat("ingredientMappings"))
     val SchoolLunches = CollectionSpec("schoolLunches", RemoteLocation.Flat("schoolLunches"), mapFields = setOf("days"))
+
+    /** Pictures attached on this phone (ADR-025). The location is never used. */
+    val Attachments = CollectionSpec("attachments", RemoteLocation.Flat("attachments"), localOnly = true)
 
     val all: List<CollectionSpec> = listOf(
         Family,

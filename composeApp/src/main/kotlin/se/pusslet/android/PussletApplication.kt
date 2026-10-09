@@ -16,6 +16,7 @@ import se.pusslet.core.AppConfig
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.di.AppScope
 import se.pusslet.data.di.dataModule
+import se.pusslet.data.repository.AttachmentHousekeeping
 import se.pusslet.data.usecase.DeviceCalendarExport
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.ReminderSync
@@ -36,6 +37,7 @@ class PussletApplication : Application() {
         get<HandoffRequests>().watch(get(AppScope), get())
         get<PushRegistration>().start(get(AppScope))
         get<WidgetUpdates>().start(get(AppScope))
+        get<CoroutineScope>(AppScope).launch { get<AttachmentHousekeeping>().run() }
         get<CoroutineScope>(AppScope).launch { Notifications.createChannels(this@PussletApplication) }
         BackgroundWork.schedule(this)
     }

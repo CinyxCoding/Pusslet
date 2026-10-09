@@ -39,8 +39,6 @@ data class Event(
     val sharedWithCaregivers: Boolean = true,
     val linkedTaskIds: List<String> = emptyList(),
     val createdBy: String? = null,
-    /** Local-only attachments (e.g. a photographed weekly letter). Stored on the device that added them. */
-    val attachments: List<Attachment> = emptyList(),
 ) {
     val isRecurring: Boolean get() = !rrule.isNullOrBlank()
     val isOverride: Boolean get() = seriesId != null
@@ -49,9 +47,6 @@ data class Event(
 /** Who drops off / picks up, and when (defaults to event start/end). */
 @Serializable
 data class Handoff(val personId: String?, val time: LocalTime? = null)
-
-@Serializable
-data class Attachment(val uri: String, val mimeType: String, val name: String = "")
 
 /** Well-known tags. Free-text tags are allowed too; these drive packing rules and contextual cards. */
 object EventTags {

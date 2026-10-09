@@ -15,6 +15,8 @@ import se.pusslet.core.util.IdGenerator
 import se.pusslet.core.util.RandomIdGenerator
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.db.PussletDatabase
+import se.pusslet.data.repository.AttachmentHousekeeping
+import se.pusslet.data.repository.AttachmentRepository
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -61,7 +63,7 @@ val AppScope = named("appScope")
 
 /**
  * Platform-independent bindings. The platform module must provide: [PussletDatabase], HttpClient, RemoteStore,
- * FamilyRemote, AuthRepository, CloudFunctions, DeviceCalendarSource, NotificationScheduler and BackendConfig.
+ * FamilyRemote, AuthRepository, CloudFunctions, DeviceCalendarSource, NotificationScheduler, AttachmentFiles and BackendConfig.
  */
 val dataModule: Module = module {
     single(AppScope) { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
@@ -89,7 +91,9 @@ val dataModule: Module = module {
     single { TaskRepository(get()) }
     single { LunchRepository(get(), get(), get()) }
     single { HandoffAssigner(get()) }
-    single { DataPrivacy(get(), get(), get(), get(), get(), get()) }
+    single { DataPrivacy(get(), get(), get(), get(), get(), get(), get()) }
+    single { AttachmentRepository(get(), get(), get(), get()) }
+    single { AttachmentHousekeeping(get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get(), get()) }

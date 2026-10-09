@@ -4,6 +4,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import se.pusslet.android.attachments.AndroidAttachmentFiles
 import se.pusslet.android.calendar.AndroidDeviceCalendarSource
 import se.pusslet.android.notify.AndroidFamilyAlerts
 import se.pusslet.android.notify.PushRegistration
@@ -27,6 +28,7 @@ import se.pusslet.data.remote.GitLiveCloudFunctions
 import se.pusslet.data.remote.LocalOnlyAuthRepository
 import se.pusslet.data.remote.LocalOnlyCloudFunctions
 import se.pusslet.data.remote.LocalOnlyFamilyRemote
+import se.pusslet.data.repository.AttachmentFiles
 import se.pusslet.data.repository.DeviceCalendarSource
 import se.pusslet.data.sync.OfflineRemoteStore
 import se.pusslet.data.sync.RemoteStore
@@ -42,6 +44,8 @@ fun androidModule(config: BackendConfig): Module = module {
     single<NotificationScheduler> { WorkManagerNotificationScheduler(androidContext(), get()) }
     single<FamilyAlerts> { AndroidFamilyAlerts(androidContext(), get(AppScope), get(), get(), get()) }
     single { PushRegistration(get(), get(), get(), get(), get()) }
+    single { AndroidAttachmentFiles(androidContext()) }
+    single<AttachmentFiles> { get<AndroidAttachmentFiles>() }
     single { TodayWidgetContent(get(), get(), get(), get(), get(), get(), get()) }
     single { ShoppingWidgetContent(get(), get(), get(), get(), get()) }
     single { WidgetUpdates(androidContext(), get(), get(), get(), get(), get()) }

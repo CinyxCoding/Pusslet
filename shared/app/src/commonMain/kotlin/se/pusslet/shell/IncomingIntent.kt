@@ -7,6 +7,9 @@ sealed interface IncomingIntent {
     /** Text shared to Pusslet (e.g. a message from school) opens quick add with the text filled in. */
     data class SharedText(val text: String) : IncomingIntent
 
+    /** A picture shared to Pusslet (e.g. a photographed weekly letter). Null when it could not be read. */
+    data class SharedImage(val fileName: String?) : IncomingIntent
+
     /** A home-screen widget opening its part of the app. */
     data class OpenTab(val tab: se.pusslet.shell.navigation.TopLevelTab) : IncomingIntent
 

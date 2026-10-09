@@ -76,6 +76,7 @@ object TestEnvironment {
             single<se.pusslet.data.remote.CloudFunctions> { se.pusslet.data.remote.LocalOnlyCloudFunctions }
             single<se.pusslet.data.usecase.NotificationScheduler> { se.pusslet.data.usecase.NoNotifications }
             single<se.pusslet.data.usecase.FamilyAlerts> { se.pusslet.data.usecase.NoFamilyAlerts }
+            single<se.pusslet.data.repository.AttachmentFiles> { se.pusslet.data.repository.NoAttachmentFiles }
         }
         val overrides = module {
             single<Clock> { FixedClock }

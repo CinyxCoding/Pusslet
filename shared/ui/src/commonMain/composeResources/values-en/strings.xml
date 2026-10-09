@@ -1039,4 +1039,19 @@
     <string name="widget_shopping_add">Add to the list</string>
     <string name="widget_shopping_item">%1$s · %2$s</string>
     <string name="widget_shopping_add_title">Add to %1$s</string>
+
+    <!-- Pictures shared to the app (kept on this phone only) -->
+    <string name="attachments_title">Pictures</string>
+    <string name="attachments_only_here">Pictures are kept on this phone only.</string>
+    <string name="attachment_open">Open the picture</string>
+    <string name="attachment_remove">Remove the picture</string>
+    <string name="attachment_remove_confirm">Remove the picture from this phone?</string>
+    <string name="attach_title">Save the picture</string>
+    <string name="attach_note_title">As a note</string>
+    <string name="attach_note_hint">What is it? E.g. Weekly letter wk 41</string>
+    <string name="attach_note_default">Picture</string>
+    <string name="attach_to_event">To an event</string>
+    <string name="attach_event_when">%1$s · %2$s</string>
+    <string name="attach_no_events">No events in the coming weeks.</string>
+    <string name="attach_failed">The picture could not be read.</string>
 </resources>

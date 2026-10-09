@@ -26,6 +26,9 @@ sealed interface Route {
     /** One occurrence of an event (family, subscription or device calendar). */
     @Serializable data class EventDetails(val eventId: String, val occurrenceDate: LocalDate) : Route
 
+    /** A picture shared to the app, already copied to the private attachment folder. */
+    @Serializable data class AttachImage(val fileName: String) : Route
+
     @Serializable data object Family : Route
 
     @Serializable data class ChildEditor(val childId: String? = null) : Route

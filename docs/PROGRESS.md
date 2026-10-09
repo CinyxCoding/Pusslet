@@ -60,21 +60,32 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] ICS-prenumerationer – lista med status (antal händelser, senast hämtat, fel i klartext), lägg till/ändra (namn, länk,
       vem den gäller, färg), av/på, uppdatera nu; WorkManager hämtar var 6:e timme med nät; webcal://-länkar och delade
       .ics-länkar öppnar dialogen. Gamla händelser gallras (FeedWindow) så att även stora flöden går snabbt
-- [ ] Tvåvägs enhetskalender (CalendarContract)
+- [x] Tvåvägs enhetskalender (CalendarContract) – egna kalendrar visas som eget lager (krockar med jobbet syns) och
+      familjens händelser skrivs till en vald kalender eller en egen "Pusslet"-kalender vid varje ändring och var 6:e timme
+      (serier som RRULE, flyttade tillfällen som egna händelser, borttagna försvinner)
 - [x] Eget ICS-flöde (Cloud Function) – `calendarFeed` + Hosting-omskrivning `/feed/<token>.ics`, hela familjen eller
       "bara mina", skapa/dela/återkalla i Inställningar, "återkalla alla" via `revokeCalendarFeeds` (ADR-021).
       Tester: 7 enhet (escaping, vikning, serier/undantag/flyttade/heldag, golden), 4 mot emulatorn, Kotlin-rundtur
-- [ ] Konfliktdetektering, hämta/lämna-förfrågningar
-- [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
-- [ ] Två widgets (Idag, Inköpslista)
+- [x] Konfliktdetektering, hämta/lämna-förfrågningar – "Kan någon hämta?" till en person eller alla vuxna; notis med
+      "Jag tar det"/"Kan inte" direkt i notisen, svaret tillbaka till den som frågade, "Jag tar det" besvarar öppna frågor
+- [x] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler (ADR-023) – planeras på telefonen 48 h framåt
+      (påminnelser, hämtnudd 15 min före, uppgifter med tid, morgonkoll), fem kanaler; push från Functions för förfrågningar,
+      svar, varor medan någon handlar och andras kalenderändringar, sammanslagna. 7 kärntester, 7 notistester, 6 Functions-tester
+- [x] Två widgets (Idag, Inköpslista) (ADR-024) – Idag: datum + vecka, nästa händelse, vem som lämnar/hämtar (varnar när
+      ingen är satt), ska med, i morgon på kvällen; Inköpslista: butiksordning, bocka av, + med snabbtillägg. 4 kärntester,
+      5 widgettester
+- [x] Dela bild till appen → bifogas en händelse eller en anteckning, bara på telefonen (ADR-025). 4 VM-tester, 2 importtester
 - [x] Uppgifter/sysslor med rotation, fördelningsvy – listor (mina/alla/sysslor; försenat, idag, kommande, när det passar),
       snabbtillägg, redigerare med checklista och upprepning, turordning per vecka/varannan vecka, "Johan nästa gång",
       fördelning senaste 4 veckorna (uppgifter, sysslor, lämningar, hämtningar) utan poäng. Bugg rättad: roterande syssla utan
       startdatum visades felaktigt på rotationens måndag
 - [x] Export/radering av data – export (JSON) fanns; nu även `deleteFamily`/`deleteAccount` (rekursivt, roller,
       Auth-användare) med 4 emulatortester och knappar i Integritet (ADR-022)
-- [ ] ✅ Publik test-ICS visas korrekt (återkommande + tidszoner); familjehändelser syns i enhetens kalender
-      – första halvan klar: Kubernetes-communityns publika Google-kalender (15 643 händelser, 24 MB, parsas på 0,8 s) – ett
+- [x] ✅ Publik test-ICS visas korrekt (återkommande + tidszoner); familjehändelser syns i enhetens kalender
+      – andra halvan verifierad på emulatorn 2026-10-09: 13 familjehändelser med RRULE i kalendern "Pusslet" i
+      CalendarContract och instanserna (t.ex. förskola mån–fre) räknas ut av kalenderleverantören, som alla kalenderappar läser.
+      Google Kalender-appen på emulatorn visar inget utan Google-konto – kontrollera på en riktig telefon (SETUP 3).
+      Första halvan: Kubernetes-communityns publika Google-kalender (15 643 händelser, 24 MB, parsas på 0,8 s) – ett
       urval ordagranna rader som fixtur: veckomöte 10:00 Los Angeles visas 19:00 → 18:00 (vecka 44, mellan EU:s och USA:s
       sommartidsbyte) → 19:00; varannan-vecka-serie med EXDATE och RECURRENCE-ID. Verifierat genom WorkManager-workern till
       kalendervyn (SubscriptionRefreshWorkerTest + skärmdump `calendar_subscription_week44`)
@@ -108,10 +119,28 @@ Nästa steg (fas 3): ICS-prenumerationer (UI + WorkManager var 6:e h), tvåvägs
 (Cloud Function med hemlig token), hämta/lämna-förfrågningar, FCM + lokala påminnelser + morgonnotis + tysta timmar +
 notiskanaler, två Glance-widgets, uppgifter/sysslor med rotation och fördelningsvy, export/radering (Cloud Function).
 
+## Verifiering fas 3 (2026-10-09)
+Demo-APK på emulatorn (Pixel 9 Pro, API 37) utan backend:
+- Båda widgets läggs till från widgetväljaren (namn och beskrivning på svenska/engelska). Idag-widgeten visar heldag,
+  lämningar/hämtningar med vem och ska med; tryck på en rad öppnar tillfället. Inköpslistan i butiksordning; bocka av
+  försvinner direkt; + → "citroner, 3 lime" hamnar som två varor under frukt och grönt; titeln öppnar Handla-fliken.
+- Exporten till telefonens kalender (se ovan); påminnelsejobben för dagens hämtningar ligger i WorkManager.
+- Bugg som hittades och rättades: en avbockad vara låg kvar på widgeten (Glance ritar inte om innehåll som laddats före
+  kompositionen medan sessionen är öppen) – innehållet är nu ett flöde (ADR-024).
+- FCM end-to-end kräver ett riktigt Firebase-projekt (emulatorn har ingen FCM); mottagare, betalaster och mottagarval är
+  testade mot Firestore-emulatorn och i Robolectric.
+
+Nästa steg (fas 4): tillgänglighetsgenomgång och skärmdumpar i stor text, prestanda (kallstart, 500+ varor), tomma lägen och
+felhantering, onboarding < 2 min, genomläsning av sv/en, Entitlements/Billing-förberedelse + `docs/MONETIZATION.md`,
+`docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md`, R8-releasebygge, signering och lanseringschecklista.
+
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.
 - iOS kan inte kompileras på Windows; verifieras i CI (macOS-runner).
 - Hjälpare (t.ex. morfar) kan inte ändra lämning/hämtning direkt, bara svara på förfrågningar (ADR-015).
 - Redigeras en händelse på en telefon i annan tidszon visas händelsens egna klockslag i redigeraren (kalendern visar omräknat).
-- Delade bilder (SEND image/*) som bilaga till händelse/anteckning återstår (kräver Firebase Storage, görs i fas 3).
+- Delade bilder syns bara på telefonen som sparade dem (ADR-025).
+- Kortet "Studiedag på fredag" säger veckodagen även när studiedagen är idag (fixas i fas 4).
+- Notiser och widgets byggs med telefonens språk; har man valt ett annat språk i appen på Android 12 eller äldre kan de
+  komma på systemspråket.
 - Livsmedelsmatchningen är ordbaserad: ovanliga ingredienser kan behöva rättas för hand en gång (sparas sedan för familjen).

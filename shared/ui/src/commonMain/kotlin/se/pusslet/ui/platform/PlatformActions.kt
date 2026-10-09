@@ -1,6 +1,7 @@
 package se.pusslet.ui.platform
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.ImageBitmap
 
 enum class AppPermission { Notifications, Calendar, Camera, CoarseLocation }
 
@@ -40,6 +41,12 @@ interface PlatformActions {
 
     /** Google sign-in via Credential Manager; returns an ID token or null. */
     fun googleSignIn(onResult: (String?) -> Unit)
+
+    /** An attached picture from the app's private folder: a small [thumbnail] or the full picture. Null if it is gone. */
+    fun loadImage(fileName: String, thumbnail: Boolean, onResult: (ImageBitmap?) -> Unit) = onResult(null)
+
+    /** Shows an attached picture full screen in the phone's viewer. */
+    fun openImage(fileName: String) = Unit
 }
 
 object NoopPlatformActions : PlatformActions {

@@ -53,7 +53,9 @@ de körs mot samma emulator.
 
 ### 2.2 Tjänster
 1. Authentication: aktivera E-post/lösenord, Google och Anonym.
-2. Cloud Messaging: aktiveras automatiskt.
+2. Cloud Messaging: aktiveras automatiskt. Push skickas av funktionerna `pushHandoffRequest`, `pushHandoffAnswer`,
+   `pushShoppingItem` och `pushEventChange` (följer med i deploy nedan); appen registrerar sin token när man loggat in.
+   Inga nycklar behövs i appen – `google-services.json` räcker.
 3. App Check: registrera Play Integrity för Android-apparna, aktivera enforcement för Firestore och Functions efter testperiod.
 4. Crashlytics: aktivera (appen samlar bara in efter samtycke).
 
@@ -77,3 +79,15 @@ Lägg till SHA-1 och SHA-256 för debug- och release-nyckeln i Firebase (krävs 
 ### 2.6 Kontaktuppgift för öppna datakällor
 Sätt `AppConfig.CONTACT` (webbplats eller e-post) i `shared/core/src/commonMain/kotlin/se/pusslet/core/AppConfig.kt`.
 Open Food Facts kräver att appen identifierar sig med kontaktuppgift i User-Agent.
+
+## 3. Kontroller på riktig telefon (före lansering)
+Saker som emulatorn inte kan visa:
+1. **Telefonens kalender:** Inställningar → Kalendrar → "Lägg familjens händelser i" → en egen Pusslet-kalender. Öppna
+   Google Kalender (inloggad) och kontrollera att förskola/skola syns som återkommande och att en ändring i Pusslet slår
+   igenom inom någon minut.
+2. **Push med två telefoner** (dev-flavorn mot ditt Firebase-projekt): Sara frågar "Kan någon hämta?" → Johans telefon
+   får notisen med "Jag tar det" även när appen är stängd; svaret når Sara. Lägg till en vara medan den andra har tryckt
+   "Jag handlar nu".
+3. **Widgets:** lägg Idag och Inköpslista på hemskärmen; bocka av, lägg till med +, och se att Idag-widgeten byter
+   "nästa händelse" när tiden passerat.
+4. **Dela en bild** från Galleriet till Pusslet → "Till en händelse" → bilden syns i händelsen och öppnas i bildvisaren.

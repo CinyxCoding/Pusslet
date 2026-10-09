@@ -13,6 +13,7 @@ import se.pusslet.core.model.Role
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.remote.AuthRepository
 import se.pusslet.data.remote.CloudFunctions
+import se.pusslet.data.repository.AttachmentFiles
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.SyncLocalStore
 import kotlin.time.Clock
@@ -27,6 +28,7 @@ class DataPrivacy(
     private val coordinator: AppCoordinator,
     private val functions: CloudFunctions,
     private val auth: AuthRepository,
+    private val attachments: AttachmentFiles,
     private val clock: Clock = Clock.System,
 ) {
     /** Server deletion needs the backend and a signed-in account; without them everything is only on this phone. */
@@ -67,8 +69,11 @@ class DataPrivacy(
 
     fun exportFileName(): String = "${AppConfig.APP_NAME.lowercase()}-export-${clock.now().toString().take(10)}.json"
 
-    /** Removes the family's data from this device only (the family continues for the others). */
-    suspend fun forgetOnDevice() = coordinator.forgetFamilyOnDevice(local)
+    /** Removes the family's data from this device only (the family continues for the others), pictures included. */
+    suspend fun forgetOnDevice() {
+        coordinator.forgetFamilyOnDevice(local)
+        attachments.deleteAll()
+    }
 
     /** "Radera familjen": gone for everyone on the server, then from this phone. */
     suspend fun deleteFamilyEverywhere() {

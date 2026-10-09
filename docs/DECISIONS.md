@@ -188,3 +188,40 @@ bort familjen från användarnas listor. `deleteAccount` tar bort åtkomst, pers
 var anroparen sista förälder raderas hela familjen. Appen raderar lokalt först när servern svarat, och säger till om det misslyckas.
 **Konsekvens:** Inget halvraderat läge i appen. Utan backend (lokalt läge) är "ta bort från telefonen" detsamma som att radera allt.
 
+
+## ADR-023 – Påminnelser planeras på telefonen, push bara för det andra gjort
+**Kontext:** Påminnelser, hämtnudd och morgonkoll måste fungera offline; "Kan du ta hämtningen?" och ändringar som någon
+annan gör ska nå telefonen även när appen är stängd.
+**Beslut:** `ReminderPlanner` (ren Kotlin, testad) planerar 48 h framåt för mig: händelsepåminnelser, nudd 15 min före en
+lämning/hämtning jag har, uppgifter med tid och morgonkollen. Tysta timmar: uppgifter väntar tills de är slut och notiser
+om andras ändringar kommer tyst, men påminnelser man själv bett om och hämtnudden hörs alltid.
+WorkManager kör en jobb per notis (`REPLACE` bara när tiden ändrats), omplanering vid varje ändring och varje timme.
+Fem notiskanaler (påminnelser, lämna/hämta, morgonkoll, inköp, familjen). Push via FCM skickas av Cloud Functions bara
+vid förfrågningar/svar, varor som läggs till när någon handlar ("Sara handlar nu") och kalenderändringar av någon annan
+inom 14 dagar. Pushen är data-only: appen bygger texten på användarens språk och tillämpar tysta timmar. Innehållet är
+förnamn, händelsetitel/varunamn och tider – aldrig allergier, adresser eller anteckningar; TTL 24 h; inget loggas.
+Token hämtas via `FirebaseMessaging.register()`/`onRegistered` (25.x), sparas lokalt och registreras under kontot.
+**Konsekvens:** Utan nät fungerar allt utom push. Notiser om andras ändringar slås ihop till en löpande sammanfattning.
+
+## ADR-024 – Hemskärmswidgets med Glance, utan nät
+**Kontext:** Briefen vill ha Idag- och Inköpslista-widgets. Widgets uppdateras ofta och får inte dra batteri eller vänta på nät.
+**Beslut:** Glance 1.2. Innehållet byggs av samma `TodayPlans` som Idag-skärmen (utan väder) via `TodayGlancer` i kärnan,
+som också räknar ut när innehållet ändras av sig självt (nästa start/slut, en hämtning passerar, midnatt) – då väcks
+widgeten med ett engångsjobb i WorkManager. Medan Glance-sessionen är öppen samlas innehållet in som ett flöde i
+kompositionen (annars ritas en avbockad vara inte om). Inköpslistan bockas av direkt och + öppnar en liten dialog med
+samma tolkning som Handla-fliken (`ShoppingQuickAdd`). Texter i widgetväljaren läses från manifestet och måste därför
+vara Android-resurser (`res/values*/widget_strings.xml`, sv+en, paritet testas) – allt i själva widgeten kommer från
+compose-resurserna.
+**Konsekvens:** Widgets visar lokal data även offline; en ändring på en annan telefon syns när synken når hit.
+
+## ADR-025 – Delade bilder sparas bara på telefonen
+**Kontext:** "Dela bild → bifoga till händelse eller anteckning" (t.ex. ett fotat veckobrev). Bilder kan visa barn, namn och
+adresser, och Firebase Storage skulle kräva nya regler, kvoter och radering i molnet.
+**Beslut:** Bilden kopieras in i appens privata mapp (`files/attachments`), skalas till högst 2048 px som JPEG med kamerans
+rotation och en 480 px-miniatyr; originalet lämnar aldrig delande app. Kopplingen sparas i en lokal samling
+(`CollectionSpec.localOnly`) som aldrig köas för uppladdning. Man väljer en kommande händelse (serie för återkommande) eller
+"Som anteckning" (en uppgift utan datum). Lämnar man skärmen utan att välja raderas bilden. Bilder till borttagna
+händelser/anteckningar och kvarglömda filer äldre än ett dygn städas vid start. Mappen är undantagen från molnbackup
+och raderas med "Glöm familjen på den här telefonen". Visning sker via FileProvider i telefonens bildvisare.
+**Konsekvens:** Bilden syns bara på telefonen som sparade den – det står i appen. Delning till andra i familjen kan
+läggas till senare med Storage om ägaren vill (premium-kandidat).

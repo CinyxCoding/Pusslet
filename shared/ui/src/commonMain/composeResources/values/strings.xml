@@ -1040,4 +1040,19 @@
     <string name="widget_shopping_add">Lägg till på listan</string>
     <string name="widget_shopping_item">%1$s · %2$s</string>
     <string name="widget_shopping_add_title">Lägg till på %1$s</string>
+
+    <!-- Pictures shared to the app (kept on this phone only) -->
+    <string name="attachments_title">Bilder</string>
+    <string name="attachments_only_here">Bilder sparas bara på den här telefonen.</string>
+    <string name="attachment_open">Öppna bilden</string>
+    <string name="attachment_remove">Ta bort bilden</string>
+    <string name="attachment_remove_confirm">Ta bort bilden från telefonen?</string>
+    <string name="attach_title">Spara bilden</string>
+    <string name="attach_note_title">Som anteckning</string>
+    <string name="attach_note_hint">Vad är det? T.ex. Veckobrev v. 41</string>
+    <string name="attach_note_default">Bild</string>
+    <string name="attach_to_event">Till en händelse</string>
+    <string name="attach_event_when">%1$s · %2$s</string>
+    <string name="attach_no_events">Inga händelser de närmaste veckorna.</string>
+    <string name="attach_failed">Bilden kunde inte läsas.</string>
 </resources>

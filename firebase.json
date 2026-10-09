@@ -45,6 +45,9 @@
   },
   "hosting": {
     "public": "hosting",
+    "predeploy": [
+      "node \"$PROJECT_DIR/functions/scripts/privacy-page.mjs\""
+    ],
     "ignore": [
       "firebase.json",
       "**/node_modules/**"

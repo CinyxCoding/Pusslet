@@ -66,9 +66,15 @@ lokalt (`git checkout main && git pull`).
 2. Cloud Messaging: aktiveras automatiskt. Push skickas av funktionerna `pushHandoffRequest`, `pushHandoffAnswer`,
    `pushShoppingItem` och `pushEventChange` (följer med i deploy nedan); appen registrerar sin token när man loggat in.
    Inga nycklar behövs i appen – `google-services.json` räcker.
-3. App Check är **inte inkopplat i appen än** (biblioteken finns bara i versionskatalogen). Slå inte på enforcement –
-   då nekas appen. Koppla in Play Integrity i appen före lansering och slå på enforcement först efter några dagars
-   övervakning.
+3. App Check (ADR-031): appen skickar App Check-token till Firestore och Functions (dev och prod; demo-flavorn mot
+   emulatorerna gör det inte).
+   - Gå till **Build → App Check → Apps** och registrera Android-apparna med **Play Integrity** (SHA-256 som i 2.5).
+   - Debugbyggen använder en debug-token: starta `devDebug` en gång och leta upp raden från `DebugAppCheckProvider`
+     i Logcat ("Enter this debug secret …"). Lägg in den under appens **⋮ → Manage debug tokens**. Gör så för varje
+     telefon/emulator du testar på.
+   - Låt enforcement vara **av** tills App Check-sidan visar att nästan alla anrop är verifierade (några dagar efter att
+     testarna börjat). Slå sedan på enforcement för Cloud Firestore och Cloud Functions. Release-byggen som inte kommer
+     från Play (t.ex. en sidoinstallerad APK) nekas då.
 4. Kraschrapporter: ingen SDK i appen (ADR-026) – se **Android vitals** i Play Console (krascher och ANR från användare
    som delar diagnostik med Google i telefonens inställningar).
 
@@ -153,14 +159,17 @@ Play App Signing rekommenderas: Google håller appens signeringsnyckel och du si
 - [ ] SHA-1/SHA-256 för uppladdningsnyckeln **och** Play-signeringsnyckeln inlagda i Firebase (Google-inloggning och App Links).
 - [ ] `assetlinks.json` för App Links publicerad på `linkHost` med Play-signeringsnyckelns fingeravtryck
       (lägg filen i `hosting/.well-known/assetlinks.json` och deploya hosting).
-- [ ] App Check med Play Integrity inkopplat i appen (se 2.2).
 - [ ] `AppConfig.CONTACT` satt (avsnitt 2.6).
 
 **Butikssidan** (`docs/STORE_LISTING.md`)
 - [ ] Appnamn, kort och lång beskrivning på svenska och engelska.
-- [ ] Ikon 512×512, funktionsbild 1024×500, minst 4 skärmdumpar per språk (Roborazzi-bilderna i
-      `composeApp/src/test/snapshots/`), gärna även en surfplatta.
-- [ ] Kategori Föräldraskap, kontaktuppgifter, integritetspolicyns URL (`docs/PRIVACY.md` publicerad).
+- [ ] Ikon 512×512, funktionsbilder 1024×500 och skärmdumpar 1080×1920 på svenska och engelska finns i `docs/store/`.
+      Gör om dem efter ändringar i appen:
+      `PUSSLET_STORE_IMAGES=1 ./gradlew :composeApp:recordRoborazziDemoDebug --tests "*StoreImages*"`.
+- [ ] Integritetspolicyn: fyll i `[…]` i `docs/PRIVACY.md` (namn, adress, e-post, datum) och deploya hosting – sidan
+      `https://<linkHost>/privacy/` byggs då av sig själv (inte så länge något `[…]` finns kvar). Ange adressen i Play
+      Console; appen länkar dit under "Integritet och dina data".
+- [ ] Kategori Föräldraskap och kontaktuppgifter.
 
 **App content i Play Console**
 - [ ] Data safety ifyllt enligt `docs/PLAY_DATA_SAFETY.md`.

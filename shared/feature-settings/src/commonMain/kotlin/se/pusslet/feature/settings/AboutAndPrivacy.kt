@@ -32,6 +32,8 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.data.BackendConfig
+import se.pusslet.data.BackendMode
 import se.pusslet.data.db.CacheDao
 import se.pusslet.data.usecase.DataPrivacy
 import se.pusslet.ui.components.Banner
@@ -127,7 +129,10 @@ fun AboutDataRoute(onBack: () -> Unit, viewModel: AboutDataViewModel = koinViewM
 
 enum class PrivacyAction { Forget, DeleteFamily, DeleteAccount }
 
-class PrivacyViewModel(private val privacy: DataPrivacy) : ViewModel() {
+class PrivacyViewModel(private val privacy: DataPrivacy, config: BackendConfig) : ViewModel() {
+    /** The public policy (built from docs/PRIVACY.md and hosted next to the calendar links); none without a server. */
+    val policyUrl: String? = if (config.mode == BackendMode.Firebase) "https://${config.linkHost}/privacy/" else null
+
     private val log = co.touchlab.kermit.Logger.withTag("Privacy")
     val busy = kotlinx.coroutines.flow.MutableStateFlow(false)
     val failed = kotlinx.coroutines.flow.MutableStateFlow(false)
@@ -176,6 +181,9 @@ fun PrivacyRoute(onBack: () -> Unit, onForgotten: () -> Unit, viewModel: Privacy
             Text(stringResource(Res.string.privacy_summary), style = MaterialTheme.typography.bodyLarge)
             Text(stringResource(Res.string.privacy_sensitive), style = MaterialTheme.typography.bodyMedium)
             Banner(stringResource(Res.string.about_no_ai), kind = BannerKind.Info)
+            viewModel.policyUrl?.let { url ->
+                TextButton(onClick = { platform.openUrl(url) }) { Text(stringResource(Res.string.privacy_policy_link)) }
+            }
             SectionCard(stringResource(Res.string.privacy_export)) {
                 Text(stringResource(Res.string.privacy_export_body), style = MaterialTheme.typography.bodyMedium)
                 OutlinedButton(

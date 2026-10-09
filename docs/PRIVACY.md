@@ -1,14 +1,15 @@
 # Integritetspolicy (utkast) / Privacy policy (draft)
 
-> Utkast att granska innan publicering. Fyll i `[…]`. Policyn ska ligga på en offentlig webbadress som anges i Play
-> Console och i appens "Integritet och dina data". Den beskriver appen som den är byggd i dag (se ADR-001, 021–025).
+> Utkast att granska innan publicering. Fyll i `[…]`. Sidan `https://<linkHost>/privacy/` byggs från den här filen vid
+> varje hosting-deploy (`functions/scripts/privacy-page.mjs`) – men bara när inga `[…]` finns kvar. Adressen anges i Play
+> Console och visas i appens "Integritet och dina data". Använd samma kontaktuppgift som i `AppConfig.CONTACT`. Den beskriver appen som den är byggd i dag (se ADR-001, 021–025).
 
 ---
 
 ## Svenska
 
 **Senast uppdaterad:** […datum…]
-**Personuppgiftsansvarig:** […namn/företag…], […adress…], […e-post…] (samma kontaktuppgift som `AppConfig.CONTACT`).
+**Personuppgiftsansvarig:** […namn/företag…], […adress…], […e-post…]
 
 ### Kort sagt
 - Pusslet är en planeringsapp för familjer. Vi samlar bara in det som behövs för att familjens kalender, listor och
@@ -53,7 +54,7 @@ båda hemmen en egen kopia.
 
 ### Tredje parter
 - **Google Firebase** (Authentication, Firestore, Cloud Functions, Cloud Messaging, Hosting) är vårt personuppgiftsbiträde.
-  Data lagras i EU (`[europe-north1 / eur3]`). Notiser skickas via Firebase Cloud Messaging och innehåller förnamn,
+  Data lagras i EU (Finland, `europe-north1`). Notiser skickas via Firebase Cloud Messaging och innehåller förnamn,
   händelsens titel eller varans namn och tid – aldrig allergier, adresser eller anteckningar – och sparas högst 24 timmar.
 - **Öppna datakällor** som appen anropar direkt: SMHI (väder, avrundad position ≈ 1 km), Skolverket (sökning på skolnamn),
   skolmaten.se och Matilda (skolans lunchmeny), Livsmedelsverket (livsmedelsdata), Open Food Facts (streckkod). De får bara det som
@@ -63,7 +64,7 @@ båda hemmen en egen kopia.
 
 ### Hur länge
 Så länge familjen finns. "Radera familjen" tar bort allt på servern direkt, inklusive delningslänkar och inbjudningar;
-"Radera mitt konto" tar bort ditt konto, din medlemskap och dina enheter (är du sista förälder raderas familjen). Googles
+"Radera mitt konto" tar bort ditt konto, ditt medlemskap och dina enheter (är du sista förälder raderas familjen). Googles
 driftkopior rensas enligt Google Clouds villkor.
 
 ### Dina rättigheter
@@ -83,7 +84,7 @@ Vi meddelar väsentliga ändringar i appen innan de börjar gälla.
 ## English
 
 **Last updated:** […date…]
-**Controller:** […name/company…], […address…], […email…] (same contact as `AppConfig.CONTACT`).
+**Controller:** […name/company…], […address…], […email…]
 
 ### In short
 - Pusslet is a planning app for families. We only collect what the family calendar, lists and reminders need to work
@@ -127,7 +128,7 @@ never visible to the other home. If you stop sharing, both homes keep their own 
 
 ### Third parties
 - **Google Firebase** (Authentication, Firestore, Cloud Functions, Cloud Messaging, Hosting) is our processor. Data is
-  stored in the EU (`[europe-north1 / eur3]`). Notifications are sent through Firebase Cloud Messaging and contain first
+  stored in the EU (Finland, `europe-north1`). Notifications are sent through Firebase Cloud Messaging and contain first
   names, the event title or item name and a time – never allergies, addresses or notes – and are kept for at most 24 hours.
 - **Open data sources** the app calls directly: SMHI (weather, rounded position ≈ 1 km), Skolverket (school name search),
   skolmaten.se and Matilda (school lunch menu), the Swedish Food Agency (food data), Open Food Facts (barcodes). They only receive what

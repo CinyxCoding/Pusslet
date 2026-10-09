@@ -304,3 +304,14 @@ innehålla barnens samlingar (barn, vårdnadsschema, händelser, packning, uppgi
 när ett dokument flyttas kan hamna i hemmets gamla kopia. Att dela med andra hemmet är en premiumkandidat
 (`Feature.SharedCustody`, kontrolleras när man startar); att gå med är alltid gratis.
 
+## ADR-031 – App Check med Play Integrity, enforcement först efter testperioden
+**Kontext:** Säkerhetsreglerna skyddar familjens data per konto, men vem som helst med projektets publika nycklar kan
+anropa Firestore och funktionerna (t.ex. kalenderlänken) från ett eget skript. App Check gör att bara den riktiga appen
+släpps in. Play Integrity fungerar bara för appar som installerats från Play.
+**Beslut:** `FirebaseSetup` installerar App Check för dev och prod: debug-provider i debug-byggen (en token per enhet
+läggs in i konsolen), Play Integrity i release-byggen (`src/debug` / `src/release`, beroendena bara i respektive
+byggtyp). Demo-flavorn mot emulatorerna använder inte App Check. Enforcement slås på i konsolen först när mätningen
+visar att testarnas anrop är verifierade.
+**Konsekvens:** Utan enforcement ändras inget för användarna. Med enforcement nekas sidoinstallerade release-APK:er och
+debug-byggen utan registrerad token; testa därför via Play (internt test) innan enforcement slås på.
+

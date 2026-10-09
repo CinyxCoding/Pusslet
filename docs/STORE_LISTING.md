@@ -1,9 +1,11 @@
 # Play-butikstexter / Store listing
 
 > Gränser i Play Console: appnamn 30 tecken, kort beskrivning 80, lång beskrivning 4 000. Kategori: **Föräldraskap**
-> (Parenting). Tagga: familj, kalender, matsedel, inköpslista. Kontakt: […e-post…]. Integritetspolicy: […URL…].
-> Skärmdumpar: från Roborazzi-guldbilderna (`composeApp/src/test/snapshots/`) – Idag, veckokalender, händelse med
-> lämna/hämta, matsedel, inköpslista i butiksläge, widgets; ljust + ett mörkt. Inga riktiga namn – demofamiljen Lind.
+> (Parenting). Tagga: familj, kalender, matsedel, inköpslista. Kontakt: […e-post…]. Integritetspolicy:
+> `https://<linkHost>/privacy/` (byggs från `docs/PRIVACY.md`, se SETUP 5).
+> Bilder i `docs/store/`: ikon `icon_512.png`, funktionsbild `feature_graphic_sv.png` / `_en.png` och sex skärmdumpar
+> per språk i `screenshots/sv` och `screenshots/en` (1080×1920): Idag, veckan, lämna/hämta, matsedeln, butiksläget och
+> barnläget. Allt med den påhittade demofamiljen Lind – inga riktiga namn. Görs från appen med `StoreImagesTest`.
 
 ## Svenska (sv-SE, standard)
 

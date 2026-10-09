@@ -4,6 +4,7 @@ import android.content.Context
 import co.touchlab.kermit.Logger
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
@@ -39,6 +40,10 @@ object FirebaseSetup {
                 .apply { if (BuildConfig.FIREBASE_STORAGE_BUCKET.isNotBlank()) setStorageBucket(BuildConfig.FIREBASE_STORAGE_BUCKET) }
                 .build()
             FirebaseApp.initializeApp(context, options)
+            if (mode == BackendMode.Firebase) {
+                // Firestore and Functions only accept requests from the real app once enforcement is on (ADR-031).
+                FirebaseAppCheck.getInstance().installAppCheckProviderFactory(AppCheckProviders.factory())
+            }
         }
         val firestore = FirebaseFirestore.getInstance()
         // Room is the offline store (ADR-006); Firestore only needs an in-memory cache.

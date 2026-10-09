@@ -580,6 +580,7 @@
     <string name="privacy_title">Integritet och dina data</string>
     <string name="privacy_summary">Familjens uppgifter lagras på telefonen och – när ni loggar in – hos Google Firebase inom EU. Barn behöver bara ett förnamn. Inget säljs, ingen reklam, ingen AI.</string>
     <string name="privacy_sensitive">Allergier och kost sparas bara om du aktivt väljer det, och kan tas bort när som helst.</string>
+    <string name="privacy_policy_link">Läs hela integritetspolicyn</string>
     <string name="privacy_export">Exportera all data</string>
     <string name="privacy_export_body">En fil (JSON) med allt som finns om familjen på den här telefonen.</string>
     <string name="privacy_delete_family">Radera familjen</string>

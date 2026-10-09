@@ -46,3 +46,5 @@ emulator-data/
 
 # JVM crash logs
 hs_err_pid*.log
+# Built from docs/PRIVACY.md before each hosting deploy
+hosting/privacy/

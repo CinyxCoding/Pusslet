@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -133,12 +134,20 @@ fun CalendarScreen(
                 CalendarView.Month to Res.string.calendar_view_month,
                 CalendarView.Agenda to Res.string.calendar_view_agenda,
             )
+            // With large text the four labels do not fit: this compact control grows to 1.3× and no further, and the
+            // checkmark goes (the selected segment is still filled and announced as selected).
+            val fontScale = LocalDensity.current.fontScale
+            val largeText = fontScale > LARGE_FONT_SCALE
+            val labelStyle = MaterialTheme.typography.labelLarge.let { style ->
+                if (largeText) style.copy(fontSize = style.fontSize * (LARGE_FONT_SCALE / fontScale)) else style
+            }
             views.forEachIndexed { i, (v, label) ->
                 SegmentedButton(
                     selected = state.view == v,
                     onClick = { onView(v) },
                     shape = SegmentedButtonDefaults.itemShape(i, views.size),
-                    label = { Text(stringResource(label), maxLines = 1) },
+                    icon = { if (!largeText) SegmentedButtonDefaults.Icon(state.view == v) },
+                    label = { Text(stringResource(label), maxLines = 1, style = labelStyle) },
                 )
             }
         }
@@ -556,3 +565,5 @@ private fun MonthView(
 private const val DAY_START = 6
 private const val DAY_END = 22
 private const val MAX_DOTS = 4
+
+private const val LARGE_FONT_SCALE = 1.3f

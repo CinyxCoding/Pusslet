@@ -36,6 +36,7 @@ import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.PackingReason
+import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.ContextCard
 import se.pusslet.core.today.Greeting
 import se.pusslet.core.today.TimelineItem
@@ -296,13 +297,13 @@ private fun ContextCardView(
             })
         }
         is ContextCard.StudyDay -> Banner(
-            stringResource(Res.string.card_study_day, card.title, stringResource(Res.string.on_weekday, weekdayName(card.date.dayOfWeek))),
+            stringResource(Res.string.card_study_day, card.title, cardDay(card.date, plan.date)),
             kind = BannerKind.Warning,
         )
         is ContextCard.PartyGift -> {
             val giftTitle = stringResource(Res.string.card_action_add_task)
             Banner(
-                stringResource(Res.string.card_party_gift, stringResource(Res.string.on_weekday, weekdayName(card.date.dayOfWeek))),
+                stringResource(Res.string.card_party_gift, cardDay(card.date, plan.date)),
                 kind = BannerKind.Warning,
                 actions = if (card.taskId == null) {
                     {
@@ -540,3 +541,11 @@ private fun UpcomingCard(plan: TodayPlan, onOpenOccurrence: (EventOccurrence) ->
 
 private const val MAX_TASKS = 6
 private const val MAX_UPCOMING = 4
+
+/** "idag", "imorgon" or "på fredag" for a card about the coming days. */
+@Composable
+private fun cardDay(date: LocalDate, today: LocalDate): String = when (date) {
+    today -> stringResource(Res.string.card_today)
+    today.plusDays(1) -> stringResource(Res.string.card_tomorrow)
+    else -> stringResource(Res.string.on_weekday, weekdayName(date.dayOfWeek))
+}

@@ -15,6 +15,7 @@ import se.pusslet.data.FakeFoodDao
 import se.pusslet.data.MockHttp
 import se.pusslet.data.MockHttp.Companion.ok
 import se.pusslet.data.readFixture
+import se.pusslet.data.sync.DomainJson
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -144,6 +145,74 @@ class OpenDataAdaptersTest {
         html = true
         val other = SkolmatenRssProvider(CachedFetcher(http.client, FakeCacheDao()), stockholm)
         assertNull(other.lunches(LunchSource(LunchProviderType.Skolmaten, "annanskola")))
+    }
+
+    // endregion
+
+    // region Matilda
+
+    @Test
+    fun matildaFixtureGivesOneLunchPerDayWithSidesLabelled() {
+        val lunches = MatildaLunchParser.parse(readFixture("matilda_week_gymnasium.xml"), "Matilda")
+        assertEquals((5..9).map { LocalDate(2026, 10, it) }, lunches.map { it.date })
+        assertEquals(listOf("Potatisbullar med lingonsylt", "Pytt i panna med rödbetor"), lunches.first().dishes)
+        // Two items on Tuesday (the course and its sides) end up as one day.
+        assertEquals(
+            listOf(
+                "Krämig pastagratäng med basilika",
+                "Potatis- och purjolökssoppa",
+                "Tillbehör: Mjukt bröd & pålägg serveras till soppan",
+            ),
+            lunches[1].dishes,
+        )
+        // "&" inside a dish (lower case after it) is not a new dish.
+        assertEquals(
+            listOf("Plant beef", "Klimatsmarta pannbiffar med stekt lök & gräddsås", "Tillbehör: Kokt potatis & rostad potatis"),
+            lunches[3].dishes,
+        )
+        assertEquals("Matilda", lunches.first().source)
+    }
+
+    @Test
+    fun matildaAcceptsTheMenuLinkParentsCopy() {
+        val id = "685427abb1ee448fd5710ce1"
+        assertEquals(id, MatildaRssProvider.distributorIdOf("https://menu.matildaplatform.com/meals/week/${id}_gymnasium"))
+        assertEquals(
+            id,
+            MatildaRssProvider.distributorIdOf("https://menu.matildaplatform.com/sv/meals/${id}_gymnasium?startDate=2026-10-05"),
+        )
+        assertEquals(id, MatildaRssProvider.distributorIdOf("https://menu.matildaplatform.com/rss?distributorId=${id.uppercase()}&lang=sv"))
+        assertEquals(id, MatildaRssProvider.distributorIdOf(" $id "))
+        assertNull(MatildaRssProvider.distributorIdOf("https://menu.matildaplatform.com/meals/week/"))
+        assertNull(MatildaRssProvider.distributorIdOf("Vasaskolan"))
+    }
+
+    @Test
+    fun matildaUsesTheOfficialFeedAndOnlyForMatildaChildren() = runTest {
+        val http = MockHttp { ok(readFixture("matilda_week_gymnasium.xml"), "application/rss+xml") }
+        val menus = LunchMenus(
+            listOf(
+                SkolmatenRssProvider(CachedFetcher(http.client, FakeCacheDao()), stockholm),
+                MatildaRssProvider(CachedFetcher(http.client, FakeCacheDao())),
+            ),
+        )
+        val source =
+            LunchSource(LunchProviderType.Matilda, "https://menu.matildaplatform.com/meals/week/685427abb1ee448fd5710ce1_gymnasium")
+        val result = assertNotNull(menus.lunches(source))
+        assertEquals(5, result.value.size)
+        assertEquals(
+            "https://menu.matildaplatform.com/rss?displayMode=week&distributorId=685427abb1ee448fd5710ce1&lang=sv",
+            http.requests.single(),
+        )
+        assertNull(menus.lunches(LunchSource(LunchProviderType.Matilda, "ingen länk")))
+        assertFalse(menus.supports(LunchSource(LunchProviderType.Manual)))
+        assertEquals(1, http.requests.size)
+    }
+
+    @Test
+    fun anUnknownLunchProviderFromANewerAppReadsAsManual() {
+        val child = DomainJson.decodeFromString(LunchSource.serializer(), """{"provider":"framtida","reference":"x"}""")
+        assertEquals(LunchProviderType.Manual, child.provider)
     }
 
     // endregion

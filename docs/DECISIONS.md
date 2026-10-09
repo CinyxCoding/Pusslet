@@ -261,3 +261,18 @@ per vecka som slås ihop per vecka. Man lämnar barnläge med ett långt tryck. 
 **Konsekvens:** Barnet "är" alltid den inloggade vuxna mot servern – godkännandet är en familjeöverenskommelse, inte en
 säkerhetsgräns. Ett eget barnkonto kan läggas till senare med en barnroll i reglerna.
 
+## ADR-029 – Matilda som lunchkälla via officiellt RSS
+**Kontext:** BRIEF nämner fler matsedelsleverantörer än skolmaten.se: Matilda (`menu.matildaplatform.com`), Mashie
+(`mpi.mashie.com`), FoodIT (`webmenu.foodit.se`) och specen Open Meal Information. Ingen av dem har ett öppet JSON-API.
+Matildas matsedelssida länkar själv till ett RSS-flöde (`/rss?displayMode=week&distributorId=<id>&lang=sv`) med en post
+per rätt och dag: beskrivningen börjar med rättens rubrik ("Dagens", "Tillbehör"), sedan rätterna ihopfogade med " & ".
+Flödet ger bara innevarande vecka (`startDate` ignoreras). FoodIT:s webbmeny är numera Matildas. Mashie gick inte att nå
+från utvecklingsmaskinen och Open Meal Information-sidan finns inte längre, så de väntar.
+**Beslut:** `LunchProviderType.Matilda` på barnprofilen. Föräldern klistrar in länken till matsedeln; id:t (24 hextecken
+före understrecket) blir `distributorId`. `MatildaLunchParser` slår ihop dagens poster, delar på " & " bara när nästa ord
+börjar med versal ("pannbiff med lök & gräddsås" är en rätt) och sätter rubriken framför allt som inte är huvudrätten
+("Tillbehör: Nudlar & couscous"). Hämtas högst en gång per dygn, cachas i Room som övriga källor och felar mjukt.
+`LunchMenus` väljer leverantör per barn. `LunchSource.provider` har nu ett standardvärde (manuell) så att en äldre
+appversion läser en okänd leverantör som manuell i stället för att tappa barnet.
+**Konsekvens:** Ingen skrapning – bara flödet som Matilda själva erbjuder. Fler leverantörer läggs till som egna
+`LunchMenuProvider` när de har ett öppet flöde; tills dess finns "Egen RSS-länk" och manuell inmatning.

@@ -60,6 +60,7 @@ import se.pusslet.core.model.LunchProviderType
 import se.pusslet.core.model.LunchSource
 import se.pusslet.core.model.MemberColor
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.sources.MatildaRssProvider
 import se.pusslet.feature.family.school.SchoolPickerDialog
 import se.pusslet.ui.components.ColorPicker
 import se.pusslet.ui.components.DatePickerSheet
@@ -294,6 +295,7 @@ private fun LunchSection(child: Child, vm: ChildEditorViewModel) {
         listOf(
             null to Res.string.lunch_none,
             LunchProviderType.Skolmaten to Res.string.lunch_skolmaten,
+            LunchProviderType.Matilda to Res.string.lunch_matilda,
             LunchProviderType.Rss to Res.string.lunch_rss,
             LunchProviderType.Manual to Res.string.lunch_manual,
         ).forEach { (type, label) ->
@@ -307,12 +309,27 @@ private fun LunchSection(child: Child, vm: ChildEditorViewModel) {
                 Text(stringResource(label), modifier = Modifier.padding(start = Spacing.sm))
             }
         }
-        if (current == LunchProviderType.Skolmaten || current == LunchProviderType.Rss) {
+        val hint = when (current) {
+            LunchProviderType.Skolmaten -> Res.string.lunch_reference_hint
+            LunchProviderType.Matilda -> Res.string.lunch_matilda_hint
+            LunchProviderType.Rss -> Res.string.lunch_rss_hint
+            LunchProviderType.Manual, null -> null
+        }
+        if (hint != null) {
+            val reference = child.lunch?.reference.orEmpty()
+            val badMatilda = current == LunchProviderType.Matilda && reference.isNotBlank() &&
+                MatildaRssProvider.distributorIdOf(reference) == null
             OutlinedTextField(
-                value = child.lunch?.reference.orEmpty(),
+                value = reference,
                 onValueChange = { v -> vm.edit { it.copy(lunch = it.lunch?.copy(reference = v)) } },
-                label = { Text(stringResource(Res.string.lunch_reference_hint)) },
+                label = { Text(stringResource(hint)) },
                 singleLine = true,
+                isError = badMatilda,
+                supportingText = if (badMatilda) {
+                    { Text(stringResource(Res.string.lunch_matilda_invalid)) }
+                } else {
+                    null
+                },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             )

@@ -123,7 +123,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Barnvy och veckopeng (ADR-028) – barnläge (dagen, mina sysslor, stjärnor, veckopeng hittills; lämnas med långt
       tryck), sysslor och uppgifter kan ges till barn med 0–5 stjärnor, föräldrar godkänner eller säger "inte klart"
       (Uppgifter + Idag-kort), veckopeng per barn med utbetalda veckor. 3 kärn-, 3 VM-, 1 Idag-test, skärmdumpar
-- [ ] Fler lunchleverantörer
+- [x] Fler lunchleverantörer (ADR-029) – Matilda via matsedelns officiella RSS (klistra in länken på barnprofilen; rätter
+      och tillbehör per dag), felmeddelande om länken saknar matsedel, källan under Om data. Mashie/Open Meal Information
+      saknar öppet flöde som går att nå – "Egen RSS-länk" och manuell inmatning finns kvar. 4 tester mot riktig fixtur
 - [ ] Flerhushållsdelning fullt ut
 
 ## Verifiering fas 1 (2026-10-08)

@@ -50,6 +50,9 @@ import kotlin.time.Instant
 
 private data class Source(val title: StringResource, val body: StringResource, val cachePrefix: String?, val url: String)
 
+private const val SKOLMATEN_CACHE = "lunch:https://skolmaten.se"
+private const val MATILDA_CACHE = "lunch:https://menu.matildaplatform.com"
+
 /** Every external source with its licence and when it was last fetched (brief §3 and §9). */
 class AboutDataViewModel(private val cache: CacheDao) : ViewModel() {
     private val _fetched = MutableStateFlow<Map<String, Long>>(emptyMap())
@@ -58,7 +61,7 @@ class AboutDataViewModel(private val cache: CacheDao) : ViewModel() {
     init {
         viewModelScope.launch {
             val summaries = cache.summaries()
-            _fetched.value = listOf("smhi:", "skolverket:", "off:", "lunch:", "icsraw:").associateWith { prefix ->
+            _fetched.value = listOf("smhi:", "skolverket:", "off:", SKOLMATEN_CACHE, MATILDA_CACHE, "icsraw:").associateWith { prefix ->
                 summaries.filter { it.key.startsWith(prefix) }.maxOfOrNull { it.fetchedAt } ?: 0L
             }.filterValues { it > 0 }
         }
@@ -84,7 +87,8 @@ fun AboutDataRoute(onBack: () -> Unit, viewModel: AboutDataViewModel = koinViewM
             "https://www.skolverket.se/om-oss/oppna-data",
         ),
         Source(Res.string.source_off, Res.string.source_off_body, "off:", "https://world.openfoodfacts.org"),
-        Source(Res.string.source_skolmaten, Res.string.source_skolmaten_body, "lunch:", "https://skolmaten.se"),
+        Source(Res.string.source_skolmaten, Res.string.source_skolmaten_body, SKOLMATEN_CACHE, "https://skolmaten.se"),
+        Source(Res.string.source_matilda, Res.string.source_matilda_body, MATILDA_CACHE, "https://www.matildafoodtech.com"),
         Source(Res.string.source_scb, Res.string.source_scb_body, null, "https://www.scb.se"),
         Source(Res.string.source_icons, Res.string.source_icons_body, null, "https://fonts.google.com/icons"),
     )

@@ -408,8 +408,12 @@
     <string name="lunch_none">Don't show</string>
     <string name="lunch_skolmaten">skolmaten.se</string>
     <string name="lunch_rss">Own RSS link</string>
+    <string name="lunch_matilda">Matilda</string>
     <string name="lunch_manual">Enter it myself</string>
-    <string name="lunch_reference_hint">The school's page on skolmaten.se or a link</string>
+    <string name="lunch_reference_hint">The school's page on skolmaten.se or the school's name</string>
+    <string name="lunch_rss_hint">Link to an RSS feed (https://…)</string>
+    <string name="lunch_matilda_hint">The link to the menu on menu.matildaplatform.com</string>
+    <string name="lunch_matilda_invalid">No menu found in the link. Copy the address while the school's menu is showing.</string>
     <string name="child_sizes">Clothing sizes</string>
     <string name="size_pants">Trousers</string>
     <string name="size_top">Top</string>
@@ -560,6 +564,8 @@
     <string name="source_off_body">Product data for barcode scanning. Licence ODbL, collected by volunteers.</string>
     <string name="source_skolmaten">skolmaten.se</string>
     <string name="source_skolmaten_body">School lunch menus for schools using the service.</string>
+    <string name="source_matilda">Matilda</string>
+    <string name="source_matilda_body">School lunch menus from municipalities and kitchens using Matilda, via the menu's open RSS feed.</string>
     <string name="source_scb">Statistics Sweden (SCB)</string>
     <string name="source_scb_body">Municipality codes and names.</string>
     <string name="source_icons">Material Icons</string>

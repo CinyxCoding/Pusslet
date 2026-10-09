@@ -49,7 +49,7 @@ ser bara händelser som delats med dem. Delade bilder kan visa barn och stannar 
   Data lagras i EU (`[europe-north1 / eur3]`). Notiser skickas via Firebase Cloud Messaging och innehåller förnamn,
   händelsens titel eller varans namn och tid – aldrig allergier, adresser eller anteckningar – och sparas högst 24 timmar.
 - **Öppna datakällor** som appen anropar direkt: SMHI (väder, avrundad position ≈ 1 km), Skolverket (sökning på skolnamn),
-  skolmaten.se (skolans lunchmeny), Livsmedelsverket (livsmedelsdata), Open Food Facts (streckkod). De får bara det som
+  skolmaten.se och Matilda (skolans lunchmeny), Livsmedelsverket (livsmedelsdata), Open Food Facts (streckkod). De får bara det som
   står i frågan och din IP-adress, som all internettrafik.
 - **Webbsidor och kalenderlänkar du själv anger** (receptimport, kalenderprenumerationer) hämtas av appen.
 - **Kalenderlänkar ni delar** (eget ICS-flöde): den som har länken kan se händelserna tills ni återkallar den.
@@ -116,7 +116,7 @@ Children have no accounts. Only a first name is required; everything else is opt
   stored in the EU (`[europe-north1 / eur3]`). Notifications are sent through Firebase Cloud Messaging and contain first
   names, the event title or item name and a time – never allergies, addresses or notes – and are kept for at most 24 hours.
 - **Open data sources** the app calls directly: SMHI (weather, rounded position ≈ 1 km), Skolverket (school name search),
-  skolmaten.se (school lunch menu), the Swedish Food Agency (food data), Open Food Facts (barcodes). They only receive what
+  skolmaten.se and Matilda (school lunch menu), the Swedish Food Agency (food data), Open Food Facts (barcodes). They only receive what
   is in the request and your IP address, like all internet traffic.
 - **Web pages and calendar links you enter yourself** (recipe import, calendar subscriptions) are fetched by the app.
 - **Calendar links you share** (the family feed): anyone with the link can see the events until you revoke it.

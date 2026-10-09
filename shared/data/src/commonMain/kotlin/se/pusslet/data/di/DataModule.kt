@@ -38,6 +38,8 @@ import se.pusslet.data.sources.CachedFetcher
 import se.pusslet.data.sources.FoodDatabase
 import se.pusslet.data.sources.LivsmedelsverketFoodDatabase
 import se.pusslet.data.sources.LunchMenuProvider
+import se.pusslet.data.sources.LunchMenus
+import se.pusslet.data.sources.MatildaRssProvider
 import se.pusslet.data.sources.OpenFoodFactsLookup
 import se.pusslet.data.sources.ProductLookup
 import se.pusslet.data.sources.SchoolRegistry
@@ -123,7 +125,7 @@ val dataModule: Module = module {
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }
     single<SchoolRegistry> { SkolverketSchoolRegistry(get()) }
-    single<LunchMenuProvider> { SkolmatenRssProvider(get(), get()) }
+    single<LunchMenuProvider> { LunchMenus(listOf(SkolmatenRssProvider(get(), get()), MatildaRssProvider(get()))) }
     single<FoodDatabase> { LivsmedelsverketFoodDatabase(get(), get(), get()) }
     single<ProductLookup> { OpenFoodFactsLookup(get()) }
     single<CalendarFeedParser> { IcsParser() }

@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.LocalDate
 import se.pusslet.core.model.Child
-import se.pusslet.core.model.LunchProviderType
 import se.pusslet.core.model.ManualLunchWeek
 import se.pusslet.core.model.SchoolLunch
 import se.pusslet.core.time.isoWeek
@@ -16,7 +15,7 @@ import se.pusslet.data.sources.LunchMenuProvider
 import se.pusslet.data.sync.Collections
 import se.pusslet.data.sync.DocumentStore
 
-/** School lunches per child: from a feed (skolmaten.se / RSS) or typed in manually (synced to the family). */
+/** School lunches per child: from a feed (skolmaten.se / Matilda / RSS) or typed in manually (synced to the family). */
 @OptIn(ExperimentalCoroutinesApi::class)
 class LunchRepository(
     private val docs: DocumentStore,
@@ -27,7 +26,7 @@ class LunchRepository(
 
     /** childId -> lunches (current week from feeds, all manual entries). */
     val lunches: Flow<Map<String, List<SchoolLunch>>> = family.children.flatMapLatest { children ->
-        val feeds = children.filter { it.lunch?.provider == LunchProviderType.Skolmaten || it.lunch?.provider == LunchProviderType.Rss }
+        val feeds = children.filter { c -> c.lunch?.let(provider::supports) == true }
         val fetched: Flow<Map<String, List<SchoolLunch>>> = if (feeds.isEmpty()) {
             flowOf(emptyMap())
         } else {

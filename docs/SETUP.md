@@ -44,29 +44,46 @@ de körs mot samma emulator.
 
 > Allt i appen är byggt så att detta kan göras sist. Inget av stegen behövs för demo-flavorn.
 
+### 2.0 Få in koden på `main`
+Arbetet görs på en egen gren och pushas dit. Öppna en pull request till `main` på GitHub (Pull requests → New → välj
+grenen): då kör CI alla jobb, även iOS-länkningen på macOS (avsnitt 6). Slå ihop när allt är grönt och hämta `main`
+lokalt (`git checkout main && git pull`).
+
 ### 2.1 Firebase-projekt (EU)
 1. Skapa ett Firebase-projekt (ett för `dev`, ett för `prod` rekommenderas).
-2. Firestore: välj **EU-multiregion `eur3`** (Europa) eller en EU-region, t.ex. `europe-north1` (Finland). Platsen kan inte ändras senare.
+2. Firestore: välj **`europe-north1` (Finland)**. Funktionerna körs där (`REGION` i `functions/src/index.ts`) och
+   Firestore-triggrarna måste ligga i databasens region. Platsen kan inte ändras senare.
 3. Lägg till Android-appar med paketnamn `se.pusslet.app.dev` (dev) och `se.pusslet.app` (prod).
    **Bestäm paketnamnet innan första Play-uppladdningen – det kan aldrig ändras.**
-4. Ladda ner `google-services.json` till `composeApp/src/dev/` respektive `composeApp/src/prod/` (filerna är gitignorerade).
+4. Gör 2.2 punkt 1 och 2.5 (Google-inloggning och SHA-1) **innan** du laddar ner `google-services.json` – annars saknas
+   OAuth-klienten som Google-inloggningen behöver i filen. Ladda sedan ner den till `composeApp/src/dev/` respektive
+   `composeApp/src/prod/` (filerna är gitignorerade).
+5. Sätt länkdomänen i `local.properties`: `pusslet.linkHost=<projekt-id>.web.app` (inbjudningslänkar, App Links och
+   kalenderlänkar; standardvärdet `pusslet.web.app` är inte ditt).
 
 ### 2.2 Tjänster
 1. Authentication: aktivera E-post/lösenord, Google och Anonym.
 2. Cloud Messaging: aktiveras automatiskt. Push skickas av funktionerna `pushHandoffRequest`, `pushHandoffAnswer`,
    `pushShoppingItem` och `pushEventChange` (följer med i deploy nedan); appen registrerar sin token när man loggat in.
    Inga nycklar behövs i appen – `google-services.json` räcker.
-3. App Check: registrera Play Integrity för Android-apparna, aktivera enforcement för Firestore och Functions efter testperiod.
+3. App Check är **inte inkopplat i appen än** (biblioteken finns bara i versionskatalogen). Slå inte på enforcement –
+   då nekas appen. Koppla in Play Integrity i appen före lansering och slå på enforcement först efter några dagars
+   övervakning.
 4. Kraschrapporter: ingen SDK i appen (ADR-026) – se **Android vitals** i Play Console (krascher och ANR från användare
    som delar diagnostik med Google i telefonens inställningar).
 
 ### 2.3 Blaze-planen
 Cloud Functions kräver **Blaze** (betala per användning). Sätt en **budgetvarning** (t.ex. 50 kr/månad) i Google Cloud Billing.
+På gratisplanen (Spark) fungerar inloggning, synk och regler; det som kräver funktionerna är push-notiser, familjens
+kalenderlänk och "Radera familjen/mitt konto". Man kan börja testa på Spark och byta när push ska provas.
 
 ### 2.4 Deploy
 ```bash
-firebase use --add                       # välj projektet
-firebase deploy --only firestore:rules,firestore:indexes,functions,hosting
+firebase login
+firebase use --add                       # välj projektet, ge det aliaset dev (resp. prod)
+cd functions && npm ci && cd ..
+firebase deploy --only firestore:rules,firestore:indexes   # räcker på Spark
+firebase deploy --only functions,hosting                   # kräver Blaze
 ```
 Hosting serverar familjens kalenderlänkar (`https://<din-domän>/feed/<token>.ics` → funktionen `calendarFeed`).
 Standarddomänen är `<projekt-id>.web.app`; sätt samma värde som `linkHost` (se `BackendConfig`) om du byter domän.
@@ -134,7 +151,9 @@ Play App Signing rekommenderas: Google håller appens signeringsnyckel och du si
 - [ ] Firebase-projekt i EU, regler, index, funktioner och hosting deployade (avsnitt 2.4), budgetvarning satt.
 - [ ] App Check med Play Integrity aktiverat och enforcement påslaget efter några dagars övervakning.
 - [ ] SHA-1/SHA-256 för uppladdningsnyckeln **och** Play-signeringsnyckeln inlagda i Firebase (Google-inloggning och App Links).
-- [ ] `assetlinks.json` för App Links publicerad på `linkHost` med Play-signeringsnyckelns fingeravtryck.
+- [ ] `assetlinks.json` för App Links publicerad på `linkHost` med Play-signeringsnyckelns fingeravtryck
+      (lägg filen i `hosting/.well-known/assetlinks.json` och deploya hosting).
+- [ ] App Check med Play Integrity inkopplat i appen (se 2.2).
 - [ ] `AppConfig.CONTACT` satt (avsnitt 2.6).
 
 **Butikssidan** (`docs/STORE_LISTING.md`)
@@ -155,3 +174,9 @@ Play App Signing rekommenderas: Google håller appens signeringsnyckel och du si
 - [ ] Kontrollerna på riktig telefon (avsnitt 3) gjorda med prod-flavorn.
 - [ ] Internt test → stängt test (12+ testare, 14 dagar) → produktion med stegvis utrullning (t.ex. 20 %).
 - [ ] Android vitals bevakas första veckan (krascher, ANR, långsam start).
+
+## 6. iOS-bygget
+iOS kan bara byggas på en Mac. CI-jobbet "iOS – compile shared framework" (`.github/workflows/ci.yml`) länkar det delade
+ramverket och kör kärntesterna på macOS vid varje pull request och push till `main`. Se resultatet under fliken Actions
+på GitHub. macOS-minuter räknas tio gånger på privata repon (gratiskvoten räcker för enstaka körningar).
+

@@ -541,8 +541,6 @@
     <string name="settings_export_calendar">Lägg familjens händelser i</string>
     <string name="settings_export_none">Exportera inte</string>
     <string name="settings_export_app_calendar">En egen Pusslet-kalender</string>
-    <string name="settings_crash_reports">Skicka kraschrapporter</string>
-    <string name="settings_crash_reports_body">Anonyma tekniska uppgifter när appen kraschar. Av som standard.</string>
     <string name="settings_version">Version %1$s</string>
 
     <!-- Account -->
@@ -1055,4 +1053,8 @@
     <string name="attach_event_when">%1$s · %2$s</string>
     <string name="attach_no_events">Inga händelser de närmaste veckorna.</string>
     <string name="attach_failed">Bilden kunde inte läsas.</string>
+
+    <!-- Free tier limits (only shown when premium is switched on, docs/MONETIZATION.md) -->
+    <string name="subs_limit_title">Fler kalendrar ingår i Premium</string>
+    <string name="subs_limit_body">Gratisversionen har plats för %1$d prenumerationer. Stäng av eller ta bort en för att lägga till en ny.</string>
 </resources>

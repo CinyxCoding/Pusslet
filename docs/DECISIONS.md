@@ -225,3 +225,13 @@ händelser/anteckningar och kvarglömda filer äldre än ett dygn städas vid st
 och raderas med "Glöm familjen på den här telefonen". Visning sker via FileProvider i telefonens bildvisare.
 **Konsekvens:** Bilden syns bara på telefonen som sparade den – det står i appen. Delning till andra i familjen kan
 läggas till senare med Storage om ägaren vill (premium-kandidat).
+
+## ADR-026 – Ingen krasch-SDK i första versionen
+**Kontext:** Briefen nämner Crashlytics (opt-in). Crashlytics Gradle-plugin 3.x kräver Google Services-pluginet, som projektet
+medvetet inte använder (ADR-013), och har öppna problem med AGP 9; utan pluginet saknas bygg-id:t och SDK:n kan krascha
+vid start. Inställningen "Skicka kraschrapporter" fanns men gjorde ingenting.
+**Beslut:** Ingen krasch- eller analys-SDK. Krascher och ANR följs i Play Consoles **Android vitals**, som Google samlar på
+systemnivå från användare som delar diagnostik. Inställningen och katalogposterna för Crashlytics är borttagna.
+**Konsekvens:** Färre beroenden och inget samtycke att fråga om; Data safety blir enklare. Saknas detaljer i vitals kan
+Crashlytics läggas till senare med Google Services-pluginet i dev/prod och samtycke i Inställningar (integritetspolicy
+och Data safety uppdateras då).

@@ -38,8 +38,8 @@ Valfrihet: "Obligatorisk" betyder att tjänsten inte fungerar utan den.
   ekonomisk information, exakt position.**
 - Köphistorik för basvaruförslag ligger bara på telefonen.
 
-> När kraschrapporter (Crashlytics, efter samtycke) aktiveras: lägg till **Appinformation och prestanda → Kraschloggar
-> och Diagnostik**, valfritt, syfte Analys/Appfunktionalitet, insamlas av Google som biträde.
+> Android vitals i Play Console samlas in av Google Play på systemnivå, inte av appen, och ska inte deklareras.
+> Läggs en krasch-SDK till senare (ADR-026): deklarera **Appinformation och prestanda → Kraschloggar och Diagnostik**.
 
 ---
 
@@ -77,5 +77,5 @@ All: **collected**, **not shared**, **not ephemeral (stored)**, purpose **App fu
   financial info, precise location.**
 - Purchase history for staple suggestions stays on the phone.
 
-> When crash reports (Crashlytics, after consent) are switched on: add **App info and performance → Crash logs and
-> Diagnostics**, optional, purpose Analytics/App functionality, collected by Google as processor.
+> Android vitals in Play Console are collected by Google Play at system level, not by the app, and are not declared.
+> If a crash SDK is added later (ADR-026): declare **App info and performance → Crash logs and Diagnostics**.

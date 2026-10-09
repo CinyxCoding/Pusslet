@@ -71,7 +71,6 @@ data class SettingsUiState(
     val quiet: TimeWindow = TimeWindow(LocalTime(21, 0), LocalTime(6, 30)),
     val readCalendars: Set<Long> = emptySet(),
     val exportCalendar: Long = -1,
-    val crashReports: Boolean = false,
     val version: String = "",
 )
 
@@ -90,21 +89,10 @@ class SettingsViewModel(
         combine(prefs.observe(Prefs.Morning), prefs.observe(Prefs.QuietHoursEnabled), prefs.observe(Prefs.QuietHours)) { m, qe, q ->
             Triple(m, qe, q)
         }
-    private val cal =
-        combine(
-            prefs.observe(Prefs.DeviceCalendarsRead),
-            prefs.observe(Prefs.DeviceCalendarExport),
-            prefs.observe(Prefs.CrashReportsConsent),
-        ) {
-            r,
-            e,
-            c,
-            ->
-            Triple(r, e, c)
-        }
+    private val cal = combine(prefs.observe(Prefs.DeviceCalendarsRead), prefs.observe(Prefs.DeviceCalendarExport)) { r, e -> r to e }
 
     val state: StateFlow<SettingsUiState> = combine(appearance, notify, cal) { a, n, c ->
-        SettingsUiState(a.first, a.second, a.third, n.first, n.second, n.third, c.first, c.second, c.third, config.versionName)
+        SettingsUiState(a.first, a.second, a.third, n.first, n.second, n.third, c.first, c.second, config.versionName)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState(version = config.versionName))
 
     fun loadCalendars() {
@@ -124,8 +112,6 @@ class SettingsViewModel(
     fun setQuiet(w: TimeWindow) = launch { prefs.set(Prefs.QuietHours, w) }
 
     fun toggleReadCalendar(id: Long) = launch { prefs.update(Prefs.DeviceCalendarsRead) { if (id in it) it - id else it + id } }
-
-    fun setCrashReports(v: Boolean) = launch { prefs.set(Prefs.CrashReportsConsent, v) }
 
     /** Picks (or creates) the calendar family events are written to, and exports right away. */
     fun setExport(id: Long?, appCalendarName: String) = launch {
@@ -271,14 +257,6 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMod
                 }
             }
             CalendarFeedSection()
-            SectionCard(null) {
-                SwitchRow(
-                    stringResource(Res.string.settings_crash_reports),
-                    state.crashReports,
-                    viewModel::setCrashReports,
-                    supporting = stringResource(Res.string.settings_crash_reports_body),
-                )
-            }
             Text(
                 stringResource(Res.string.settings_version, state.version),
                 style = MaterialTheme.typography.labelMedium,

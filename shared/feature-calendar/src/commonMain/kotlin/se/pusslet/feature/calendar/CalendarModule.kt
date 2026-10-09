@@ -14,7 +14,7 @@ val calendarModule: Module = module {
     viewModel { CalendarViewModel(get(), get(), get(), get(), get()) }
     viewModel { EventEditorViewModel(get(), get(), get(), get(), get()) }
     viewModel { EventDetailsViewModel(get(), get(), get(), get(), get(), get()) }
-    viewModel { SubscriptionsViewModel(get(), get(), get(), get(), get()) }
+    viewModel { SubscriptionsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { AttachmentsViewModel(get()) }
     viewModel { AttachImageViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(AppScope)) }
 }

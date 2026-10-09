@@ -71,6 +71,7 @@ fun SubscriptionsRoute(onBack: () -> Unit, prefilledUrl: String? = null, viewMod
         onEnabled = viewModel::setEnabled,
         onRefresh = viewModel::refreshNow,
         onDelete = viewModel::delete,
+        onDismissLimit = viewModel::dismissLimit,
     )
 }
 
@@ -86,6 +87,7 @@ fun SubscriptionsScreen(
     onEnabled: (CalendarSubscription, Boolean) -> Unit = { _, _ -> },
     onRefresh: (CalendarSubscription) -> Unit = {},
     onDelete: (CalendarSubscription) -> Unit = {},
+    onDismissLimit: () -> Unit = {},
 ) {
     Scaffold(
         topBar = { PussletTopBar(stringResource(Res.string.subs_title), onBack = onBack) },
@@ -116,6 +118,14 @@ fun SubscriptionsScreen(
         }
     }
     state.draft?.let { d -> DraftDialog(d, state, onEditDraft, onSave, onCancel) }
+    state.limitReached?.let { limit ->
+        AlertDialog(
+            onDismissRequest = onDismissLimit,
+            title = { Text(stringResource(Res.string.subs_limit_title)) },
+            text = { Text(stringResource(Res.string.subs_limit_body, limit)) },
+            confirmButton = { TextButton(onClick = onDismissLimit) { Text(stringResource(Res.string.action_close)) } },
+        )
+    }
 }
 
 @Composable

@@ -36,7 +36,9 @@ i en kalender som tillhör ett Google-konto synkar Google den kalendern enligt s
 ### Rättslig grund
 - Avtal (art. 6.1 b GDPR) för att tillhandahålla tjänsten ni valt att använda.
 - Uttryckligt samtycke (art. 9.2 a) för allergier och kost. Samtycket kan återkallas genom att ta bort uppgifterna.
-- Samtycke för kraschrapporter (av som standard).
+
+Appen innehåller ingen kraschrapportering eller analys. Om du i telefonens inställningar delar användnings- och
+diagnostikdata med Google kan Google Play visa oss anonyma kraschrapporter (Android vitals).
 
 ### Barn
 Barn har inga konton. Bara förnamn krävs; allt annat är frivilligt och fylls i av en förälder. Hjälpare (t.ex. morfar)
@@ -101,7 +103,9 @@ calendar that belongs to a Google account, Google syncs that calendar under its 
 ### Legal basis
 - Contract (Art. 6(1)(b) GDPR) to provide the service you chose to use.
 - Explicit consent (Art. 9(2)(a)) for allergies and diets. Withdraw it by removing the information.
-- Consent for crash reports (off by default).
+
+The app contains no crash reporting or analytics. If you share usage and diagnostics data with Google in your phone's
+settings, Google Play may show us anonymous crash reports (Android vitals).
 
 ### Children
 Children have no accounts. Only a first name is required; everything else is optional and entered by a parent. Helpers

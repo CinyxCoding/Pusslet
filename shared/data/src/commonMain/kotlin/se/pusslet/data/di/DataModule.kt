@@ -8,12 +8,16 @@ import org.koin.core.module.Module
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import se.pusslet.core.entitlements.AllUnlockedEntitlements
+import se.pusslet.core.entitlements.Entitlements
 import se.pusslet.core.ics.CalendarFeedParser
 import se.pusslet.core.ics.IcsParser
 import se.pusslet.core.quickadd.SwedishQuickAddParser
 import se.pusslet.core.util.IdGenerator
 import se.pusslet.core.util.RandomIdGenerator
 import se.pusslet.data.AppCoordinator
+import se.pusslet.data.billing.BillingRepository
+import se.pusslet.data.billing.NoBilling
 import se.pusslet.data.db.PussletDatabase
 import se.pusslet.data.repository.AttachmentHousekeeping
 import se.pusslet.data.repository.AttachmentRepository
@@ -93,6 +97,9 @@ val dataModule: Module = module {
     single { HandoffAssigner(get()) }
     single { DataPrivacy(get(), get(), get(), get(), get(), get(), get()) }
     single { AttachmentRepository(get(), get(), get(), get()) }
+    // No payment is active (BRIEF §7): everything unlocked, billing switched off. See docs/MONETIZATION.md.
+    single<Entitlements> { AllUnlockedEntitlements }
+    single<BillingRepository> { NoBilling }
     single { AttachmentHousekeeping(get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }

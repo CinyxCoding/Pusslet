@@ -57,7 +57,8 @@ de körs mot samma emulator.
    `pushShoppingItem` och `pushEventChange` (följer med i deploy nedan); appen registrerar sin token när man loggat in.
    Inga nycklar behövs i appen – `google-services.json` räcker.
 3. App Check: registrera Play Integrity för Android-apparna, aktivera enforcement för Firestore och Functions efter testperiod.
-4. Crashlytics: aktivera (appen samlar bara in efter samtycke).
+4. Kraschrapporter: ingen SDK i appen (ADR-026) – se **Android vitals** i Play Console (krascher och ANR från användare
+   som delar diagnostik med Google i telefonens inställningar).
 
 ### 2.3 Blaze-planen
 Cloud Functions kräver **Blaze** (betala per användning). Sätt en **budgetvarning** (t.ex. 50 kr/månad) i Google Cloud Billing.

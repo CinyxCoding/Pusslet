@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import se.pusslet.core.entitlements.Entitlements
 import se.pusslet.core.model.CalendarSubscription
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.MemberColor
@@ -44,6 +45,8 @@ data class SubscriptionsUiState(
     val people: List<FamilyPerson> = emptyList(),
     val draft: SubscriptionDraft? = null,
     val canEdit: Boolean = true,
+    /** Shown instead of the add dialog when the free version's limit is reached (only when premium is switched on). */
+    val limitReached: Int? = null,
 )
 
 /** ICS subscriptions (school platform, sports club, TimeEdit …): read-only calendars refreshed every six hours. */
@@ -54,9 +57,11 @@ class SubscriptionsViewModel(
     private val sync: SubscriptionSync,
     private val sessions: SessionProvider,
     private val ids: IdGenerator,
+    private val entitlements: Entitlements,
 ) : ViewModel() {
     private val refreshing = MutableStateFlow(emptySet<String>())
     private val draft = MutableStateFlow<SubscriptionDraft?>(null)
+    private val limitReached = MutableStateFlow<Int?>(null)
 
     private val rows: Flow<List<SubscriptionRow>> = combine(calendar.subscriptions, refreshing) { subs, busy -> subs to busy }
         .flatMapLatest { (subs, busy) ->
@@ -70,12 +75,23 @@ class SubscriptionsViewModel(
             }
         }
 
-    val state: StateFlow<SubscriptionsUiState> = combine(rows, family.people, draft) { r, p, d ->
-        SubscriptionsUiState(false, r, p, d, sessions.session.value.role != Role.Caregiver)
+    val state: StateFlow<SubscriptionsUiState> = combine(rows, family.people, draft, limitReached) { r, p, d, limit ->
+        SubscriptionsUiState(false, r, p, d, sessions.session.value.role != Role.Caregiver, limit)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SubscriptionsUiState())
 
     fun startNew(prefilledUrl: String? = null) {
-        draft.value = SubscriptionDraft(url = prefilledUrl.orEmpty())
+        viewModelScope.launch {
+            val limit = entitlements.current.value.subscriptionLimit
+            if (limit != null && calendar.subscriptions.first().size >= limit) {
+                limitReached.value = limit
+            } else {
+                draft.value = SubscriptionDraft(url = prefilledUrl.orEmpty())
+            }
+        }
+    }
+
+    fun dismissLimit() {
+        limitReached.value = null
     }
 
     fun startEdit(sub: CalendarSubscription) {

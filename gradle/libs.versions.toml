@@ -33,7 +33,6 @@ qrose = "1.3.1"
 gitlive-firebase = "2.7.0"
 firebase-bom = "34.18.0"
 google-services = "4.5.0"
-firebase-crashlytics-plugin = "3.0.8"
 
 androidx-activity = "1.13.0"
 androidx-core = "1.19.1"
@@ -119,7 +118,6 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
-firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
 firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debug" }
 
@@ -175,7 +173,6 @@ compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose-m
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-plugin" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint-plugin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }

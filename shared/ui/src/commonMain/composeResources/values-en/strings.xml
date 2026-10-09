@@ -111,7 +111,7 @@
     <string name="today_packing_empty">Nothing extra to pack today.</string>
     <string name="today_packing_reason_event">for %1$s</string>
     <string name="today_packing_reason_handover">changeover day</string>
-    <string name="today_meals_title">Food today</string>
+    <string name="today_meals_title">Meals today</string>
     <string name="today_lunch">Lunch for %1$s: %2$s</string>
     <string name="today_dinner">Dinner: %1$s</string>
     <string name="today_no_dinner">No dinner planned yet.</string>
@@ -249,11 +249,11 @@
     <string name="quickadd_save">Save</string>
     <string name="quickadd_save_all">Save %1$d things</string>
     <string name="quickadd_saved">Saved!</string>
-    <string name="quickadd_examples">Try for example</string>
-    <string name="quickadd_example_1">Ella kalas lör 14-16 hos Vera, köp present</string>
-    <string name="quickadd_example_2">mjölk, 2 gurka, pasta</string>
-    <string name="quickadd_example_3">Johan hämtar imorgon</string>
-    <string name="quickadd_example_4">tacos fredag</string>
+    <string name="quickadd_examples">For example</string>
+    <string name="quickadd_example_1">Ella party Sat 14-16 at Vera's, buy a present</string>
+    <string name="quickadd_example_2">milk, 2 cucumbers, pasta</string>
+    <string name="quickadd_example_3">Johan picks up tomorrow</string>
+    <string name="quickadd_example_4">tacos Friday</string>
     <string name="quickadd_handoff_pickup">%1$s picks up %2$s</string>
     <string name="quickadd_handoff_dropoff">%1$s drops off %2$s</string>
     <string name="quickadd_handoff_all_children">the children</string>
@@ -570,7 +570,7 @@
     <!-- Privacy -->
     <string name="privacy_title">Privacy and your data</string>
     <string name="privacy_summary">The family's information is stored on the phone and – once you sign in – with Google Firebase within the EU. Children only need a first name. Nothing is sold, no ads, no AI.</string>
-    <string name="privacy_sensitive">Allergies and diet are only stored if you actively choose so, and can be removed at any time.</string>
+    <string name="privacy_sensitive">Allergies and diet are only stored if you actively choose to, and can be removed at any time.</string>
     <string name="privacy_export">Export all data</string>
     <string name="privacy_export_body">A file (JSON) with everything about the family on this phone.</string>
     <string name="privacy_delete_family">Delete the family</string>

@@ -410,7 +410,7 @@
     <string name="lunch_skolmaten">skolmaten.se</string>
     <string name="lunch_rss">Egen RSS-länk</string>
     <string name="lunch_manual">Skriv in själv</string>
-    <string name="lunch_reference_hint">Skolans sida på skolmaten.se eller länk</string>
+    <string name="lunch_reference_hint">Skolans sida på skolmaten.se eller en länk</string>
     <string name="child_sizes">Klädstorlekar</string>
     <string name="size_pants">Byxor</string>
     <string name="size_top">Tröja</string>
@@ -726,7 +726,7 @@
     <string name="nutrition_source">Ungefärliga värden från Livsmedelsverkets livsmedelsdatabas (CC BY 4.0).</string>
     <string name="nutrition_match">Kontrollera matchningen</string>
     <string name="nutrition_match_title">Vad motsvarar %1$s?</string>
-    <string name="nutrition_no_candidates">Hittade inget som liknar. Prova ett enklare namn på ingrediensen.</string>
+    <string name="nutrition_no_candidates">Hittade inget liknande. Prova ett enklare namn på ingrediensen.</string>
     <string name="nutrition_not_counted">Räknas inte</string>
     <string name="import_title">Hämta recept från länk</string>
     <string name="import_url">Länk till receptet</string>
@@ -734,7 +734,7 @@
     <string name="import_invalid">Det där ser inte ut som en webblänk.</string>
     <string name="import_unreachable">Sidan gick inte att nå. Kontrollera länken och nätet och försök igen.</string>
     <string name="import_no_data">Sidan saknar receptdata som Pusslet kan läsa. Klistra in texten i stället.</string>
-    <string name="import_warning_servings">Antal portioner stod inte – Pusslet gissade på 4.</string>
+    <string name="import_warning_servings">Antal portioner saknades – Pusslet gissade på 4.</string>
     <string name="import_warning_ingredients">Inga ingredienser hittades.</string>
     <string name="import_warning_steps">Inga steg hittades.</string>
     <string name="import_explain">Bara sidan du väljer hämtas. Receptet sparas för familjens eget bruk, med källan angiven.</string>
@@ -1026,5 +1026,5 @@
 
     <!-- Free tier limits (only shown when premium is switched on, docs/MONETIZATION.md) -->
     <string name="subs_limit_title">Fler kalendrar ingår i Premium</string>
-    <string name="subs_limit_body">Gratisversionen har plats för %1$d prenumerationer. Stäng av eller ta bort en för att lägga till en ny.</string>
+    <string name="subs_limit_body">Gratisversionen har plats för %1$d prenumerationer. Ta bort en för att lägga till en ny.</string>
 </resources>

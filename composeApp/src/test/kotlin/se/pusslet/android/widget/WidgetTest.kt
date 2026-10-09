@@ -8,6 +8,7 @@ import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasText
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -48,9 +49,11 @@ class WidgetTest {
         }
     }
 
-    private fun today() = GlobalContext.get().let { TodayWidgetContent(it.get(), it.get(), it.get(), it.get()) }
+    private fun today() = GlobalContext.get().let {
+        TodayWidgetContent(it.get(), it.get(), it.get(), it.get(), it.get(), it.get(), it.get())
+    }
 
-    private fun shopping() = GlobalContext.get().let { ShoppingWidgetContent(it.get(), it.get(), it.get(), it.get()) }
+    private fun shopping() = GlobalContext.get().let { ShoppingWidgetContent(it.get(), it.get(), it.get(), it.get(), it.get()) }
 
     @Test
     fun todayShowsTheDayFromTheSamePlanAsTheApp() = runBlocking {
@@ -83,6 +86,12 @@ class WidgetTest {
         assertTrue("Mjölk · 2 l" in names, "$names")
         assertFalse(names.any { it.startsWith("Knäckebröd") }, "checked items are in the trolley, not on the widget")
         assertTrue(names.indexOf("Bananer") < names.indexOf("Mjölk · 2 l"), "fruit and vegetables come first at ICA: $names")
+
+        // The widget's content follows the list: ticking something off shows up without a new widget session.
+        val live = async { shopping().updates().first { ui -> ui.items.none { it.text == "Bananer" } } }
+        val bananas = GlobalContext.get().get<ShoppingRepository>().items.first().first { it.name == "Bananer" }
+        GlobalContext.get().get<ShoppingRepository>().setChecked(bananas, true)
+        withTimeout(10_000) { live.await() }
 
         val quickAdd = GlobalContext.get().get<ShoppingQuickAdd>()
         val added = quickAdd.add(ui.listId!!, "mjölk, 3 citroner och tandkräm") // listId is set for a set-up list

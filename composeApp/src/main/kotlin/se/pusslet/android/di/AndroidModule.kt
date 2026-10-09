@@ -42,8 +42,8 @@ fun androidModule(config: BackendConfig): Module = module {
     single<NotificationScheduler> { WorkManagerNotificationScheduler(androidContext(), get()) }
     single<FamilyAlerts> { AndroidFamilyAlerts(androidContext(), get(AppScope), get(), get(), get()) }
     single { PushRegistration(get(), get(), get(), get(), get()) }
-    single { TodayWidgetContent(get(), get(), get(), get()) }
-    single { ShoppingWidgetContent(get(), get(), get(), get()) }
+    single { TodayWidgetContent(get(), get(), get(), get(), get(), get(), get()) }
+    single { ShoppingWidgetContent(get(), get(), get(), get(), get()) }
     single { WidgetUpdates(androidContext(), get(), get(), get(), get(), get()) }
 
     if (config.mode == BackendMode.LocalOnly) {

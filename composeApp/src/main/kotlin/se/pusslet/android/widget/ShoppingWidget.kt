@@ -2,6 +2,9 @@ package se.pusslet.android.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
@@ -48,8 +51,10 @@ class ShoppingWidget :
     GlanceAppWidget(),
     KoinComponent {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val ui = get<ShoppingWidgetContent>().load()
+        val content = get<ShoppingWidgetContent>()
+        val first = content.load()
         provideContent {
+            val ui by remember { content.updates() }.collectAsState(first)
             GlanceTheme(colors = PussletGlanceColors) { ShoppingContent(ui) }
         }
     }

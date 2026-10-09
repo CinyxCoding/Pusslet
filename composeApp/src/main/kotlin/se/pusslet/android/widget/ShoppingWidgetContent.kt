@@ -1,11 +1,18 @@
 package se.pusslet.android.widget
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapLatest
 import org.jetbrains.compose.resources.getString
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.ShoppingItem
 import se.pusslet.core.shopping.ShoppingListGenerator
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.PreferencesRepository
+import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.usecase.ShoppingQuickAdd
@@ -32,9 +39,24 @@ data class ShoppingWidgetUi(
 class ShoppingWidgetContent(
     private val shopping: ShoppingRepository,
     private val family: FamilyRepository,
+    private val prefs: PreferencesRepository,
     private val quickAdd: ShoppingQuickAdd,
     private val sessions: SessionProvider,
 ) {
+    /** New content whenever the lists change (ticked off here, in the app or on another phone). */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun updates(): Flow<ShoppingWidgetUi> =
+        combine(shopping.lists, shopping.items, shopping.stores, prefs.observe(Prefs.ActiveShoppingList), sessions.session) {
+            _,
+            _,
+            _,
+            _,
+            _,
+            ->
+        }
+            .mapLatest { load() }
+            .distinctUntilChanged()
+
     suspend fun load(): ShoppingWidgetUi {
         sessions.loaded.first { it }
         val list = quickAdd.currentList()

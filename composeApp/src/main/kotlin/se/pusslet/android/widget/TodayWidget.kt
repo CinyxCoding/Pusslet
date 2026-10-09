@@ -2,6 +2,9 @@ package se.pusslet.android.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -31,18 +34,26 @@ import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import kotlinx.coroutines.flow.onEach
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import se.pusslet.shell.navigation.TopLevelTab
+import kotlin.time.Clock
 
 /** "Idag": the next thing, who drops off and picks up, and what has to come along. */
 class TodayWidget :
     GlanceAppWidget(),
     KoinComponent {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val state = get<TodayWidgetContent>().load()
-        state.refreshAt?.let { WidgetRefresh.scheduleToday(context, it, get()) }
+        val content = get<TodayWidgetContent>()
+        val clock = get<Clock>()
+        val first = content.load()
+        first.refreshAt?.let { WidgetRefresh.scheduleToday(context, it, clock) }
         provideContent {
+            val updates = remember {
+                content.updates().onEach { s -> s.refreshAt?.let { WidgetRefresh.scheduleToday(context, it, clock) } }
+            }
+            val state by updates.collectAsState(first)
             GlanceTheme(colors = PussletGlanceColors) { TodayContent(state.ui) }
         }
     }

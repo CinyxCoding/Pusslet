@@ -1,6 +1,13 @@
 package se.pusslet.android.widget
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -11,6 +18,9 @@ import se.pusslet.core.model.MemberColor
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.today.TodayGlance
 import se.pusslet.core.today.TodayGlancer
+import se.pusslet.data.repository.CalendarRepository
+import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.PackingRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.usecase.TodayPlans
 import se.pusslet.ui.format.dateLongText
@@ -33,6 +43,7 @@ import se.pusslet.ui.resources.widget_nothing_more
 import se.pusslet.ui.resources.widget_now
 import se.pusslet.ui.resources.widget_quiet
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 /** One line of the Today widget: "16:30 · Hämtning Simon – Sara". */
@@ -62,10 +73,23 @@ data class TodayWidgetState(val ui: TodayWidgetUi, val refreshAt: Instant?)
 /** Builds the Today widget from the same plan as the Today screen (without the weather: a widget never waits on the network). */
 class TodayWidgetContent(
     private val plans: TodayPlans,
+    private val calendar: CalendarRepository,
+    private val packing: PackingRepository,
+    private val family: FamilyRepository,
     private val sessions: SessionProvider,
     private val clock: Clock,
     private val zone: TimeZone,
 ) {
+    /**
+     * New content whenever the family's data changes, and every minute, while Glance keeps the widget's session open.
+     * (An update during an open session only recomposes, so the content has to come from a flow.)
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun updates(): Flow<TodayWidgetState> =
+        combine(calendar.events, packing.rules, packing.checks, family.people, everyMinute()) { _, _, _, _, _ -> }
+            .mapLatest { load() }
+            .distinctUntilChanged()
+
     suspend fun load(): TodayWidgetState {
         sessions.loaded.first { it }
         if (sessions.session.value.familyId == null) {
@@ -80,6 +104,13 @@ class TodayWidgetContent(
             lines = lines(glance),
         )
         return TodayWidgetState(ui, glance.refreshAt.toInstant(zone))
+    }
+
+    private fun everyMinute(): Flow<Unit> = flow {
+        while (true) {
+            emit(Unit)
+            delay(1.minutes)
+        }
     }
 
     private suspend fun message(g: TodayGlance): String? = when {

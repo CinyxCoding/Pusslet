@@ -41,9 +41,21 @@ class FamilyRepository(
     val children: Flow<List<Child>> = docs.observeAll(Collections.Children, Child.serializer())
         .map { list -> list.sortedWith(compareBy<Child>({ it.birthDate == null }, { it.birthDate }).thenBy { it.firstName }) }
 
-    /** Everyone an event or task can be about. Adults first, then children (oldest first). */
+    /** Everyone an event or task can be about. Adults first, then children (oldest first), shared children included. */
     val people: Flow<List<FamilyPerson>> = combine(members, children) { m, c ->
         m.sortedBy { it.role.ordinal }.map(FamilyPerson::of) + c.map(FamilyPerson::of)
+    }
+
+    /** Adults of the other home, from the spaces this family shares (ADR-030). */
+    val otherHomeAdults: Flow<List<Member>> =
+        combine(members, docs.observeSpaces(Collections.Members, Member.serializer())) { ours, shared ->
+            val mine = ours.map { it.id }.toSet()
+            shared.filter { it.id !in mine }.distinctBy { it.id }.sortedBy { it.displayName }
+        }
+
+    /** [people] plus the other home's adults, for showing who does what in the children's shared things. */
+    val everyone: Flow<List<FamilyPerson>> = combine(people, otherHomeAdults) { p, other ->
+        p + other.map { FamilyPerson.of(it).copy(otherHome = true) }
     }
 
     val custody: Flow<List<CustodySchedule>> = docs.observeAll(Collections.Custody, CustodySchedule.serializer())

@@ -61,6 +61,7 @@ import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.KidChoreActions
 import se.pusslet.data.usecase.MealShopping
+import se.pusslet.data.usecase.OtherHomeSharing
 import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
@@ -133,5 +134,6 @@ val dataModule: Module = module {
     single { SwedishQuickAddParser() }
 
     single { DemoSeed(get(), get(), get()) }
-    single { AppCoordinator(get(AppScope), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { OtherHomeSharing(get(), get(), get(), get(), get(), get(), get()) }
+    single { AppCoordinator(get(AppScope), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
 }

@@ -5,6 +5,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
+/**
+ * A family (one home), or – with [shared] – the space two homes share for the children they have together (ADR-030).
+ * A shared space only holds what is about those children; each home keeps everything else to itself.
+ */
 @Serializable
 data class Family(
     val id: String,
@@ -12,6 +16,14 @@ data class Family(
     val timeZoneId: String = "Europe/Stockholm",
     val createdBy: String = "",
     val createdAt: Instant? = null,
+    /** This document is a space shared by two homes, not a home. */
+    val shared: Boolean = false,
+    /** For a shared space: the homes taking part. Their parents may join without an invite. */
+    val familyIds: List<String> = emptyList(),
+    /** For a home: the spaces it shares with another home. */
+    val sharedSpaces: List<String> = emptyList(),
+    /** For a shared space: the children's allergies and diets are shared too (opt-in, sensitive). */
+    val shareDiets: Boolean = false,
 )
 
 @Serializable
@@ -151,6 +163,8 @@ data class FamilyPerson(
     val birthDate: LocalDate? = null,
     /** Other names the family uses ("morfar"). */
     val aliases: List<String> = emptyList(),
+    /** An adult of the other home (from the shared space): shown by name, never offered for this home's own things. */
+    val otherHome: Boolean = false,
 ) {
     /** Colour is never the only signal: UI shows this initial (or the avatar emoji) on the colour. */
     val initial: String get() = avatar ?: name.trim().take(1).uppercase().ifEmpty { "?" }

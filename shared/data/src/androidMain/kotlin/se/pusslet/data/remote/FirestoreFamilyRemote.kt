@@ -21,13 +21,14 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore) : FamilyRemote {
 
     private fun stamp(uid: String) = mapOf(MetaFields.UPDATED_AT to FieldValue.serverTimestamp(), MetaFields.UPDATED_BY to uid)
 
-    override suspend fun bootstrapFamily(familyId: String, name: String, memberId: String, uid: String) = guard {
+    override suspend fun bootstrapFamily(familyId: String, name: String, memberId: String, uid: String, shared: Boolean) = guard {
         val familyRef = db.document("families/$familyId")
         val accessRef = db.document("families/$familyId/access/$uid")
         val access = runCatching { accessRef.get().await() }.getOrNull()
         if (access?.exists() == true) return@guard
         db.runBatch { batch ->
-            batch.set(familyRef, mapOf("name" to name, "createdBy" to uid) + stamp(uid), SetOptions.merge())
+            val space = if (shared) mapOf("shared" to true) else emptyMap()
+            batch.set(familyRef, mapOf("name" to name, "createdBy" to uid) + space + stamp(uid), SetOptions.merge())
             batch.set(accessRef, mapOf("memberId" to memberId, "role" to "parent"))
         }.await()
         Unit
@@ -42,7 +43,15 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore) : FamilyRemote {
                 "memberId" to invite.memberId,
                 "createdBy" to createdBy,
                 "expiresAt" to Timestamp(Date(invite.expiresAt.toEpochMilliseconds())),
-            ),
+            ) + if (invite.shared) {
+                mapOf(
+                    "shared" to true,
+                    "fromName" to invite.fromName,
+                    "children" to invite.children.map { mapOf("id" to it.id, "name" to it.name) },
+                )
+            } else {
+                emptyMap()
+            },
         ).await()
         Unit
     }
@@ -58,6 +67,13 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore) : FamilyRemote {
             role = if (snap.getString("role") == "caregiver") Role.Caregiver else Role.Parent,
             memberId = snap.getString("memberId"),
             expiresAt = Instant.fromEpochMilliseconds(expires),
+            shared = snap.getBoolean("shared") == true,
+            children = (snap.get("children") as? List<*>).orEmpty().mapNotNull { c ->
+                val m = c as? Map<*, *> ?: return@mapNotNull null
+                val id = m["id"] as? String ?: return@mapNotNull null
+                SharedChildRef(id, m["name"] as? String ?: "")
+            },
+            fromName = snap.getString("fromName").orEmpty(),
         )
     }
 
@@ -127,6 +143,43 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore) : FamilyRemote {
                 "card" to FirestoreRemoteStore.toPlain(payload),
             ),
         ).await()
+        Unit
+    }
+
+    override suspend fun joinSpace(spaceId: String, viaFamily: String, uid: String, member: Member) = guard {
+        val accessRef = db.document("families/$spaceId/access/$uid")
+        val exists = runCatching { accessRef.get().await().exists() }.getOrDefault(false)
+        val memberJson = DomainJson.encodeToJsonElement(Member.serializer(), member.copy(uid = uid, role = Role.Parent)).jsonObject
+        db.runBatch { batch ->
+            if (!exists) batch.set(accessRef, mapOf("memberId" to member.id, "role" to "parent", "viaFamily" to viaFamily))
+            batch.set(
+                db.document("families/$spaceId/members/${member.id}"),
+                FirestoreRemoteStore.toPlain(memberJson) + stamp(uid),
+                SetOptions.merge(),
+            )
+            batch.set(db.document("users/$uid"), mapOf("familyIds" to FieldValue.arrayUnion(spaceId)), SetOptions.merge())
+        }.await()
+        Unit
+    }
+
+    override suspend fun leaveSpace(spaceId: String, homeId: String, uid: String, memberIds: List<String>) = guard {
+        val space = db.document("families/$spaceId")
+        // While still a parent there: take the home out and hide its adults, then drop the access docs (our own last).
+        space.update(mapOf("familyIds" to FieldValue.arrayRemove(homeId)) + stamp(uid)).await()
+        val access = space.collection("access").get().await().documents
+        val leaving = access.filter { it.getString("memberId") in memberIds }
+        db.runBatch { batch ->
+            memberIds.forEach { id ->
+                batch.set(
+                    space.collection("members").document(id),
+                    mapOf(MetaFields.DELETED_AT to FieldValue.serverTimestamp()) + stamp(uid),
+                    SetOptions.merge(),
+                )
+            }
+            leaving.filter { it.id != uid }.forEach { batch.delete(it.reference) }
+        }.await()
+        space.collection("access").document(uid).delete().await()
+        db.document("users/$uid").set(mapOf("familyIds" to FieldValue.arrayRemove(spaceId)), SetOptions.merge()).await()
         Unit
     }
 

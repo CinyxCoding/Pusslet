@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
@@ -47,6 +48,8 @@ data class SyncStatus(
  * - **Outgoing:** the outbox is pushed oldest-first; each entry contains only changed fields, so concurrent edits of
  *   different fields both survive and the same field resolves last-write-wins by server time.
  * - **Deletes** are soft (`deletedAt`), so they sync like any other change.
+ * - **Shared spaces** (ADR-030) sync next to the family: the same listeners and outbox per space, limited to the
+ *   collections a space holds. In a space everyone is a parent.
  */
 class SyncEngine(
     private val local: SyncLocalStore,
@@ -64,36 +67,51 @@ class SyncEngine(
     private val pushMutex = Mutex()
     private var current: Target? = null
 
-    private data class Target(val familyId: String, val uid: String, val role: Role)
+    private data class Target(val familyId: String, val uid: String, val role: Role, val spaces: List<String>) {
+        /** The family first, then each shared space (where everyone is a parent). */
+        val roots: List<Root> = listOf(Root(familyId, role, space = false)) + spaces.distinct().filter { it != familyId }.map {
+            Root(it, Role.Parent, space = true)
+        }
+    }
 
-    /** Starts (or restarts) syncing the given family. Idempotent for the same target. */
-    fun start(scope: CoroutineScope, familyId: String, uid: String, role: Role) {
-        val target = Target(familyId, uid, role)
+    private data class Root(val id: String, val role: Role, val space: Boolean)
+
+    /** Starts (or restarts) syncing the given family and the [spaces] it shares with other homes. Idempotent. */
+    fun start(scope: CoroutineScope, familyId: String, uid: String, role: Role, spaces: List<String> = emptyList()) {
+        val target = Target(familyId, uid, role, spaces)
         if (target == current && job?.isActive == true) return
         stop()
         current = target
         _status.value = SyncStatus(SyncState.Connecting)
         job = scope.launch {
-            launch { local.observeOutboxCount(familyId).collectLatest { n -> _status.update { it.copy(pendingWrites = n) } } }
-            for (spec in specs.filter { it.visibleTo(role) }) {
-                when (val loc = spec.location) {
-                    RemoteLocation.FamilyRoot -> launch { listenLoop(target, spec, "", parentId = null) }
-                    is RemoteLocation.Flat -> launch { listenLoop(target, spec, loc.path, parentId = null) }
-                    is RemoteLocation.Nested -> launch {
-                        local.observeCollection(familyId, loc.parentCollection)
-                            .map { rows -> rows.map { it.docId }.sorted() }
-                            .distinctUntilChanged()
-                            .collectLatest { parentIds ->
-                                coroutineScope {
-                                    parentIds.forEach { pid ->
-                                        launch { listenLoop(target, spec, "${loc.parentRemotePath}/$pid/${loc.subPath}", pid) }
-                                    }
-                                }
-                            }
-                    }
-                }
+            launch {
+                combine(target.roots.map { local.observeOutboxCount(it.id) }) { counts -> counts.sum() }
+                    .collectLatest { n -> _status.update { it.copy(pendingWrites = n) } }
+            }
+            for (root in target.roots) {
+                val rootSpecs = specs.filter { it.visibleTo(root.role) && (!root.space || it.spaces != SpaceSharing.None) }
+                for (spec in rootSpecs) launchListeners(root, spec)
             }
             launch { pushLoop(target) }
+        }
+    }
+
+    private fun CoroutineScope.launchListeners(root: Root, spec: CollectionSpec) {
+        when (val loc = spec.location) {
+            RemoteLocation.FamilyRoot -> launch { listenLoop(root, spec, "", parentId = null) }
+            is RemoteLocation.Flat -> launch { listenLoop(root, spec, loc.path, parentId = null) }
+            is RemoteLocation.Nested -> launch {
+                local.observeCollection(root.id, loc.parentCollection)
+                    .map { rows -> rows.map { it.docId }.sorted() }
+                    .distinctUntilChanged()
+                    .collectLatest { parentIds ->
+                        coroutineScope {
+                            parentIds.forEach { pid ->
+                                launch { listenLoop(root, spec, "${loc.parentRemotePath}/$pid/${loc.subPath}", pid) }
+                            }
+                        }
+                    }
+            }
         }
     }
 
@@ -106,9 +124,9 @@ class SyncEngine(
 
     // region incoming
 
-    private suspend fun listenLoop(target: Target, spec: CollectionSpec, path: String, parentId: String?) {
+    private suspend fun listenLoop(root: Root, spec: CollectionSpec, path: String, parentId: String?) {
         var backoff = INITIAL_BACKOFF_MS
-        val filter = if (target.role != Role.Parent &&
+        val filter = if (root.role != Role.Parent &&
             spec.caregiverFilterField != null
         ) {
             RemoteFilter(spec.caregiverFilterField, true)
@@ -117,9 +135,9 @@ class SyncEngine(
         }
         while (true) {
             try {
-                val since = local.watermark(target.familyId, path)?.let { it - WATERMARK_OVERLAP_MS }
-                remote.listen(target.familyId, path, since, filter).collect { batch ->
-                    applyRemote(target.familyId, spec, path, batch, parentId)
+                val since = local.watermark(root.id, path)?.let { it - WATERMARK_OVERLAP_MS }
+                remote.listen(root.id, path, since, filter).collect { batch ->
+                    applyRemote(root.id, spec, path, batch, parentId)
                     backoff = INITIAL_BACKOFF_MS
                     _status.update { s ->
                         s.copy(
@@ -231,14 +249,18 @@ class SyncEngine(
         }
     }
 
-    /** Pushes every queued change. Returns false when a retryable error stopped the run. */
+    /** Pushes every queued change of the family and its spaces. Returns false when a retryable error stopped the run. */
     private suspend fun pushPending(target: Target): Boolean = pushMutex.withLock {
-        var batch = local.nextOutbox(target.familyId, PUSH_BATCH)
+        target.roots.all { pushRoot(target, it.id) }
+    }
+
+    private suspend fun pushRoot(target: Target, root: String): Boolean {
+        var batch = local.nextOutbox(root, PUSH_BATCH)
         while (batch.isNotEmpty()) {
             _status.update { it.copy(state = SyncState.Pushing) }
             for (entry in batch) {
                 val spec = specs.firstOrNull { it.key == entry.collection }
-                val docPath = spec?.let { remoteDocPath(target.familyId, it, entry.docId) }
+                val docPath = spec?.let { remoteDocPath(root, it, entry.docId) }
                 if (spec == null || docPath == null) {
                     log.w { "Dropping outbox entry for unknown/unroutable collection ${entry.collection}" }
                     local.deleteOutbox(entry.id)
@@ -246,11 +268,11 @@ class SyncEngine(
                 }
                 val fields = JsonPaths.decode(json.parseToJsonElement(entry.fieldsJson).jsonObject)
                 try {
-                    remote.write(target.familyId, docPath, fields, target.uid)
+                    remote.write(root, docPath, fields, target.uid)
                     local.transaction {
                         local.deleteOutbox(entry.id)
-                        if (local.outboxFor(target.familyId, entry.collection, entry.docId).isEmpty()) {
-                            local.clearPending(target.familyId, entry.collection, entry.docId)
+                        if (local.outboxFor(root, entry.collection, entry.docId).isEmpty()) {
+                            local.clearPending(root, entry.collection, entry.docId)
                         }
                     }
                 } catch (e: CancellationException) {
@@ -260,8 +282,8 @@ class SyncEngine(
                     log.w(e) { "Write to ${entry.collection} denied; dropping change" }
                     local.transaction {
                         local.deleteOutbox(entry.id)
-                        if (local.outboxFor(target.familyId, entry.collection, entry.docId).isEmpty()) {
-                            local.clearPending(target.familyId, entry.collection, entry.docId)
+                        if (local.outboxFor(root, entry.collection, entry.docId).isEmpty()) {
+                            local.clearPending(root, entry.collection, entry.docId)
                         }
                     }
                     _status.update { it.copy(rejectedWrites = it.rejectedWrites + 1, lastError = "permission:${entry.collection}") }
@@ -271,9 +293,9 @@ class SyncEngine(
                     return false
                 }
             }
-            batch = local.nextOutbox(target.familyId, PUSH_BATCH)
+            batch = local.nextOutbox(root, PUSH_BATCH)
         }
-        true
+        return true
     }
 
     /** Pushes now (e.g. from a background worker). */

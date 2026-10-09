@@ -11,6 +11,7 @@ import { calendarFeed, revokeCalendarFeeds } from "../src/feeds.js";
 if (getApps().length === 0) initializeApp({ projectId: "demo-pusslet-functions" });
 
 const FID = "feedtest-family";
+const SPACE = "feedtest-space";
 const TOKEN = "feedtestTOKEN_abcdefghijklmnop";
 const SARA_TOKEN = "feedtestTOKEN_sara_abcdefghijk";
 
@@ -82,6 +83,18 @@ beforeAll(async () => {
     pickUp: { personId: "m-sara", time: null },
   });
   await family.collection("events").doc("e2").set({ title: "Tandläkare", start: "2026-10-12T09:00", end: "2026-10-12T10:00", participantIds: ["c-simon"] });
+  // Ella is shared with her mum's home: her things live in the space (ADR-030).
+  await family.set({ sharedSpaces: [SPACE, "feedtest-stranger"] }, { merge: true });
+  const space = db.doc(`families/${SPACE}`);
+  await space.set({ name: "Ella", shared: true, familyIds: [FID] });
+  await space.collection("children").doc("c-ella").set({ firstName: "Ella" });
+  await space.collection("members").doc("m-lina").set({ displayName: "Lina" });
+  await space.collection("events").doc("e3").set({
+    title: "Simning", start: "2026-10-14T17:00", end: "2026-10-14T18:00", participantIds: ["c-ella"], pickUp: { personId: "m-lina", time: null },
+  });
+  // Listed by the home but not listing it back: never read.
+  await db.doc("families/feedtest-stranger").set({ name: "Annan", shared: true, familyIds: ["someone"] });
+  await db.doc("families/feedtest-stranger/events/x").set({ title: "Hemligt", start: "2026-10-15T10:00", end: "2026-10-15T11:00" });
   await db.doc(`calendarFeeds/${TOKEN}`).set({ familyId: FID, memberId: null, createdBy: "sara" });
   await db.doc(`calendarFeeds/${SARA_TOKEN}`).set({ familyId: FID, memberId: "m-sara", createdBy: "sara" });
 });
@@ -89,6 +102,8 @@ beforeAll(async () => {
 afterAll(async () => {
   const db = getFirestore();
   await db.recursiveDelete(db.doc(`families/${FID}`));
+  await db.recursiveDelete(db.doc(`families/${SPACE}`));
+  await db.recursiveDelete(db.doc("families/feedtest-stranger"));
   await db.doc(`calendarFeeds/${TOKEN}`).delete();
   await db.doc(`calendarFeeds/${SARA_TOKEN}`).delete();
 });
@@ -103,6 +118,13 @@ describe("calendarFeed", () => {
     expect(r.body).toContain("SUMMARY:Fotboll");
     expect(r.body).toContain("SUMMARY:Tandläkare");
     expect(r.body).toContain("Hämtar: Sara");
+  });
+
+  it("includes what the family shares with the other home, and nothing a space does not confirm", async () => {
+    const r = await get(`/feed/${TOKEN}.ics`);
+    expect(r.body).toContain("SUMMARY:Simning");
+    expect(r.body).toContain("Hämtar: Lina");
+    expect(r.body).not.toContain("Hemligt");
   });
 
   it("a personal feed only has that person's events", async () => {

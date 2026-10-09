@@ -282,3 +282,84 @@ describe("server-only collections", () => {
     );
   });
 });
+
+describe("sharing with the other home (ADR-030)", () => {
+  const SPACE = "space-ella";
+
+  /** Sara's home (lind) shares Ella with Lina's home (berg). Johan is Sara's partner, Bengt their helper. */
+  async function seedSpace() {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      const f = ctx.firestore();
+      await setDoc(doc(f, `families/${FID}/access/johan`), { memberId: "m-johan", role: "parent" });
+      await setDoc(doc(f, `families/${SPACE}`), { name: "Ella", createdBy: "sara", shared: true, familyIds: [FID] });
+      await setDoc(doc(f, `families/${SPACE}/access/sara`), { memberId: "m-sara", role: "parent" });
+      await setDoc(doc(f, `families/${SPACE}/events/football`), { title: "Fotboll", start: "2026-10-13T17:30", end: "2026-10-13T18:30" });
+      await setDoc(doc(f, "families/berg"), { name: "Hos mamma", createdBy: "lina" });
+      await setDoc(doc(f, "families/berg/access/lina"), { memberId: "m-lina", role: "parent" });
+      await setDoc(doc(f, "invites/OTHERHOME1"), { familyId: SPACE, role: "parent", createdBy: "sara", expiresAt: future(7), shared: true });
+    });
+  }
+
+  async function linaJoins() {
+    const f = db("lina");
+    const batch = writeBatch(f);
+    batch.set(doc(f, `families/${SPACE}/access/lina`), { memberId: "m-lina", role: "parent", inviteCode: "OTHERHOME1" });
+    batch.set(doc(f, `families/${SPACE}/members/m-lina`), { displayName: "Lina", uid: "lina", ...stamp("lina") });
+    await assertSucceeds(batch.commit());
+  }
+
+  it("lets the other home join with the invite and work on the children's things, but not see the rest", async () => {
+    await seedSpace();
+    await linaJoins();
+    const f = db("lina");
+    await assertSucceeds(getDoc(doc(f, `families/${SPACE}/events/football`)));
+    await assertSucceeds(
+      setDoc(doc(f, `families/${SPACE}/events/swim`), { title: "Simning", start: "2026-10-14T17:00", end: "2026-10-14T18:00", ...stamp("lina") }),
+    );
+    await assertSucceeds(
+      updateDoc(doc(f, `families/${SPACE}`), { familyIds: [FID, "berg"], ...stamp("lina") }),
+    );
+    await assertFails(getDoc(doc(f, `families/${FID}/events/private`)));
+    await assertFails(getDocs(collection(f, `families/${FID}/events`)));
+  });
+
+  it("lets the home's other parent join without an invite, as themselves, but not a helper or an outsider", async () => {
+    await seedSpace();
+    const join = (uid: string, memberId: string, via: string) => {
+      const f = db(uid);
+      const batch = writeBatch(f);
+      batch.set(doc(f, `families/${SPACE}/access/${uid}`), { memberId, role: "parent", viaFamily: via });
+      batch.set(doc(f, `families/${SPACE}/members/${memberId}`), { displayName: uid, uid, ...stamp(uid) });
+      return batch.commit();
+    };
+    await assertFails(join("johan", "m-sara", FID));
+    await assertFails(join("bengt", "m-bengt", FID));
+    await assertFails(join("lina", "m-lina", "berg"));
+    await assertSucceeds(join("johan", "m-johan", FID));
+    await assertSucceeds(getDoc(doc(db("johan"), `families/${SPACE}/events/football`)));
+  });
+
+  it("keeps a space to the children's collections and its flag fixed", async () => {
+    await seedSpace();
+    const f = db("sara");
+    await assertFails(setDoc(doc(f, `families/${SPACE}/shoppingLists/l1`), { name: "Veckohandling", ...stamp("sara") }));
+    await assertFails(setDoc(doc(f, `families/${SPACE}/recipes/r1`), { title: "Pannkakor", ...stamp("sara") }));
+    await assertFails(setDoc(doc(f, `families/${SPACE}/shoppingLists/l1/items/i1`), { name: "Mjölk", listId: "l1", ...stamp("sara") }));
+    await assertSucceeds(setDoc(doc(f, `families/${SPACE}/packingRules/gym`), { item: "Gympapåse", childId: "ella", ...stamp("sara") }));
+    await assertFails(updateDoc(doc(f, `families/${SPACE}`), { shared: false, ...stamp("sara") }));
+    await assertFails(updateDoc(doc(f, `families/${FID}`), { shared: true, ...stamp("sara") }));
+  });
+
+  it("lets a leaving home take itself out: the home, its adults and their access", async () => {
+    await seedSpace();
+    await linaJoins();
+    const f = db("sara");
+    await assertSucceeds(updateDoc(doc(f, `families/${SPACE}`), { familyIds: [], ...stamp("sara") }));
+    await assertSucceeds(
+      setDoc(doc(f, `families/${SPACE}/members/m-sara`), { displayName: "Sara", deletedAt: serverTimestamp(), ...stamp("sara") }, { merge: true }),
+    );
+    await assertSucceeds(deleteDoc(doc(f, `families/${SPACE}/access/sara`)));
+    await assertFails(getDoc(doc(f, `families/${SPACE}/events/football`)));
+    await assertSucceeds(getDoc(doc(db("lina"), `families/${SPACE}/events/football`)));
+  });
+});

@@ -5,6 +5,8 @@ rules_version = '2';
 // - Parents can write everything; caregivers (e.g. a grandparent) see what is shared with them and can check things off.
 // - Every client write is stamped: updatedBy == caller and updatedAt == server time (the sync engine always does this).
 // - Clients never hard-delete family data; deletion is soft (deletedAt) or done by a Cloud Function.
+// - A family document with shared == true is a space two homes share for their children (ADR-030): it only holds the
+//   children's collections, and the parents of its homes may join it without an invite.
 // Tests: functions/test/rules.test.ts (run against the emulator in CI).
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -30,6 +32,12 @@ service cloud.firestore {
     function optString(field, max) { return !(field in data()) || shortString(data()[field], max); }
     function softDeleteOnly() { return onlyChanges(['deletedAt']) && data().deletedAt == request.time; }
     function sharedWithCaregivers() { return resource.data.get('sharedWithCaregivers', false) == true; }
+    function isSpace(fid) { return get(famPath(fid)).data.get('shared', false) == true; }
+    // What a space shared with the other home may hold (Collections.inSpaces in the app; members are matched below).
+    function spaceCollection(collection) {
+      return collection in ['children', 'custodySchedules', 'events', 'packingRules', 'packingChecks', 'tasks',
+        'handoffRequests', 'dietProfiles', 'schoolLunches', 'wishes'];
+    }
 
     // ---------- per-collection validation ----------
     function validEvent() {
@@ -113,7 +121,8 @@ service cloud.firestore {
     match /families/{fid} {
       allow read: if isMember(fid);
       allow create: if signedIn() && data().createdBy == me() && stamped() && shortString(data().name, 100);
-      allow update: if isParent(fid) && stamped() && data().createdBy == resource.data.createdBy && shortString(data().name, 100);
+      allow update: if isParent(fid) && stamped() && data().createdBy == resource.data.createdBy && shortString(data().name, 100)
+        && data().get('shared', false) == resource.data.get('shared', false);
       allow delete: if false;
 
       function validInvite(code, role, memberId) {
@@ -122,12 +131,20 @@ service cloud.firestore {
           && (inv.get('memberId', null) == null || inv.get('memberId', null) == memberId);
       }
 
+      // A parent of one of a shared space's homes joins it as the same person they are at home.
+      function joinsViaHome(home, memberId) {
+        let homeAccess = /databases/$(database)/documents/families/$(home)/access/$(me());
+        return isSpace(fid) && home in get(famPath(fid)).data.get('familyIds', [])
+          && exists(homeAccess) && get(homeAccess).data.role == 'parent' && get(homeAccess).data.memberId == memberId;
+      }
+
       // Membership index used by every rule above. Doc id = Firebase uid.
       match /access/{userId} {
         allow read: if isMember(fid);
         allow create: if signedIn() && userId == me() && data().memberId is string && (
           (getAfter(famPath(fid)).data.createdBy == me() && data().role == 'parent')
           || ('inviteCode' in data() && validInvite(data().inviteCode, data().role, data().memberId))
+          || ('viaFamily' in data() && data().role == 'parent' && joinsViaHome(data().viaFamily, data().memberId))
         );
         allow update: if isParent(fid) && userId != me() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['role']);
         allow delete: if isParent(fid) || (signedIn() && userId == me());
@@ -136,7 +153,8 @@ service cloud.firestore {
       // Shopping items live under their list.
       match /shoppingLists/{listId}/items/{itemId} {
         allow read: if isMember(fid);
-        allow create, update: if isMember(fid) && stamped() && reasonableSize() && (validItem(listId) || softDeleteOnly());
+        allow create, update: if isMember(fid) && stamped() && reasonableSize() && (validItem(listId) || softDeleteOnly())
+          && !isSpace(fid);
         allow delete: if false;
       }
 
@@ -180,7 +198,7 @@ service cloud.firestore {
         allow create, update: if collection != 'access' && collection != 'members' && stamped() && reasonableSize() && (
           (isParent(fid) && (validFor(collection) || softDeleteOnly()))
           || (isCaregiver(fid) && caregiverWrite(collection))
-        );
+        ) && (spaceCollection(collection) || !isSpace(fid));
         allow delete: if false;
 
       }

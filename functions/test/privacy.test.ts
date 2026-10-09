@@ -78,3 +78,36 @@ describe("deleteAccount", () => {
     expect(await exists("families/delsolo")).toBe(false);
   });
 });
+
+describe("deleting a home that shares a space with the other home", () => {
+  it("takes the home out of the space and leaves the other home's data", async () => {
+    await seedFamily("delhome", [{ uid: "home-ahmed", memberId: "m-ahmed", role: "parent" }]);
+    await seedFamily("delspace", [
+      { uid: "home-ahmed", memberId: "m-ahmed", role: "parent" },
+      { uid: "home-lina", memberId: "m-lina", role: "parent" },
+    ]);
+    await db().doc("families/delspace").set({ shared: true, familyIds: ["delhome", "delother"] }, { merge: true });
+    await db().doc("families/delhome").set({ sharedSpaces: ["delspace", "someone-elses-family"] }, { merge: true });
+    await seedFamily("someone-elses-family", [{ uid: "stranger", memberId: "m-x", role: "parent" }]);
+
+    await call(deleteFamily, "home-ahmed", { familyId: "delhome" });
+    expect(await exists("families/delhome")).toBe(false);
+    expect(await exists("families/delspace/events/e1")).toBe(true);
+    expect(await exists("families/delspace/access/home-ahmed")).toBe(false);
+    expect(await exists("families/delspace/members/m-ahmed")).toBe(false);
+    expect(await exists("families/delspace/access/home-lina")).toBe(true);
+    expect((await db().doc("families/delspace").get()).get("familyIds")).toEqual(["delother"]);
+    // A space that does not list the home is never touched.
+    expect(await exists("families/someone-elses-family/access/stranger")).toBe(true);
+  });
+
+  it("deletes a space when the leaving home was the only one left", async () => {
+    await seedFamily("delhome2", [{ uid: "home2-ahmed", memberId: "m-ahmed", role: "parent" }]);
+    await seedFamily("delspace2", [{ uid: "home2-ahmed", memberId: "m-ahmed", role: "parent" }]);
+    await db().doc("families/delspace2").set({ shared: true, familyIds: ["delhome2"] }, { merge: true });
+    await db().doc("families/delhome2").set({ sharedSpaces: ["delspace2"] }, { merge: true });
+    await call(deleteFamily, "home2-ahmed", { familyId: "delhome2" });
+    expect(await exists("families/delspace2")).toBe(false);
+    expect(await exists("families/delspace2/events/e1")).toBe(false);
+  });
+});

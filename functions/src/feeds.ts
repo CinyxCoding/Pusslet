@@ -4,12 +4,24 @@
  * this function only reads. Nothing is logged about the family or its events.
  */
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, type Firestore, type QuerySnapshot } from "firebase-admin/firestore";
 import { buildFeed, isValidToken, type FeedEvent } from "./ics.js";
 
 interface FeedDoc {
   familyId: string;
   memberId?: string | null;
+}
+
+/**
+ * The spaces a home shares with the other home (ADR-030). A home lists them itself, so a space only counts when it also
+ * lists the home – a parent can never pull a stranger's events into the feed.
+ */
+async function sharedSpaces(db: Firestore, familyId: string, listed: unknown): Promise<string[]> {
+  const ids = Array.isArray(listed) ? listed.filter((id): id is string => typeof id === "string" && id.length > 0) : [];
+  const docs = await Promise.all(ids.map((id) => db.doc(`families/${id}`).get()));
+  return docs
+    .filter((d) => d.exists && d.get("shared") === true && ((d.get("familyIds") as unknown[] | undefined) ?? []).includes(familyId))
+    .map((d) => d.id);
 }
 
 /** GET /feed/<token>.ics (Hosting rewrite) or /calendarFeed/<token>.ics. Optional ?lang=en. */
@@ -39,13 +51,26 @@ export const calendarFeed = onRequest({ cors: false }, async (req, res) => {
     family.collection("children").get(),
     family.collection("events").get(),
   ]);
+  const spaces = await sharedSpaces(db, familyId, familyDoc.get("sharedSpaces"));
+  const shared = await Promise.all(
+    spaces.map((id) => Promise.all(["members", "children", "events"].map((c) => db.collection(`families/${id}/${c}`).get()))),
+  );
   const names = new Map<string, string>();
-  members.forEach((d) => names.set(d.id, String(d.get("displayName") ?? "")));
-  children.forEach((d) => names.set(d.id, String(d.get("firstName") ?? "")));
+  const addNames = (snap: QuerySnapshot, field: string) =>
+    snap.forEach((d) => {
+      if (!names.has(d.id)) names.set(d.id, String(d.get(field) ?? ""));
+    });
+  addNames(members, "displayName");
+  addNames(children, "firstName");
+  shared.forEach(([m, c]) => {
+    addNames(m, "displayName");
+    addNames(c, "firstName");
+  });
+  const allEvents = [events, ...shared.map(([, , e]) => e)].flatMap((s) => s.docs);
   const familyName = String(familyDoc.get("name") ?? "Pusslet");
   const calendarName = memberId && names.get(memberId) ? `${familyName} – ${names.get(memberId)}` : familyName;
   const ics = buildFeed(
-    events.docs.map((d) => ({ ...(d.data() as Omit<FeedEvent, "id">), id: d.id })),
+    allEvents.map((d) => ({ ...(d.data() as Omit<FeedEvent, "id">), id: d.id })),
     { calendarName, memberId, names, now: new Date(), language: req.query.lang === "en" ? "en" : "sv" },
   );
   res.set("Content-Type", "text/calendar; charset=utf-8");

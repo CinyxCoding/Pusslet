@@ -6,11 +6,37 @@ import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, getFirestore, type Firestore } from "firebase-admin/firestore";
 
+/**
+ * Takes a deleted home out of a space it shared with the other home (ADR-030): the home, its adults and their access
+ * go; the other home keeps the children's things. A space nobody can manage any more is deleted too.
+ */
+async function leaveSpace(db: Firestore, spaceId: string, homeId: string, home: { uid: string; memberId: string }[]): Promise<void> {
+  const space = db.doc(`families/${spaceId}`);
+  const snap = await space.get();
+  // The home's own list is not proof: the space must list the home as well.
+  if (!snap.exists || snap.get("shared") !== true || !((snap.get("familyIds") as unknown[] | undefined) ?? []).includes(homeId)) return;
+  const batch = db.batch();
+  batch.update(space, { familyIds: FieldValue.arrayRemove(homeId) });
+  for (const p of home) {
+    batch.delete(space.collection("access").doc(p.uid));
+    if (p.memberId) batch.delete(space.collection("members").doc(p.memberId));
+  }
+  await batch.commit();
+  await Promise.all(home.map((p) => db.doc(`users/${p.uid}`).set({ familyIds: FieldValue.arrayRemove(spaceId) }, { merge: true })));
+  const parentsLeft = await space.collection("access").where("role", "==", "parent").get();
+  if (parentsLeft.empty) await deleteFamilyData(db, spaceId);
+}
+
 /** Removes the family, its feed and share links and invites, and the family from each user's list. */
 export async function deleteFamilyData(db: Firestore, familyId: string): Promise<void> {
   const family = db.doc(`families/${familyId}`);
   const access = await family.collection("access").get();
   const uids = access.docs.map((d) => d.id);
+  const spaces = ((await family.get()).get("sharedSpaces") as unknown[] | undefined) ?? [];
+  const home = access.docs.map((d) => ({ uid: d.id, memberId: String(d.get("memberId") ?? "") }));
+  for (const spaceId of spaces) {
+    if (typeof spaceId === "string" && spaceId.length > 0 && spaceId !== familyId) await leaveSpace(db, spaceId, familyId, home);
+  }
   for (const name of ["calendarFeeds", "handoverShares", "invites"]) {
     const linked = await db.collection(name).where("familyId", "==", familyId).get();
     const batch = db.batch();

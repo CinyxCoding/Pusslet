@@ -26,6 +26,22 @@ val emulatorHost: String = localProps.getProperty("pusslet.emulatorHost", "10.0.
 val linkHost: String = localProps.getProperty("pusslet.linkHost", "pusslet.web.app")
 
 /**
+ * The upload key for Play (docs/SETUP.md 4). Read from keystore.properties in the repo root (gitignored) or from the
+ * environment in CI; never committed. Without it release builds are unsigned (they still build and run through R8).
+ */
+val signingProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+fun signingValue(key: String, env: String): String? = signingProps.getProperty(key) ?: System.getenv(env)
+
+val uploadKeystore: String? = signingValue("storeFile", "PUSSLET_KEYSTORE")
+
+/** -Ppusslet.debugSignRelease=true signs release builds with the debug key, to try the minified app on a device. */
+val debugSignRelease = providers.gradleProperty("pusslet.debugSignRelease").map { it.toBoolean() }.getOrElse(false)
+
+/**
  * Reads Firebase options from src/<flavor>/google-services.json when present (gitignored, only the owner has it).
  * Missing file = empty values = the app runs local-only. No Google Services Gradle plugin needed (ADR-013).
  */
@@ -120,11 +136,27 @@ android {
         }
     }
 
+    signingConfigs {
+        if (uploadKeystore != null) {
+            create("upload") {
+                storeFile = rootProject.file(uploadKeystore)
+                storePassword = signingValue("storePassword", "PUSSLET_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "PUSSLET_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "PUSSLET_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = when {
+                debugSignRelease -> signingConfigs.getByName("debug")
+                uploadKeystore != null -> signingConfigs.getByName("upload")
+                else -> null
+            }
         }
     }
 

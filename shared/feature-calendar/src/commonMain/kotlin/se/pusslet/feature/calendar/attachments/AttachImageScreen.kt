@@ -193,9 +193,10 @@ fun AttachImageScreen(
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             item {
+                // The full picture (at most 2048 px): the thumbnail is too small to fill the width.
                 AttachmentImage(
                     fileName,
-                    thumbnail = true,
+                    thumbnail = false,
                     contentDescription = null,
                     modifier = Modifier.fillMaxWidth().height(PREVIEW.dp).clip(MaterialTheme.shapes.large),
                 )

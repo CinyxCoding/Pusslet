@@ -92,3 +92,66 @@ Saker som emulatorn inte kan visa:
 3. **Widgets:** lägg Idag och Inköpslista på hemskärmen; bocka av, lägg till med +, och se att Idag-widgeten byter
    "nästa händelse" när tiden passerat.
 4. **Dela en bild** från Galleriet till Pusslet → "Till en händelse" → bilden syns i händelsen och öppnas i bildvisaren.
+
+## 4. Releasebygge och signering
+Releasebyggen krymps och optimeras med R8 (`isMinifyEnabled`, `isShrinkResources`, regler i `composeApp/proguard-rules.pro`).
+Play App Signing rekommenderas: Google håller appens signeringsnyckel och du signerar bara uppladdningar med en
+**uppladdningsnyckel**.
+
+1. Skapa uppladdningsnyckeln en gång (förvara den och lösenorden i en lösenordshanterare, aldrig i repot):
+   ```bash
+   keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000
+   ```
+2. Skapa `keystore.properties` i repots rot (gitignorerad):
+   ```properties
+   storeFile=upload.jks
+   storePassword=…
+   keyAlias=upload
+   keyPassword=…
+   ```
+   I CI används i stället miljövariablerna `PUSSLET_KEYSTORE`, `PUSSLET_KEYSTORE_PASSWORD`, `PUSSLET_KEY_ALIAS` och
+   `PUSSLET_KEY_PASSWORD` (nyckelfilen läggs dit från en hemlighet).
+3. Lägg `google-services.json` för prod i `composeApp/src/prod/` och bygg:
+   ```bash
+   ./gradlew :composeApp:bundleProdRelease
+   ```
+   AAB-filen hamnar i `composeApp/build/outputs/bundle/prodRelease/`. Utan nyckel byggs den osignerad (fungerar för att
+   kontrollera R8, men Play tar inte emot den).
+4. Prova den krympta appen på en telefon/emulator utan uppladdningsnyckeln:
+   `./gradlew :composeApp:assembleDemoRelease -Ppusslet.debugSignRelease=true` och installera
+   `composeApp-demo-release.apk`. Kontrollera start, alla flikar, snabbinmatning, widgets och "Dela bild".
+5. Höj `app-versionCode` (och `app-versionName`) i `gradle/libs.versions.toml` inför varje uppladdning.
+
+## 5. Lanseringschecklista (Google Play)
+**Konto och app**
+- [ ] Utvecklarkonto skapat och identitet verifierad. **Nya personliga konton måste köra ett stängt test med minst 12
+      testare som är med i 14 dagar i följd** innan du kan ansöka om produktionsåtkomst – planera in det (familj, vänner,
+      föräldragruppen) och be testarna faktiskt använda appen under perioden.
+- [ ] Paketnamnet bestämt (`se.pusslet.app`) – kan aldrig ändras efter första uppladdningen.
+- [ ] Play App Signing aktiverat, uppladdningsnyckel skapad (avsnitt 4).
+
+**Backend**
+- [ ] Firebase-projekt i EU, regler, index, funktioner och hosting deployade (avsnitt 2.4), budgetvarning satt.
+- [ ] App Check med Play Integrity aktiverat och enforcement påslaget efter några dagars övervakning.
+- [ ] SHA-1/SHA-256 för uppladdningsnyckeln **och** Play-signeringsnyckeln inlagda i Firebase (Google-inloggning och App Links).
+- [ ] `assetlinks.json` för App Links publicerad på `linkHost` med Play-signeringsnyckelns fingeravtryck.
+- [ ] `AppConfig.CONTACT` satt (avsnitt 2.6).
+
+**Butikssidan** (`docs/STORE_LISTING.md`)
+- [ ] Appnamn, kort och lång beskrivning på svenska och engelska.
+- [ ] Ikon 512×512, funktionsbild 1024×500, minst 4 skärmdumpar per språk (Roborazzi-bilderna i
+      `composeApp/src/test/snapshots/`), gärna även en surfplatta.
+- [ ] Kategori Föräldraskap, kontaktuppgifter, integritetspolicyns URL (`docs/PRIVACY.md` publicerad).
+
+**App content i Play Console**
+- [ ] Data safety ifyllt enligt `docs/PLAY_DATA_SAFETY.md`.
+- [ ] Målgrupp: vuxna (18+); appen riktar sig inte till barn.
+- [ ] Innehållsklassning (IARC-enkäten): inget våld, ingen användarkommunikation utanför familjen.
+- [ ] Reklam: nej. Behörigheter förklarade (kalender, kamera, ungefärlig plats, notiser – alla frågas i sammanhang).
+- [ ] Kontouppgifter för granskning: ett testkonto med en ifylld familj (eller instruktion om att demo-läget finns).
+
+**Kvalitet**
+- [ ] `./gradlew build` grönt och `cd functions && npm test` grönt.
+- [ ] Kontrollerna på riktig telefon (avsnitt 3) gjorda med prod-flavorn.
+- [ ] Internt test → stängt test (12+ testare, 14 dagar) → produktion med stegvis utrullning (t.ex. 20 %).
+- [ ] Android vitals bevakas första veckan (krascher, ANR, långsam start).

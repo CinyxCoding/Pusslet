@@ -10,6 +10,9 @@
 # Room (generated _Impl classes are referenced reflectively by the constructor object)
 -keep class * extends androidx.room.RoomDatabase { <init>(); }
 
+# Glance creates action callbacks by class name (actionRunCallback<T>)
+-keep class * implements androidx.glance.appwidget.action.ActionCallback { <init>(); }
+
 # Ktor / OkHttp optional dependencies
 -dontwarn org.slf4j.**
 -dontwarn java.lang.management.**

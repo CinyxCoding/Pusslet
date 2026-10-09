@@ -160,8 +160,12 @@ Demo-APK på emulatorn (Pixel 9 Pro, API 37) utan backend:
 - FCM end-to-end kräver ett riktigt Firebase-projekt (emulatorn har ingen FCM); mottagare, betalaster och mottagarval är
   testade mot Firestore-emulatorn och i Robolectric.
 
-Nästa steg (fas 5, V2): sök, kalas och presenter, barnvy med sysslor och veckopeng, fler lunchleverantörer och
-flerhushållsdelning fullt ut.
+Fas 5 klar 2026-10-09: ✅ `./gradlew build` grönt efter fas 5 (alla varianter, Android Lint, detekt, ktlint, enhetstester
+för demo/dev/prod), release-APK:er byggs med R8, 54 functions- och regeltester gröna.
+
+Nästa steg (ägaren): allt i briefen är byggt. Det som återstår kräver ägaren – Firebase-projekt och
+`google-services.json`, uppladdningsnyckel, riktiga telefoner (FCM, Google Kalender), iOS-länkning i macOS-jobbet i CI
+och Play Console (testare i 14 dagar). Se `docs/SETUP.md` avsnitt 1–5.
 
 ## Verifiering fas 5: andra hemmet (2026-10-09)
 Demo-APK på emulatorn (Pixel 9 Pro, API 37, utan fönster) mot Firebase-emulatorerna (auth + firestore), med

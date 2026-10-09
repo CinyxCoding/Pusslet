@@ -114,7 +114,15 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
       (`bundleProdRelease`, 26 MB, osignerad utan uppladdningsnyckel) – 2026-10-09
 
 ## Fas 5 – V2
-- [ ] Barnvy & veckopeng · kalas/presenter · sök · flerhushållsdelning · fler lunchleverantörer
+- [x] Sök – händelser (familj, prenumerationer, egna kalendrar; en serie en gång vid nästa tillfälle), recept (namn och
+      ingredienser), att göra, varor och barnens kontakter; skiftlägen och å/ä/ö spelar ingen roll, svenska sammansättningar
+      hittas inifrån ("läkare" → tandläkare). Från Idag och Mer. 4 + 3 tester + flödestest
+- [x] Kalas och presenter (ADR-027) – OSA med sista dag, presentidé, budget, köpt (bockar presentuppgiften), eget kalas med
+      gästlista och delbar inbjudan, Idag-kort och notiser (present tre dagar innan, OSA kvällen före), önskelistor per barn
+      som morföräldrar kan bocka av. 4 regel-, 1 planerar-, 1 Idag-, 3 VM-tester, regeltest för önskelistor, skärmdumpar
+- [ ] Barnvy och veckopeng
+- [ ] Fler lunchleverantörer
+- [ ] Flerhushållsdelning fullt ut
 
 ## Verifiering fas 1 (2026-10-08)
 Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestore):

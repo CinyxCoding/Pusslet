@@ -35,6 +35,8 @@ sealed interface Route {
 
     @Serializable data class ChildEditor(val childId: String? = null) : Route
 
+    @Serializable data class Wishlist(val childId: String) : Route
+
     @Serializable data class MemberEditor(val memberId: String? = null) : Route
 
     @Serializable data class Invite(val claimMemberId: String? = null) : Route

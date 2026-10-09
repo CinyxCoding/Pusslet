@@ -35,6 +35,7 @@ import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.repository.TaskRepository
+import se.pusslet.data.repository.WishRepository
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
 import se.pusslet.data.sync.DocumentStore
@@ -69,6 +70,7 @@ class TestGraph(
     val tasks = TaskRepository(docs)
     val files = FakeAttachmentFiles(clock)
     val attachments = AttachmentRepository(docs, files, ids, clock)
+    val wishes = WishRepository(docs, sessions, ids, clock)
     val packing = PackingRepository(docs)
     val lunchProvider = FakeLunchProvider()
     val lunches = LunchRepository(docs, lunchProvider, family)

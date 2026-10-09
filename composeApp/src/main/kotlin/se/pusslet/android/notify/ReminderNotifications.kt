@@ -19,6 +19,7 @@ import org.jetbrains.compose.resources.getStringArray
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.notify.PartyReminder
 import se.pusslet.core.notify.PlannedNotification
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.today.TimelineItem
@@ -96,6 +97,7 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
             is PlannedNotification.Handoff -> Channel.Handoffs to handoff(plan)
             is PlannedNotification.TaskDue -> Channel.Reminders to NotificationContent(plan.title, getString(Res.string.notify_task_text))
             is PlannedNotification.Morning -> Channel.Morning to morning(plan.date)
+            is PlannedNotification.Party -> Channel.Reminders to party(plan)
         }
         Notifications.show(applicationContext, channel, plan.key.hashCode(), content)
         return Result.success()
@@ -118,6 +120,16 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
             eventId = p.eventId,
             occurrenceDate = p.occurrenceDate,
         )
+    }
+
+    private suspend fun party(p: PlannedNotification.Party): NotificationContent {
+        val day = getString(Res.string.on_weekday, getStringArray(Res.array.weekdays)[p.partyDate.dayOfWeek.isoDayNumber - 1])
+        val (title, text) = when (p.kind) {
+            PartyReminder.Gift -> getString(Res.string.notify_party_gift_title, p.title) to
+                getString(Res.string.notify_party_gift_text, day)
+            PartyReminder.Rsvp -> getString(Res.string.notify_party_rsvp_title, p.title) to getString(Res.string.notify_party_rsvp_text)
+        }
+        return NotificationContent(title, text, eventId = p.eventId, occurrenceDate = p.occurrenceDate)
     }
 
     /** "Morgonkollen": the day in five lines, built from the same plan as the Today screen. */

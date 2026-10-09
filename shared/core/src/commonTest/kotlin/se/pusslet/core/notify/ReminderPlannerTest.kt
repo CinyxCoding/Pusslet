@@ -9,9 +9,13 @@ import se.pusslet.core.model.ChoreRotation
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
+import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilyTask
+import se.pusslet.core.model.GiftPlan
 import se.pusslet.core.model.Handoff
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.PartyDetails
+import se.pusslet.core.model.Rsvp
 import se.pusslet.core.model.TaskKind
 import se.pusslet.core.time.IsoWeek
 import kotlin.test.Test
@@ -152,5 +156,37 @@ class ReminderPlannerTest {
         assertEquals(at(today, 12, 0), q.deferred(at(today, 12, 0), zone))
         // Across the DST change at night (25 Oct): still 06:30 local time.
         assertEquals(at(LocalDate(2026, 10, 25), 6, 30), q.deferred(at(LocalDate(2026, 10, 24), 22, 0), zone))
+    }
+
+    @Test
+    fun partiesRemindParentsOfThePresentAndTheAnswer() {
+        val party = Event(
+            "vera",
+            "Kalas hos Vera",
+            LocalDateTime(LocalDate(2026, 10, 11), LocalTime(14, 0)),
+            LocalDateTime(LocalDate(2026, 10, 11), LocalTime(16, 0)),
+            participantIds = listOf("ella"),
+            tags = listOf(EventTags.PARTY),
+            party = PartyDetails(rsvpBy = LocalDate(2026, 10, 9)),
+        )
+        val sara = plan("sara", occ(party))
+        val byKind = sara.filterIsInstance<PlannedNotification.Party>().associateBy { it.kind }
+        assertEquals(setOf(PartyReminder.Rsvp, PartyReminder.Gift), byKind.keys)
+        assertEquals(at(today, 18, 0), byKind.getValue(PartyReminder.Rsvp).at, "the evening before the OSA date")
+        assertEquals(at(today, 18, 0), byKind.getValue(PartyReminder.Gift).at, "three days before the party")
+
+        val answered = party.copy(party = PartyDetails(rsvp = Rsvp.Yes, gift = GiftPlan(bought = true)))
+        assertTrue(plan("sara", occ(answered)).isEmpty(), "answered and bought: nothing to remind")
+        val helper = ReminderPlanner.plan(
+            "bengt",
+            adults + "bengt",
+            listOf(occ(party)),
+            emptyList(),
+            ReminderSettings(),
+            now,
+            zone,
+            iAmParent = false,
+        )
+        assertTrue(helper.isEmpty(), "helpers are not chased about presents")
     }
 }

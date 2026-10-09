@@ -75,6 +75,7 @@ object Collections {
     val AisleOverrides = CollectionSpec("aisleOverrides", RemoteLocation.Flat("aisleOverrides"))
     val IngredientMappings = CollectionSpec("ingredientMappings", RemoteLocation.Flat("ingredientMappings"))
     val SchoolLunches = CollectionSpec("schoolLunches", RemoteLocation.Flat("schoolLunches"), mapFields = setOf("days"))
+    val Wishes = CollectionSpec("wishes", RemoteLocation.Flat("wishes"))
 
     /** Pictures attached on this phone (ADR-025). The location is never used. */
     val Attachments = CollectionSpec("attachments", RemoteLocation.Flat("attachments"), localOnly = true)
@@ -103,6 +104,7 @@ object Collections {
         AisleOverrides,
         IngredientMappings,
         SchoolLunches,
+        Wishes,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

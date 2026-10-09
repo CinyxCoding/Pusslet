@@ -235,3 +235,16 @@ systemnivå från användare som delar diagnostik. Inställningen och katalogpos
 **Konsekvens:** Färre beroenden och inget samtycke att fråga om; Data safety blir enklare. Saknas detaljer i vitals kan
 Crashlytics läggas till senare med Google Services-pluginet i dev/prod och samtycke i Inställningar (integritetspolicy
 och Data safety uppdateras då).
+
+## ADR-027 – Kalas och önskelistor
+**Kontext:** BRIEF §4.8: OSA-status, presentidé, budget, "present köpt", påminnelse tre dagar innan, egna kalas med
+gästlista och inbjudan, önskelista per barn.
+**Beslut:** Kalasuppgifterna ligger på händelsen (`Event.party`: OSA och sista dag, present eller – för eget kalas –
+gäster och inbjudningstext) och synkas som resten av händelsen; ett kalas känns igen på taggen eller på att uppgifterna
+finns. `PartyRules` i kärnan avgör när något behövs: present för ett kalas familjen inte tackat nej till tills den är
+köpt eller presentuppgiften är bockad, och OSA när ett datum finns och ingen svarat. Idag-kort för present (en vecka
+framåt) och OSA (tre dagar innan sista dagen); notiser kl 18 tre dagar före kalaset och kvällen före OSA-datumet, bara
+till föräldrar. "Köpt" bockar även av presentuppgiften från snabbinmatningen. Önskelistor är en egen samling (`wishes`)
+som även hjälpare kan läsa och där de får markera "köpt" – inget annat (reglerna + regeltest), så två morföräldrar inte
+köper samma sak. Inbjudan delas som text via telefonens delningsmeny; inga gästers kontaktuppgifter sparas.
+**Konsekvens:** Gästlistan är bara namn och svar. Barnets egen vy (fas 5) ska inte visa "köpt" på önskelistan.

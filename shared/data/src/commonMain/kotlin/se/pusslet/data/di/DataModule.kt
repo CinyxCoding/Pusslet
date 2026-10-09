@@ -30,6 +30,7 @@ import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.repository.TaskRepository
+import se.pusslet.data.repository.WishRepository
 import se.pusslet.data.seed.DemoSeed
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.session.SessionRepository
@@ -103,6 +104,7 @@ val dataModule: Module = module {
     single<BillingRepository> { NoBilling }
     single { AttachmentHousekeeping(get(), get(), get(), get()) }
     single { FamilySearch(get(), get(), get(), get(), get(), get(), get()) }
+    single { WishRepository(get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get(), get()) }

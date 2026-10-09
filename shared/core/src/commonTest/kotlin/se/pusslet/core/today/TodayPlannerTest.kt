@@ -14,6 +14,7 @@ import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
+import se.pusslet.core.model.GiftPlan
 import se.pusslet.core.model.Handoff
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.MainComponent
@@ -23,7 +24,9 @@ import se.pusslet.core.model.Member
 import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.PackingTrigger
+import se.pusslet.core.model.PartyDetails
 import se.pusslet.core.model.Role
+import se.pusslet.core.model.Rsvp
 import se.pusslet.core.model.SchoolLunch
 import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.model.TaskKind
@@ -152,6 +155,24 @@ class TodayPlannerTest {
         assertEquals(listOf("Ella"), study.children.map { it.name })
         val party = cards.filterIsInstance<ContextCard.PartyGift>().single()
         assertEquals("present", party.taskId)
+    }
+
+    @Test
+    fun anUnansweredInvitationAndABoughtPresent() {
+        val base = input()
+        val withParty = { details: PartyDetails ->
+            base.copy(
+                occurrences = base.occurrences.map { o ->
+                    if (o.event.id == "party") o.copy(event = o.event.copy(party = details)) else o
+                },
+            )
+        }
+        val pending = TodayPlanner.build(withParty(PartyDetails(rsvpBy = tuesday.plusDays(1)))).cards
+        assertEquals("party", pending.filterIsInstance<ContextCard.PartyRsvp>().single().occurrence.event.id)
+        val later = TodayPlanner.build(withParty(PartyDetails(rsvpBy = tuesday.plusDays(4)))).cards
+        assertTrue(later.none { it is ContextCard.PartyRsvp }, "more than three days left: no nagging yet")
+        val bought = TodayPlanner.build(withParty(PartyDetails(rsvp = Rsvp.Yes, gift = GiftPlan(bought = true)))).cards
+        assertTrue(bought.none { it is ContextCard.PartyGift || it is ContextCard.PartyRsvp })
     }
 
     @Test

@@ -14,6 +14,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
+import se.pusslet.core.model.Role
 import se.pusslet.core.notify.PlannedNotification
 import se.pusslet.core.notify.QuietHours
 import se.pusslet.core.notify.ReminderPlanner
@@ -68,7 +69,8 @@ class ReminderSync(
         val quiet = if (prefs.get(Prefs.QuietHoursEnabled)) prefs.get(Prefs.QuietHours).let { QuietHours(it.start, it.end) } else null
         val morning = prefs.get(Prefs.Morning)
         val settings = ReminderSettings(morning.enabled, morning.time, quiet)
-        return ReminderPlanner.plan(me, adults, occurrences, tasks.tasks.first(), settings, clock.now(), zone)
+        val parent = sessions.session.value.role == Role.Parent
+        return ReminderPlanner.plan(me, adults, occurrences, tasks.tasks.first(), settings, clock.now(), zone, iAmParent = parent)
     }
 
     suspend fun replanNow() {
@@ -132,7 +134,7 @@ class TodayPlans(
                 me = sessions.session.value.memberId,
                 people = family.people.first(),
                 children = family.children.first(),
-                occurrences = calendar.occurrences(date, date.plusDays(UPCOMING_DAYS), zone).first(),
+                occurrences = calendar.occurrences(date, date.plusDays(LOOK_AHEAD_DAYS), zone).first(),
                 packingRules = packing.rules.first(),
                 packingChecks = packing.checks.first(),
                 custody = family.custody.first(),
@@ -146,5 +148,8 @@ class TodayPlans(
 
     private companion object {
         const val UPCOMING_DAYS = 3
+
+        /** Cards look further than the day previews: a party in two weeks may need an answer tomorrow. */
+        const val LOOK_AHEAD_DAYS = 14
     }
 }

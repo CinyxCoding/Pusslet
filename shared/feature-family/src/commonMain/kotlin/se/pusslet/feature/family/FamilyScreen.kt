@@ -34,6 +34,7 @@ import se.pusslet.core.model.Member
 import se.pusslet.core.model.Role
 import se.pusslet.core.weather.ClothingAdvisor
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.WishRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.ListRow
@@ -54,17 +55,28 @@ data class FamilyUiState(
     val me: String? = null,
     val myRole: Role = Role.Parent,
     val today: LocalDate? = null,
+    /** Child id -> wishes nobody has bought yet. */
+    val openWishes: Map<String, Int> = emptyMap(),
 )
 
-class FamilyViewModel(family: FamilyRepository, sessions: SessionProvider, clock: Clock, zone: TimeZone) : ViewModel() {
-    val state: StateFlow<FamilyUiState> = combine(family.family, family.members, family.children, family.custody, sessions.session) {
+class FamilyViewModel(
+    family: FamilyRepository,
+    sessions: SessionProvider,
+    wishes: WishRepository,
+    clock: Clock,
+    zone: TimeZone,
+) : ViewModel() {
+    private val custodyAndWishes = combine(family.custody, wishes.wishes) { cu, w -> cu to w }
+
+    val state: StateFlow<FamilyUiState> = combine(family.family, family.members, family.children, custodyAndWishes, sessions.session) {
         f,
         m,
         c,
-        cu,
+        (cu, w),
         s,
         ->
-        FamilyUiState(f?.name.orEmpty(), m, c, cu, s.memberId, s.role, clock.todayIn(zone))
+        val open = w.filter { !it.taken }.groupingBy { it.childId }.eachCount()
+        FamilyUiState(f?.name.orEmpty(), m, c, cu, s.memberId, s.role, clock.todayIn(zone), open)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FamilyUiState())
 }
 
@@ -76,6 +88,7 @@ fun FamilyRoute(
     onInvite: (String?) -> Unit,
     onCustody: (String?) -> Unit,
     onHandover: (String) -> Unit,
+    onWishlist: (String) -> Unit = {},
     viewModel: FamilyViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -129,6 +142,25 @@ fun FamilyRoute(
                         )
                     }
                     if (parent) OutlinedButton(onClick = { onEditChild(null) }) { Text(stringResource(Res.string.family_add_child)) }
+                }
+            }
+            if (state.children.isNotEmpty()) {
+                item {
+                    SectionCard(stringResource(Res.string.family_wishlists)) {
+                        state.children.forEach { c ->
+                            val open = state.openWishes[c.id] ?: 0
+                            ListRow(
+                                title = c.firstName,
+                                supporting = if (open > 0) {
+                                    stringResource(Res.string.family_wishlist_count, open)
+                                } else {
+                                    stringResource(Res.string.family_wishlist_none)
+                                },
+                                leading = { PersonAvatar(FamilyPerson.of(c), size = 40.dp) },
+                                modifier = Modifier.clickable { onWishlist(c.id) },
+                            )
+                        }
+                    }
                 }
             }
             item {

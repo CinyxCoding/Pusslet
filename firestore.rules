@@ -51,6 +51,7 @@ service cloud.firestore {
         && (!('steps' in data()) || data().steps is list);
     }
     function validNamed(field) { return shortString(data()[field], 200); }
+    function validWish() { return shortString(data().text, 300) && data().childId is string && optString('link', 2000); }
 
     function validFor(collection) {
       return collection == 'events' ? validEvent()
@@ -61,6 +62,7 @@ service cloud.firestore {
         : collection == 'shoppingLists' ? validNamed('name')
         : collection == 'stores' ? validNamed('name')
         : collection == 'icsSubscriptions' ? (validNamed('name') && shortString(data().url, 2000))
+        : collection == 'wishes' ? validWish()
         : true;
     }
 
@@ -68,7 +70,7 @@ service cloud.firestore {
     function caregiverReadable(collection) {
       return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
         'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings', 'dietProfiles',
-        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches'];
+        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches', 'wishes'];
     }
     function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
 
@@ -158,13 +160,15 @@ service cloud.firestore {
       }
 
       match /{collection}/{docId} {
-        // What a caregiver may change: tick off packing, answer hand-off requests, mark shared tasks done, show presence.
+        // What a caregiver may change: tick off packing, answer hand-off requests, mark shared tasks done, show presence,
+        // and mark a wish as bought (grandparents).
         function caregiverWrite(collection) {
           return collection == 'packingChecks'
             || collection == 'handoffRequests'
             || (collection == 'presence' && docId == myMemberId(fid))
             || (collection == 'tasks' && resource != null && sharedWithCaregivers()
-                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']));
+                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']))
+            || (collection == 'wishes' && resource != null && onlyChanges(['taken', 'takenBy']));
         }
 
         allow read: if collection != 'access' && collection != 'members' && isMember(fid) && (

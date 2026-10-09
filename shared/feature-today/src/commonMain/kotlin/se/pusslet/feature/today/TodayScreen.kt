@@ -138,6 +138,7 @@ private fun cardKey(card: ContextCard): String = when (card) {
     is ContextCard.Problem -> "conflict-${card.conflict.occurrence.key}-${card.conflict::class.simpleName}"
     is ContextCard.StudyDay -> "study-${card.date}"
     is ContextCard.PartyGift -> "party-${card.date}-${card.eventTitle}"
+    is ContextCard.PartyRsvp -> "rsvp-${card.occurrence.key}"
     is ContextCard.SqueezeDay -> "squeeze-${card.date}"
     is ContextCard.HandoverSoon -> "handover-${card.schedule.id}-${card.handover.date}"
 }
@@ -328,6 +329,11 @@ private fun ContextCardView(
                 },
             )
         }
+        is ContextCard.PartyRsvp -> Banner(
+            stringResource(Res.string.card_party_rsvp, card.occurrence.event.title, cardDay(card.by, plan.date)),
+            kind = BannerKind.Warning,
+            actions = { SmallAction(stringResource(Res.string.card_action_open)) { onOpenOccurrence(card.occurrence) } },
+        )
         is ContextCard.SqueezeDay -> Banner(
             stringResource(Res.string.card_squeeze_day, relativeDay(card.date, plan.date)),
             kind = BannerKind.Info,

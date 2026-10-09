@@ -12,6 +12,7 @@ import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.party.PartyRules
 import se.pusslet.core.tasks.TaskScheduler
 import se.pusslet.core.time.plusDays
 import kotlin.time.Duration
@@ -64,7 +65,23 @@ sealed interface PlannedNotification {
     @Serializable
     @SerialName("morning")
     data class Morning(override val key: String, override val at: Instant, val date: LocalDate) : PlannedNotification
+
+    /** "Present till Kalas hos Vera" three days before, or "Dags att OSA" the day before the deadline. */
+    @Serializable
+    @SerialName("party")
+    data class Party(
+        override val key: String,
+        override val at: Instant,
+        val eventId: String,
+        val occurrenceDate: LocalDate,
+        val title: String,
+        val partyDate: LocalDate,
+        val kind: PartyReminder,
+    ) : PlannedNotification
 }
+
+@Serializable
+enum class PartyReminder { Gift, Rsvp }
 
 /** "Tysta timmar" (e.g. 21:00–06:30): crosses midnight when start is after end. */
 data class QuietHours(val start: LocalTime, val end: LocalTime) {
@@ -92,12 +109,16 @@ data class ReminderSettings(
  *   parents when no adult is named;
  * - whoever drops off or picks up gets "dags att lämna/hämta" [handoffLead] before;
  * - tasks with a time go to whoever is responsible (rotations resolved) and wait for quiet hours to end;
- * - the morning brief at its time.
+ * - the morning brief at its time;
+ * - parents: a kalas present not yet bought three days before, and an unanswered OSA the evening before its deadline.
  * Reminders the user asked for are never silenced by quiet hours.
  */
 object ReminderPlanner {
     val handoffLead: Duration = 15.minutes
     val horizon: Duration = 48.hours
+
+    /** Party reminders come in the early evening, when there is time to sort it out. */
+    val partyTime: LocalTime = LocalTime(18, 0)
 
     fun plan(
         me: String,
@@ -107,15 +128,37 @@ object ReminderPlanner {
         settings: ReminderSettings,
         now: Instant,
         zone: TimeZone,
+        iAmParent: Boolean = true,
     ): List<PlannedNotification> {
         val window = Window(now, now + horizon, zone)
         val family = occurrences.filter { it.source == EventSource.Family && !it.allDay }
+        val parties = if (iAmParent) partyReminders(occurrences.filter { it.source == EventSource.Family }, tasks, window) else emptyList()
         return (
             family.flatMap { eventReminders(it, me, adultIds, window) } +
                 family.flatMap { handoffs(it, me, adultIds, window) } +
                 taskReminders(tasks, me, settings.quietHours, window) +
-                morning(settings, window)
+                morning(settings, window) +
+                parties
         ).sortedBy { it.at }
+    }
+
+    private fun partyReminders(occurrences: List<EventOccurrence>, tasks: List<FamilyTask>, w: Window): List<PlannedNotification> =
+        occurrences.filter { PartyRules.isParty(it.event) }
+            .distinctBy { it.event.seriesId ?: it.event.id }
+            .flatMap { o ->
+                val gift = PartyRules.giftReminderDay(o, w.today)?.takeIf { PartyRules.needsGift(o, tasks, w.today) }
+                val rsvp = PartyRules.details(o.event).rsvpBy?.plusDays(-1)?.takeIf { PartyRules.needsRsvp(o.event, w.today) }
+                listOfNotNull(
+                    gift?.let { partyAt(o, it, PartyReminder.Gift, w) },
+                    rsvp?.let { partyAt(o, it, PartyReminder.Rsvp, w) },
+                )
+            }
+
+    private fun partyAt(o: EventOccurrence, day: LocalDate, kind: PartyReminder, w: Window): PlannedNotification? {
+        val at = LocalDateTime(day, partyTime).toInstant(w.zone)
+        if (!w.contains(at)) return null
+        val key = "party:${kind.name.lowercase()}:${o.event.seriesId ?: o.event.id}"
+        return PlannedNotification.Party(key, at, o.event.id, o.occurrenceDate, o.event.title, o.start.date, kind)
     }
 
     private class Window(val now: Instant, val until: Instant, val zone: TimeZone) {

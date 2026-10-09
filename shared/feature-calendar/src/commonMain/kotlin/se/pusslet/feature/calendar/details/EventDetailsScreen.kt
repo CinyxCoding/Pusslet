@@ -54,6 +54,7 @@ import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
+import se.pusslet.core.party.PartyRules
 import se.pusslet.core.time.plusDays
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
@@ -193,9 +194,16 @@ fun EventDetailsRoute(
             onBack()
         }
     }
-    EventDetailsScreen(state, onBack, onEdit, viewModel::take, viewModel::assign, viewModel::requestHelp) { o ->
-        AttachmentsRoute(AttachmentOwner.Event, o.event.seriesId ?: o.event.id)
-    }
+    EventDetailsScreen(
+        state,
+        onBack,
+        onEdit,
+        viewModel::take,
+        viewModel::assign,
+        viewModel::requestHelp,
+        attachments = { o -> AttachmentsRoute(AttachmentOwner.Event, o.event.seriesId ?: o.event.id) },
+        party = { o -> PartySection(o, editable = state.role == Role.Parent) },
+    )
 }
 
 @Composable
@@ -208,6 +216,8 @@ fun EventDetailsScreen(
     onRequest: (HandoffKind) -> Unit,
     /** Pictures attached on this phone (ADR-025). */
     attachments: @Composable (EventOccurrence) -> Unit = {},
+    /** The kalas card (OSA, present, guests). */
+    party: @Composable (EventOccurrence) -> Unit = {},
 ) {
     val o = state.occurrence
     var askScope by remember { mutableStateOf(false) }
@@ -278,6 +288,7 @@ fun EventDetailsScreen(
             if (o.source == EventSource.Family && !o.allDay && participants.any { it.isChild }) {
                 HandoffCard(state, o, people, onTake, onAssign, onRequest)
             }
+            if (o.source == EventSource.Family && PartyRules.isParty(o.event)) party(o)
             if (o.event.tags.isNotEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     o.event.tags.forEach { tag ->

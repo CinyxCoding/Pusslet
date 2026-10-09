@@ -68,6 +68,9 @@ class SubscriptionsScreenshotTest {
     fun subscriptionList() {
         startWithSubscription()
         compose.onNodeWithText("Kalender").performClick()
+        // Wait for the tab to settle; during the transition the menu button is not in the merged tree yet.
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41"), timeoutMillis = 10_000)
+        compose.waitForIdle()
         compose.onNodeWithContentDescription("Visa i kalendern").performClick()
         compose.onNodeWithText("Prenumerationer …").performClick()
         compose.waitUntilAtLeastOneExists(hasText("hämtat", substring = true), timeoutMillis = 10_000)

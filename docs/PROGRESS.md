@@ -91,14 +91,27 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
       kalendervyn (SubscriptionRefreshWorkerTest + skärmdump `calendar_subscription_week44`)
 
 ## Fas 4 – Polish & Play-beredskap
-- [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)
-- [ ] Prestanda (kallstart, 500+ varor)
-- [ ] Felhantering och tomma lägen överallt, onboarding < 2 min
-- [ ] Svenska + engelska texter genomlästa
-- [ ] Entitlements/Billing-förberedelse, `docs/MONETIZATION.md`
-- [ ] `docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md`
-- [ ] Releasebygge (R8), signeringsinstruktioner, lanseringschecklista
-- [ ] ✅ `./gradlew build` grönt, release-AAB bygger
+- [x] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text) – `AccessibilityTest` går igenom
+      semantikträdet för Idag, Kalender, Mat, Handla, Mer och händelsedetaljer: allt tryckbart har ett namn och minst
+      48 dp (ATF rapporterar inget under Robolectric – kontrollerat med en avsiktligt felaktig knapp). Nya skärmdumpar i
+      200 % textstorlek (Idag, vecka, inköpslista) och mörk vecka. Hittat och rättat: vyväljaren Dag/Vecka/Månad/Agenda
+      klipptes i stor text
+- [x] Prestanda (kallstart, 500+ varor) – releasebygget startar kallt på 2,9 s på emulatorn med mjukvaru-GPU (riktiga
+      telefoner är betydligt snabbare); listor är lata med nycklar; `ShoppingPerformanceTest` (600 varor genom de riktiga
+      repositoryna) och ICS-flödet med 15 643 händelser (0,8 s) håller budget
+- [x] Felhantering och tomma lägen överallt, onboarding < 2 min – vänliga tomma lägen på alla listor, nätfel med
+      klartext och "försök igen", ny remsa när ändringar väntar på nät. `CriticalFlowsTest` kör onboarding (4 korta steg),
+      snabbinmatning, inköpslista från matsedeln och butiksläget genom hela appen. Hittat och rättat: onboardingens
+      "Klart!"-steg visades aldrig
+- [x] Svenska + engelska texter genomlästa – alla ~900 strängar per språk; engelska exempel i snabbinmatningen som
+      tolken förstår (testade), 30 oanvända strängar borttagna, studiedag/kalas säger "idag/imorgon"
+- [x] Entitlements/Billing-förberedelse, `docs/MONETIZATION.md` – allt upplåst, `NoBilling`, gränsen för gratisversionen
+      kontrolleras i ViewModel (testad). Kraschrapport-reglaget som inte gjorde något är borttaget (ADR-026)
+- [x] `docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md` (sv+en) och `docs/DESIGN.md`
+- [x] Releasebygge (R8), signeringsinstruktioner, lanseringschecklista (SETUP 4–5) – den krympta demo-appen
+      verifierad på emulatorn: alla flikar, snabbinmatning, widget-avbockning (Glance-callback) och "Dela bild"
+- [x] ✅ `./gradlew build` grönt (alla varianter, lint, detekt, ~470 JVM-tester), release-AAB bygger
+      (`bundleProdRelease`, 26 MB, osignerad utan uppladdningsnyckel) – 2026-10-09
 
 ## Fas 5 – V2
 - [ ] Barnvy & veckopeng · kalas/presenter · sök · flerhushållsdelning · fler lunchleverantörer
@@ -130,9 +143,8 @@ Demo-APK på emulatorn (Pixel 9 Pro, API 37) utan backend:
 - FCM end-to-end kräver ett riktigt Firebase-projekt (emulatorn har ingen FCM); mottagare, betalaster och mottagarval är
   testade mot Firestore-emulatorn och i Robolectric.
 
-Nästa steg (fas 4): tillgänglighetsgenomgång och skärmdumpar i stor text, prestanda (kallstart, 500+ varor), tomma lägen och
-felhantering, onboarding < 2 min, genomläsning av sv/en, Entitlements/Billing-förberedelse + `docs/MONETIZATION.md`,
-`docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md`, R8-releasebygge, signering och lanseringschecklista.
+Nästa steg (fas 5, V2): sök, kalas och presenter, barnvy med sysslor och veckopeng, fler lunchleverantörer och
+flerhushållsdelning fullt ut.
 
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.

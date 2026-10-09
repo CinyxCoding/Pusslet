@@ -82,6 +82,8 @@ class ShellScreenshotTest {
     fun calendarMonth() {
         launch()
         compose.onNodeWithText("Kalender").performClick()
+        // The tab composes asynchronously; under a full build the view switcher can be a frame late.
+        compose.waitUntilAtLeastOneExists(hasText("Månad"), timeoutMillis = 10_000)
         compose.onNodeWithText("Månad").performClick()
         compose.waitUntilAtLeastOneExists(hasText("Oktober 2026"), timeoutMillis = 10_000)
         snap("calendar_month")

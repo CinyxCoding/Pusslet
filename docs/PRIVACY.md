@@ -44,6 +44,13 @@ diagnostikdata med Google kan Google Play visa oss anonyma kraschrapporter (Andr
 Barn har inga konton. Bara förnamn krävs; allt annat är frivilligt och fylls i av en förälder. Hjälpare (t.ex. morfar)
 ser bara händelser som delats med dem. Delade bilder kan visa barn och stannar därför på telefonen.
 
+### Andra hemmet
+Bor barnen i två hem kan ni dela dem med det andra hemmet. Då ser föräldrarna i båda hemmen barnens namn och profil,
+vårdnadsschema och det som bara handlar om dem (händelser, packning, läxor och sysslor, önskelistor, skollunch).
+Allergier och kost delas bara om ni slår på det. Resten av er familj – vuxnas händelser, matsedel, inköpslistor,
+recept, veckopeng och det som också gäller barn ni inte delar – syns aldrig för det andra hemmet. Slutar ni dela behåller
+båda hemmen en egen kopia.
+
 ### Tredje parter
 - **Google Firebase** (Authentication, Firestore, Cloud Functions, Cloud Messaging, Hosting) är vårt personuppgiftsbiträde.
   Data lagras i EU (`[europe-north1 / eur3]`). Notiser skickas via Firebase Cloud Messaging och innehåller förnamn,
@@ -110,6 +117,13 @@ settings, Google Play may show us anonymous crash reports (Android vitals).
 ### Children
 Children have no accounts. Only a first name is required; everything else is optional and entered by a parent. Helpers
 (e.g. a grandparent) only see events shared with them. Shared pictures may show children and therefore stay on the phone.
+
+### The other home
+If the children live in two homes, you can share them with the other home. The parents in both homes then see the
+children's names and profiles, their custody schedule and what is only about them (events, packing, homework and chores,
+wishlists, school lunch). Allergies and diets are only shared if you turn that on. The rest of your family – the adults'
+events, meal plan, shopping lists, recipes, pocket money and anything that also involves children you don't share – is
+never visible to the other home. If you stop sharing, both homes keep their own copy.
 
 ### Third parties
 - **Google Firebase** (Authentication, Firestore, Cloud Functions, Cloud Messaging, Hosting) is our processor. Data is

@@ -41,6 +41,8 @@ sealed interface Route {
 
     @Serializable data class Invite(val claimMemberId: String? = null) : Route
 
+    @Serializable data object OtherHome : Route
+
     @Serializable data class Join(val code: String? = null) : Route
 
     @Serializable data class Custody(val scheduleId: String? = null) : Route

@@ -13,7 +13,7 @@ import se.pusslet.feature.calendar.subscriptions.SubscriptionsViewModel
 
 val calendarModule: Module = module {
     viewModel { CalendarViewModel(get(), get(), get(), get(), get()) }
-    viewModel { EventEditorViewModel(get(), get(), get(), get(), get()) }
+    viewModel { EventEditorViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { EventDetailsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SubscriptionsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { AttachmentsViewModel(get()) }

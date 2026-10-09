@@ -14,6 +14,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+import se.pusslet.core.custody.SharedHome
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.Handoff
@@ -25,6 +26,8 @@ import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.usecase.HandoffAssigner
+import se.pusslet.data.usecase.OtherHomeSharing
+import se.pusslet.data.usecase.SharedSpace
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -50,6 +53,8 @@ data class EventDraft(
     val reminder: Int? = null,
     val note: String = "",
     val sharedWithCaregivers: Boolean = true,
+    /** Chosen in the editor; null = decided by what the event is about (ADR-030). */
+    val shareWithOtherHome: Boolean? = null,
 ) {
     val startDateTime: LocalDateTime get() = LocalDateTime(startDate, if (allDay) LocalTime(0, 0) else startTime)
 
@@ -78,8 +83,34 @@ data class EventEditorState(
     val errors: Set<EditorError> = emptySet(),
     val saving: Boolean = false,
     val done: Boolean = false,
+    /** Spaces shared with the other home, for the "shared with the other home" switch. */
+    val spaces: List<SharedSpace> = emptyList(),
+    /** The event already lives in a shared space. */
+    val wasShared: Boolean = false,
 ) {
     val adults: List<FamilyPerson> get() = people.filter { !it.isChild }
+
+    private val sharedChildren: Set<String> get() = spaces.flatMap { s -> s.children.map { it.id } }.toSet()
+
+    /** The switch is offered for events about a shared child (and for ones already shared). */
+    fun canShare(d: EventDraft): Boolean =
+        spaces.isNotEmpty() && !singleOccurrence && (wasShared || d.participants.any { it in sharedChildren })
+
+    /** What the switch shows: the user's choice, else where the event is or would go. */
+    fun shares(d: EventDraft): Boolean = d.shareWithOtherHome ?: if (isNew) {
+        SharedHome(sharedChildren, people.filter { it.isChild }.map { it.id }.toSet()).shares(
+            Event("", "", d.startDateTime, d.endDateTime, participantIds = d.participants.toList()),
+        )
+    } else {
+        wasShared
+    }
+
+    /** Adults offered for drop-off and pick-up: the other home's too when the event is shared. */
+    fun handoffAdults(d: EventDraft): List<FamilyPerson> =
+        if (canShare(d) && shares(d)) adults + otherAdults else adults
+
+    private val otherAdults: List<FamilyPerson>
+        get() = spaces.flatMap { it.otherAdults }.distinctBy { it.id }.map { FamilyPerson.of(it).copy(otherHome = true) }
 }
 
 /**
@@ -90,6 +121,7 @@ class EventEditorViewModel(
     private val calendar: CalendarRepository,
     private val family: FamilyRepository,
     private val sessions: SessionProvider,
+    private val otherHome: OtherHomeSharing,
     private val clock: Clock,
     private val zone: TimeZone,
 ) : ViewModel() {
@@ -122,8 +154,17 @@ class EventEditorViewModel(
                 }
                 else -> draftOf(existing)
             }
-            _state.value =
-                EventEditorState(loaded = true, isNew = existing == null, singleOccurrence = single, draft = draft, people = people)
+            val spaces = otherHome.spaces.first()
+            val wasShared = existing?.let { calendar.sharedSpaceOf(it.id) } != null
+            _state.value = EventEditorState(
+                loaded = true,
+                isNew = existing == null,
+                singleOccurrence = single,
+                draft = draft,
+                people = people,
+                spaces = spaces,
+                wasShared = wasShared,
+            )
         }
     }
 
@@ -215,8 +256,28 @@ class EventEditorViewModel(
                 else -> apply(base, d)
             }
             calendar.saveEvent(event)
+            placeForOtherHome(s, d, event, base)
             _state.update { it.copy(saving = false, done = true) }
         }
+    }
+
+    /**
+     * Puts the event where the switch says: in the space of the shared child it is about, or back home. A changed
+     * occurrence follows its series.
+     */
+    private suspend fun placeForOtherHome(s: EventEditorState, d: EventDraft, event: Event, base: Event?) {
+        if (s.spaces.isEmpty()) return
+        if (s.singleOccurrence && base != null) {
+            calendar.moveEvent(event.id, calendar.sharedSpaceOf(base.seriesId ?: base.id))
+            return
+        }
+        if (!s.canShare(d)) return
+        val target = if (s.shares(d)) {
+            s.spaces.firstOrNull { space -> space.children.any { it.id in d.participants } }?.id ?: s.spaces.first().id
+        } else {
+            null
+        }
+        if (calendar.sharedSpaceOf(event.id) != target) calendar.moveEvent(event.id, target)
     }
 
     /** Deletes the whole event/series, or only the occurrence being edited. */

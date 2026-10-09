@@ -150,7 +150,15 @@ fun EventEditorScreen(
                 }
             }
             if (!d.allDay && d.participants.any { id -> state.people.any { it.id == id && it.isChild } }) {
-                HandoffSection(state.adults, d, onEdit)
+                HandoffSection(state.handoffAdults(d), d, onEdit)
+            }
+            if (state.canShare(d)) {
+                SwitchRow(
+                    stringResource(Res.string.event_other_home),
+                    state.shares(d),
+                    { v -> onEdit { it.copy(shareWithOtherHome = v) } },
+                    supporting = stringResource(Res.string.event_other_home_body),
+                )
             }
             OutlinedTextField(
                 value = d.location,

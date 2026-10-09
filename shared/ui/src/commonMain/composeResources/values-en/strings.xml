@@ -24,6 +24,7 @@
     <string name="action_skip">Skip</string>
     <string name="action_retry">Try again</string>
     <string name="action_share">Share</string>
+    <string name="action_open">Open</string>
     <string name="action_undo">Undo</string>
     <string name="action_confirm">Yes, do it</string>
     <string name="nobody">Nobody</string>
@@ -1128,4 +1129,40 @@
     <string name="allowance_per_star">Kr per star</string>
     <string name="allowance_week_line">%1$d ⭐ · %2$d kr</string>
     <string name="allowance_paid">Paid</string>
+
+    <!-- The other home (ADR-030) -->
+    <string name="other_home_title">The other home</string>
+    <string name="other_home_intro">Do the children live in two homes? Share their custody schedule, events, packing and homework with the other home. Everything else in your family stays yours.</string>
+    <string name="other_home_unavailable">This version of the app isn't connected to a server, so you can't share with the other home.</string>
+    <string name="other_home_needs_account">Sign in to share with the other home.</string>
+    <string name="other_home_pick_children">Which children do you share with the other home?</string>
+    <string name="other_home_share_existing">Share the children's existing events and chores</string>
+    <string name="other_home_share_existing_body">Otherwise only what you add from now on is shared. Anything that also involves a child you don't share stays with you.</string>
+    <string name="other_home_share_diets">Share allergies and diets</string>
+    <string name="other_home_share_diets_body">Sensitive data – only turn this on if both homes need it.</string>
+    <string name="other_home_premium">Starting to share with the other home is part of Premium. Joining when the other home invites you is always free.</string>
+    <string name="other_home_start">Share with the other home</string>
+    <string name="other_home_invite_ready">Give the code to the other home. They enter it in the app under More → Family → The other home.</string>
+    <string name="other_home_share_text">%1$s wants to share %2$s with you in %3$s. Enter the code %4$s under More → Family → The other home.</string>
+    <string name="other_home_shared_with">Shared with %1$s</string>
+    <string name="other_home_waiting">Waiting for the other home to join</string>
+    <string name="other_home_diets_shared">Allergies and diets are shared.</string>
+    <string name="other_home_diets_private">Allergies and diets stay with you.</string>
+    <string name="other_home_new_code">New code</string>
+    <string name="other_home_stop">Stop sharing</string>
+    <string name="other_home_stop_confirm">Stop sharing %1$s? You keep your own copy of everything, and the other home keeps theirs.</string>
+    <string name="other_home_join_title">Got a code from the other home?</string>
+    <string name="other_home_join_intro">%1$s wants to share %2$s with you.</string>
+    <string name="other_home_match_title">Who is %1$s in your family?</string>
+    <string name="other_home_match_same">Our %1$s</string>
+    <string name="other_home_match_new">New to us</string>
+    <string name="other_home_join_existing">Share your events and chores for the children too</string>
+    <string name="other_home_join_custody">The shared custody schedule replaces your own for these children.</string>
+    <string name="other_home_family_invite">This is an invite to a family. Enter it under Join a family.</string>
+    <string name="other_home_already">You already share with this home.</string>
+    <string name="other_home_from_join">This code is from the other home. Create your own family first, then enter the code under More → Family → The other home.</string>
+    <string name="family_other_home">The other home</string>
+    <string name="family_other_home_none">Share the children's schedule with the other home without sharing the rest.</string>
+    <string name="event_other_home">Shared with the other home</string>
+    <string name="event_other_home_body">Both homes see and can change the event.</string>
 </resources>

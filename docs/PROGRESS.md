@@ -126,7 +126,12 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Fler lunchleverantörer (ADR-029) – Matilda via matsedelns officiella RSS (klistra in länken på barnprofilen; rätter
       och tillbehör per dag), felmeddelande om länken saknar matsedel, källan under Om data. Mashie/Open Meal Information
       saknar öppet flöde som går att nå – "Egen RSS-länk" och manuell inmatning finns kvar. 4 tester mot riktig fixtur
-- [ ] Flerhushållsdelning fullt ut
+- [x] Flerhushållsdelning fullt ut (ADR-030) – "Andra hemmet": barnen man delar, deras vårdnadsschema och det som bara
+      handlar om dem bor i ett delat utrymme som båda hemmens föräldrar synkar (allergier bara om man vill). Starta med kod,
+      gå med och para ihop sitt eget barn med det delade, andra föräldern i hemmet följer med utan kod, sluta dela med egen
+      kopia. Händelseredigeraren: "Delas med andra hemmet", andra hemmets vuxna kan hämta/lämna. Regler (bara barnens
+      samlingar, `viaFamily`), kalenderflödet tar med delade händelser, "Radera familjen" lämnar utrymmet. 3 kärn-,
+      2 tvåhems- (Ahmed, Sara och Lina mot en gemensam fejkserver), 3 redigerar-, 4 regel- och 3 funktionstester, skärmdump
 
 ## Verifiering fas 1 (2026-10-08)
 Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestore):

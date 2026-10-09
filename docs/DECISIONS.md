@@ -276,3 +276,31 @@ börjar med versal ("pannbiff med lök & gräddsås" är en rätt) och sätter r
 appversion läser en okänd leverantör som manuell i stället för att tappa barnet.
 **Konsekvens:** Ingen skrapning – bara flödet som Matilda själva erbjuder. Fler leverantörer läggs till som egna
 `LunchMenuProvider` när de har ett öppet flöde; tills dess finns "Egen RSS-länk" och manuell inmatning.
+
+## ADR-030 – Andra hemmet: ett delat utrymme per barn i två hem
+**Kontext:** BRIEF: delad vårdnad, "ett barn tillhör två hushåll" i datamodellen, full flerhushållsdelning i V2. Fas 2 gav
+vårdnadsschema och en skrivskyddad överlämningslänk. Det andra hemmet har ofta en egen Pusslet-familj (ny partner, syskon)
+och ska se barnens schema, packning och läxor – men inget annat. Firestore-reglerna kan inte filtrera på "händelser om
+Ella", och dubbla kopior av barnet i två familjer går inte att hålla ihop.
+**Beslut:** Barnen man delar flyttar till ett *delat utrymme*: ett vanligt `families/{id}`-dokument med `shared: true`,
+`familyIds` (hemmen) och `shareDiets`. Hemmet listar sina utrymmen i `sharedSpaces`. Föräldrarna i båda hemmen är
+föräldrar i utrymmet, så befintliga regler, synkmotor och Room-nycklar fungerar som för en familj. Utrymmet får bara
+innehålla barnens samlingar (barn, vårdnadsschema, händelser, packning, uppgifter, förfrågningar, kost, skollunch,
+önskelistor; reglerna och `Collections.inSpaces` säger samma sak) och `shared` kan aldrig ändras.
+- **Vad som delas** avgörs av `SharedHome` i kärnan: det som bara handlar om delade barn. Något som också gäller ett barn
+  som inte delas (halvsyskon) stannar hemma. Allergier och kost bara om föräldern slår på det. Nytt om ett delat barn
+  hamnar i utrymmet automatiskt (`SpacePlacement`); i händelseredigeraren kan man ändra det ("Delas med andra hemmet").
+- **Telefonen** synkar familjen och utrymmena (sessionens `spaceIds`). `DocumentStore` slår ihop barnens samlingar
+  (utrymmets kopia vinner), skriver tillbaka där dokumentet finns och flyttar dokument med samma id, så alla referenser
+  håller. Andra hemmets vuxna visas med namn (`FamilyRepository.everyone`) men erbjuds inte för hemmets egna saker.
+- **Starta:** barnen, deras vårdnadsschema och (om man vill) befintliga händelser m.m. flyttar; en kod skapas.
+  **Gå med:** koden är en vanlig inbjudan med `shared`; man anger vilket av sina barn som är samma barn, och hemmets
+  data pekas om till det delade id:t (UUID-ersättning i alla dokument) – det egna vårdnadsschemat för barnet ersätts av
+  det delade. Hemmets andra förälder går med utan kod (`viaFamily` i reglerna: förälder i ett hem som utrymmet listar,
+  som samma person). **Sluta dela:** hemmet får en egen kopia av allt, tas bort ur utrymmet och telefonen glömmer det;
+  det andra hemmet behåller sitt. "Radera familjen" gör samma sak på servern, och ett utrymme utan föräldrar raderas.
+- Familjens kalenderflöde tar med utrymmenas händelser, men bara från utrymmen som listar hemmet tillbaka.
+**Konsekvens:** Hjälpare (morfar) ser inte det delade – de är bara med i sitt hem. En ändring som görs offline precis
+när ett dokument flyttas kan hamna i hemmets gamla kopia. Att dela med andra hemmet är en premiumkandidat
+(`Feature.SharedCustody`, kontrolleras när man startar); att gå med är alltid gratis.
+

@@ -86,9 +86,13 @@ data class EventDetailsState(
     val myMemberId: String? = null,
     val role: Role = Role.Parent,
     val requests: List<HandoffRequest> = emptyList(),
+    /** The event lives in a space shared with the other home (ADR-030). */
+    val sharedWithOtherHome: Boolean = false,
 ) {
     val editable: Boolean get() = occurrence?.source == EventSource.Family && role == Role.Parent
-    val adults: List<FamilyPerson> get() = people.filter { !it.isChild }
+
+    /** Who can drop off or pick up: the other home's adults only for a shared event. */
+    val adults: List<FamilyPerson> get() = people.filter { !it.isChild && (!it.otherHome || sharedWithOtherHome) }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -112,7 +116,7 @@ class EventDetailsViewModel(
         }
     }
 
-    val state: StateFlow<EventDetailsState> = combine(occurrence, family.people, sessions.session, calendar.handoffRequests) {
+    val state: StateFlow<EventDetailsState> = combine(occurrence, family.everyone, sessions.session, calendar.handoffRequests) {
         o,
         people,
         session,
@@ -128,6 +132,7 @@ class EventDetailsViewModel(
                 o != null && it.eventId == o.event.id && it.occurrenceDate == o.occurrenceDate &&
                     it.status == RequestStatus.Pending
             },
+            sharedWithOtherHome = o?.source == EventSource.Family && calendar.sharedSpaceOf(o.event.seriesId ?: o.event.id) != null,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EventDetailsState())
 
@@ -312,6 +317,13 @@ fun EventDetailsScreen(
                 SectionCard(stringResource(Res.string.event_note)) { Text(o.event.note, style = MaterialTheme.typography.bodyLarge) }
             }
             attachments(o)
+            if (state.sharedWithOtherHome) {
+                Text(
+                    stringResource(Res.string.event_other_home) + ". " + stringResource(Res.string.event_other_home_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (o.source == EventSource.Family && !o.event.sharedWithCaregivers) {
                 Text(
                     stringResource(Res.string.event_private_hint),

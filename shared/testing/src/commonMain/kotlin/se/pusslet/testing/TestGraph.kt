@@ -42,6 +42,7 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.InMemorySyncLocalStore
 import se.pusslet.data.usecase.AllowanceRepository
 import se.pusslet.data.usecase.MealShopping
+import se.pusslet.data.usecase.OtherHomeSharing
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
 import kotlin.time.Instant
@@ -80,6 +81,8 @@ class TestGraph(
     val nutrition = RecipeNutrition(foods, recipes)
     val mealShopping = MealShopping(meals, recipes, shopping, family, sessions, ids, clock, zone)
     val products = FakeProductLookup()
+    val auth = LocalOnlyAuthRepository()
+    val otherHome = OtherHomeSharing(docs, local, sessions, LocalOnlyFamilyRemote, auth, ids, clock)
 
     /** url -> HTML for the recipe importer; anything else is 404. */
     val pages = mutableMapOf<String, String>()

@@ -1,5 +1,6 @@
 package se.pusslet.android.notify
 
+import android.annotation.SuppressLint
 import co.touchlab.kermit.Logger
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -81,7 +82,11 @@ class PushRegistration(
     }
 }
 
-/** Data-only pushes from the backend become the same notifications the app shows while running. */
+/**
+ * Data-only pushes from the backend become the same notifications the app shows while running.
+ * Token changes arrive in [onRegistered]: firebase-messaging 25 deprecated onNewToken for it, which Lint does not know yet.
+ */
+@SuppressLint("MissingFirebaseInstanceTokenRefresh")
 class PussletMessagingService : FirebaseMessagingService(), KoinComponent {
     private val alerts: FamilyAlerts by inject()
 

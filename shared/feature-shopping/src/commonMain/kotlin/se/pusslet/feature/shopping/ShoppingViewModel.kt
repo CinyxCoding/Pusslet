@@ -29,9 +29,7 @@ import se.pusslet.core.model.Store
 import se.pusslet.core.shopping.AisleClassifier
 import se.pusslet.core.shopping.AisleGroup
 import se.pusslet.core.shopping.Purchase
-import se.pusslet.core.shopping.ShoppingInput
 import se.pusslet.core.shopping.ShoppingListGenerator
-import se.pusslet.core.shopping.ShoppingNames
 import se.pusslet.core.shopping.StapleSuggester
 import se.pusslet.core.shopping.StapleSuggestion
 import se.pusslet.core.util.IdGenerator
@@ -41,6 +39,7 @@ import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sources.ProductLookup
+import se.pusslet.data.usecase.ShoppingQuickAdd
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
@@ -99,6 +98,7 @@ class ShoppingViewModel(
     private val selectedId = MutableStateFlow<String?>(null)
     private val unknownBarcode = MutableStateFlow<String?>(null)
     private val scanning = MutableStateFlow(false)
+    private val quickAdd = ShoppingQuickAdd(shopping, prefs, sessions, ids, clock)
     private val messageChannel = Channel<ShoppingMessage>(Channel.BUFFERED)
     val messages: Flow<ShoppingMessage> = messageChannel.receiveAsFlow()
     private val me get() = sessions.session.value.memberId
@@ -185,38 +185,13 @@ class ShoppingViewModel(
     init {
         launch {
             prefs.get(Prefs.ActiveShoppingList).takeIf { it.isNotEmpty() }?.let {
-                if (selectedId.value ==
-                    null
-                ) {
-                    selectedId.value = it
-                }
+                if (selectedId.value == null) selectedId.value = it
             }
         }
     }
 
     /** "mjölk, 2 gurka och pasta" -> three items, each in its aisle (the family's own corrections win). */
-    fun addText(text: String) = withList { list ->
-        val overrides = shopping.aisleOverrides.first()
-        val parsed = ShoppingInput.parse(text)
-        val open = shopping.getItems(list.id).filter { !it.checked }
-        for (p in parsed) {
-            // Typing "mjölk" when milk is already on the list does not add a second line.
-            val existing = open.firstOrNull { ShoppingNames.canonical(it.name) == ShoppingNames.canonical(p.name) }
-            if (existing != null && p.quantity == null) continue
-            shopping.saveItem(
-                ShoppingItem(
-                    id = ids.newId(),
-                    listId = list.id,
-                    name = p.name,
-                    quantity = p.quantity?.value,
-                    unit = p.quantity?.unit,
-                    aisle = AisleClassifier.classify(p.name, overrides),
-                    addedBy = me,
-                    addedAt = clock.now(),
-                ),
-            )
-        }
-    }
+    fun addText(text: String) = withList { list -> quickAdd.add(list.id, text) }
 
     fun setChecked(item: ShoppingItem, checked: Boolean) = launch {
         shopping.setChecked(item, checked)

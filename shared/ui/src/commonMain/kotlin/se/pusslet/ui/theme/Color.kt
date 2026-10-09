@@ -46,6 +46,12 @@ internal object PussletPalette {
     val Ink = Color(0xFF1F1C17)
 }
 
+/** The app's colour schemes for surfaces outside Compose UI (home-screen widgets). */
+object PussletColorSchemes {
+    val light: ColorScheme get() = LightColors
+    val dark: ColorScheme get() = DarkColors
+}
+
 internal val LightColors: ColorScheme = with(PussletPalette) {
     lightColorScheme(
         primary = Sage40,

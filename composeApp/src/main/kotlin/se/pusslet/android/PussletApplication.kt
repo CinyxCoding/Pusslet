@@ -10,6 +10,7 @@ import org.koin.core.context.startKoin
 import se.pusslet.android.di.androidModule
 import se.pusslet.android.notify.Notifications
 import se.pusslet.android.notify.PushRegistration
+import se.pusslet.android.widget.WidgetUpdates
 import se.pusslet.android.work.BackgroundWork
 import se.pusslet.core.AppConfig
 import se.pusslet.data.AppCoordinator
@@ -34,6 +35,7 @@ class PussletApplication : Application() {
         get<ReminderSync>().start(get(AppScope))
         get<HandoffRequests>().watch(get(AppScope), get())
         get<PushRegistration>().start(get(AppScope))
+        get<WidgetUpdates>().start(get(AppScope))
         get<CoroutineScope>(AppScope).launch { Notifications.createChannels(this@PussletApplication) }
         BackgroundWork.schedule(this)
     }

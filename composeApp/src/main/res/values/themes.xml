@@ -7,6 +7,14 @@
         <item name="android:windowBackground">@color/pusslet_background</item>
     </style>
 
+    <!-- The widget's quick add: only the dialog shows, over the home screen. -->
+    <style name="Theme.Pusslet.Translucent" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
     <style name="Theme.Pusslet.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/pusslet_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>

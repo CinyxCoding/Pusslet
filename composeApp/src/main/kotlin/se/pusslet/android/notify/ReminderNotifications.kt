@@ -28,6 +28,7 @@ import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.usecase.NotificationScheduler
 import se.pusslet.data.usecase.TodayPlans
 import se.pusslet.ui.components.Labels
+import se.pusslet.ui.format.joinNamesText
 import se.pusslet.ui.resources.*
 import kotlin.math.roundToInt
 import kotlin.time.Clock
@@ -103,7 +104,7 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
     private suspend fun handoff(p: PlannedNotification.Handoff): NotificationContent {
         val people = family.people.first().associateBy { it.id }
         val names = p.childIds.mapNotNull { people[it]?.name }
-        val joined = joinNames(names)
+        val joined = joinNamesText(names)
         val title = when {
             names.isEmpty() && p.kind == HandoffKind.PickUp -> getString(Res.string.notify_pickup_title_plain)
             names.isEmpty() -> getString(Res.string.notify_dropoff_title_plain)
@@ -141,7 +142,7 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
                 is TimelineItem.EventItem -> item.occurrence.event.title
                 is TimelineItem.HandoffItem -> {
                     val who = item.person?.name.orEmpty()
-                    val kids = joinNames(item.children.map { it.name })
+                    val kids = joinNamesText(item.children.map { it.name })
                     getString(if (item.kind == HandoffKind.PickUp) Res.string.today_pickup else Res.string.today_dropoff) +
                         " $kids" + if (who.isNotEmpty()) " – $who" else ""
                 }
@@ -152,15 +153,9 @@ class NotificationWorker(context: Context, params: WorkerParameters) : Coroutine
         val packing = plan.packing.flatMap { p ->
             p.items.filter { !it.checked }.map { getString(Res.string.notify_item_child, it.text, p.child.name) }
         }
-        if (packing.isNotEmpty()) add(getString(Res.string.notify_morning_packing, joinNames(packing)))
+        if (packing.isNotEmpty()) add(getString(Res.string.notify_morning_packing, joinNamesText(packing)))
         plan.dinner?.let { add(getString(Res.string.notify_morning_dinner, it.title)) }
         if (plan.myTasks.isNotEmpty()) add(getString(Res.string.notify_morning_tasks, plan.myTasks.size))
-    }
-
-    private suspend fun joinNames(names: List<String>): String = when (names.size) {
-        0 -> ""
-        1 -> names.first()
-        else -> names.dropLast(1).joinToString(getString(Res.string.list_separator)) + getString(Res.string.and_separator) + names.last()
     }
 
     private fun formatTime(h: Int, m: Int) = "${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}"

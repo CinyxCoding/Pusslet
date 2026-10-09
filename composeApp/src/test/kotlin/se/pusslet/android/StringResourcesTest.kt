@@ -34,6 +34,17 @@ class StringResourcesTest {
 
     private val placeholder = Regex("""%(\d+\$)?[sd]""")
 
+    /** The few Android resources the launcher reads from the manifest (widget picker). */
+    @Test
+    fun androidWidgetLabelsAreTranslated() {
+        fun keys(folder: String): Set<String> {
+            val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(File("src/main/res/$folder/widget_strings.xml"))
+            val nodes = doc.documentElement.getElementsByTagName("string")
+            return (0 until nodes.length).map { (nodes.item(it) as Element).getAttribute("name") }.toSet()
+        }
+        assertEquals(keys("values"), keys("values-en"))
+    }
+
     @Test
     fun swedishAndEnglishHaveTheSameKeys() {
         val sv = load("values")

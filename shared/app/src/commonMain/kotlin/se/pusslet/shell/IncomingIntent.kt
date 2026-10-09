@@ -7,6 +7,9 @@ sealed interface IncomingIntent {
     /** Text shared to Pusslet (e.g. a message from school) opens quick add with the text filled in. */
     data class SharedText(val text: String) : IncomingIntent
 
+    /** A home-screen widget opening its part of the app. */
+    data class OpenTab(val tab: se.pusslet.shell.navigation.TopLevelTab) : IncomingIntent
+
     /** A tapped notification about an event occurrence. */
     data class OpenEvent(val eventId: String, val occurrenceDate: kotlinx.datetime.LocalDate) : IncomingIntent
 

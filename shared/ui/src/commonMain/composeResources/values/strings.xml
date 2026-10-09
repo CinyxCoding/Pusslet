@@ -1025,4 +1025,19 @@
     <string name="empty_meals">Ingen matsedel planerad den här veckan.</string>
     <string name="empty_shopping">Inköpslistan är tom. Skönt!</string>
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
+
+    <!-- Home-screen widgets -->
+    <string name="widget_all_day">Hela dagen</string>
+    <string name="widget_now">Nu</string>
+    <string name="widget_more_today">+%1$d till idag</string>
+    <string name="widget_handoff">%1$s %2$s – %3$s</string>
+    <string name="widget_handoff_plain">%1$s – %2$s</string>
+    <string name="widget_bring">Ska med</string>
+    <string name="widget_nothing_more">Inget mer idag</string>
+    <string name="widget_quiet">Inget inplanerat idag</string>
+    <string name="widget_not_set_up">Öppna Pusslet för att komma igång</string>
+    <string name="widget_shopping_empty">Listan är tom. Tryck + för att lägga till.</string>
+    <string name="widget_shopping_add">Lägg till på listan</string>
+    <string name="widget_shopping_item">%1$s · %2$s</string>
+    <string name="widget_shopping_add_title">Lägg till på %1$s</string>
 </resources>

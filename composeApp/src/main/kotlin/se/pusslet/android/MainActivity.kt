@@ -14,10 +14,12 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import kotlinx.datetime.LocalDate
 import se.pusslet.android.notify.Notifications
 import se.pusslet.android.platform.AndroidPlatformActions
+import se.pusslet.android.widget.WidgetIntents
 import se.pusslet.core.util.InviteCodes
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.shell.IncomingIntent
 import se.pusslet.shell.PussletApp
+import se.pusslet.shell.navigation.TopLevelTab
 import se.pusslet.ui.platform.LocalPlatformActions
 
 /**
@@ -45,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         parse(intent)?.let { incoming = it }
     }
 
-    private fun parse(intent: Intent?): IncomingIntent? = openEvent(intent) ?: when (intent?.action) {
+    private fun parse(intent: Intent?): IncomingIntent? = openEvent(intent) ?: openTab(intent) ?: when (intent?.action) {
         Intent.ACTION_VIEW -> intent.data?.let { uri ->
             if (uri.scheme.equals("webcal", ignoreCase = true) || uri.scheme.equals("webcals", ignoreCase = true)) {
                 IncomingIntent.SharedLink(uri.toString())
@@ -64,6 +66,11 @@ class MainActivity : AppCompatActivity() {
         val id = intent?.getStringExtra(Notifications.EXTRA_EVENT_ID) ?: return null
         val date = intent.getStringExtra(Notifications.EXTRA_DATE)?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
         return IncomingIntent.OpenEvent(id, date)
+    }
+
+    /** From a widget: open its tab. */
+    private fun openTab(intent: Intent?): IncomingIntent? = intent?.getStringExtra(WidgetIntents.EXTRA_TAB)?.let { name ->
+        TopLevelTab.entries.firstOrNull { it.name == name }?.let { IncomingIntent.OpenTab(it) }
     }
 
     /** A shared page ("Krämig kycklinggryta https://…") goes to recipe import; anything else to quick add. */

@@ -53,6 +53,7 @@ import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
 import se.pusslet.data.usecase.ReminderSync
+import se.pusslet.data.usecase.ShoppingQuickAdd
 import se.pusslet.data.usecase.TodayPlans
 import kotlin.time.Clock
 
@@ -98,6 +99,7 @@ val dataModule: Module = module {
     single { ReminderSync(get(), get(), get(), get(), get(), get(), get(), get()) }
     single { TodayPlans(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { HandoffRequests(get(), get(), get(), get(), get(), get()) }
+    single { ShoppingQuickAdd(get(), get(), get(), get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

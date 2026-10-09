@@ -8,6 +8,9 @@ import se.pusslet.android.calendar.AndroidDeviceCalendarSource
 import se.pusslet.android.notify.AndroidFamilyAlerts
 import se.pusslet.android.notify.PushRegistration
 import se.pusslet.android.notify.WorkManagerNotificationScheduler
+import se.pusslet.android.widget.ShoppingWidgetContent
+import se.pusslet.android.widget.TodayWidgetContent
+import se.pusslet.android.widget.WidgetUpdates
 import se.pusslet.core.AppConfig
 import se.pusslet.data.BackendConfig
 import se.pusslet.data.BackendMode
@@ -39,6 +42,9 @@ fun androidModule(config: BackendConfig): Module = module {
     single<NotificationScheduler> { WorkManagerNotificationScheduler(androidContext(), get()) }
     single<FamilyAlerts> { AndroidFamilyAlerts(androidContext(), get(AppScope), get(), get(), get()) }
     single { PushRegistration(get(), get(), get(), get(), get()) }
+    single { TodayWidgetContent(get(), get(), get(), get()) }
+    single { ShoppingWidgetContent(get(), get(), get(), get()) }
+    single { WidgetUpdates(androidContext(), get(), get(), get(), get(), get()) }
 
     if (config.mode == BackendMode.LocalOnly) {
         single<RemoteStore> { OfflineRemoteStore }

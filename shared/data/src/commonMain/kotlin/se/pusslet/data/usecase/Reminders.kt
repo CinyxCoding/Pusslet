@@ -121,8 +121,8 @@ class TodayPlans(
     private val sessions: SessionProvider,
     private val zone: TimeZone,
 ) {
-    suspend fun plan(date: LocalDate, now: LocalTime): TodayPlan {
-        val place = family.settings.first().weatherPlace
+    suspend fun plan(date: LocalDate, now: LocalTime, withWeather: Boolean = true): TodayPlan {
+        val place = family.settings.first().weatherPlace?.takeIf { withWeather }
         val forecast = place?.let { runCatching { weather.forecast(it, force = false) }.getOrNull()?.value }
         return TodayPlanner.build(
             TodayInput(

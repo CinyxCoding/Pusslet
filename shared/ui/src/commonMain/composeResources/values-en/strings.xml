@@ -1024,4 +1024,19 @@
     <string name="empty_meals">No meal plan for this week yet.</string>
     <string name="empty_shopping">The shopping list is empty. Nice!</string>
     <string name="empty_more">Family, tasks and settings live here.</string>
+
+    <!-- Home-screen widgets -->
+    <string name="widget_all_day">All day</string>
+    <string name="widget_now">Now</string>
+    <string name="widget_more_today">+%1$d more today</string>
+    <string name="widget_handoff">%1$s %2$s – %3$s</string>
+    <string name="widget_handoff_plain">%1$s – %2$s</string>
+    <string name="widget_bring">Bring</string>
+    <string name="widget_nothing_more">Nothing more today</string>
+    <string name="widget_quiet">Nothing planned today</string>
+    <string name="widget_not_set_up">Open Pusslet to get started</string>
+    <string name="widget_shopping_empty">The list is empty. Tap + to add.</string>
+    <string name="widget_shopping_add">Add to the list</string>
+    <string name="widget_shopping_item">%1$s · %2$s</string>
+    <string name="widget_shopping_add_title">Add to %1$s</string>
 </resources>

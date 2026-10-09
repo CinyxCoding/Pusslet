@@ -151,6 +151,7 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
                 showQuickAdd = true
             }
             is IncomingIntent.OpenEvent -> navigator.navigate(Route.EventDetails(incoming.eventId, incoming.occurrenceDate))
+            is IncomingIntent.OpenTab -> navigator.selectTab(incoming.tab)
             is IncomingIntent.SharedLink -> navigator.navigate(
                 if (incoming.isCalendarFeed) Route.Subscriptions(incoming.url) else Route.RecipeEditor(link = true, url = incoming.url),
             )

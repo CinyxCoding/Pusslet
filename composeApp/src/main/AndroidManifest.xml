@@ -72,6 +72,38 @@
             android:name=".notify.HandoffAnswerReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".widget.TodayWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_today_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_today_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.ShoppingWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_shopping_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_shopping_info" />
+        </receiver>
+
+        <activity
+            android:name=".widget.ShoppingQuickAddActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Pusslet.Translucent"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+
         <service
             android:name=".notify.PussletMessagingService"
             android:exported="false">

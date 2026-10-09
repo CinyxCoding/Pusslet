@@ -1,14 +1,18 @@
 package se.pusslet.shell
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -29,7 +33,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -94,10 +100,12 @@ import se.pusslet.ui.resources.nav_meals
 import se.pusslet.ui.resources.nav_more
 import se.pusslet.ui.resources.nav_shopping
 import se.pusslet.ui.resources.nav_today
+import se.pusslet.ui.resources.offline_notice
 import se.pusslet.ui.resources.quick_add
 import se.pusslet.ui.resources.quick_add_description
 import se.pusslet.ui.resources.quickadd_saved
 import se.pusslet.ui.theme.PussletTheme
+import se.pusslet.ui.theme.Spacing
 
 /**
  * Root composable shared by Android and iOS: theme, onboarding gate, bottom navigation with one back stack per tab,
@@ -115,7 +123,7 @@ fun PussletApp(
             when {
                 !state.ready -> LoadingBox()
                 !state.onboarded -> OnboardingFlow(incoming, onIncomingHandled)
-                else -> MainShell(incoming, onIncomingHandled)
+                else -> MainShell(incoming, onIncomingHandled, state.offlineWithChanges)
             }
         }
     }
@@ -141,7 +149,7 @@ private fun OnboardingFlow(incoming: IncomingIntent?, onIncomingHandled: () -> U
 }
 
 @Composable
-private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) {
+private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit, offline: Boolean) {
     val navigator = rememberAppNavigator()
     val quickAdd: QuickAddViewModel = koinViewModel()
     var showQuickAdd by rememberSaveable { mutableStateOf(false) }
@@ -186,7 +194,12 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
     }
 
     Scaffold(
-        bottomBar = { if (navigator.atTabRoot) PussletBottomBar(navigator) },
+        bottomBar = {
+            Column {
+                if (offline) OfflineStrip()
+                if (navigator.atTabRoot) PussletBottomBar(navigator)
+            }
+        },
         floatingActionButton = {
             if (navigator.atTabRoot && navigator.currentTab != TopLevelTab.More) {
                 QuickAddButton(onClick = {
@@ -203,6 +216,21 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
     }
     if (showQuickAdd) {
         QuickAddSheet(viewModel = quickAdd, onDismiss = { showQuickAdd = false }, onSaved = ::onSaved)
+    }
+}
+
+/** "Du är offline – ändringar sparas och skickas när du har nät igen." Read out once by TalkBack when it appears. */
+@Composable
+private fun OfflineStrip() {
+    Surface(color = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) {
+        Text(
+            stringResource(Res.string.offline_notice),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm)
+                .semantics { liveRegion = LiveRegionMode.Polite },
+        )
     }
 }
 

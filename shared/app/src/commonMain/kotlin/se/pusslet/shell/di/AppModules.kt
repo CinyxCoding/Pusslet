@@ -14,7 +14,7 @@ import se.pusslet.shell.ShellViewModel
 import se.pusslet.shell.quickadd.QuickAddViewModel
 
 val shellModule: Module = module {
-    viewModel { ShellViewModel(get(), get(), get()) }
+    viewModel { ShellViewModel(get(), get(), get(), get()) }
     viewModel { QuickAddViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }
 

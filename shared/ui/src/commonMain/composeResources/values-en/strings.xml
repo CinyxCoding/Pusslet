@@ -26,13 +26,10 @@
     <string name="action_share">Share</string>
     <string name="action_undo">Undo</string>
     <string name="action_confirm">Yes, do it</string>
-    <string name="action_change">Change</string>
-    <string name="action_show_all">Show all</string>
     <string name="nobody">Nobody</string>
     <string name="everyone">Everyone</string>
     <string name="optional">optional</string>
     <string name="loading">Loading…</string>
-    <string name="error_generic">Something went wrong. Please try again in a moment.</string>
     <string name="offline_notice">You are offline – changes are saved and sent when you are back online.</string>
     <string name="list_separator">, </string>
     <string name="and_separator"> and </string>
@@ -90,7 +87,6 @@
     <string name="week_short">w. %1$d</string>
     <string name="week_long">Week %1$d</string>
     <string name="time_range">%1$s–%2$s</string>
-    <string name="at_time">at %1$s</string>
     <string name="all_day">All day</string>
     <string name="today">Today</string>
     <string name="tomorrow">Tomorrow</string>
@@ -110,7 +106,6 @@
     <string name="today_weather_stale">Weather from %1$s – could not update</string>
     <string name="today_weather_missing">Choose a place in settings to get weather and clothing tips.</string>
     <string name="today_weather_unavailable">The weather could not be loaded right now.</string>
-    <string name="today_clothes_for">%1$s: %2$s</string>
     <string name="today_timeline_title">The day</string>
     <string name="today_packing_title">To bring today</string>
     <string name="today_packing_empty">Nothing extra to pack today.</string>
@@ -131,11 +126,9 @@
     <string name="today_custody_next">Next changeover %1$s</string>
     <string name="today_dropoff">Drop-off</string>
     <string name="today_pickup">Pick-up</string>
-    <string name="today_handoff_line">%1$s %2$s</string>
     <string name="today_handoff_nobody">Nobody assigned yet</string>
     <string name="today_quiet">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
     <string name="today_overdue">Overdue</string>
-    <string name="today_holiday">%1$s</string>
 
     <!-- Context cards -->
     <string name="card_nobody_pickup">%1$s are busy at %2$s – nobody can pick up %3$s</string>
@@ -149,7 +142,6 @@
     <string name="card_party_gift">Party %1$s – no present bought yet</string>
     <string name="card_squeeze_day">Bridge day %1$s – day off or after-school care?</string>
     <string name="card_handover">Changeover %1$s: the children move to %2$s</string>
-    <string name="card_action_ask">Ask for help</string>
     <string name="card_action_take">I'll take it</string>
     <string name="card_action_add_task">Add a to-do</string>
     <string name="card_action_open">Show</string>
@@ -265,9 +257,7 @@
     <string name="quickadd_handoff_pickup">%1$s picks up %2$s</string>
     <string name="quickadd_handoff_dropoff">%1$s drops off %2$s</string>
     <string name="quickadd_handoff_all_children">the children</string>
-    <string name="quickadd_no_handoff_found">There was no drop-off/pick-up that day, so I added a new pick-up at %1$s.</string>
     <string name="quickadd_linked_task">Linked to the event</string>
-    <string name="quickadd_meal_slot">%1$s, %2$s</string>
     <string name="field_title">Title</string>
     <string name="field_date">Date</string>
     <string name="field_time">Time</string>
@@ -278,7 +268,6 @@
     <string name="field_location">Place</string>
     <string name="field_due">Due</string>
     <string name="field_assignee">Responsible</string>
-    <string name="field_items">Items</string>
     <string name="meal_breakfast">Breakfast</string>
     <string name="meal_lunch">Lunch</string>
     <string name="meal_dinner">Dinner</string>
@@ -301,8 +290,6 @@
     <string name="calendar_edit_event">Edit event</string>
     <string name="calendar_previous">Previous</string>
     <string name="calendar_next">Next</string>
-    <string name="calendar_go_today">Go to today</string>
-    <string name="calendar_more_events">+%1$d more</string>
     <string name="event_all_day">All day</string>
     <string name="event_participants">Who is it for?</string>
     <string name="event_dropoff">Drops off</string>
@@ -386,7 +373,6 @@
     <string name="family_add_adult">Add adult</string>
     <string name="family_custody">Shared custody</string>
     <string name="family_custody_none">No schedule. Add one if the children live in two homes.</string>
-    <string name="family_rename">Rename the family</string>
     <string name="family_me">you</string>
     <string name="member_nickname">What do you call them?</string>
     <string name="member_nickname_hint">E.g. Grandpa</string>
@@ -402,7 +388,6 @@
     <string name="invite_role_parent">Parent – sees and edits everything</string>
     <string name="invite_role_caregiver">Other adult – sees what is shared and can tick things off</string>
     <string name="invite_claim">For %1$s</string>
-    <string name="invite_claim_new">A new person</string>
     <string name="invite_create">Create invite</string>
     <string name="invite_code_label">Code</string>
     <string name="invite_valid_until">Valid until %1$s</string>
@@ -417,7 +402,6 @@
     <string name="child_avatar">Symbol</string>
     <string name="child_color">Colour</string>
     <string name="child_birth_date">Date of birth</string>
-    <string name="child_birth_hint">YYYY-MM-DD</string>
     <string name="child_school">School or preschool</string>
     <string name="child_class">Class or group</string>
     <string name="child_lunch">School lunch</string>
@@ -431,7 +415,6 @@
     <string name="size_top">Top</string>
     <string name="size_shoes">Shoes</string>
     <string name="size_outerwear">Outerwear</string>
-    <string name="size_noted">%1$s (%2$s)</string>
     <string name="child_contacts">Important contacts</string>
     <string name="contact_name">Name</string>
     <string name="contact_relation">Who is it?</string>
@@ -444,7 +427,6 @@
     <!-- School picker -->
     <string name="school_municipality">Municipality</string>
     <string name="school_search">Search school</string>
-    <string name="school_not_found">Can't find the school? Type the name yourself.</string>
     <string name="school_free_text">Use “%1$s”</string>
     <string name="school_source">Source: the Swedish National Agency for Education</string>
     <string name="school_preschool_note">Preschools are not in the national register – type the name yourself.</string>
@@ -454,7 +436,6 @@
     <string name="diet_title">Allergies and diet</string>
     <string name="diet_explain">Optional. Only used to warn and filter recipes, and visible to the family. You can remove it at any time.</string>
     <string name="diet_consent">Save allergies and diet for %1$s</string>
-    <string name="diet_remove">Remove the information</string>
     <string name="allergen_Milk">Milk protein</string>
     <string name="allergen_Lactose">Lactose</string>
     <string name="allergen_Egg">Egg</string>
@@ -509,7 +490,6 @@
     <string name="more_family_body">Children, adults, invites and shared custody</string>
     <string name="more_tasks">Tasks and chores</string>
     <string name="more_tasks_body">To-dos, rotating chores and how they are shared</string>
-    <string name="more_recipes">Recipes</string>
     <string name="more_settings">Settings</string>
     <string name="more_account">Account and sync</string>
     <string name="more_about_data">About the data</string>
@@ -647,7 +627,6 @@
     <string name="meals_servings_increase">More servings</string>
     <string name="meals_school_lunch">School lunch</string>
     <string name="meals_lunch_edit_hint">Dishes, one per line</string>
-    <string name="meals_lunch_add">Add lunch</string>
     <string name="meals_lunch_missing">No lunch added</string>
     <string name="reason_favorite">Favourite</string>
     <string name="reason_not_recently">Not cooked in a while</string>
@@ -759,7 +738,6 @@
     <string name="import_warning_steps">No steps were found.</string>
     <string name="import_explain">Only the page you choose is fetched. The recipe is saved for your family's own use, with its source.</string>
     <string name="import_save">Save the recipe</string>
-    <string name="import_edit_first">Edit first</string>
 
     <!-- Shopping -->
     <string name="shopping_add_hint">Add – e.g. milk, 2 cucumbers, pasta</string>
@@ -787,7 +765,6 @@
     <string name="shopping_staple_every_a">about every %1$d days</string>
     <string name="shopping_staple_add">Add %1$s</string>
     <string name="shopping_staple_dismiss">Not now</string>
-    <string name="shopping_lists">Lists</string>
     <string name="shopping_new_list">New list</string>
     <string name="shopping_list_name">List name</string>
     <string name="shopping_list_default_name">Weekly shop</string>
@@ -807,12 +784,10 @@
     <string name="shopping_total">Total from your own prices: SEK %1$s</string>
     <string name="shopping_no_lists">No shopping list yet.</string>
     <string name="shopping_create_first">Create a list</string>
-    <string name="shopping_check">Check off %1$s</string>
     <string name="shopping_added_by_other">%1$s added %2$s</string>
     <string name="item_edit_title">Edit item</string>
     <string name="item_name">Item</string>
     <string name="item_quantity">Amount</string>
-    <string name="item_unit">Unit</string>
     <string name="item_unit_none">None</string>
     <string name="item_aisle">Aisle</string>
     <string name="item_note">Note</string>
@@ -834,7 +809,6 @@
     <string name="stores_new">New store</string>
     <string name="stores_empty">No stores of your own – the list follows a typical Swedish supermarket.</string>
     <string name="stores_default">Default store</string>
-    <string name="stores_set_default">Make default</string>
     <string name="store_name">Store name</string>
     <string name="store_order">Aisles in walking order</string>
     <string name="store_move_up">Move %1$s up</string>
@@ -1017,11 +991,7 @@
     <string name="notify_events_changed_many">%1$d changes in the calendar</string>
 
     <!-- Placeholders used until a feature is wired up -->
-    <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
-    <string name="empty_calendar">The calendar is empty for now.</string>
-    <string name="empty_meals">No meal plan for this week yet.</string>
     <string name="empty_shopping">The shopping list is empty. Nice!</string>
-    <string name="empty_more">Family, tasks and settings live here.</string>
 
     <!-- Home-screen widgets -->
     <string name="widget_all_day">All day</string>

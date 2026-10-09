@@ -183,7 +183,6 @@ Demo-APK på emulatorn (Pixel 9 Pro, API 37, utan fönster) mot Firebase-emulato
 - Redigeras en händelse på en telefon i annan tidszon visas händelsens egna klockslag i redigeraren (kalendern visar omräknat).
 - Delade bilder syns bara på telefonen som sparade dem (ADR-025).
 - Hjälpare (morfar) ser inte det som delas med andra hemmet – de är bara med i sitt eget hem (ADR-030).
-- Kortet "Studiedag på fredag" säger veckodagen även när studiedagen är idag (fixas i fas 4).
 - Notiser och widgets byggs med telefonens språk; har man valt ett annat språk i appen på Android 12 eller äldre kan de
   komma på systemspråket.
 - Livsmedelsmatchningen är ordbaserad: ovanliga ingredienser kan behöva rättas för hand en gång (sparas sedan för familjen).

@@ -41,7 +41,7 @@ import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.PackingReason
 import se.pusslet.core.model.Role
-import se.pusslet.core.time.plusDays
+import se.pusslet.core.time.RelativeDay
 import se.pusslet.core.today.ContextCard
 import se.pusslet.core.today.Greeting
 import se.pusslet.core.today.TimelineItem
@@ -57,6 +57,7 @@ import se.pusslet.ui.components.PersonAvatar
 import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SmallAction
 import se.pusslet.ui.format.formatDateLong
+import se.pusslet.ui.format.formatDateShort
 import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.formatTimeRange
 import se.pusslet.ui.format.joinNames
@@ -577,8 +578,11 @@ private const val MAX_UPCOMING = 4
 
 /** "idag", "imorgon" or "på fredag" for a card about the coming days. */
 @Composable
-private fun cardDay(date: LocalDate, today: LocalDate): String = when (date) {
-    today -> stringResource(Res.string.card_today)
-    today.plusDays(1) -> stringResource(Res.string.card_tomorrow)
-    else -> stringResource(Res.string.on_weekday, weekdayName(date.dayOfWeek))
+private fun cardDay(date: LocalDate, today: LocalDate): String = when (RelativeDay.of(date, today)) {
+    RelativeDay.Today -> stringResource(Res.string.card_today)
+    RelativeDay.Tomorrow -> stringResource(Res.string.card_tomorrow)
+    RelativeDay.ThisWeek -> stringResource(Res.string.on_weekday, weekdayName(date.dayOfWeek))
+    // A week away the weekday alone reads as today's ("Studiedag på fredag" on a Friday).
+    RelativeDay.NextWeek -> stringResource(Res.string.on_next_weekday, weekdayName(date.dayOfWeek))
+    RelativeDay.Other -> formatDateShort(date)
 }

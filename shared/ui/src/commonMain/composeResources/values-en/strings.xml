@@ -93,6 +93,7 @@
     <string name="tomorrow">Tomorrow</string>
     <string name="yesterday">Yesterday</string>
     <string name="on_weekday">on %1$s</string>
+    <string name="on_next_weekday">next %1$s</string>
 
     <!-- Greetings -->
     <string name="greeting_morning">Good morning</string>

@@ -27,8 +27,15 @@ class ShoppingPerformanceTest {
         g.shopping.saveItems(
             (1..ITEMS).map { i -> ShoppingItem("i$i", "big", "Vara $i", aisle = aisles[i % aisles.size]) },
         )
-        val vm = ShoppingViewModel(g.shopping, g.family, g.prefs, g.products, g.sessions, g.ids, g.clock, tickMillis = 0)
 
+        fun vm() = ShoppingViewModel(g.shopping, g.family, g.prefs, g.products, g.sessions, g.ids, g.clock, tickMillis = 0)
+
+        // Warm up once so the measurement is the work itself, not the JVM compiling it under a busy build.
+        val warmUp = vm()
+        collectInBackground(warmUp.state)
+        assertEquals(ITEMS, warmUp.state.value.groups.sumOf { it.items.size })
+
+        val vm = vm()
         val built = TimeSource.Monotonic.markNow()
         collectInBackground(vm.state)
         val state = vm.state.value

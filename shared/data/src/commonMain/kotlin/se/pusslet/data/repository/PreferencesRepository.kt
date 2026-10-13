@@ -7,6 +7,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.SetSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
@@ -50,6 +51,9 @@ object Prefs {
     val CrashReportsConsent = PrefKey("privacy.crashReports", Boolean.serializer(), false)
     val ActiveShoppingList = PrefKey("shopping.activeList", String.serializer(), "")
     val ActiveStore = PrefKey("shopping.activeStore", String.serializer(), "")
+
+    /** Staple suggestions waved away: normalized name -> epoch millis. Shown again after the next purchase. */
+    val DismissedStaples = PrefKey("shopping.dismissedStaples", MapSerializer(String.serializer(), Long.serializer()), emptyMap())
     val RecentQuickAdds = PrefKey("quickadd.recent", ListSerializer(String.serializer()), emptyList())
     val DeviceId = PrefKey("device.id", String.serializer(), "")
 }

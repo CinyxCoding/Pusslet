@@ -1,7 +1,7 @@
 package se.pusslet.data.usecase
 
-import io.ktor.http.HttpStatusCode
 import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import se.pusslet.core.model.Child
@@ -70,7 +70,8 @@ class MealDataTest {
     fun weekPlanBecomesShoppingListAndRegeneratesCleanly() = runTest {
         seedFamily()
         assertEquals(4, mealShopping.householdSize(), "morfar does not eat here every day")
-        recipes.save(Recipe("r1", "Tacos", 4, listOf("500 g nötfärs", "1 gurka", "2 tomater", "1 påse tacokrydda").map { IngredientParser.parse(it) }))
+        val tacos = listOf("500 g nötfärs", "1 gurka", "2 tomater", "1 påse tacokrydda")
+        recipes.save(Recipe("r1", "Tacos", 4, tacos.map { IngredientParser.parse(it) }))
         recipes.save(Recipe("r2", "Tomatsoppa", 2, listOf("2 tomater", "1 gul lök", "salt").map { IngredientParser.parse(it) }))
         meals.setEntry(MealEntry(monday, recipeId = "r1", title = "Tacos"))
         meals.setEntry(MealEntry(monday.plusDays(2), recipeId = "r2", title = "Tomatsoppa"))
@@ -98,7 +99,9 @@ class MealDataTest {
     fun importsRecipeFromSharedText() = runTest {
         val page = """<html><script type="application/ld+json">{"@type":"Recipe","name":"Fiskgratäng","recipeYield":"4 portioner",
             "recipeIngredient":["600 g torskfilé","4 dl matlagningsgrädde"],"recipeInstructions":"Sätt ugnen på 200 grader."}</script></html>"""
-        val http = MockHttp { request -> if ("example.se" in request.url.host) ok(page, "text/html") else respond("", HttpStatusCode.NotFound) }
+        val http = MockHttp { request ->
+            if ("example.se" in request.url.host) ok(page, "text/html") else respond("", HttpStatusCode.NotFound)
+        }
         val importer = RecipeImporter(http.client, SequentialIdGenerator("r"))
 
         val found = assertIs<RecipeImportResult.Found>(importer.import("Den här blev bra! https://www.example.se/recept/fiskgratang."))

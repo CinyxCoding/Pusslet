@@ -49,6 +49,7 @@ import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
+import se.pusslet.data.usecase.ShoppingAdder
 import kotlin.time.Clock
 
 val AppScope = named("appScope")
@@ -88,6 +89,7 @@ val dataModule: Module = module {
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeNutrition(get(), get()) }
+    single { ShoppingAdder(get(), get(), get(), get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

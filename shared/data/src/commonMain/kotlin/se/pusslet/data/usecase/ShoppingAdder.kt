@@ -1,14 +1,21 @@
 package se.pusslet.data.usecase
 
 import kotlinx.coroutines.flow.first
+import se.pusslet.core.meals.RecipeScaler
 import se.pusslet.core.model.Aisle
+import se.pusslet.core.model.ListKind
+import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.ShoppingItem
+import se.pusslet.core.model.ShoppingList
 import se.pusslet.core.quickadd.ParsedItem
 import se.pusslet.core.shopping.AisleClassifier
 import se.pusslet.core.shopping.ProductCategories
 import se.pusslet.core.shopping.ShoppingInput
+import se.pusslet.core.shopping.ShoppingNames
 import se.pusslet.core.units.MeasureUnit
 import se.pusslet.core.util.IdGenerator
+import se.pusslet.data.repository.PreferencesRepository
+import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sources.ProductInfo
@@ -39,10 +46,31 @@ data class ScanOutcome(val barcode: String, val product: ProductInfo?, val added
 class ShoppingAdder(
     private val shopping: ShoppingRepository,
     private val products: ProductLookup,
+    private val prefs: PreferencesRepository,
     private val sessions: SessionProvider,
     private val ids: IdGenerator,
     private val clock: Clock,
 ) {
+    /** The list chosen on this phone, else the first grocery list, else a new "Veckohandling". */
+    suspend fun activeListId(): String {
+        val lists = shopping.lists.first()
+        val selected = prefs.get(Prefs.ActiveShoppingList)
+        lists.firstOrNull { it.id == selected }?.let { return it.id }
+        (lists.firstOrNull { it.kind == ListKind.Grocery } ?: lists.firstOrNull())?.let { return it.id }
+        val list = ShoppingList(ids.newId(), DEFAULT_LIST_NAME)
+        shopping.saveList(list)
+        prefs.set(Prefs.ActiveShoppingList, list.id)
+        return list.id
+    }
+
+    /** "Lägg på inköpslistan" from a recipe: scaled to [servings], salt/pepper/water and optional extras skipped. */
+    suspend fun addRecipe(recipe: Recipe, servings: Int, listId: String? = null): AddOutcome {
+        val items = RecipeScaler.scale(recipe, servings)
+            .filter { !it.optional && !ShoppingNames.isStaple(it.name) }
+            .map { ParsedItem(it.name.trim().replaceFirstChar { c -> c.uppercase() }, it.amount) }
+        return addItems(listId ?: activeListId(), items)
+    }
+
     suspend fun addText(listId: String, text: String): AddOutcome = addItems(listId, ShoppingInput.parse(text))
 
     suspend fun addItems(listId: String, items: List<ParsedItem>, barcode: String? = null, hint: ProductInfo? = null): AddOutcome {
@@ -113,5 +141,9 @@ class ShoppingAdder(
         val name = p.name?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         val brand = p.brand?.trim()?.takeIf { it.isNotEmpty() && !name.contains(it, ignoreCase = true) }
         return listOfNotNull(brand, name).joinToString(" ")
+    }
+
+    private companion object {
+        const val DEFAULT_LIST_NAME = "Veckohandling"
     }
 }

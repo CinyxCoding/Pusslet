@@ -18,6 +18,8 @@ import se.pusslet.data.db.FoodDao
 import se.pusslet.data.db.FoodEntity
 import se.pusslet.data.db.FoodNutrientsEntity
 import se.pusslet.data.db.FoodVersion
+import se.pusslet.data.db.PreferenceDao
+import se.pusslet.data.db.PreferenceEntity
 
 class FakeCacheDao : CacheDao {
     val entries = MutableStateFlow<Map<String, CacheEntryEntity>>(emptyMap())
@@ -66,6 +68,26 @@ class FakeFoodDao : FoodDao {
 
     override suspend fun putNutrients(entity: FoodNutrientsEntity) {
         nutrients[entity.number] = entity
+    }
+}
+
+class FakePreferenceDao : PreferenceDao {
+    private val values = MutableStateFlow<Map<String, String>>(emptyMap())
+
+    override fun observe(key: String): Flow<String?> = values.map { it[key] }
+
+    override suspend fun get(key: String): String? = values.value[key]
+
+    override suspend fun put(entity: PreferenceEntity) {
+        values.value = values.value + (entity.key to entity.value)
+    }
+
+    override suspend fun remove(key: String) {
+        values.value = values.value - key
+    }
+
+    override suspend fun clear() {
+        values.value = emptyMap()
     }
 }
 

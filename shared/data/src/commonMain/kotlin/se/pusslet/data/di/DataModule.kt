@@ -89,7 +89,7 @@ val dataModule: Module = module {
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeNutrition(get(), get()) }
-    single { ShoppingAdder(get(), get(), get(), get(), get()) }
+    single { ShoppingAdder(get(), get(), get(), get(), get(), get()) }
 
     single { CachedFetcher(get(), get(), get()) }
     single<WeatherSource> { SmhiWeatherSource(get(), get()) }

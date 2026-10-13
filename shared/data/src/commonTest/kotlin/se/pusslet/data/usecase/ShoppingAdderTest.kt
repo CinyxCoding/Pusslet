@@ -1,12 +1,17 @@
 package se.pusslet.data.usecase
 
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import se.pusslet.core.model.Aisle
+import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.Role
+import se.pusslet.core.recipes.IngredientParser
 import se.pusslet.core.units.MeasureUnit
 import se.pusslet.core.util.SequentialIdGenerator
+import se.pusslet.data.FakePreferenceDao
 import se.pusslet.data.db.PurchaseLogDao
 import se.pusslet.data.db.PurchaseLogEntity
+import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
@@ -54,7 +59,8 @@ class ShoppingAdderTest {
             "4000000000000" to ProductInfo("4000000000000", null, "Okänt", null, emptyList()),
         ),
     )
-    private val adder = ShoppingAdder(shopping, products, sessions, SequentialIdGenerator(), FixedClock)
+    private val prefs = PreferencesRepository(FakePreferenceDao())
+    private val adder = ShoppingAdder(shopping, products, prefs, sessions, SequentialIdGenerator(), FixedClock)
 
     @Test
     fun typedItemsGetAislesAndMergeWithWhatIsThere() = runTest {
@@ -137,5 +143,30 @@ class ShoppingAdderTest {
         val item = shopping.getItems("l").single()
         assertEquals("Tändstickor", item.name)
         assertEquals("1234567890123", item.barcode)
+    }
+
+    @Test
+    fun activeListIsCreatedOnceWhenTheFamilyHasNone() = runTest {
+        val first = adder.activeListId()
+        assertEquals(first, adder.activeListId())
+        assertEquals("Veckohandling", shopping.lists.first().single().name)
+    }
+
+    @Test
+    fun recipeGoesOnTheListScaledWithoutStaples() = runTest {
+        val recipe = Recipe(
+            "r1",
+            "Pannkakor",
+            servings = 4,
+            ingredients = listOf("3 ägg", "6 dl mjölk", "2½ dl vetemjöl", "1 krm salt", "sylt till servering")
+                .map { IngredientParser.parse(it) },
+        )
+        adder.addText("l", "1 l mjölk")
+        val outcome = adder.addRecipe(recipe, servings = 8, listId = "l")
+        val items = shopping.getItems("l").associateBy { it.name }
+        assertEquals(setOf("Mjölk", "Ägg", "Vetemjöl"), items.keys, "salt and the optional jam are skipped")
+        assertEquals(6.0, items.getValue("Ägg").quantity)
+        assertEquals(2.2, items.getValue("Mjölk").quantity ?: 0.0, 0.001, "1 l + 12 dl, in the line's own unit")
+        assertEquals(1, outcome.previous.size)
     }
 }

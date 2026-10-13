@@ -137,3 +137,40 @@ tillsammans med notiserna.
 gebundlade har inga värdbibliotek för Robolectric), fast klocka 2026-10-08 07:10 Europe/Stockholm, demofamiljen och en
 inspelad SMHI-prognos. Testerna klickar sig fram och fotograferar Idag (ljust/mörkt/engelska/150 % text), kalendern och detaljvyn.
 **Konsekvens:** Testerna är också röktester av DI och datalagret. De tar ~1 min; körs i CI med `verifyRoborazziDemoDebug`.
+
+## ADR-017 – Lägga till på listan slår ihop i stället för att duplicera
+**Kontext:** Hela familjen lägger till samtidigt ("mjölk" skrivs av två personer), och recept/skanning lägger till samma
+varor som redan står på listan.
+**Beslut:** `ShoppingInput.mergeInto` matchar på kanoniskt namn (`ShoppingNames.canonical`, plural → singular). Samma vara
+utan mängd blir kvar som en rad; mängder adderas när enheterna går att konvertera (2 dl + 3 msk), annars blir det en ny rad
+("2 kg potatis" + "4 potatis"). En avbockad rad med samma namn tas tillbaka med den nya mängden. Samma streckkod två gånger
+räknar upp antal. Varje tillägg returnerar vad som ändrades så att UI:t kan erbjuda Ångra.
+**Konsekvens:** Färre dubbletter och mindre städning; en rad kan ibland bli "fel" sammanslagen – Ångra och redigering löser det.
+
+## ADR-018 – "Jag handlar nu" som närvarodokument med utgångstid
+**Kontext:** Övriga i familjen ska se att någon är i affären och hinna lägga till saker. Push (FCM) kommer i fas 3.
+**Beslut:** Butiksläget skriver `presence/{memberId}` med `until = nu + 60 min` när det öppnas och tar bort det när skärmens
+ViewModel rensas – via app-scopet, så att skrivningen inte avbryts när skärmen stängs. UI:t filtrerar bort utgångna dokument,
+så en kraschad app aldrig visar "handlar" för evigt. Hjälpare får skriva sin egen närvaro (reglerna tillät det redan).
+**Konsekvens:** Fungerar offline-först och synkas som allt annat. Notisen "Sara lade till mjölk medan du handlar" kommer med FCM i fas 3.
+
+## ADR-019 – Basvaror från lokal köphistorik
+**Kontext:** Briefen vill att återkommande varor föreslås "baserat på historik/intervall", utan AI (ADR-001).
+**Beslut:** Varje avbockning loggas i den lokala tabellen `purchase_log` (synkas aldrig). `StapleSuggester` grupperar på
+kanoniskt namn, kräver minst tre köp olika dagar, tar medianintervallet och föreslår varan när 85 % av intervallet har gått.
+Varor som inte köpts på fyra intervall räknas som slutade. "Inte nu" döljer förslagen tills varan köpts igen (per enhet).
+**Konsekvens:** Förutsägbart och integritetsvänligt; varje telefon lär sig av det som bockats av på just den telefonen.
+
+## ADR-020 – Receptredigerare med en rad per ingrediens och regelbaserad uppdelning av inklistrad text
+**Kontext:** Recept ska kunna skrivas in eller klistras in snabbt, och sidor utan JSON-LD ska ändå gå att spara.
+**Beslut:** Ingredienser och steg redigeras som text, en per rad ("2 dl grädde, vispad"; rubrik med kolon blir grupp).
+`RecipeText.split` delar inklistrad text på rubriker ("Ingredienser", "Gör så här") eller på rader som börjar med en mängd,
+och tar bort stegnummer. Bekräftade livsmedelsmatchningar behålls vid redigering om ingrediensens kanoniska namn är detsamma,
+och sparas dessutom per familj i `ingredientMappings`.
+**Konsekvens:** Snabbt att skriva och lätt att rätta; inga formulär med en rad per fält.
+
+## ADR-021 – Delad länk öppnar receptimport
+**Kontext:** Android-delning ger bara text. En receptlänk ska till receptimporten, ett veckobrev med en länk ska till snabbinmatningen.
+**Beslut:** Om den delade texten nästan bara är en länk (högst 60 tecken annat) öppnas `RecipeImport`; annars snabbinmatning.
+Importen hämtar bara den sidan, sparar källa och uppdaterar en tidigare import av samma länk i stället för att duplicera.
+**Konsekvens:** Rätt flöde i de vanliga fallen; den som delar en lång text med länk hamnar i snabbinmatningen och kan klistra in länken i importen.

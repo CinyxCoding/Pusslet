@@ -40,6 +40,12 @@ node scripts/second-device.mjs rename <eventId> "Ny titel"  # prova med appen i 
 Regeltesterna (`npm test`) använder ett eget projekt-id (`demo-pusslet-rules`), så de rensar aldrig demoappens data även om
 de körs mot samma emulator.
 
+### Molnsessioner (Claude Code på webben)
+Den molnmiljö som sessionen körs i behöver nå **`dl.google.com`** (Googles Maven-repo och Android SDK) – lägg till domänen
+under nätverksinställningarna för miljön (Allowed domains). Utan den går bara `shared/core` att kompilera och testa, via ett
+fristående JVM-projekt. Maven Central begränsar ibland antalet anrop (HTTP 429) från molnmiljön; en lokal cachande proxy
+med back-off löser det under en session.
+
 ## 2. Manuella steg för ägaren
 
 > Allt i appen är byggt så att detta kan göras sist. Inget av stegen behövs för demo-flavorn.

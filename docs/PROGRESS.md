@@ -33,15 +33,29 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 
 
 ## Fas 2 – Mat & handla
-- [ ] Receptbibliotek, URL-import (JSON-LD), portionsskalning/enhetskonvertering – 🟡 logik + tester klara (IngredientParser, RecipeJsonLd, RecipeScaler, RecipeImporter); UI saknas
-- [ ] Veckomatsedel (kopiera förra veckan, favoritveckor, gör dubbelt) – 🟡 MealPlanner klar; UI saknas
-- [ ] Livsmedelsdatabasen: lokalt FTS-index + näringsöversikt – 🟡 RecipeNutrition klar; UI saknas
-- [ ] Skollunch-provider (skolmaten-RSS + manuell)
-- [ ] Smarta förslag (regelbaserat) – 🟡 MealSuggester klar (förklarbara skäl); UI saknas
-- [ ] Inköpslista från matsedel med sammanslagning, basvaror, butiksläge med avdelningsordning – 🟡 ShoppingListGenerator + MealShopping klara; UI saknas
-- [ ] Streckkodsskanning + Open Food Facts
-- [ ] "Jag handlar nu"
+> ⚠️ Fas 2-UI:t (2026-10-13) skrevs i en molnsession där Googles Maven/Android SDK var blockerat: `shared/core` är
+> kompilerad och testad (246 tester gröna på JVM), men feature-modulerna, `shared/data`-ändringarna och appen är **inte
+> kompilerade än**. Första steget i nästa session med Android-miljö: `./gradlew build` och rätta det som dyker upp.
+
+- [x] Receptbibliotek (sök på namn/ingrediens, taggar, favoriter), receptvy med portionsskalning, redigerare (en rad per
+  ingrediens/steg, klistra in och dela upp), URL-import (JSON-LD) med inklistring som reserv, delade länkar → import
+- [x] Veckomatsedel: veckonummer, röda dagar, planera med förslag/recept/fritext, "gör dubbelt" (rester nästa lediga dag),
+  flytta, kopiera förra veckan, favoritveckor, frukost/lunch om familjen valt det
+- [x] Livsmedelsdatabasen: näringsöversikt per portion (neutral, med källa och hur komplett den är) och ark för att bekräfta
+  ingrediensmatchningar (sparas för familjen). ⬜ Översikt per dag/vecka återstår
+- [x] Skollunch: skolmaten-RSS (fas 1) + manuell inmatning per barn och dag i matsedeln; krockmarkering mot middagen
+- [x] Smarta förslag (regelbaserat) med synliga skäl: snabbt en upptagen kväll (kalendern 16:30–19:00), inte samma som
+  skollunchen, länge sedan, varierar veckan, använder det ni har hemma
+- [x] Inköpslista: flera listor, snabbtillägg med sammanslagning, avdelningar i butikens gångordning, avbockade i "I vagnen",
+  Ångra, redigera vara (mängd, enhet, avdelning som familjen lär sig, anteckning, eget pris), dela som text, basvaror från
+  köphistorik, butiker med egen gångordning, Hemma-lager, "Från matsedeln" med förhandsvisning (denna/nästa vecka)
+- [x] Butiksläge: stor text, avdelningsordning, avbockade sjunker, skärmen hålls vaken, Ångra, "Allt i vagnen!"
+- [x] Streckkodsskanning + Open Food Facts (namn + märke, avdelning från kategori, okänd kod → fråga efter namn, samma kod igen
+  räknar upp)
+- [x] "Jag handlar nu": synlig för familjen medan butiksläget är öppet (push kommer med FCM i fas 3)
 - [x] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (ShoppingListGeneratorTest)
+- [ ] Skärmdumpstester för Mat/Handla (Roborazzi) – kräver Android-miljö
+- [ ] Kompilera och köra fas 2-UI:t på emulator (se varningen ovan)
 
 ## Fas 3 – Integrationer & notiser
 - [ ] ICS-prenumerationer
@@ -79,11 +93,16 @@ Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestor
   (nytt regeltest), (2) lämnings-/hämtningstider konverterades inte till enhetens tidszon, (3) engelska strängar med `\'`
   visades bokstavligt (nytt strängtest), (4) regeltesterna rensade demoappens data på delad emulator (eget projekt-id).
 
-Nästa steg (fas 2): UI i `feature-meals` (veckomatsedel med skollunch och krockmarkering, dagsark med förslag, receptbibliotek, receptvy med skalning och näring, redigerare, import från länk) och `feature-shopping` (listor per avdelning, snabbtillägg, butiksläge, "Jag handlar nu", skanning + Open Food Facts, Hemma-lager, butiker med gångordning). Rutter läggs till i `shared/app` och strängar i sv + en.
+Nästa steg: bygg och verifiera fas 2 på emulator (`./gradlew build`, `installDemoDebug`), spela in skärmdumpar för Mat och
+Handla, och lägg till näringsöversikt per vecka. Sedan fas 3.
 
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.
 - iOS kan inte kompileras på Windows; verifieras i CI (macOS-runner).
 - Hjälpare (t.ex. morfar) kan inte ändra lämning/hämtning direkt, bara svara på förfrågningar (ADR-015).
 - Redigeras en händelse på en telefon i annan tidszon visas händelsens egna klockslag i redigeraren (kalendern visar omräknat).
-- Delade bilder (SEND image/*) och recept-länkar tas emot först i fas 2.
+- Delade bilder (SEND image/*) tas inte emot än (receptlänkar gör det sedan fas 2).
+- CI hade aldrig gått igenom: `gradlew` saknade körbarhetsbiten i git (rättat 2026-10-13). Lint körs nu på riktigt, så det kan
+  dyka upp gamla ktlint/detekt-anmärkningar första gången.
+- Molnsessioner (claude.ai/code) behöver `dl.google.com` tillåtet i miljöns nätverksinställningar för att kunna bygga Android
+  (Googles Maven och SDK). Maven Central svarar dessutom ofta 429 där; se docs/SETUP.md.

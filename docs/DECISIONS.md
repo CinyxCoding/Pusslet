@@ -174,3 +174,11 @@ och sparas dessutom per familj i `ingredientMappings`.
 **Beslut:** Om den delade texten nästan bara är en länk (högst 60 tecken annat) öppnas `RecipeImport`; annars snabbinmatning.
 Importen hämtar bara den sidan, sparar källa och uppdaterar en tidigare import av samma länk i stället för att duplicera.
 **Konsekvens:** Rätt flöde i de vanliga fallen; den som delar en lång text med länk hamnar i snabbinmatningen och kan klistra in länken i importen.
+
+## ADR-022 – Morgondagens väder från kl. 18
+**Kontext:** På kvällen är dagens väder mest passerat. Ägaren vill kunna planera ytterkläderna kvällen före.
+**Beslut:** Från 18:00 lokal tid (`TodayInput.tomorrowWeatherFrom`) sammanfattar `TodayPlanner` morgondagens dagtid (07–17),
+och klädråden räknas för morgondagen. Kortet visar "I morgon · Regn" i stället för "just nu". Om prognosen inte når
+morgondagen visas dagens väder. Efter midnatt är den nya dagen "idag" igen. "Just nu" använder nu det prognossteg som ligger
+närmast klockan i stället för dagens högsta temperatur.
+**Konsekvens:** Kvällskollen svarar på "vad ska barnen ha på sig i morgon?" utan ett extra steg. Tiden kan göras inställbar senare.

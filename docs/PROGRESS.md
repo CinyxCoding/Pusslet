@@ -55,7 +55,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] "Jag handlar nu": synlig för familjen medan butiksläget är öppet (push kommer med FCM i fas 3)
 - [x] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (ShoppingListGeneratorTest)
 - [ ] Skärmdumpstester för Mat/Handla (Roborazzi) – kräver Android-miljö
-- [ ] Köra fas 2-UI:t på emulator och gå igenom flödena för hand
+- [x] Köra fas 2-UI:t på emulator och gå igenom flödena för hand (ägaren, Android Studio, 2026-10-13)
 
 ## Fas 3 – Integrationer & notiser
 - [ ] ICS-prenumerationer

@@ -197,12 +197,15 @@ private fun WeatherCard(state: TodayUiState, plan: TodayPlan, onOpenSettings: ()
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                     Text(Labels.weatherEmoji(summary.condition), style = MaterialTheme.typography.displaySmall)
                     Column(Modifier.weight(1f)) {
-                        val nowTemp = summary.now?.temperature ?: summary.maxTemperature
-                        Text(
-                            stringResource(Res.string.today_weather_now, nowTemp.roundToInt()) + " · " +
-                                stringResource(Labels.weather(summary.condition)),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                        val condition = stringResource(Labels.weather(summary.condition))
+                        // After 18:00 the card is about tomorrow, so the clothes can be laid out in the evening.
+                        val headline = if (plan.weatherForTomorrow) {
+                            stringResource(Res.string.today_weather_tomorrow, condition)
+                        } else {
+                            val nowTemp = summary.now?.temperature ?: summary.maxTemperature
+                            stringResource(Res.string.today_weather_now, nowTemp.roundToInt()) + " · " + condition
+                        }
+                        Text(headline, style = MaterialTheme.typography.titleMedium)
                         Text(
                             stringResource(
                                 Res.string.today_weather_range,

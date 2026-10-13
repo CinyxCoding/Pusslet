@@ -1,8 +1,10 @@
 package se.pusslet.core.today
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import se.pusslet.core.conflicts.Conflict
 import se.pusslet.core.conflicts.ConflictDetector
 import se.pusslet.core.custody.CustodyCalculator
@@ -56,6 +58,8 @@ data class TodayInput(
     val tasks: List<FamilyTask> = emptyList(),
     val forecast: Forecast? = null,
     val upcomingDays: Int = 3,
+    /** From this time the weather and clothing look at tomorrow, so outdoor clothes can be planned the evening before. */
+    val tomorrowWeatherFrom: LocalTime = TodayPlanner.TOMORROW_WEATHER_FROM,
 )
 
 enum class Greeting { Morning, Day, Evening, Night }
@@ -107,7 +111,9 @@ data class TodayPlan(
     val week: IsoWeek,
     val greeting: Greeting,
     val holidays: List<Holiday>,
+    /** Today's daytime weather, or tomorrow's in the evening (see [weatherForTomorrow]). */
     val weather: DaySummary?,
+    val weatherForTomorrow: Boolean,
     val clothing: List<ChildClothing>,
     val custody: List<CustodyToday>,
     val timeline: List<TimelineItem>,
@@ -130,12 +136,12 @@ object TodayPlanner {
         val childPeople = input.children.map(FamilyPerson::of)
         val todays = input.occurrences.filter { it.overlapsDate(today) }
 
-        val weather = input.forecast?.let { WeatherMath.summarize(it, today, input.zone) }
+        val weather = input.forecast?.let { weatherFor(it, input) }
         val clothing = if (weather == null) {
             emptyList()
         } else {
             input.children.map { c ->
-                ChildClothing(FamilyPerson.of(c), ClothingAdvisor.advise(weather, ClothingAdvisor.ageOn(c.birthDate, today)))
+                ChildClothing(FamilyPerson.of(c), ClothingAdvisor.advise(weather, ClothingAdvisor.ageOn(c.birthDate, weather.date)))
             }
         }
 
@@ -183,6 +189,7 @@ object TodayPlanner {
             greeting = greeting(input.now),
             holidays = SwedishHolidays.forDate(today),
             weather = weather,
+            weatherForTomorrow = weather != null && weather.date != today,
             clothing = clothing,
             custody = custody,
             timeline = timeline,
@@ -194,6 +201,17 @@ object TodayPlanner {
             myTasks = myTasks,
             cards = cards(input, childPeople),
         )
+    }
+
+    /**
+     * In the evening the day's weather is mostly over, so tomorrow's daytime forecast is what helps ("vilka ytterkläder?").
+     * Falls back to today when the forecast does not reach tomorrow.
+     */
+    private fun weatherFor(forecast: Forecast, input: TodayInput): DaySummary? {
+        val today = input.today
+        val todays = { WeatherMath.summarize(forecast, today, input.zone, now = LocalDateTime(today, input.now).toInstant(input.zone)) }
+        if (input.now < input.tomorrowWeatherFrom) return todays()
+        return WeatherMath.summarize(forecast, today.plusDays(1), input.zone) ?: todays()
     }
 
     /** School/preschool blocks are shown as their drop-off and pick-up, not as a big event. */
@@ -253,6 +271,8 @@ object TodayPlanner {
         }
         return cards
     }
+
+    val TOMORROW_WEATHER_FROM: LocalTime = LocalTime(18, 0)
 
     fun greeting(now: LocalTime): Greeting = when (now.hour) {
         in 5..9 -> Greeting.Morning

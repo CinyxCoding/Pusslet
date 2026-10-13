@@ -108,6 +108,7 @@
     <!-- Today -->
     <string name="today_weather_now">%1$d° just nu</string>
     <string name="today_weather_range">%1$d° till %2$d° under dagen</string>
+    <string name="today_weather_tomorrow">I morgon · %1$s</string>
     <string name="today_weather_stale">Väder från %1$s – kunde inte uppdatera</string>
     <string name="today_weather_missing">Välj ort i inställningarna för att få väder och klädråd.</string>
     <string name="today_weather_unavailable">Vädret kunde inte hämtas just nu.</string>

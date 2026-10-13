@@ -107,6 +107,7 @@
     <!-- Today -->
     <string name="today_weather_now">%1$d° right now</string>
     <string name="today_weather_range">%1$d° to %2$d° during the day</string>
+    <string name="today_weather_tomorrow">Tomorrow · %1$s</string>
     <string name="today_weather_stale">Weather from %1$s – could not update</string>
     <string name="today_weather_missing">Choose a place in settings to get weather and clothing tips.</string>
     <string name="today_weather_unavailable">The weather could not be loaded right now.</string>

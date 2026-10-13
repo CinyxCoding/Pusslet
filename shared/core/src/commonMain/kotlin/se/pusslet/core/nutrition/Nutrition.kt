@@ -176,6 +176,41 @@ object NutritionCalculator {
     }
 }
 
+/** The week's planned recipes, averaged per portion. [estimated] of [meals] could be calculated at all. */
+data class WeekNutrition(
+    val meals: Int,
+    val estimated: Int,
+    val averagePerPortion: NutrientValues,
+    /** Every meal estimated, and every ingredient in them matched. */
+    val complete: Boolean,
+)
+
+object WeekNutritionCalculator {
+    /** [summaries] has one entry per planned recipe meal; null = could not be estimated. */
+    fun average(summaries: List<NutritionSummary?>): WeekNutrition {
+        val known = summaries.filterNotNull()
+        // Per value: a nutrient a recipe does not report is unknown, not zero.
+        fun avg(value: (NutrientValues) -> Double?): Double? =
+            known.mapNotNull { value(it.perPortion) }.takeIf { it.isNotEmpty() }?.average()
+        val average = NutrientValues(
+            energyKcal = avg { it.energyKcal },
+            energyKj = avg { it.energyKj },
+            protein = avg { it.protein },
+            fat = avg { it.fat },
+            carbohydrates = avg { it.carbohydrates },
+            fiber = avg { it.fiber },
+            salt = avg { it.salt },
+            sugars = avg { it.sugars },
+        )
+        return WeekNutrition(
+            meals = summaries.size,
+            estimated = known.size,
+            averagePerPortion = average,
+            complete = known.size == summaries.size && known.all { it.complete },
+        )
+    }
+}
+
 /**
  * Suggests database foods for an ingredient name. Simple and explainable: word overlap with a bonus for the first word,
  * a preference for raw/plain items ("rå", short names) and a penalty for prepared dishes. The user confirms the match.

@@ -32,6 +32,8 @@ import se.pusslet.core.model.PantryItem
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.SchoolLunch
+import se.pusslet.core.nutrition.WeekNutrition
+import se.pusslet.core.nutrition.WeekNutritionCalculator
 import se.pusslet.core.time.IsoWeek
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.util.IdGenerator
@@ -43,6 +45,7 @@ import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionProvider
+import se.pusslet.data.usecase.RecipeNutrition
 import kotlin.time.Clock
 
 /** A child's school lunch on a day, and the dish words it shares with the planned dinner (empty = no clash). */
@@ -79,6 +82,20 @@ data class MealsUiState(
     val plannedCount: Int get() = days.count { it.dinner != null }
 }
 
+sealed interface WeekNutritionState {
+    data object Idle : WeekNutritionState
+
+    data object Loading : WeekNutritionState
+
+    /** No planned meal uses a recipe, so there is nothing to estimate. */
+    data object NoRecipes : WeekNutritionState
+
+    /** The food database has not been downloaded yet and the phone is offline. */
+    data object Unavailable : WeekNutritionState
+
+    data class Ready(val week: WeekNutrition) : WeekNutritionState
+}
+
 /** The bottom sheet for planning one meal: current entry, explainable suggestions and the day's context. */
 data class DayEditorState(
     val date: LocalDate,
@@ -100,6 +117,7 @@ class MealsViewModel(
     private val calendar: CalendarRepository,
     shopping: ShoppingRepository,
     sessions: SessionProvider,
+    private val nutrition: RecipeNutrition,
     private val ids: IdGenerator,
     private val clock: Clock,
     private val zone: TimeZone,
@@ -107,6 +125,10 @@ class MealsViewModel(
     private val today: LocalDate get() = clock.now().toLocalDateTime(zone).date
     private val week = MutableStateFlow(today.isoWeek)
     private val editing = MutableStateFlow<Pair<LocalDate, MealSlot>?>(null)
+    private val weekNutritionState = MutableStateFlow<WeekNutritionState>(WeekNutritionState.Idle)
+
+    /** Calculated on request (the first time downloads Livsmedelsverket's food list); reset when the week changes. */
+    val weekNutrition: StateFlow<WeekNutritionState> = weekNutritionState
 
     private data class Household(
         val children: List<Child>,
@@ -210,20 +232,39 @@ class MealsViewModel(
         )
     }
 
-    fun previousWeek() {
-        week.value = week.value.previous()
+    private fun showWeek(target: IsoWeek) {
+        if (target != week.value) weekNutritionState.value = WeekNutritionState.Idle
+        week.value = target
     }
 
-    fun nextWeek() {
-        week.value = week.value.next()
-    }
+    fun previousWeek() = showWeek(week.value.previous())
 
-    fun thisWeek() {
-        week.value = today.isoWeek
-    }
+    fun nextWeek() = showWeek(week.value.next())
 
-    fun showWeekOf(date: LocalDate) {
-        week.value = date.isoWeek
+    fun thisWeek() = showWeek(today.isoWeek)
+
+    fun showWeekOf(date: LocalDate) = showWeek(date.isoWeek)
+
+    /** Average per portion over the week's planned recipes (neutral overview, no targets). */
+    fun calculateWeekNutrition() {
+        val s = state.value
+        val byId = s.recipes.associateBy { it.id }
+        val meals = s.days.flatMap { it.entries.values }.filter { it.leftoversFrom == null }.mapNotNull { e ->
+            e.recipeId?.let(byId::get)?.let { it to (e.servings ?: it.servings) }
+        }
+        if (meals.isEmpty()) {
+            weekNutritionState.value = WeekNutritionState.NoRecipes
+            return
+        }
+        weekNutritionState.value = WeekNutritionState.Loading
+        viewModelScope.launch {
+            val summaries = meals.map { (recipe, portions) -> nutrition.summary(recipe, portions) }
+            weekNutritionState.value = if (summaries.all { it == null }) {
+                WeekNutritionState.Unavailable
+            } else {
+                WeekNutritionState.Ready(WeekNutritionCalculator.average(summaries))
+            }
+        }
     }
 
     fun openDay(date: LocalDate, slot: MealSlot = MealSlot.Dinner) {

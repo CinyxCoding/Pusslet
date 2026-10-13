@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.LocalDate
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.Child
@@ -86,6 +87,7 @@ fun MealsRoute(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val editor by viewModel.dayEditor.collectAsStateWithLifecycle()
     val libraryState by library.state.collectAsStateWithLifecycle()
+    val weekNutrition by viewModel.weekNutrition.collectAsStateWithLifecycle()
     var section by rememberSaveable { mutableStateOf(MealsSection.Week) }
 
     Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
@@ -109,6 +111,7 @@ fun MealsRoute(
         when (section) {
             MealsSection.Week -> WeekPlanScreen(
                 state = state,
+                weekNutrition = weekNutrition,
                 bottomPadding = bottom,
                 actions = WeekActions(
                     onPrevious = viewModel::previousWeek,
@@ -122,6 +125,7 @@ fun MealsRoute(
                     onSetLunch = viewModel::setLunch,
                     onOpenRecipe = onOpenRecipe,
                     onShopForWeek = onShopForWeek,
+                    onCalculateNutrition = viewModel::calculateWeekNutrition,
                 ),
             )
             MealsSection.Recipes -> RecipeLibraryScreen(
@@ -172,6 +176,7 @@ data class WeekActions(
     val onSetLunch: (childId: String, date: LocalDate, dishes: String) -> Unit = { _, _, _ -> },
     val onOpenRecipe: (String) -> Unit = {},
     val onShopForWeek: () -> Unit = {},
+    val onCalculateNutrition: () -> Unit = {},
 )
 
 private enum class WeekDialog { None, SaveFavorite, Favorites }
@@ -179,6 +184,7 @@ private enum class WeekDialog { None, SaveFavorite, Favorites }
 @Composable
 fun WeekPlanScreen(
     state: MealsUiState,
+    weekNutrition: WeekNutritionState = WeekNutritionState.Idle,
     bottomPadding: PaddingValues = PaddingValues(),
     actions: WeekActions = WeekActions(),
 ) {
@@ -207,6 +213,9 @@ fun WeekPlanScreen(
                 onOpenRecipe = actions.onOpenRecipe,
                 onEditLunch = { child -> lunchTarget = child to day },
             )
+        }
+        if (state.plannedCount > 0) {
+            item(key = "nutrition") { WeekNutritionCard(weekNutrition, actions.onCalculateNutrition) }
         }
     }
     when (dialog) {
@@ -542,4 +551,39 @@ private fun LunchDialog(child: Child, day: DayPlan, onDismiss: () -> Unit, onSav
         confirmButton = { TextButton(onClick = { onSave(text) }) { Text(stringResource(Res.string.action_save)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) } },
     )
+}
+
+/** "Näring för veckans middagar": calculated on request, averaged per portion, neutral and with its source. */
+@Composable
+private fun WeekNutritionCard(state: WeekNutritionState, onCalculate: () -> Unit) {
+    SectionCard(title = stringResource(Res.string.week_nutrition_title)) {
+        when (state) {
+            WeekNutritionState.Idle -> {
+                Text(stringResource(Res.string.week_nutrition_intro), style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = onCalculate) { Text(stringResource(Res.string.week_nutrition_calculate)) }
+            }
+            WeekNutritionState.Loading -> BodyText(Res.string.nutrition_loading)
+            WeekNutritionState.NoRecipes -> BodyText(Res.string.week_nutrition_no_recipes)
+            WeekNutritionState.Unavailable -> BodyText(Res.string.nutrition_unavailable)
+            is WeekNutritionState.Ready -> {
+                Text(stringResource(Res.string.week_nutrition_average), style = MaterialTheme.typography.bodyMedium)
+                NutrientRows(state.week.averagePerPortion)
+                Text(
+                    stringResource(Res.string.week_nutrition_coverage, state.week.estimated, state.week.meals),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Text(
+            stringResource(Res.string.nutrition_source),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun BodyText(text: StringResource) {
+    Text(stringResource(text), style = MaterialTheme.typography.bodyMedium)
 }

@@ -5,7 +5,7 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val mealsModule: Module = module {
-    viewModel { MealsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { MealsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { RecipeLibraryViewModel(get(), get()) }
     viewModel { RecipeDetailsViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { RecipeEditorViewModel(get(), get()) }

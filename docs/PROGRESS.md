@@ -42,7 +42,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Veckomatsedel: veckonummer, röda dagar, planera med förslag/recept/fritext, "gör dubbelt" (rester nästa lediga dag),
   flytta, kopiera förra veckan, favoritveckor, frukost/lunch om familjen valt det
 - [x] Livsmedelsdatabasen: näringsöversikt per portion (neutral, med källa och hur komplett den är) och ark för att bekräfta
-  ingrediensmatchningar (sparas för familjen). ⬜ Översikt per dag/vecka återstår
+  ingrediensmatchningar (sparas för familjen), samt snitt per portion för veckans planerade middagar
 - [x] Skollunch: skolmaten-RSS (fas 1) + manuell inmatning per barn och dag i matsedeln; krockmarkering mot middagen
 - [x] Smarta förslag (regelbaserat) med synliga skäl: snabbt en upptagen kväll (kalendern 16:30–19:00), inte samma som
   skollunchen, länge sedan, varierar veckan, använder det ni har hemma
@@ -94,7 +94,7 @@ Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestor
   visades bokstavligt (nytt strängtest), (4) regeltesterna rensade demoappens data på delad emulator (eget projekt-id).
 
 Nästa steg: bygg och verifiera fas 2 på emulator (`./gradlew build`, `installDemoDebug`), spela in skärmdumpar för Mat och
-Handla, och lägg till näringsöversikt per vecka. Sedan fas 3.
+Handla. Sedan fas 3.
 
 ## Kända begränsningar / buggar
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.

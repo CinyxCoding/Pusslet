@@ -842,6 +842,14 @@
     <string name="nutrition_unavailable">Näringsdata hämtas från Livsmedelsverket första gången – försök igen när du har nät.</string>
     <string name="nutrition_source">Källa: Livsmedelsverkets livsmedelsdatabas (CC BY 4.0).</string>
 
+    <!-- Meals: week nutrition -->
+    <string name="week_nutrition_title">Näring för veckans middagar</string>
+    <string name="week_nutrition_intro">En ungefärlig översikt per portion för de planerade recepten.</string>
+    <string name="week_nutrition_calculate">Räkna ut</string>
+    <string name="week_nutrition_no_recipes">Planera några middagar med recept så kan vi räkna på dem.</string>
+    <string name="week_nutrition_average">I snitt per portion:</string>
+    <string name="week_nutrition_coverage">Beräknat för %1$d av %2$d måltider med recept.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
     <string name="empty_calendar">Kalendern är tom än så länge.</string>

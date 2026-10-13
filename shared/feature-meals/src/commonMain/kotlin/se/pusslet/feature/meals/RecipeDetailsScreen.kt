@@ -67,7 +67,6 @@ import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
-import kotlin.math.roundToInt
 
 @Composable
 fun RecipeDetailsRoute(
@@ -346,34 +345,13 @@ private fun NutritionCard(state: NutritionState, servings: Int, onMatch: () -> U
 
 @Composable
 private fun NutritionValues(summary: NutritionSummary, servings: Int) {
-    val p = summary.perPortion
     Text(stringResource(Res.string.nutrition_per_portion), style = MaterialTheme.typography.bodyMedium)
-    val rows = listOfNotNull(
-        p.energyKcal?.let { Res.string.nutrition_energy to stringResource(Res.string.nutrition_kcal, it.roundToInt()) },
-        p.protein?.let { Res.string.nutrition_protein to grams(it) },
-        p.fat?.let { Res.string.nutrition_fat to grams(it) },
-        p.carbohydrates?.let { Res.string.nutrition_carbs to grams(it) },
-        p.fiber?.let { Res.string.nutrition_fiber to grams(it) },
-        p.salt?.let { Res.string.nutrition_salt to grams(it) },
-    )
-    rows.forEach { (label, value) ->
-        Row(Modifier.fillMaxWidth()) {
-            Text(stringResource(label), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Text(value, style = MaterialTheme.typography.bodyLarge)
-        }
-    }
+    NutrientRows(summary.perPortion)
     Text(
         stringResource(Res.string.nutrition_coverage, summary.matchedIngredients, summary.totalIngredients, servings),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-}
-
-/** "12 g", "0,8 g". */
-@Composable
-private fun grams(value: Double): String {
-    val text = if (value >= GRAMS_WHOLE) value.roundToInt().toString() else ((value * 10).roundToInt() / 10.0).toString().replace('.', ',')
-    return stringResource(Res.string.nutrition_grams, text)
 }
 
 /** Pick which food in Livsmedelsverket's database an ingredient is; the choice is remembered for the family. */
@@ -440,5 +418,3 @@ private fun FoodMatchingSheet(
         }
     }
 }
-
-private const val GRAMS_WHOLE = 10.0

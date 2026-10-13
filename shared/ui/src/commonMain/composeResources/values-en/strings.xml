@@ -841,6 +841,14 @@
     <string name="nutrition_unavailable">Nutrition data is downloaded from the Swedish Food Agency the first time – try again when you're online.</string>
     <string name="nutrition_source">Source: Swedish Food Agency food database (CC BY 4.0).</string>
 
+    <!-- Meals: week nutrition -->
+    <string name="week_nutrition_title">Nutrition for the week's dinners</string>
+    <string name="week_nutrition_intro">A rough overview per serving for the planned recipes.</string>
+    <string name="week_nutrition_calculate">Calculate</string>
+    <string name="week_nutrition_no_recipes">Plan a few dinners with recipes and we can calculate them.</string>
+    <string name="week_nutrition_average">On average per serving:</string>
+    <string name="week_nutrition_coverage">Calculated for %1$d of %2$d meals with recipes.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
     <string name="empty_calendar">The calendar is empty for now.</string>

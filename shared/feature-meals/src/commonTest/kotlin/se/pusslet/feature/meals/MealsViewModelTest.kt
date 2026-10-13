@@ -23,12 +23,14 @@ import se.pusslet.core.model.Member
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.RecipeTag
 import se.pusslet.core.model.Role
+import se.pusslet.core.recipes.IngredientParser
 import se.pusslet.core.time.plusDays
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -58,6 +60,7 @@ class MealsViewModelTest {
             world.calendar,
             world.shopping,
             world.sessions,
+            world.nutrition,
             world.ids,
             world.clock,
             world.zone,
@@ -206,5 +209,24 @@ class MealsViewModelTest {
         val world = TestWorld(role = Role.Caregiver).apply { seed() }
         val vm = viewModel(world)
         assertFalse(vm.state.value.canEdit)
+    }
+
+    @Test
+    fun weekNutritionAveragesPlannedRecipes() = runTest {
+        val world = TestWorld().apply { seed() }
+        world.recipes.save(Recipe("r-fars", "Färsbiffar", 4, ingredients = listOf(IngredientParser.parse("500 g nötfärs"))))
+        val vm = viewModel(world)
+        vm.calculateWeekNutrition()
+        assertEquals(WeekNutritionState.NoRecipes, vm.weekNutrition.value)
+
+        vm.plan(monday, MealSlot.Dinner, "Färsbiffar", "r-fars", cookDouble = true, servings = null, note = "")
+        vm.plan(tuesday.plusDays(1), MealSlot.Dinner, "pizza", null, cookDouble = false, servings = null, note = "")
+        vm.calculateWeekNutrition()
+        val ready = assertIs<WeekNutritionState.Ready>(vm.weekNutrition.value)
+        assertEquals(1, ready.week.meals, "leftovers and free text do not count")
+        assertEquals(250.0, ready.week.averagePerPortion.energyKcal ?: 0.0, 0.5)
+
+        vm.nextWeek()
+        assertEquals(WeekNutritionState.Idle, vm.weekNutrition.value)
     }
 }

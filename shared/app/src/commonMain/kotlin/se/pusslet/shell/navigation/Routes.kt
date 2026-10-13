@@ -49,6 +49,15 @@ sealed interface Route {
     @Serializable data object Account : Route
 
     @Serializable data object Tasks : Route
+
+    /** Butiksläge for the active shopping list. */
+    @Serializable data object StoreMode : Route
+
+    @Serializable data object Stores : Route
+
+    @Serializable data class StoreEditor(val storeId: String? = null) : Route
+
+    @Serializable data object Pantry : Route
 }
 
 /** Bottom navigation: Idag · Kalender · Mat · Handla · Mer. */

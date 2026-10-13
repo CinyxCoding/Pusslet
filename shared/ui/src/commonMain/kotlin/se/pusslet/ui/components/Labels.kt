@@ -2,9 +2,11 @@ package se.pusslet.ui.components
 
 import org.jetbrains.compose.resources.StringResource
 import se.pusslet.core.holidays.HolidayId
+import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.Allergen
 import se.pusslet.core.model.Diet
 import se.pusslet.core.model.EventTags
+import se.pusslet.core.model.ListKind
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Role
 import se.pusslet.core.weather.ClothingAdvice
@@ -142,5 +144,35 @@ object Labels {
         Diet.Halal -> Res.string.diet_Halal
         Diet.NoPork -> Res.string.diet_NoPork
         Diet.Kosher -> Res.string.diet_Kosher
+    }
+
+    fun aisle(a: Aisle): StringResource = when (a) {
+        Aisle.Produce -> Res.string.aisle_produce
+        Aisle.Bakery -> Res.string.aisle_bakery
+        Aisle.Deli -> Res.string.aisle_deli
+        Aisle.Meat -> Res.string.aisle_meat
+        Aisle.Fish -> Res.string.aisle_fish
+        Aisle.Dairy -> Res.string.aisle_dairy
+        Aisle.Cheese -> Res.string.aisle_cheese
+        Aisle.Eggs -> Res.string.aisle_eggs
+        Aisle.Frozen -> Res.string.aisle_frozen
+        Aisle.Pantry -> Res.string.aisle_pantry
+        Aisle.Canned -> Res.string.aisle_canned
+        Aisle.SpicesAndSauces -> Res.string.aisle_spices
+        Aisle.Baking -> Res.string.aisle_baking
+        Aisle.Breakfast -> Res.string.aisle_breakfast
+        Aisle.Drinks -> Res.string.aisle_drinks
+        Aisle.SnacksAndSweets -> Res.string.aisle_snacks
+        Aisle.Baby -> Res.string.aisle_baby
+        Aisle.Hygiene -> Res.string.aisle_hygiene
+        Aisle.Household -> Res.string.aisle_household
+        Aisle.Pets -> Res.string.aisle_pets
+        Aisle.Pharmacy -> Res.string.aisle_pharmacy
+        Aisle.Other -> Res.string.aisle_other
+    }
+
+    fun listKind(k: ListKind): StringResource = when (k) {
+        ListKind.Grocery -> Res.string.list_kind_grocery
+        ListKind.Other -> Res.string.list_kind_other
     }
 }

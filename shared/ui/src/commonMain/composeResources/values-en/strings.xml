@@ -602,6 +602,125 @@
     <string name="privacy_delete_confirm">Are you completely sure? This cannot be undone.</string>
     <string name="privacy_forget_device">Remove the family from this phone</string>
 
+    <!-- Shopping: aisles -->
+    <string name="aisle_produce">Fruit and vegetables</string>
+    <string name="aisle_bakery">Bread</string>
+    <string name="aisle_deli">Deli</string>
+    <string name="aisle_meat">Meat and poultry</string>
+    <string name="aisle_fish">Fish and seafood</string>
+    <string name="aisle_dairy">Dairy</string>
+    <string name="aisle_cheese">Cheese</string>
+    <string name="aisle_eggs">Eggs</string>
+    <string name="aisle_frozen">Frozen</string>
+    <string name="aisle_pantry">Dry goods</string>
+    <string name="aisle_canned">Canned food</string>
+    <string name="aisle_spices">Spices and sauces</string>
+    <string name="aisle_baking">Baking</string>
+    <string name="aisle_breakfast">Breakfast, coffee and tea</string>
+    <string name="aisle_drinks">Drinks</string>
+    <string name="aisle_snacks">Snacks and sweets</string>
+    <string name="aisle_baby">Baby and kids</string>
+    <string name="aisle_hygiene">Personal care</string>
+    <string name="aisle_household">Household</string>
+    <string name="aisle_pets">Pets</string>
+    <string name="aisle_pharmacy">Pharmacy</string>
+    <string name="aisle_other">Other</string>
+
+    <!-- Shopping list -->
+    <string name="list_kind_grocery">Groceries</string>
+    <string name="list_kind_other">Other</string>
+    <string name="shopping_add_hint">Add, e.g. 2 l milk, bread</string>
+    <string name="shopping_add_action">Add to the list</string>
+    <string name="shopping_scan">Scan barcode</string>
+    <string name="shopping_store_mode">I'm shopping now</string>
+    <string name="shopping_from_meals">From the meal plan</string>
+    <string name="shopping_suggestions_title">You usually buy</string>
+    <string name="shopping_suggestions_dismiss">Not now</string>
+    <string name="shopping_suggestion_add">Add %1$s</string>
+    <string name="shopping_shopper_now">%1$s is shopping right now – add what you need and it comes along.</string>
+    <string name="shopping_someone_shopping">Someone in the family is shopping right now – add what you need.</string>
+    <string name="shopping_in_cart_count">In the cart (%1$d)</string>
+    <string name="shopping_clear_checked">Clear ticked items</string>
+    <string name="shopping_show_checked">Show</string>
+    <string name="shopping_hide_checked">Hide</string>
+    <string name="shopping_empty_title">The list is empty</string>
+    <string name="shopping_empty_body">Type what you need above, scan a product or get the ingredients from the meal plan.</string>
+    <string name="shopping_added">Added: %1$s</string>
+    <string name="shopping_already_on_list">Already on the list: %1$s</string>
+    <string name="shopping_removed">%1$s removed</string>
+    <string name="shopping_in_cart_toast">%1$s in the cart</string>
+    <string name="shopping_all_done">Everything's in the cart! Nice work 🎉</string>
+    <string name="shopping_generated">The list is updated from the meal plan.</string>
+    <string name="shopping_generated_nothing">Nothing new to add from the meal plan.</string>
+    <string name="shopping_unknown_title">Unknown product</string>
+    <string name="shopping_unknown_body">The barcode %1$s isn't in Open Food Facts (or you're offline). What's the product called?</string>
+    <string name="shopping_item_name">Item</string>
+    <string name="shopping_off_attribution">Product data from Open Food Facts (ODbL).</string>
+    <string name="shopping_share">Share as text</string>
+    <string name="shopping_menu_store">Store: %1$s</string>
+    <string name="shopping_menu_choose_store">Choose store</string>
+    <string name="shopping_stores">Stores and aisle order</string>
+    <string name="shopping_rename_list">Rename list</string>
+    <string name="shopping_delete_list">Delete list</string>
+    <string name="shopping_delete_list_confirm">Delete %1$s and everything on it?</string>
+    <string name="shopping_more">More options</string>
+    <string name="shopping_new_list">New list</string>
+    <string name="shopping_list_name">List name</string>
+    <string name="shopping_store_none">No particular store (default order)</string>
+    <string name="shopping_edit_item">Edit item</string>
+    <string name="shopping_edit_item_named">Edit %1$s</string>
+    <string name="shopping_amount">Amount</string>
+    <string name="shopping_unit">Unit</string>
+    <string name="shopping_unit_none">–</string>
+    <string name="shopping_aisle">Aisle</string>
+    <string name="shopping_note">Note</string>
+    <string name="shopping_price">Own price, SEK (optional)</string>
+    <string name="shopping_added_by">Added by %1$s</string>
+    <string name="shopping_left_count">Left to buy: %1$d</string>
+    <string name="shopping_nothing_left">All bought</string>
+    <string name="shopping_subtitle_store">%1$s · %2$s</string>
+    <string name="shopping_state_in_cart">In the cart</string>
+    <string name="shopping_state_to_buy">To buy</string>
+    <string name="shopping_tick_off">Tick off</string>
+    <string name="shopping_put_back">Put back on the list</string>
+
+    <!-- Shopping: from the meal plan -->
+    <string name="meals_to_list_title">Shop for the meal plan</string>
+    <string name="meals_to_list_this_week">This week</string>
+    <string name="meals_to_list_next_week">Next week</string>
+    <string name="meals_to_list_summary">%1$s – new: %2$d · changed: %3$d · removed: %4$d</string>
+    <string name="meals_to_list_empty">Nothing to add for %1$s. Plan dinners with recipes in the meal plan – or everything is already on the list.</string>
+    <string name="meals_to_list_confirm">Update the list</string>
+    <string name="meals_to_list_pantry_on">What you have in the pantry is deducted. Salt, pepper and water are skipped.</string>
+    <string name="meals_to_list_pantry_off">Salt, pepper and water are skipped. Turn on the pantry to deduct what you already have.</string>
+
+    <!-- Shopping: pantry -->
+    <string name="pantry_title">Pantry</string>
+    <string name="pantry_intro">Note what you have at home and it is deducted when the list is made from the meal plan. Without an amount it counts as enough.</string>
+    <string name="pantry_use">Deduct what we have at home</string>
+    <string name="pantry_add_hint">E.g. 1 kg flour, rice</string>
+    <string name="pantry_empty">Nothing in the pantry yet.</string>
+    <string name="pantry_enough">Enough</string>
+    <string name="pantry_remove">Remove %1$s</string>
+
+    <!-- Shopping: stores and store mode -->
+    <string name="stores_title">Stores</string>
+    <string name="stores_add">New store</string>
+    <string name="stores_empty">Add the store you usually shop at and sort the aisles in the order you walk them – the list then follows the same order.</string>
+    <string name="store_edit">Edit store</string>
+    <string name="store_name">Store name</string>
+    <string name="store_default">Default store</string>
+    <string name="store_default_body">Used for lists without a store of their own.</string>
+    <string name="store_order_title">Aisle order</string>
+    <string name="store_order_hint">Move the aisles into the order you pass them in the store.</string>
+    <string name="store_move_up">Move %1$s up</string>
+    <string name="store_move_down">Move %1$s down</string>
+    <string name="store_reset_order">Reset to default order</string>
+    <string name="store_delete_confirm">Delete the store %1$s?</string>
+    <string name="store_mode_all_done_title">Everything's in the cart!</string>
+    <string name="store_mode_all_done_body">Lovely. Only the checkout left.</string>
+    <string name="store_mode_finish">Done shopping</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
     <string name="empty_calendar">The calendar is empty for now.</string>

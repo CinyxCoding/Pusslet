@@ -223,14 +223,7 @@ class ShoppingViewModel(
     }
 
     /** The list to add to; creates "Veckohandling" when the family has no list yet. */
-    private suspend fun listIdForAdding(): String {
-        state.value.list?.let { return it.id }
-        activeList(shopping.lists.first(), prefs.get(Prefs.ActiveShoppingList))?.let { return it.id }
-        val list = ShoppingList(ids.newId(), DEFAULT_LIST_NAME)
-        shopping.saveList(list)
-        prefs.set(Prefs.ActiveShoppingList, list.id)
-        return list.id
-    }
+    private suspend fun listIdForAdding(): String = state.value.list?.id ?: adder.activeListId()
 
     private fun launchSafely(block: suspend () -> Unit) {
         viewModelScope.launch {
@@ -375,6 +368,5 @@ class ShoppingViewModel(
     private companion object {
         const val TICK_MS = 60_000L
         const val STOP_TIMEOUT_MS = 5_000L
-        const val DEFAULT_LIST_NAME = "Veckohandling"
     }
 }

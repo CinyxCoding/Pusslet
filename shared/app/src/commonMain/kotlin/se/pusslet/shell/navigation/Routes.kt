@@ -58,6 +58,13 @@ sealed interface Route {
     @Serializable data class StoreEditor(val storeId: String? = null) : Route
 
     @Serializable data object Pantry : Route
+
+    @Serializable data class RecipeDetails(val recipeId: String) : Route
+
+    /** New (no id) or edited recipe; [sourceUrl] starts a new one from a link without recipe data. */
+    @Serializable data class RecipeEditor(val recipeId: String? = null, val sourceUrl: String? = null) : Route
+
+    @Serializable data class RecipeImport(val url: String? = null) : Route
 }
 
 /** Bottom navigation: Idag · Kalender · Mat · Handla · Mer. */

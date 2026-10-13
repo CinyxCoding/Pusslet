@@ -55,7 +55,10 @@ import se.pusslet.feature.family.invite.InviteRoute
 import se.pusslet.feature.family.join.JoinRoute
 import se.pusslet.feature.family.member.MemberEditorRoute
 import se.pusslet.feature.family.onboarding.OnboardingRoute
-import se.pusslet.feature.meals.MealsScreen
+import se.pusslet.feature.meals.MealsRoute
+import se.pusslet.feature.meals.RecipeDetailsRoute
+import se.pusslet.feature.meals.RecipeEditorRoute
+import se.pusslet.feature.meals.RecipeImportRoute
 import se.pusslet.feature.settings.AboutDataRoute
 import se.pusslet.feature.settings.AccountRoute
 import se.pusslet.feature.settings.MoreDestination
@@ -142,8 +145,13 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
         when (incoming) {
             is IncomingIntent.JoinCode -> navigator.navigate(Route.Join(incoming.code))
             is IncomingIntent.SharedText -> {
-                quickAdd.start(incoming.text)
-                showQuickAdd = true
+                val recipe = incoming.recipeLink()
+                if (recipe != null) {
+                    navigator.navigate(Route.RecipeImport(recipe))
+                } else {
+                    quickAdd.start(incoming.text)
+                    showQuickAdd = true
+                }
             }
             null -> return@LaunchedEffect
         }
@@ -208,7 +216,39 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                     navigator.navigate(Route.EventEditor(date = it))
                 }, contentPadding = padding)
             }
-            entry<Route.Meals> { MealsScreen() }
+            entry<Route.Meals> {
+                MealsRoute(
+                    onOpenRecipe = { navigator.navigate(Route.RecipeDetails(it)) },
+                    onNewRecipe = { navigator.navigate(Route.RecipeEditor()) },
+                    onImportRecipe = { navigator.navigate(Route.RecipeImport()) },
+                    onShopForWeek = { navigator.navigate(Route.Shopping) },
+                    contentPadding = padding,
+                )
+            }
+            entry<Route.RecipeDetails> { r ->
+                RecipeDetailsRoute(r.recipeId, onBack = navigator::goBack, onEdit = { navigator.navigate(Route.RecipeEditor(it)) })
+            }
+            entry<Route.RecipeEditor> { r ->
+                RecipeEditorRoute(r.recipeId, r.sourceUrl, onDone = { saved ->
+                    navigator.goBack()
+                    // A new recipe opens right away; an edited one is already open underneath.
+                    if (saved != null && r.recipeId == null) navigator.navigate(Route.RecipeDetails(saved))
+                })
+            }
+            entry<Route.RecipeImport> { r ->
+                RecipeImportRoute(
+                    initialUrl = r.url,
+                    onBack = navigator::goBack,
+                    onImported = { id ->
+                        navigator.goBack()
+                        navigator.navigate(Route.RecipeDetails(id))
+                    },
+                    onPasteInstead = { url ->
+                        navigator.goBack()
+                        navigator.navigate(Route.RecipeEditor(sourceUrl = url))
+                    },
+                )
+            }
             entry<Route.Shopping> {
                 ShoppingRoute(
                     onOpenStoreMode = { navigator.navigate(Route.StoreMode) },

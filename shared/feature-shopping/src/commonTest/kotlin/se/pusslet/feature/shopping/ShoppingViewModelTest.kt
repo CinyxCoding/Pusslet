@@ -114,7 +114,7 @@ class ShoppingViewModelTest {
     private val shopping = ShoppingRepository(docs, purchases, sessions, clock)
     private val meals = MealRepository(docs)
     private val recipes = RecipeRepository(docs)
-    private val adder = ShoppingAdder(shopping, NoProducts, sessions, ids, clock)
+    private val adder = ShoppingAdder(shopping, NoProducts, prefs, sessions, ids, clock)
     private val mealShopping = MealShopping(meals, recipes, shopping, family, sessions, ids, clock)
 
     @BeforeTest

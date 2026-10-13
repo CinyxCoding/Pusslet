@@ -1,0 +1,430 @@
+package se.pusslet.feature.meals
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import se.pusslet.core.meals.RecipeScaler
+import se.pusslet.core.model.Ingredient
+import se.pusslet.core.model.MainComponent
+import se.pusslet.core.model.MealEntry
+import se.pusslet.core.model.Recipe
+import se.pusslet.core.model.RecipeTag
+import se.pusslet.core.model.Role
+import se.pusslet.core.nutrition.Food
+import se.pusslet.core.nutrition.NutritionSummary
+import se.pusslet.core.recipes.ImportWarning
+import se.pusslet.core.recipes.RecipeText
+import se.pusslet.core.shopping.ShoppingNames
+import se.pusslet.core.util.IdGenerator
+import se.pusslet.data.repository.MealRepository
+import se.pusslet.data.repository.RecipeRepository
+import se.pusslet.data.session.SessionProvider
+import se.pusslet.data.usecase.AddOutcome
+import se.pusslet.data.usecase.RecipeImportResult
+import se.pusslet.data.usecase.RecipeImporter
+import se.pusslet.data.usecase.RecipeNutrition
+import se.pusslet.data.usecase.ShoppingAdder
+import kotlin.time.Clock
+
+// region library
+
+data class RecipeLibraryState(
+    val loading: Boolean = true,
+    val recipes: List<Recipe> = emptyList(),
+    val total: Int = 0,
+    val query: String = "",
+    val tags: Set<RecipeTag> = emptySet(),
+    val canEdit: Boolean = true,
+)
+
+class RecipeLibraryViewModel(recipes: RecipeRepository, sessions: SessionProvider) : ViewModel() {
+    private val query = MutableStateFlow("")
+    private val tags = MutableStateFlow<Set<RecipeTag>>(emptySet())
+
+    val state: StateFlow<RecipeLibraryState> = combine(recipes.recipes, query, tags, sessions.session) { all, q, t, s ->
+        RecipeLibraryState(
+            loading = false,
+            recipes = all.filter { matches(it, q, t) }.sortedWith(favoritesFirst),
+            total = all.size,
+            query = q,
+            tags = t,
+            canEdit = s.role == Role.Parent,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), RecipeLibraryState())
+
+    fun setQuery(text: String) {
+        query.value = text
+    }
+
+    fun toggleTag(tag: RecipeTag) {
+        tags.update { if (tag in it) it - tag else it + tag }
+    }
+
+    private fun matches(r: Recipe, q: String, t: Set<RecipeTag>): Boolean {
+        if (!r.tags.containsAll(t - RecipeTag.Quick) || (RecipeTag.Quick in t && !r.isQuick)) return false
+        val needle = q.trim().lowercase()
+        if (needle.isEmpty()) return true
+        return needle in r.title.lowercase() || r.ingredients.any { needle in it.name.lowercase() }
+    }
+
+    private companion object {
+        const val STOP_TIMEOUT_MS = 5_000L
+        val favoritesFirst = compareByDescending<Recipe> { it.favorite }.thenBy { it.title.lowercase() }
+    }
+}
+
+// endregion
+
+// region details
+
+sealed interface NutritionState {
+    data object Loading : NutritionState
+
+    /** The food database has not been downloaded yet and the phone is offline. */
+    data object Unavailable : NutritionState
+
+    data class Ready(val summary: NutritionSummary) : NutritionState
+}
+
+/** Choosing which food in Livsmedelsverket's database an ingredient is. */
+data class MatchingState(val ingredient: Ingredient, val candidates: List<Food>?, val current: Int?)
+
+data class RecipeDetailsState(
+    val loading: Boolean = true,
+    val today: LocalDate? = null,
+    val recipe: Recipe? = null,
+    val servings: Int = 4,
+    val ingredients: List<Ingredient> = emptyList(),
+    val nutrition: NutritionState = NutritionState.Loading,
+    val mappings: Map<String, Int> = emptyMap(),
+    val canEdit: Boolean = true,
+)
+
+sealed interface RecipeMessage {
+    data class AddedToList(val outcome: AddOutcome) : RecipeMessage
+
+    data class Planned(val date: LocalDate) : RecipeMessage
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class RecipeDetailsViewModel(
+    private val recipes: RecipeRepository,
+    private val nutrition: RecipeNutrition,
+    private val adder: ShoppingAdder,
+    private val meals: MealRepository,
+    sessions: SessionProvider,
+    private val clock: Clock,
+    private val zone: TimeZone,
+) : ViewModel() {
+    private val log = Logger.withTag("Recipe")
+    private val recipeId = MutableStateFlow<String?>(null)
+    private val servings = MutableStateFlow<Int?>(null)
+    private val matching = MutableStateFlow<MatchingState?>(null)
+    private val messageChannel = Channel<RecipeMessage>(Channel.BUFFERED)
+    private val removed = MutableStateFlow(false)
+
+    val messages: Flow<RecipeMessage> = messageChannel.receiveAsFlow()
+    val match: StateFlow<MatchingState?> = matching
+
+    /** True once the recipe has been deleted here; the screen then closes. */
+    val deleted: StateFlow<Boolean> = removed
+
+    private val recipe: Flow<Recipe?> = recipeId.filterNotNull().flatMapLatest { recipes.recipe(it) }
+
+    private val portions: Flow<Int?> = combine(recipe, servings) { r, s -> r?.let { s ?: it.servings } }
+
+    private val nutritionState: Flow<NutritionState> = combine(recipe, portions, recipes.ingredientMappings) { r, p, _ -> r to p }
+        .mapLatest { (r, p) ->
+            if (r == null || p == null) return@mapLatest NutritionState.Loading
+            nutrition.summary(r, p)?.let { NutritionState.Ready(it) } ?: NutritionState.Unavailable
+        }
+        .onStart { emit(NutritionState.Loading) }
+
+    val state: StateFlow<RecipeDetailsState> = combine(
+        recipe,
+        portions,
+        nutritionState,
+        recipes.ingredientMappings,
+        sessions.session,
+    ) { r, p, n, m, s ->
+        val count = p ?: r?.servings ?: DEFAULT_SERVINGS
+        RecipeDetailsState(
+            loading = false,
+            today = clock.now().toLocalDateTime(zone).date,
+            recipe = r,
+            servings = count,
+            ingredients = r?.let { RecipeScaler.scale(it, count) }.orEmpty(),
+            nutrition = n,
+            mappings = m,
+            canEdit = s.role == Role.Parent,
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), RecipeDetailsState())
+
+    fun load(id: String) {
+        if (recipeId.value != id) {
+            recipeId.value = id
+            servings.value = null
+        }
+    }
+
+    fun setServings(count: Int) {
+        servings.value = count.coerceIn(1, MAX_SERVINGS)
+    }
+
+    fun toggleFavorite() {
+        val r = state.value.recipe ?: return
+        viewModelScope.launch { recipes.save(r.copy(favorite = !r.favorite)) }
+    }
+
+    fun delete() {
+        val r = state.value.recipe ?: return
+        viewModelScope.launch {
+            recipes.delete(r.id)
+            removed.value = true
+        }
+    }
+
+    fun addToShoppingList() {
+        val r = state.value.recipe ?: return
+        val count = state.value.servings
+        viewModelScope.launch { messageChannel.send(RecipeMessage.AddedToList(adder.addRecipe(r, count))) }
+    }
+
+    fun undoAdd(outcome: AddOutcome) {
+        viewModelScope.launch { adder.undo(outcome) }
+    }
+
+    /** Puts this recipe on the meal plan for [date] (dinner), with the chosen number of portions. */
+    fun planOn(date: LocalDate) {
+        val r = state.value.recipe ?: return
+        val count = state.value.servings
+        viewModelScope.launch {
+            meals.setEntry(MealEntry(date, recipeId = r.id, title = r.title, servings = count.takeIf { it != r.servings }))
+            messageChannel.send(RecipeMessage.Planned(date))
+        }
+    }
+
+    fun startMatching(ingredient: Ingredient) {
+        val current = ingredient.foodNumber ?: state.value.mappings[ingredient.name.trim().lowercase()]
+        matching.value = MatchingState(ingredient, null, current)
+        viewModelScope.launch {
+            val candidates = nutrition.candidates(ingredient.name)
+            matching.update { m -> if (m?.ingredient == ingredient) m.copy(candidates = candidates) else m }
+        }
+    }
+
+    fun confirmMatch(food: Food) {
+        val m = matching.value ?: return
+        matching.value = null
+        viewModelScope.launch {
+            nutrition.confirm(m.ingredient.name, food.number)
+            log.i { "Ingredient match confirmed" }
+        }
+    }
+
+    fun cancelMatching() {
+        matching.value = null
+    }
+
+    private companion object {
+        const val STOP_TIMEOUT_MS = 5_000L
+        const val DEFAULT_SERVINGS = 4
+        const val MAX_SERVINGS = 40
+    }
+}
+
+// endregion
+
+// region editor
+
+/** What the editor shows; amounts and lists are kept as text so typing is never fought. */
+data class RecipeForm(
+    val title: String = "",
+    val servings: String = "4",
+    val prepMinutes: String = "",
+    val totalMinutes: String = "",
+    val ingredients: String = "",
+    val steps: String = "",
+    val tags: Set<RecipeTag> = emptySet(),
+    val mainComponent: MainComponent? = null,
+    val notes: String = "",
+    val sourceUrl: String? = null,
+    val sourceName: String? = null,
+) {
+    val servingsValue: Int? get() = servings.trim().toIntOrNull()?.takeIf { it in 1..MAX_FORM_SERVINGS }
+    val valid: Boolean get() = title.isNotBlank() && servingsValue != null
+
+    companion object {
+        const val MAX_FORM_SERVINGS = 40
+
+        fun of(r: Recipe) = RecipeForm(
+            title = r.title,
+            servings = r.servings.toString(),
+            prepMinutes = r.prepMinutes?.toString().orEmpty(),
+            totalMinutes = r.totalMinutes?.toString().orEmpty(),
+            ingredients = RecipeText.formatIngredients(r.ingredients),
+            steps = r.steps.joinToString("\n"),
+            tags = r.tags,
+            mainComponent = r.mainComponent,
+            notes = r.notes,
+            sourceUrl = r.sourceUrl,
+            sourceName = r.sourceName,
+        )
+    }
+}
+
+data class RecipeEditorState(
+    val loading: Boolean = true,
+    val isNew: Boolean = true,
+    val form: RecipeForm = RecipeForm(),
+    /** Set after saving; the screen then opens or returns to the recipe. */
+    val savedId: String? = null,
+)
+
+class RecipeEditorViewModel(private val recipes: RecipeRepository, private val ids: IdGenerator) : ViewModel() {
+    private val mutable = MutableStateFlow(RecipeEditorState())
+    val state: StateFlow<RecipeEditorState> = mutable
+    private var original: Recipe? = null
+    private var loadedKey: String? = null
+
+    /** [sourceUrl] pre-fills a new recipe from a link that had no recipe data ("klistra in texten"). */
+    fun load(recipeId: String?, sourceUrl: String? = null) {
+        val key = "$recipeId|$sourceUrl"
+        if (loadedKey == key) return
+        loadedKey = key
+        viewModelScope.launch {
+            val r = recipeId?.let { recipes.get(it) }
+            original = r
+            val form = r?.let { RecipeForm.of(it) } ?: RecipeForm(sourceUrl = sourceUrl, sourceName = sourceUrl?.let(::hostOf))
+            mutable.value = RecipeEditorState(loading = false, isNew = r == null, form = form)
+        }
+    }
+
+    fun update(transform: (RecipeForm) -> RecipeForm) {
+        mutable.update { it.copy(form = transform(it.form)) }
+    }
+
+    /** Fills the form from pasted text. Only empty fields are filled, so nothing typed is lost. */
+    fun paste(text: String) {
+        val split = RecipeText.split(text)
+        update { f ->
+            f.copy(
+                title = f.title.ifBlank { split.title.orEmpty() },
+                servings = if (f.servingsValue == null || f.servings == RecipeForm().servings) {
+                    split.servings?.toString() ?: f.servings
+                } else {
+                    f.servings
+                },
+                ingredients = f.ingredients.ifBlank { RecipeText.formatIngredients(split.ingredients) },
+                steps = f.steps.ifBlank { split.steps.joinToString("\n") },
+            )
+        }
+    }
+
+    fun save() {
+        val s = mutable.value
+        val f = s.form
+        val servings = f.servingsValue ?: return
+        if (!f.valid) return
+        val ingredients = RecipeText.parseIngredients(f.ingredients)
+        val base = original ?: Recipe(id = ids.newId(), title = f.title)
+        val recipe = base.copy(
+            title = f.title.trim(),
+            servings = servings,
+            ingredients = ingredients.map { ing -> keepMatch(ing, original?.ingredients.orEmpty()) },
+            steps = RecipeText.parseSteps(f.steps),
+            tags = f.tags,
+            prepMinutes = f.prepMinutes.trim().toIntOrNull(),
+            totalMinutes = f.totalMinutes.trim().toIntOrNull(),
+            mainComponent = f.mainComponent,
+            notes = f.notes.trim(),
+            sourceUrl = f.sourceUrl,
+            sourceName = f.sourceName,
+        )
+        viewModelScope.launch {
+            recipes.save(recipe)
+            mutable.update { it.copy(savedId = recipe.id) }
+        }
+    }
+
+    /** Editing a line should not lose a confirmed food match for the same ingredient. */
+    private fun keepMatch(ing: Ingredient, before: List<Ingredient>): Ingredient {
+        val match = before.firstOrNull { ShoppingNames.canonical(it.name) == ShoppingNames.canonical(ing.name) }?.foodNumber
+        return if (match != null) ing.copy(foodNumber = match) else ing
+    }
+
+    private fun hostOf(url: String): String? = Regex("""https?://(?:www\.)?([^/:?#]+)""").find(url)?.groupValues?.get(1)
+}
+
+// endregion
+
+// region import
+
+sealed interface ImportStatus {
+    data object Idle : ImportStatus
+
+    data object Loading : ImportStatus
+
+    /** The page has no recipe data: offer to paste the text instead. */
+    data class NoRecipeData(val url: String) : ImportStatus
+
+    data object NotReachable : ImportStatus
+
+    data object InvalidUrl : ImportStatus
+}
+
+data class RecipeImportState(
+    val status: ImportStatus = ImportStatus.Idle,
+    val savedId: String? = null,
+    val warnings: Set<ImportWarning> = emptySet(),
+)
+
+/** "Importera från länk": reads schema.org Recipe data from one page and saves it with the source kept. */
+class RecipeImportViewModel(private val importer: RecipeImporter, private val recipes: RecipeRepository) : ViewModel() {
+    private val mutable = MutableStateFlow(RecipeImportState())
+    val state: StateFlow<RecipeImportState> = mutable
+
+    fun import(input: String) {
+        if (mutable.value.status == ImportStatus.Loading) return
+        mutable.value = RecipeImportState(ImportStatus.Loading)
+        viewModelScope.launch {
+            mutable.value = when (val result = importer.import(input)) {
+                is RecipeImportResult.Found -> {
+                    // The same link imported twice updates the earlier copy instead of duplicating it.
+                    val existing = recipes.all().firstOrNull { it.sourceUrl != null && it.sourceUrl == result.imported.recipe.sourceUrl }
+                    val recipe = existing?.let { e -> result.imported.recipe.copy(id = e.id, favorite = e.favorite, notes = e.notes) }
+                        ?: result.imported.recipe
+                    recipes.save(recipe)
+                    RecipeImportState(ImportStatus.Idle, savedId = recipe.id, warnings = result.imported.warnings)
+                }
+                RecipeImportResult.NoRecipeData -> RecipeImportState(ImportStatus.NoRecipeData(RecipeImporter.findUrl(input).orEmpty()))
+                RecipeImportResult.NotReachable -> RecipeImportState(ImportStatus.NotReachable)
+                RecipeImportResult.InvalidUrl -> RecipeImportState(ImportStatus.InvalidUrl)
+            }
+        }
+    }
+
+    fun reset() {
+        mutable.value = RecipeImportState()
+    }
+}
+
+// endregion

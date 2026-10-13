@@ -227,7 +227,7 @@ class RecipeDetailsViewModel(
         matching.value = MatchingState(ingredient, null, current)
         viewModelScope.launch {
             val candidates = nutrition.candidates(ingredient.name)
-            matching.update { m -> if (m?.ingredient == ingredient) m.copy(candidates = candidates) else m }
+            matching.update { m -> if (m != null && m.ingredient == ingredient) m.copy(candidates = candidates) else m }
         }
     }
 

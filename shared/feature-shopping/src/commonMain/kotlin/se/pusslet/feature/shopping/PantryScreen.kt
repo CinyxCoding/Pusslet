@@ -130,6 +130,7 @@ fun PantryScreen(
     onUsePantry: (Boolean) -> Unit = {},
 ) {
     var text by rememberSaveable { mutableStateOf("") }
+
     fun submit() {
         if (text.isNotBlank()) {
             onAdd(text)

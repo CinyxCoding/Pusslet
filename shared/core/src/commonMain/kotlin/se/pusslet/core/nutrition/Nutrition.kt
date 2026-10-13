@@ -189,6 +189,7 @@ object WeekNutritionCalculator {
     /** [summaries] has one entry per planned recipe meal; null = could not be estimated. */
     fun average(summaries: List<NutritionSummary?>): WeekNutrition {
         val known = summaries.filterNotNull()
+
         // Per value: a nutrient a recipe does not report is unknown, not zero.
         fun avg(value: (NutrientValues) -> Double?): Double? =
             known.mapNotNull { value(it.perPortion) }.takeIf { it.isNotEmpty() }?.average()

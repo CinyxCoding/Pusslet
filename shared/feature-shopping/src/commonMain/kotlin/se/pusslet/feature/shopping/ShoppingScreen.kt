@@ -463,6 +463,7 @@ private fun ShopperBanner(shopper: Shopper) {
 @Composable
 private fun AddField(actions: ShoppingActions) {
     var text by rememberSaveable { mutableStateOf("") }
+
     fun submit() {
         if (text.isNotBlank()) {
             actions.onAdd(text)

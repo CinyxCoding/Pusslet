@@ -78,6 +78,7 @@ internal fun DayPlanSheet(
     var cookDouble by rememberSaveable(key) { mutableStateOf(entry?.cookDouble ?: false) }
     var note by rememberSaveable(key) { mutableStateOf(entry?.note.orEmpty()) }
     val selected = recipeId?.let { id -> state.recipes.firstOrNull { it.id == id } }
+
     fun pick(recipe: Recipe) {
         recipeId = recipe.id
         title = recipe.title

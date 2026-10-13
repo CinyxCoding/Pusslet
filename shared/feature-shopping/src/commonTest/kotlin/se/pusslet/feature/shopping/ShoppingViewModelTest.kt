@@ -351,5 +351,4 @@ class ShoppingViewModelTest {
         assertIs<ShoppingMessage.Generated>(messages.last())
         assertEquals(3, vm.state.value.openCount)
     }
-
 }

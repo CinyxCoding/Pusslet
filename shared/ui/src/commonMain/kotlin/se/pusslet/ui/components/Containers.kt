@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -83,6 +84,8 @@ fun Banner(
     text: String,
     modifier: Modifier = Modifier,
     kind: BannerKind = BannerKind.Info,
+    /** Topic icon (gift, school …); the kind's default icon when null. */
+    icon: ImageVector? = null,
     actions: (@Composable () -> Unit)? = null,
 ) {
     val (container, content) = when (kind) {
@@ -94,7 +97,7 @@ fun Banner(
         Column(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)) {
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 Icon(
-                    if (kind == BannerKind.Info) Icons.Filled.Info else Icons.Filled.Warning,
+                    icon ?: if (kind == BannerKind.Info) Icons.Filled.Info else Icons.Filled.Warning,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp).padding(top = Spacing.xxs),
                 )

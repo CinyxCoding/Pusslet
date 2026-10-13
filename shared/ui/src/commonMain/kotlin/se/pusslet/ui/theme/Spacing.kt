@@ -18,6 +18,9 @@ object Spacing {
     /** Minimum touch target. Primary actions get a bit more ("en hand, en tumme"). */
     val touchTarget = 48.dp
     val primaryTouchTarget = 56.dp
+
+    /** Bottom padding for tab-root lists so the last row is never under the round + (ADR-023). */
+    val listBottomInset = 88.dp
 }
 
 internal val PussletShapes = Shapes(

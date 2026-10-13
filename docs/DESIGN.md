@@ -43,7 +43,8 @@ Material 3-skalan, något större brödtext för att kunna läsas i farten. Allt
 | labelLarge | 15 | SemiBold | Knappar |
 | StoreModeItemStyle | 24 / 32 | Medium | Varor i butiksläget ("stor text") |
 
-Rubriker får `semantics { heading() }` så TalkBack kan hoppa mellan dem.
+Rubriker får `semantics { heading() }` så TalkBack kan hoppa mellan dem. Typstegen går åt ett håll (22 > 20 > 17 > 15 >
+14) och ingen text är under 14 sp.
 
 ## Avstånd och former
 
@@ -53,22 +54,31 @@ Former: 6 / 10 / 16 / 24 / 32 dp (extraSmall … extraLarge). Kort använder med
 
 ## Komponentprinciper
 
-- **Idag först, nedtill nåbart.** Viktiga handlingar ligger i nedre halvan; global **+** (snabbinmatning) finns på
-  alla flikrötter utom Mer.
+- **Idag först, nedtill nåbart.** Viktiga handlingar ligger i nedre halvan. **+** är rund och utan text och betyder
+  ”lägg till det skärmen handlar om” – ett sätt att lägga till per skärm (ADR-023). Listor har 88 dp luft i botten.
 - **Stateless skärmar + tunn `*Route`.** Skärmen tar state och callbacks (förhandsvisningar, skärmdumpstester); routen
   kopplar ViewModel, snackbars och plattform.
 - **Ångra i stället för "Är du säker?"** för vardagliga handlingar (bocka av, ta bort vara, lägg till). Bekräftelse-
   dialog bara för det som inte går att ångra (ta bort lista, recept, familj).
-- **Kort (`SectionCard`)** grupperar en fråga ("Ska med idag", en dag i matsedeln). **Banner** för sådant som kräver
-  uppmärksamhet: Info (havre), Warning (terrakotta), Problem (error).
-- **Tomma lägen** säger alltid vad man kan göra härnäst (`EmptyState`).
-- **Förklarbart.** Regelbaserade förslag visar sina skäl som chips ("Snabbt en upptagen kväll", "Inte samma som
-  skollunchen"). Osäkra tolkningar i snabbinmatningen markeras i terrakotta.
+- **En fokusyta per skärm** (havre). Annars platta sektioner med rubrik och luft; kort bara för fokusyta, Problem, ark
+  och dialoger. **Uppmärksamhet** har tre nivåer som skiljer sig i form, ikon och placering: Info är en enkel rad,
+  Warning (påminnelse) är ofylld med terrakottaikon, Problem är fyllt (`errorContainer`) och har alltid en åtgärd.
+- **Tomt är tyst.** Ett tomt block syns inte. En helt tom skärm har en mening och en primär åtgärd (`EmptyState`).
+- **Förklarbart.** Regelbaserade förslag visar högst två skäl på en rad ("Snabbt", "Inte som lunchen"). Osäkra tolkningar
+  i snabbinmatningen markeras i terrakotta.
 - **Haptik** bara vid avbockning (subtil `TextHandleMove`). Butikslägets "Allt i vagnen!" är en lugn fade/scale, inget
   konfettiregn.
 - **Omordning** görs med upp/ner-knappar (fungerar med TalkBack) – dra-och-släpp är i så fall ett tillägg, aldrig enda
   sättet.
 - **Edge-to-edge:** innehåll får `contentPadding` från skalets `Scaffold`; inga hårdkodade systemfältshöjder.
+- **Samma form, samma sak.** En knapp gör något, `NavRow` öppnar, FilterChip filtrerar, `InfoPill` informerar.
+  `onClick = {}` är förbjudet. Högst en fylld knapp per skärm eller ark.
+- **Anpassningsbar startsida** (ADR-027). Svaret står först och ligger fast; blocken under går att slå av och ordna om;
+  det som måste lösas döljs aldrig; nya block kommer avstängda; anpassningen ligger som en rad längst ned.
+- **Kvitton** säger vad som hände och var: ”2 varor på listan · Visa”. Ångra visas bara när den verkligen återställer.
+- **Hjälparvyn** (Role.Caregiver) har ingen text under 18 sp och tryckytor på 64 dp (ADR-029).
+
+Hela underlaget och arbetsplanen finns i [UX_PLAN.md](UX_PLAN.md).
 
 ## Ton i text
 
@@ -77,8 +87,22 @@ Kort, varmt, vuxet – som en lugn förälder som har koll. Svenska först, enge
 - Säg vad som händer och vad man kan göra: "Sidan gick inte att nå. Kolla länken eller försök igen när du har nät."
 - Du-tilltal, inga utropstecken i felmeddelanden, inga skämt när något gått fel.
 - Små glädjeämnen är okej där det passar: "Inköpslistan är tom. Skönt!", "Allt i vagnen! Bra jobbat 🎉".
-- **Näring** beskrivs neutralt och informativt: inga mål, inga värdeord ("nyttigt", "onyttigt"), alltid källa
-  (Livsmedelsverket, CC BY 4.0) och hur komplett uppskattningen är.
+- **Näring** beskrivs neutralt och informativt: inga mål, inga värdeord ("nyttigt", "onyttigt"), källa i näringsvyn
+  (”Källa: Livsmedelsverket”) och hur komplett uppskattningen är. Övriga källor och licenser står i ”Om Pusslet” (ADR-025).
 - Svenska format: 24-timmarsklocka, decimalkomma, veckan börjar på måndag, veckonummer syns ("Vecka 42"),
   svenska enheter (dl, msk, tsk, krm, st, förp).
 - Inga hårdkodade strängar – allt ligger i `shared/ui/src/commonMain/composeResources/values*/strings.xml`.
+
+**Skrivregler** (ADR-024, gäller båda språken):
+1. Etiketter har 1–3 ord och knappar börjar med ett verb. Upprepa inte skärmens namn.
+2. Huvudskärmar har inga förklarande meningar; förklaringen hör hemma i tomläget, bakom (i) eller i inställningen.
+3. Siffror först och kompakt: ”5 kvar”, ”3 av 8 i vagnen”. Årtalet visas bara om det inte är i år.
+4. Statusrader är fragment (”Sara handlar nu”). Hela meningar bara i Problem (”Ingen kan hämta Ella kl 15:45”).
+5. En rad visar en sak, med högst en sekundär rad med högst tre delar (” · ”). Upprepa aldrig rubrik, ikon eller tid.
+6. Tomt är tyst. Skriv aldrig ”lägg till med +”.
+7. Ikon med ord är standard; ensam ikon bara när den är entydig (+, ×, ›, ⌄, sök, dela, stjärna, kryssruta, väder).
+8. En sak heter samma sak överallt (”Handla till veckan”).
+9. Källor och licenser står i ”Om Pusslet”.
+10. Högst ett varmt ord eller en emoji per skärm, i tomlägen och klart-lägen. Kvitton har inget ”!”.
+
+**Textbudget:** högst 40 ord ovanför vecket på Idag, 45 på övriga flikrötter, etiketter högst 3 ord.

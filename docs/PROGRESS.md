@@ -57,6 +57,23 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Skärmdumpstester för Mat/Handla (Roborazzi) – kräver Android-miljö
 - [x] Köra fas 2-UI:t på emulator och gå igenom flödena för hand (ägaren, Android Studio, 2026-10-13)
 
+## UX-förenkling (docs/UX_PLAN.md)
+Ägarens test av fas 2: funktionerna fungerar, men UI:t kändes rörigt med för mycket text. Plan med beslut i
+`docs/UX_PLAN.md`, ADR-023–033.
+- [x] Kvällskoll: från 18:00 visar Idag morgondagens väder och klädråd (ADR-022)
+- [ ] 1.0 Baslinje-goldens (kräver Android-miljö)
+- [ ] 1.1 Mindre text: skrivregler, omskrivningar, `StringBudgetTest`
+- [ ] 1.2 Rund +, ett sätt att lägga till per skärm
+- [ ] 1.3–1.6 Etiketter i bottenfältet, sage för valt, 14 sp, tre uppmärksamhetsnivåer, `InfoPill`
+- [ ] 1.7–1.12 Klädråd grupperade, kvitton, Handla-ångra, kalender, Mat idag först, Mer
+- [ ] 1.13 Hjälpare ser bara knappar som fungerar
+- [ ] 1.14–1.15 Första start i demo, första barnets färg
+- [ ] 2.0 Gemensamma komponenter
+- [ ] Idag A: block och Morgonkollen · Idag B: Anpassa Idag
+- [ ] Steg 2 per flik: Handla, Mat, Kalender, Mer
+- [ ] Steg 3: hjälparvy (H1 data och regler, H2 vy, H3 förhandsvisning och svar)
+- [ ] Steg 4: första användningen
+
 ## Fas 3 – Integrationer & notiser
 - [ ] ICS-prenumerationer
 - [ ] Tvåvägs enhetskalender (CalendarContract)

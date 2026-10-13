@@ -182,3 +182,52 @@ och klädråden räknas för morgondagen. Kortet visar "I morgon · Regn" i stä
 morgondagen visas dagens väder. Efter midnatt är den nya dagen "idag" igen. "Just nu" använder nu det prognossteg som ligger
 närmast klockan i stället för dagens högsta temperatur.
 **Konsekvens:** Kvällskollen svarar på "vad ska barnen ha på sig i morgon?" utan ett extra steg. Tiden kan göras inställbar senare.
+
+## ADR-023 – Rund + med ett sätt att lägga till per skärm
+**Kontext:** Ägaren tyckte att den utökade knappen ”Lägg till” var rörig (”ersätt med en +-knapp”). Handlas eget fält och
+den globala snabbinmatningen tolkade dessutom samma text på två sätt.
+**Beslut:** `FloatingActionButton` med bara + och en contentDescription per skärm. + betyder ”lägg till det skärmen handlar
+om”: snabbinmatning på Idag och Kalender, planera middag på Matsedel, nytt recept på Recept, ny vara på Handla, ny butik på
+Butiker. Ingen + i Mer, undersidor, butiksläget och hjälparvyn. Listor får 88 dp luft i botten. Avviker från BRIEF §5
+(global + på alla flikar).
+**Konsekvens:** En ingång per skärm; snabbinmatningen nås från Idag och Kalender.
+
+## ADR-024 – Skrivregler och textbudget
+**Kontext:** ”För mycket text, allt blev typ luddigt och rörigt.”
+**Beslut:** Tio skrivregler (docs/UX_PLAN.md 1.1, DESIGN.md › Ton i text). Högst 40 ord ovanför vecket på Idag och 45 på
+övriga flikrötter; etiketter högst 3 ord. `StringBudgetTest` kontrollerar strängarna och goldens räknar synliga ord.
+**Konsekvens:** Förklaringar flyttar till tomlägen, (i) och inställningar.
+
+## ADR-025 – Källor och licenser i ”Om Pusslet”
+**Kontext:** ”Prognos: SMHI” och liknande källrader tog plats på huvudskärmarna.
+**Beslut:** Källor och licenser (SMHI, Livsmedelsverket, OpenStreetMap m.fl.) står i ”Om Pusslet”. Undantag: en kort
+”Källa: Livsmedelsverket” inne i näringsvyn. CC BY 4.0 kräver erkännande på ett skäligt sätt för mediet, vilket det uppfyller.
+**Konsekvens:** DESIGN.md:s ”alltid källa” gäller näringsvyn, inte varje skärm.
+
+## ADR-026 – Idag utan hälsning
+**Kontext:** ”God morgon, Sara” var den största texten på Idag men sa inget om dagen.
+**Beslut:** Idag börjar med datum och vecka. Hälsningen finns kvar i morgonnotisen (fas 3). Avviker från BRIEF §4.1.
+
+## ADR-027 – Anpassningsbar Idag
+**Kontext:** Ägaren vill kunna anpassa sin startsida, men standardläget ska vara lugnt.
+**Beslut:** Idag byggs av block med stabila id (`handoffs`, `packing`, `dinner`, `weather`, `timeline`, `tasks`, `upcoming`,
+`shopping`) och en standard per roll. Morgonkollen står alltid först; sektionerna under går att slå av och ordna om med
+upp/ner-knappar på en egen skärm, ”Anpassa Idag”. Rubrik med vecka, Problem och förfrågningar går inte att dölja. Nya block
+kommer avstängda. Layouten lagras lokalt i `Prefs.TodayLayout` (ADR-012) och synkas inte.
+**Konsekvens:** Ingen ny data lämnar telefonen; en ny telefon börjar med standardläget.
+
+## ADR-028 – Ett faktum en gång på Idag
+**Kontext:** Samma sak syntes på flera ställen (väderkort, banners, tidslinje).
+**Beslut:** Väderkortet och kontextbannrarna (byte, kalas, studiedag, klämdag) blir rader: vädret i Morgonkollen,
+påminnelser i Kommande, vårdnaden i rubriken. Lämning och hämtning visas i Morgonkollen och bara i tidslinjen när blocket
+är av. Innehållet i BRIEF §4.1 behålls i ny form.
+
+## ADR-032 – Färgroller
+**Kontext:** Valt läge och fokus använde färger med för låg kontrast mot bakgrunden, och varning och problem såg likadana ut.
+**Beslut:** Havre (`secondaryContainer`) betyder fokus, högst en yta per skärm. Sage `primaryContainer` betyder valt (flik,
+segment, filterchip). Terrakotta är påminnelse/osäker tolkning och visas som ikon på neutral yta. Rött (`errorContainer`) är
+problem idag, fyllt och alltid med en åtgärd. Medlemsfärger betyder aldrig status.
+
+## ADR-033 – Kalendervyer: Vecka och Månad
+**Kontext:** Fyra vyer (Dag, Vecka, Månad, Agenda) gjorde kalendern svår att förstå, och Dag-vyn fastnade som standard.
+**Beslut:** Segmentet visar ”Vecka | Månad”. Agenda går upp i veckolistan och Dag öppnas från dagrubriken som egen skärm.

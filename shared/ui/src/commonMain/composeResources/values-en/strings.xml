@@ -103,32 +103,20 @@
     <string name="greeting_named">%1$s, %2$s</string>
 
     <!-- Today -->
-    <string name="today_weather_line">%1$d° now · %2$d–%3$d°</string>
-    <string name="today_weather_tomorrow">Tomorrow · %1$d–%2$d°</string>
+    <string name="today_weather_tomorrow">Tomorrow %1$d–%2$d°</string>
     <string name="today_weather_stale">Weather from %1$s</string>
     <string name="today_weather_missing">Choose place</string>
     <string name="today_weather_unavailable">No weather right now</string>
     <string name="today_clothes_for">%1$s: %2$s</string>
-    <string name="today_timeline_title">The day</string>
-    <string name="today_packing_title">To bring</string>
     <string name="today_packing_reason_event">for %1$s</string>
     <string name="today_packing_reason_handover">changeover day</string>
-    <string name="today_meals_title">Food</string>
     <string name="today_lunch">Lunch: %2$s (%1$s)</string>
-    <string name="today_dinner">Dinner: %1$s</string>
-    <string name="today_no_dinner">No dinner planned</string>
     <string name="today_plan_dinner">Plan dinner</string>
     <string name="today_clash">%1$s had %2$s for lunch</string>
-    <string name="today_upcoming_title">Coming up</string>
-    <string name="today_tasks_title">To do</string>
     <string name="today_custody">With %1$s</string>
-    <string name="today_custody_a11y">The children are with %1$s</string>
     <string name="today_custody_handover">Changeover %1$s to %2$s</string>
     <string name="today_custody_next">Next changeover %1$s</string>
-    <string name="today_dropoff">Drop-off</string>
-    <string name="today_pickup">Pick-up</string>
     <string name="today_handoff_nobody">Not decided</string>
-    <string name="today_quiet">A calm day ☕</string>
     <string name="today_overdue">Overdue</string>
 
     <!-- Context cards -->
@@ -139,15 +127,9 @@
     <string name="card_unassigned_pickup">Nobody is picking up %1$s at %2$s</string>
     <string name="card_unassigned_dropoff">Nobody is dropping off %1$s at %2$s</string>
     <string name="card_double_booked">%1$s has both %2$s and %3$s at the same time</string>
-    <string name="card_study_day">%1$s %2$s – who is at home?</string>
-    <string name="card_party_gift">Party %1$s – present?</string>
-    <string name="card_squeeze_day">Bridge day %1$s – off or after-school care?</string>
-    <string name="card_handover">Changeover %1$s to %2$s</string>
     <string name="card_action_take">I'll take it</string>
     <string name="card_action_remind">Remind me</string>
     <string name="card_action_open">Show</string>
-    <string name="card_today">today</string>
-    <string name="card_tomorrow">tomorrow</string>
 
     <!-- Clothing advice -->
     <string name="advice_winter_overall">Snowsuit</string>
@@ -276,10 +258,8 @@
     <string name="meal_dinner">Dinner</string>
 
     <!-- Calendar -->
-    <string name="calendar_view_day">Day</string>
     <string name="calendar_view_week">Week</string>
     <string name="calendar_view_month">Month</string>
-    <string name="calendar_view_agenda">Agenda</string>
     <string name="calendar_layers">Filter</string>
     <string name="layer_family">Family</string>
     <string name="layer_subscriptions">School and clubs</string>
@@ -297,8 +277,6 @@
     <string name="calendar_more_events">+%1$d more</string>
     <string name="event_all_day">All day</string>
     <string name="event_participants">Who is it for?</string>
-    <string name="event_dropoff">Drops off</string>
-    <string name="event_pickup">Picks up</string>
     <string name="event_handoffs">Drop-off and pick-up</string>
     <string name="event_handoff_none">Not decided</string>
     <string name="event_location">Place</string>
@@ -700,8 +678,6 @@
     <string name="store_default_body">Used for lists without a store of their own.</string>
     <string name="store_order_title">Aisle order</string>
     <string name="store_order_hint">Move the aisles into the order you pass them in the store.</string>
-    <string name="store_move_up">Move %1$s up</string>
-    <string name="store_move_down">Move %1$s down</string>
     <string name="store_reset_order">Reset to default order</string>
     <string name="store_delete_confirm">Delete the store %1$s?</string>
     <string name="store_mode_all_done_title">Everything's in the cart!</string>
@@ -864,6 +840,70 @@
 
     <string name="action_move_up_named">Move %1$s up</string>
     <string name="action_move_down_named">Move %1$s down</string>
+
+    <!-- Calendar: week list, routines, filter, editor (UX Steg 2) -->
+    <string name="calendar_week_title">Week %1$d · %2$s</string>
+    <string name="calendar_range">%1$s–%2$s</string>
+    <string name="calendar_custody_period">With %1$s (%2$s)</string>
+    <string name="calendar_custody_period_for">%1$s with %2$s (%3$s)</string>
+    <string name="calendar_routine_child">%1$s: %2$s</string>
+    <string name="calendar_handoff_dropoff">%1$s drops off %2$s</string>
+    <string name="calendar_handoff_pickup">%1$s picks up %2$s</string>
+    <string name="calendar_handoff_dropoff_me">You drop off %1$s</string>
+    <string name="calendar_handoff_pickup_me">You pick up %1$s</string>
+    <string name="calendar_handoff_dropoff_open">Drop-off %1$s – %2$s</string>
+    <string name="calendar_handoff_pickup_open">Pick-up %1$s – %2$s</string>
+    <string name="calendar_filter_only">Only %1$s</string>
+    <string name="calendar_filter_hidden">Hidden: %1$s</string>
+    <string name="calendar_filter_people">Who</string>
+    <string name="calendar_filter_layers">Show in calendar</string>
+    <string name="calendar_open_day">Open day</string>
+    <string name="calendar_more_count">+%1$d</string>
+    <string name="calendar_events_one">1 event</string>
+    <string name="calendar_events_many">%1$d events</string>
+    <string name="calendar_more_details">More details</string>
+    <string name="calendar_who_drops_off">Who drops off %1$s?</string>
+    <string name="calendar_who_picks_up">Who picks up %1$s?</string>
+
+    <!-- Idag – blocks (UX plan Steg 2, ADR-027): names on Anpassa Idag and the section titles -->
+    <string name="today_block_handoffs">Drop-off and pick-up</string>
+    <string name="today_block_packing">To bring</string>
+    <string name="today_block_dinner">Food</string>
+    <string name="today_block_weather">Weather and clothes</string>
+    <string name="today_block_timeline">Happening today</string>
+    <string name="today_block_tasks">To do</string>
+    <string name="today_block_upcoming">Coming up</string>
+    <string name="today_block_shopping">Shopping list</string>
+    <!-- Idag – Att lösa -->
+    <string name="today_more_problems">More to solve (%1$d)</string>
+    <string name="today_request_pickup">%1$s asks if you can pick up %2$s %3$s</string>
+    <string name="today_request_dropoff">%1$s asks if you can drop off %2$s %3$s</string>
+    <string name="today_request_someone">Someone</string>
+    <string name="today_request_answer">Reply</string>
+    <!-- Idag – Morgonkollen -->
+    <string name="today_you_dropoff">You drop off %1$s</string>
+    <string name="today_you_pickup">You pick up %1$s</string>
+    <string name="today_person_dropoff">%1$s drops off %2$s</string>
+    <string name="today_person_pickup">%1$s picks up %2$s</string>
+    <string name="today_nobody_dropoff">Drop-off %1$s</string>
+    <string name="today_nobody_pickup">Pick-up %1$s</string>
+    <string name="today_handoff_stop">%1$s at %2$s</string>
+    <string name="today_packing_line">To bring: %1$s</string>
+    <string name="today_item_for">%1$s (%2$s)</string>
+    <string name="today_packing_done">All packed</string>
+    <string name="today_dinner_tonight">Tonight: %1$s</string>
+    <string name="today_weather_temp">%1$d°</string>
+    <string name="state_expanded">Expanded</string>
+    <string name="state_collapsed">Collapsed</string>
+    <!-- Idag – sections -->
+    <string name="today_show_whole_day">Show the whole day</string>
+    <string name="today_show_all_count">Show all (%1$d)</string>
+    <string name="today_reminder_gift">%1$s – present?</string>
+    <string name="today_reminder_study_day">%1$s – who is at home?</string>
+    <string name="today_reminder_squeeze">Bridge day – off or after-school care?</string>
+    <string name="today_shopping_left">%1$s: %2$d left</string>
+    <string name="today_quiet_end">Nothing more today</string>
+    <string name="today_customize">Customize Today</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>

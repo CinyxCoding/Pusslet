@@ -15,6 +15,8 @@ import se.pusslet.data.db.CacheEntryEntity
 import se.pusslet.data.db.CacheSummary
 import se.pusslet.data.db.PreferenceDao
 import se.pusslet.data.db.PreferenceEntity
+import se.pusslet.data.db.PurchaseLogDao
+import se.pusslet.data.db.PurchaseLogEntity
 import se.pusslet.data.remote.LocalOnlyAuthRepository
 import se.pusslet.data.remote.LocalOnlyFamilyRemote
 import se.pusslet.data.repository.CalendarRepository
@@ -24,6 +26,7 @@ import se.pusslet.data.repository.MealRepository
 import se.pusslet.data.repository.NoDeviceCalendars
 import se.pusslet.data.repository.PackingRepository
 import se.pusslet.data.repository.PreferencesRepository
+import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.repository.TaskRepository
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
@@ -76,13 +79,21 @@ class FakeCacheDao : CacheDao {
     override suspend fun summaries() = entries.value.values.map { CacheSummary(it.key, it.fetchedAt, it.lastError) }
 }
 
+object NoPurchases : PurchaseLogDao {
+    override suspend fun insert(entity: PurchaseLogEntity) = Unit
+
+    override suspend fun since(familyId: String, since: Long) = emptyList<PurchaseLogEntity>()
+
+    override suspend fun deleteFamily(familyId: String) = Unit
+}
+
 object NoLunchFeeds : LunchMenuProvider {
     override fun supports(source: LunchSource) = false
 
     override suspend fun lunches(source: LunchSource, force: Boolean): Sourced<List<SchoolLunch>>? = null
 }
 
-/** SMHI is offline in tests: the weather card shows "Inget väder just nu" (or "Välj ort" without a place). */
+/** SMHI is offline in tests: the weather row says "Inget väder just nu" (or "Välj ort" without a place). */
 object NoWeather : WeatherSource {
     override suspend fun forecast(place: Place, force: Boolean): Sourced<Forecast>? = null
 }
@@ -103,5 +114,6 @@ class TestWorld(role: Role = Role.Parent, now: Instant = Instant.parse("2026-10-
     val meals = MealRepository(docs)
     val tasks = TaskRepository(docs)
     val lunches = LunchRepository(docs, NoLunchFeeds, family)
+    val shopping = ShoppingRepository(docs, NoPurchases, sessions, clock)
     val handoffs = HandoffAssigner(calendar)
 }

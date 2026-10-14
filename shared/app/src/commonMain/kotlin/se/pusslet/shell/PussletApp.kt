@@ -45,6 +45,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.data.usecase.QuickAddOutcome
+import se.pusslet.feature.calendar.CalendarDayRoute
 import se.pusslet.feature.calendar.CalendarRoute
 import se.pusslet.feature.calendar.details.EventDetailsRoute
 import se.pusslet.feature.calendar.editor.EventEditorRoute
@@ -239,17 +240,26 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues, onQui
                     onOpenOccurrence = openOccurrence,
                     onPlanDinner = { navigator.navigate(Route.Meals) },
                     onOpenSettings = { navigator.navigate(Route.Settings) },
-                    onOpenHandover = { navigator.navigate(Route.Handover(it)) },
                     onQuickAdd = onQuickAdd,
+                    onOpenCalendar = { navigator.selectTab(TopLevelTab.Calendar) },
+                    onOpenShopping = { navigator.selectTab(TopLevelTab.Shopping) },
                     contentPadding = padding,
                 )
             }
             entry<Route.Calendar> {
                 CalendarRoute(
                     onOpenOccurrence = openOccurrence,
-                    onNewEvent = { navigator.navigate(Route.EventEditor(date = it)) },
+                    onOpenDay = { navigator.navigate(Route.CalendarDay(it)) },
                     onQuickAdd = onQuickAdd,
                     contentPadding = padding,
+                )
+            }
+            entry<Route.CalendarDay> { r ->
+                CalendarDayRoute(
+                    date = r.date,
+                    onBack = navigator::goBack,
+                    onOpenOccurrence = openOccurrence,
+                    onNewEvent = { navigator.navigate(Route.EventEditor(date = it)) },
                 )
             }
             entry<Route.Meals> {

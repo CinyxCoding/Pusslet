@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -16,14 +17,12 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
-import se.pusslet.core.custody.CustodyCalculator
-import se.pusslet.core.holidays.Holiday
-import se.pusslet.core.holidays.SwedishHolidays
 import se.pusslet.core.model.EventOccurrence
+import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
-import se.pusslet.core.model.Household
+import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
-import se.pusslet.core.time.datesUntil
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.time.startOfWeek
 import se.pusslet.data.repository.CalendarLayer
@@ -33,18 +32,15 @@ import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.session.SessionProvider
+import se.pusslet.data.usecase.HandoffAssigner
 import kotlin.time.Clock
 
-data class CalendarDay(
-    val date: LocalDate,
-    val occurrences: List<EventOccurrence>,
-    val holidays: List<Holiday>,
-    /** Where the children are this day (one entry per custody schedule). */
-    val custody: List<Household>,
-    val redDay: Boolean,
-)
-
+/**
+ * The calendar tab (ADR-033): "Vecka | Månad". Day is its own screen ([CalendarDayViewModel]); stored values from the old
+ * Day and Agenda segments open the week.
+ */
 data class CalendarUiState(
+    /** Only [CalendarView.Week] or [CalendarView.Month]. */
     val view: CalendarView = CalendarView.Week,
     val anchor: LocalDate? = null,
     val today: LocalDate? = null,
@@ -52,24 +48,47 @@ data class CalendarUiState(
     val people: List<FamilyPerson> = emptyList(),
     val personFilter: Set<String> = emptySet(),
     val layers: Set<CalendarLayer> = CalendarLayer.entries.toSet(),
-    /** Caregivers see what is shared with them but cannot add events (UX plan 1.13). */
+    /** Caregivers see what is shared with them but cannot add events or take hand-offs (UX plan 1.13). */
     val role: Role = Role.Parent,
+    val myMemberId: String? = null,
+    /** Month: the day shown under the grid. Defaults to today in the current month, else the first of the month. */
+    val selected: LocalDate? = null,
+    /** Week: where the children are, the line under the week ("Hos Ahmed (mån–sön)"). */
+    val custodyWeek: List<CustodyWeek> = emptyList(),
 ) {
     val canEdit: Boolean get() = role == Role.Parent
 
+    /** Layers that are switched off in the filter sheet. */
+    val hiddenLayers: List<CalendarLayer> get() = CalendarLayer.entries.filter { it !in layers }
+
+    /** People in the filter, children first ("Bara Simon"). */
+    val filteredPeople: List<FamilyPerson> get() = people.filter { it.id in personFilter }.sortedBy { !it.isChild }
+
+    /** Any filter on: the filter icon gets a dot and the line "Bara Simon · Visa alla" shows (UX plan, Kalender 3). */
+    val filterActive: Boolean get() = personFilter.isNotEmpty() || hiddenLayers.isNotEmpty()
+
+    /** The shown week or month contains today, so "Idag" is not offered. */
+    val showsToday: Boolean
+        get() {
+            val a = anchor ?: return true
+            val t = today ?: return true
+            return if (view == CalendarView.Month) a.year == t.year && a.month == t.month else a.startOfWeek() == t.startOfWeek()
+        }
+
+    /** The day under the month grid. */
+    val selectedDay: CalendarDay? get() = selected?.let { s -> days.firstOrNull { it.date == s } }
+
     /**
-     * The day the round + hands to quick add (UX plan 1.2): the selected day, else the first day of another week (or
-     * month) than the current one, else null so that quick add uses today.
+     * The day the round + hands to quick add (UX plan 1.2): the Monday of another week, or the selected day of the month;
+     * null when that is today, so that quick add uses today.
      */
     val addDate: LocalDate?
         get() {
             val a = anchor ?: return null
             val t = today ?: return null
             return when (view) {
-                CalendarView.Day -> a
-                CalendarView.Week -> a.startOfWeek().takeIf { it != t.startOfWeek() }
-                CalendarView.Month -> LocalDate(a.year, a.month, 1).takeIf { a.year != t.year || a.month != t.month }
-                CalendarView.Agenda -> a.takeIf { t !in a..a.plusDays(CalendarViewModel.AGENDA_DAYS) }
+                CalendarView.Month -> selected?.takeIf { it != t }
+                else -> a.startOfWeek().takeIf { it != t.startOfWeek() }
             }
         }
 }
@@ -79,24 +98,25 @@ class CalendarViewModel(
     private val calendar: CalendarRepository,
     private val family: FamilyRepository,
     private val prefs: PreferencesRepository,
-    sessions: SessionProvider,
+    private val sessions: SessionProvider,
+    private val assigner: HandoffAssigner,
     private val clock: Clock,
     private val zone: TimeZone,
 ) : ViewModel() {
     private val anchor = MutableStateFlow(clock.todayIn(zone))
 
-    /**
-     * The view chosen in this visit, ahead of the stored one. A tapped date opens Day here without storing it, so the
-     * calendar never gets stuck in Day after a restart (UX plan 1.10); only an explicit view switch is stored.
-     */
+    /** The view chosen in this visit, ahead of the stored one (shown at once, before the store answers). */
     private val chosenView = MutableStateFlow<CalendarView?>(null)
+
+    /** A day tapped in the month; null = the default (today, or the first of another month). */
+    private val selectedDate = MutableStateFlow<LocalDate?>(null)
 
     private data class Window(val view: CalendarView, val anchor: LocalDate, val from: LocalDate, val to: LocalDate)
 
-    private data class Settings(val filter: Set<String>, val layers: Set<CalendarLayer>, val role: Role)
+    private data class Settings(val filter: Set<String>, val layers: Set<CalendarLayer>, val role: Role, val me: String?)
 
     private val window = combine(prefs.observe(Prefs.CalendarViewMode), chosenView, anchor) { stored, chosen, a ->
-        val view = chosen ?: stored
+        val view = shown(chosen ?: stored)
         val (from, to) = rangeFor(view, a)
         Window(view, a, from, to)
     }
@@ -107,60 +127,75 @@ class CalendarViewModel(
         prefs.observe(Prefs.CalendarPersonFilter),
         prefs.observe(Prefs.CalendarLayers),
         sessions.session,
-    ) { f, l, s -> Settings(f, l, s.role) }
+    ) { f, l, s -> Settings(f, l, s.role, s.memberId) }
 
-    val state: StateFlow<CalendarUiState> = combine(window, occurrences, family.people, family.custody, settings) {
-        w,
-        occ,
-        people,
-        custody,
-        (filter, layers, role),
-        ->
-        val visible = if (filter.isEmpty()) occ else occ.filter { o -> o.event.participantIds.any { it in filter } }
-        val days = w.from.datesUntil(w.to).map { d ->
-            CalendarDay(
-                date = d,
-                occurrences = visible.filter { it.overlapsDate(d) },
-                holidays = if (CalendarLayer.Holidays in layers) SwedishHolidays.forDate(d) else emptyList(),
-                custody = if (CalendarLayer.Custody in layers) custody.mapNotNull { CustodyCalculator.householdOn(it, d) } else emptyList(),
-                redDay = SwedishHolidays.isRedDay(d),
-            )
+    private val content = combine(window, occurrences, family.people, family.custody, settings) { w, occ, people, custody, s ->
+        val filter = CalendarDays.effectiveFilter(s.filter, people)
+        val days = CalendarDays.build(w.from, w.to, occ, people, custody, filter, s.layers, s.me)
+        val custodyWeek = if (w.view == CalendarView.Week) {
+            CalendarDays.custodyWeek(w.from, w.to, custody, people, filter, s.layers)
+        } else {
+            emptyList()
         }
-        CalendarUiState(w.view, w.anchor, clock.todayIn(zone), days, people, filter, layers, role)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState(role = sessions.session.value.role))
+        val today = clock.todayIn(zone)
+        CalendarUiState(
+            view = w.view,
+            anchor = w.anchor,
+            today = today,
+            days = days,
+            people = people,
+            personFilter = filter,
+            layers = s.layers,
+            role = s.role,
+            myMemberId = s.me,
+            selected = if (w.view == CalendarView.Month) defaultSelection(w.anchor, today) else null,
+            custodyWeek = custodyWeek,
+        )
+    }
+
+    val state: StateFlow<CalendarUiState> = combine(content, selectedDate) { s, picked ->
+        // A tapped day wins while it is inside the shown month grid.
+        val chosen = picked?.takeIf { p -> s.view == CalendarView.Month && s.days.any { it.date == p } }
+        if (chosen != null) s.copy(selected = chosen) else s
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        CalendarUiState(role = sessions.session.value.role, myMemberId = sessions.session.value.memberId),
+    )
 
     /** An explicit view switch: shown right away and stored as the view the calendar opens with. */
     fun setView(view: CalendarView) {
-        chosenView.value = view
-        viewModelScope.launch { prefs.set(Prefs.CalendarViewMode, view) }
+        val shown = shown(view)
+        chosenView.value = shown
+        selectedDate.value = null
+        viewModelScope.launch { prefs.set(Prefs.CalendarViewMode, shown) }
     }
 
-    /** A tapped date opens that day for now; the stored view stays as it was. */
-    fun showDay(date: LocalDate) {
-        anchor.value = date
-        chosenView.value = CalendarView.Day
+    /** Month: show [date] under the grid. The calendar stays in the month (UX plan, Kalender 5). */
+    fun selectDay(date: LocalDate) {
+        selectedDate.value = date
     }
 
     fun goToday() {
         anchor.value = clock.todayIn(zone)
+        selectedDate.value = null
     }
 
     fun step(forward: Boolean) {
         val a = anchor.value
-        val sign = if (forward) 1 else -1
         anchor.value = when (state.value.view) {
-            CalendarView.Day -> a.plusDays(sign)
-            CalendarView.Week -> a.plusDays(7 * sign)
             CalendarView.Month -> if (forward) a.plus(1, DateTimeUnit.MONTH) else a.minus(1, DateTimeUnit.MONTH)
-            CalendarView.Agenda -> a.plusDays(AGENDA_DAYS * sign)
+            else -> a.plusDays(if (forward) 7 else -7)
         }
+        selectedDate.value = null
     }
 
     fun togglePerson(id: String) {
         viewModelScope.launch { prefs.update(Prefs.CalendarPersonFilter) { if (id in it) it - id else it + id } }
     }
 
-    fun clearFilter() {
+    /** "Alla" in the filter sheet: everyone again, the layers stay as they are. */
+    fun clearPeople() {
         viewModelScope.launch { prefs.set(Prefs.CalendarPersonFilter, emptySet()) }
     }
 
@@ -168,20 +203,59 @@ class CalendarViewModel(
         viewModelScope.launch { prefs.update(Prefs.CalendarLayers) { if (layer in it) it - layer else it + layer } }
     }
 
-    companion object {
-        const val AGENDA_DAYS = 42
-
-        /** Visible date range for a view. Weeks start on Monday; month grids show whole weeks. */
-        fun rangeFor(view: CalendarView, anchor: LocalDate): Pair<LocalDate, LocalDate> = when (view) {
-            CalendarView.Day -> anchor to anchor
-            CalendarView.Week -> anchor.startOfWeek() to anchor.startOfWeek().plusDays(6)
-            CalendarView.Month -> {
-                val first = LocalDate(anchor.year, anchor.month, 1)
-                val start = first.startOfWeek()
-                val last = first.plus(1, DateTimeUnit.MONTH).plusDays(-1)
-                start to last.startOfWeek().plusDays(6)
-            }
-            CalendarView.Agenda -> anchor to anchor.plusDays(AGENDA_DAYS)
+    /** "Visa alla": everyone and every layer. */
+    fun showAll() {
+        viewModelScope.launch {
+            prefs.set(Prefs.CalendarPersonFilter, emptySet())
+            prefs.set(Prefs.CalendarLayers, CalendarLayer.entries.toSet())
         }
     }
+
+    /** "Jag tar det" on a routine line; parents only. */
+    fun take(occurrence: EventOccurrence, kind: HandoffKind) {
+        val me = sessions.session.value.memberId ?: return
+        if (!state.value.canEdit) return
+        viewModelScope.launch { takeHandoff(calendar, assigner, clock, occurrence, kind, me) }
+    }
+
+    companion object {
+        /** The calendar shows weeks and months; the stored Day and Agenda values from before ADR-033 open the week. */
+        fun shown(view: CalendarView): CalendarView = if (view == CalendarView.Month) CalendarView.Month else CalendarView.Week
+
+        /** Visible date range for a view. Weeks start on Monday; month grids show whole weeks. */
+        fun rangeFor(view: CalendarView, anchor: LocalDate): Pair<LocalDate, LocalDate> = when (shown(view)) {
+            CalendarView.Month -> {
+                val first = LocalDate(anchor.year, anchor.month, 1)
+                val last = first.plus(1, DateTimeUnit.MONTH).plusDays(-1)
+                first.startOfWeek() to last.startOfWeek().plusDays(6)
+            }
+            else -> anchor.startOfWeek() to anchor.startOfWeek().plusDays(6)
+        }
+
+        /** Today in the current month, else the first day of the shown month. */
+        fun defaultSelection(anchor: LocalDate, today: LocalDate): LocalDate =
+            if (anchor.year == today.year && anchor.month == today.month) today else LocalDate(anchor.year, anchor.month, 1)
+    }
+}
+
+/**
+ * "Jag tar det": the signed-in member takes the hand-off for this occurrence (an override for a series) and answers any open
+ * request for it (ADR-015). Only family events can be changed.
+ */
+internal suspend fun takeHandoff(
+    calendar: CalendarRepository,
+    assigner: HandoffAssigner,
+    clock: Clock,
+    occurrence: EventOccurrence,
+    kind: HandoffKind,
+    me: String,
+) {
+    if (occurrence.source != EventSource.Family) return
+    assigner.assign(occurrence, kind, me)
+    calendar.handoffRequests.first()
+        .filter {
+            it.eventId == occurrence.event.id && it.occurrenceDate == occurrence.occurrenceDate && it.kind == kind &&
+                it.status == RequestStatus.Pending
+        }
+        .forEach { calendar.saveHandoffRequest(it.copy(status = RequestStatus.Accepted, respondedBy = me, respondedAt = clock.now())) }
 }

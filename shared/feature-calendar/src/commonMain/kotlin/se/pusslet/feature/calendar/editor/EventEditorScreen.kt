@@ -1,6 +1,7 @@
 package se.pusslet.feature.calendar.editor
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -8,24 +9,30 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,10 +40,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -46,18 +55,19 @@ import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
-import se.pusslet.ui.components.DateField
+import se.pusslet.ui.components.DatePickerSheet
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.LoadingBox
-import se.pusslet.ui.components.PersonChips
+import se.pusslet.ui.components.OutlinedValueField
+import se.pusslet.ui.components.PersonAvatar
 import se.pusslet.ui.components.PussletTopBar
-import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.SwitchRow
-import se.pusslet.ui.components.TimeField
-import se.pusslet.ui.components.ValueField
+import se.pusslet.ui.components.TimePickerSheet
 import se.pusslet.ui.format.describe
 import se.pusslet.ui.format.formatDateLong
+import se.pusslet.ui.format.formatTime
+import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.format.weekdayName
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
@@ -88,6 +98,10 @@ fun EventEditorRoute(
     )
 }
 
+/**
+ * The event editor (UX plan, Kalender 7): Titel → Vem gäller det? → När → "Vem lämnar/hämtar Simon?", the rest under
+ * "Fler detaljer" and "Spara" fixed at the bottom. Deleting is rare and sits in the ⋮ menu.
+ */
 @Composable
 fun EventEditorScreen(
     state: EventEditorState,
@@ -108,8 +122,24 @@ fun EventEditorScreen(
             PussletTopBar(
                 title = stringResource(if (state.isNew) Res.string.calendar_new_event else Res.string.calendar_edit_event),
                 onBack = onBack,
-                actions = { TextButton(onClick = onSave, enabled = !state.saving) { Text(stringResource(Res.string.action_save)) } },
+                actions = { if (!state.isNew) DeleteMenu { confirmDelete = true } },
             )
+        },
+        bottomBar = {
+            Surface(color = MaterialTheme.colorScheme.surface) {
+                Button(
+                    onClick = onSave,
+                    enabled = !state.saving && state.draft != null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .imePadding()
+                        .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm)
+                        .heightIn(min = Spacing.primaryTouchTarget),
+                ) {
+                    Text(stringResource(Res.string.action_save))
+                }
+            }
         },
     ) { padding ->
         val d = state.draft
@@ -118,7 +148,11 @@ fun EventEditorScreen(
             return@Scaffold
         }
         Column(
-            Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(Spacing.screenHorizontal),
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             if (state.singleOccurrence) {
@@ -132,72 +166,35 @@ fun EventEditorScreen(
                 onValueChange = { v -> onEdit { it.copy(title = v) } },
                 label = { Text(stringResource(Res.string.field_title)) },
                 isError = EditorError.TitleRequired in state.errors,
-                supportingText = if (EditorError.TitleRequired in
-                    state.errors
-                ) {
-                    ({ Text(stringResource(Res.string.event_title_required)) })
+                supportingText = if (EditorError.TitleRequired in state.errors) {
+                    { Text(stringResource(Res.string.event_title_required)) }
                 } else {
                     null
                 },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth(),
             )
-            WhenSection(state, d, onEdit, onStartDate, onStartTime)
             if (state.people.isNotEmpty()) {
-                SectionCard(stringResource(Res.string.event_participants)) {
-                    PersonChips(state.people, d.participants, onTogglePerson)
-                }
-            }
-            if (!d.allDay && d.participants.any { id -> state.people.any { it.id == id && it.isChild } }) {
-                HandoffSection(state.adults, d, onEdit)
-            }
-            OutlinedTextField(
-                value = d.location,
-                onValueChange = { v -> onEdit { it.copy(location = v) } },
-                label = { Text(stringResource(Res.string.event_location)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SectionCard(stringResource(Res.string.event_tags)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    EventTags.all.forEach { tag ->
-                        val label = Labels.tag(tag)?.let { stringResource(it) } ?: tag
-                        FilterChip(
-                            selected = tag in d.tags,
-                            onClick = { onToggleTag(tag) },
-                            label = { Text(label) },
-                            colors = SelectionColors.filterChip(),
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    FieldHeading(stringResource(Res.string.event_participants))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        state.people.sortedBy { !it.isChild }.forEach { p ->
+                            FilterChip(
+                                selected = p.id in d.participants,
+                                onClick = { onTogglePerson(p.id) },
+                                label = { Text(p.name) },
+                                leadingIcon = { PersonAvatar(p, size = 20.dp) },
+                                colors = SelectionColors.filterChip(),
+                            )
+                        }
                     }
                 }
             }
-            PackingSection(d.packing, onAddPacking, onRemovePacking)
-            ReminderField(d.reminder) { r -> onEdit { it.copy(reminder = r) } }
-            OutlinedTextField(
-                value = d.note,
-                onValueChange = { v -> onEdit { it.copy(note = v) } },
-                label = { Text(stringResource(Res.string.event_note)) },
-                minLines = 2,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            SwitchRow(stringResource(Res.string.event_shared_caregivers), d.sharedWithCaregivers, { v ->
-                onEdit { it.copy(sharedWithCaregivers = v) }
-            })
-            Button(
-                onClick = onSave,
-                enabled = !state.saving,
-                modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
-            ) {
-                Text(stringResource(Res.string.action_save))
-            }
-            if (!state.isNew) {
-                OutlinedButton(onClick = {
-                    confirmDelete = true
-                }, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget)) {
-                    Text(stringResource(Res.string.action_delete))
-                }
-            }
+            WhenSection(state, d, onEdit, onStartDate, onStartTime)
+            val children = state.people.filter { it.isChild && it.id in d.participants }
+            if (!d.allDay && children.isNotEmpty()) HandoffSection(state.adults, children, d, onEdit)
+            MoreDetails(d, onEdit, onToggleTag, onAddPacking, onRemovePacking)
         }
     }
     if (confirmDelete) {
@@ -224,6 +221,28 @@ fun EventEditorScreen(
     }
 }
 
+/** ⋮ with "Ta bort" (rare and destructive, so not a button on the form). */
+@Composable
+private fun DeleteMenu(onDelete: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.action_delete))
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text(stringResource(Res.string.action_delete)) }, onClick = {
+                open = false
+                onDelete()
+            })
+        }
+    }
+}
+
+@Composable
+private fun FieldHeading(text: String) {
+    Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
 @Composable
 private fun WhenSection(
     state: EventEditorState,
@@ -232,18 +251,18 @@ private fun WhenSection(
     onStartDate: (LocalDate) -> Unit,
     onStartTime: (LocalTime) -> Unit,
 ) {
-    SectionCard(null) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         SwitchRow(stringResource(Res.string.event_all_day), d.allDay, { v -> onEdit { it.copy(allDay = v) } })
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            DateField(stringResource(Res.string.field_start), d.startDate, onStartDate, Modifier.weight(1f))
-            if (!d.allDay) TimeField(stringResource(Res.string.field_time), d.startTime, onStartTime, Modifier.weight(1f))
+            DateValueField(stringResource(Res.string.field_start), d.startDate, onStartDate, Modifier.weight(1f))
+            if (!d.allDay) TimeValueField(stringResource(Res.string.field_time), d.startTime, onStartTime, Modifier.width(TimeFieldWidth))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            DateField(stringResource(Res.string.field_end), d.endDate, { v -> onEdit { it.copy(endDate = v) } }, Modifier.weight(1f))
+            DateValueField(stringResource(Res.string.field_end), d.endDate, { v -> onEdit { it.copy(endDate = v) } }, Modifier.weight(1f))
             if (!d.allDay) {
-                TimeField(stringResource(Res.string.field_time), d.endTime, { v ->
+                TimeValueField(stringResource(Res.string.field_time), d.endTime, { v ->
                     onEdit { it.copy(endTime = v) }
-                }, Modifier.weight(1f))
+                }, Modifier.width(TimeFieldWidth))
             }
         }
         if (EditorError.EndBeforeStart in state.errors) {
@@ -255,6 +274,20 @@ private fun WhenSection(
         }
         if (!state.singleOccurrence) RepeatField(d, onEdit)
     }
+}
+
+@Composable
+private fun DateValueField(label: String, date: LocalDate, onChange: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
+    var open by remember { mutableStateOf(false) }
+    OutlinedValueField(label, formatDateLong(date), onClick = { open = true }, modifier = modifier)
+    if (open) DatePickerSheet(date, onDismiss = { open = false }, onPicked = onChange)
+}
+
+@Composable
+private fun TimeValueField(label: String, time: LocalTime, onChange: (LocalTime) -> Unit, modifier: Modifier = Modifier) {
+    var open by remember { mutableStateOf(false) }
+    OutlinedValueField(label, formatTime(time), onClick = { open = true }, modifier = modifier)
+    if (open) TimePickerSheet(time, onDismiss = { open = false }, onPicked = onChange)
 }
 
 @Composable
@@ -272,8 +305,8 @@ private fun RepeatField(d: EventDraft, onEdit: ((EventDraft) -> EventDraft) -> U
         if (d.customRule != null) add(RepeatOption.Custom to describe(d.customRule))
     }
     val current = labels.firstOrNull { it.first == d.repeat }?.second ?: describe(d.customRule)
-    Column {
-        ValueField(stringResource(Res.string.field_repeat), current, onClick = { open = true })
+    Box {
+        OutlinedValueField(stringResource(Res.string.field_repeat), current, onClick = { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             labels.forEach { (option, label) ->
                 DropdownMenuItem(text = { Text(label) }, onClick = {
@@ -285,36 +318,44 @@ private fun RepeatField(d: EventDraft, onEdit: ((EventDraft) -> EventDraft) -> U
     }
 }
 
+/** "Vem lämnar Simon?" and "Vem hämtar Simon?", each with its time; "Inte bestämt" until someone is chosen. */
 @Composable
-private fun HandoffSection(adults: List<FamilyPerson>, d: EventDraft, onEdit: ((EventDraft) -> EventDraft) -> Unit) {
-    SectionCard(stringResource(Res.string.event_handoffs)) {
+private fun HandoffSection(
+    adults: List<FamilyPerson>,
+    children: List<FamilyPerson>,
+    d: EventDraft,
+    onEdit: ((EventDraft) -> EventDraft) -> Unit,
+) {
+    val names = joinNames(children.map { it.name })
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            PersonPicker(stringResource(Res.string.event_dropoff), adults, d.dropOffBy, Modifier.weight(1f)) { id ->
+            PersonPicker(stringResource(Res.string.calendar_who_drops_off, names), adults, d.dropOffBy, Modifier.weight(1f)) { id ->
                 onEdit { it.copy(dropOffBy = id) }
             }
-            TimeField(stringResource(Res.string.field_time), d.dropOffTime ?: d.startTime, { t ->
+            TimeValueField(stringResource(Res.string.field_time), d.dropOffTime ?: d.startTime, { t ->
                 onEdit { it.copy(dropOffTime = t) }
-            }, Modifier.weight(1f))
+            }, Modifier.width(TimeFieldWidth))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-            PersonPicker(stringResource(Res.string.event_pickup), adults, d.pickUpBy, Modifier.weight(1f)) { id ->
+            PersonPicker(stringResource(Res.string.calendar_who_picks_up, names), adults, d.pickUpBy, Modifier.weight(1f)) { id ->
                 onEdit { it.copy(pickUpBy = id) }
             }
-            TimeField(stringResource(Res.string.field_time), d.pickUpTime ?: d.endTime, { t ->
+            TimeValueField(stringResource(Res.string.field_time), d.pickUpTime ?: d.endTime, { t ->
                 onEdit { it.copy(pickUpTime = t) }
-            }, Modifier.weight(1f))
+            }, Modifier.width(TimeFieldWidth))
         }
     }
 }
 
+/** Chooses an adult for a hand-off; "Inte bestämt" is the placeholder and the first choice. */
 @Composable
 fun PersonPicker(label: String, people: List<FamilyPerson>, selected: String?, modifier: Modifier = Modifier, onPick: (String?) -> Unit) {
     var open by remember { mutableStateOf(false) }
-    val name = people.firstOrNull { it.id == selected }?.name ?: stringResource(Res.string.event_handoff_none)
-    Column(modifier) {
-        ValueField(label, name, onClick = { open = true })
+    val nobody = stringResource(Res.string.event_handoff_none)
+    Box(modifier) {
+        OutlinedValueField(label, people.firstOrNull { it.id == selected }?.name, onClick = { open = true }, placeholder = nobody)
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(text = { Text(stringResource(Res.string.event_handoff_none)) }, onClick = {
+            DropdownMenuItem(text = { Text(nobody) }, onClick = {
                 onPick(null)
                 open = false
             })
@@ -328,10 +369,68 @@ fun PersonPicker(label: String, people: List<FamilyPerson>, selected: String?, m
     }
 }
 
+/** "Fler detaljer": place, type, what to bring, reminder, note and who sees it. Open from the start when any of it is set. */
+@Composable
+private fun MoreDetails(
+    d: EventDraft,
+    onEdit: ((EventDraft) -> EventDraft) -> Unit,
+    onToggleTag: (String) -> Unit,
+    onAddPacking: (String) -> Unit,
+    onRemovePacking: (String) -> Unit,
+) {
+    val hasDetails = d.location.isNotBlank() || d.tags.isNotEmpty() || d.packing.isNotEmpty() || d.reminder != null ||
+        d.note.isNotBlank() || !d.sharedWithCaregivers
+    var open by rememberSaveable { mutableStateOf(hasDetails) }
+    val label = stringResource(Res.string.calendar_more_details)
+    TextButton(onClick = { open = !open }) {
+        Text(label)
+        Icon(
+            if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            modifier = Modifier.padding(start = Spacing.xs),
+        )
+    }
+    if (!open) return
+    OutlinedTextField(
+        value = d.location,
+        onValueChange = { v -> onEdit { it.copy(location = v) } },
+        label = { Text(stringResource(Res.string.event_location)) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        FieldHeading(stringResource(Res.string.event_tags))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            EventTags.all.forEach { tag ->
+                val tagLabel = Labels.tag(tag)?.let { stringResource(it) } ?: tag
+                FilterChip(
+                    selected = tag in d.tags,
+                    onClick = { onToggleTag(tag) },
+                    label = { Text(tagLabel) },
+                    colors = SelectionColors.filterChip(),
+                )
+            }
+        }
+    }
+    PackingSection(d.packing, onAddPacking, onRemovePacking)
+    ReminderField(d.reminder) { r -> onEdit { it.copy(reminder = r) } }
+    OutlinedTextField(
+        value = d.note,
+        onValueChange = { v -> onEdit { it.copy(note = v) } },
+        label = { Text(stringResource(Res.string.event_note)) },
+        minLines = 2,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    SwitchRow(stringResource(Res.string.event_shared_caregivers), d.sharedWithCaregivers, { v ->
+        onEdit { it.copy(sharedWithCaregivers = v) }
+    })
+}
+
 @Composable
 private fun PackingSection(items: List<String>, onAdd: (String) -> Unit, onRemove: (String) -> Unit) {
     var text by remember { mutableStateOf("") }
-    SectionCard(stringResource(Res.string.event_packing)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        FieldHeading(stringResource(Res.string.event_packing))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             items.forEach { item ->
                 InputChip(
@@ -366,8 +465,8 @@ private fun PackingSection(items: List<String>, onAdd: (String) -> Unit, onRemov
 @Composable
 private fun ReminderField(minutes: Int?, onChange: (Int?) -> Unit) {
     var open by remember { mutableStateOf(false) }
-    Column {
-        ValueField(stringResource(Res.string.event_reminder), reminderLabel(minutes), onClick = { open = true })
+    Box {
+        OutlinedValueField(stringResource(Res.string.event_reminder), reminderLabel(minutes), onClick = { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             EventEditorViewModel.reminderOptions.forEach { m ->
                 DropdownMenuItem(text = { Text(reminderLabel(m)) }, onClick = {
@@ -388,4 +487,5 @@ fun reminderLabel(minutes: Int?): String = when {
 }
 
 private const val HOUR_MINUTES = 60
+private val TimeFieldWidth = 120.dp
 private const val DAY_MINUTES = 24 * 60

@@ -1,18 +1,23 @@
 package se.pusslet.feature.calendar.details
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,19 +62,21 @@ import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.usecase.HandoffAssigner
-import se.pusslet.feature.calendar.editor.PersonPicker
+import se.pusslet.feature.calendar.annotate
 import se.pusslet.feature.calendar.editor.reminderLabel
+import se.pusslet.feature.calendar.handoffSegment
+import se.pusslet.feature.calendar.takeHandoff
 import se.pusslet.ui.components.AvatarStack
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.InfoPill
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.components.PussletTopBar
-import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.Section
 import se.pusslet.ui.format.describe
 import se.pusslet.ui.format.formatDateLong
-import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.formatTimeRange
 import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.resources.*
@@ -140,13 +147,8 @@ class EventDetailsViewModel(
     fun take(kind: HandoffKind) {
         val me = sessions.session.value.memberId ?: return
         val o = state.value.occurrence ?: return
-        viewModelScope.launch {
-            assigner.assign(o, kind, me)
-            // Taking it also answers any open request for the same hand-off.
-            state.value.requests.filter { it.kind == kind }.forEach {
-                calendar.saveHandoffRequest(it.copy(status = RequestStatus.Accepted, respondedBy = me, respondedAt = clock.now()))
-            }
-        }
+        // Taking it also answers any open request for the same hand-off.
+        viewModelScope.launch { takeHandoff(calendar, assigner, clock, o, kind, me) }
     }
 
     fun requestHelp(kind: HandoffKind) {
@@ -270,7 +272,7 @@ fun EventDetailsScreen(
                 }
             }
             if (o.source == EventSource.Family && !o.allDay && participants.any { it.isChild }) {
-                HandoffCard(state, o, people, onTake, onAssign, onRequest)
+                HandoffSection(state, o, people, onTake, onAssign, onRequest)
             }
             if (o.event.tags.isNotEmpty()) {
                 // Tags inform; they are not buttons (UX plan 1.6).
@@ -281,7 +283,7 @@ fun EventDetailsScreen(
                 }
             }
             if (o.event.packingItems.isNotEmpty()) {
-                SectionCard(stringResource(Res.string.event_packing)) {
+                Section(stringResource(Res.string.event_packing)) {
                     o.event.packingItems.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge) }
                 }
             }
@@ -289,7 +291,7 @@ fun EventDetailsScreen(
                 Text(stringResource(Res.string.event_reminder) + ": " + reminderLabel(it), style = MaterialTheme.typography.bodyMedium)
             }
             if (o.event.note.isNotBlank()) {
-                SectionCard(stringResource(Res.string.event_note)) { Text(o.event.note, style = MaterialTheme.typography.bodyLarge) }
+                Section(stringResource(Res.string.event_note)) { Text(o.event.note, style = MaterialTheme.typography.bodyLarge) }
             }
             if (o.source == EventSource.Family && !o.event.sharedWithCaregivers) {
                 Text(
@@ -321,8 +323,12 @@ fun EventDetailsScreen(
     }
 }
 
+/**
+ * "Lämning och hämtning" (UX plan, Kalender 6): one sentence per hand-off, "Johan lämnar 08:05 · Ändra". "Jag tar det" is a
+ * filled button only on the first hand-off nobody has taken, so the screen has at most one filled button.
+ */
 @Composable
-private fun HandoffCard(
+private fun HandoffSection(
     state: EventDetailsState,
     o: EventOccurrence,
     people: Map<String, FamilyPerson>,
@@ -330,45 +336,76 @@ private fun HandoffCard(
     onAssign: (HandoffKind, String?) -> Unit,
     onRequest: (HandoffKind) -> Unit,
 ) {
-    SectionCard(stringResource(Res.string.event_handoffs)) {
-        listOf(HandoffKind.DropOff, HandoffKind.PickUp).forEach { kind ->
-            val handoff = if (kind == HandoffKind.PickUp) o.event.pickUp else o.event.dropOff
-            val time = if (kind == HandoffKind.PickUp) o.pickUpTime() else o.dropOffTime()
-            val label = stringResource(if (kind == HandoffKind.PickUp) Res.string.event_pickup else Res.string.event_dropoff) +
-                (time?.let { " " + formatTime(it) } ?: "")
-            val who = handoff?.personId
-            if (state.role == Role.Parent) {
-                PersonPicker(label, state.adults, who) { onAssign(kind, it) }
-            } else {
-                Text(
-                    label + ": " + (
-                        who?.let {
-                            people[it]?.name
-                        } ?: stringResource(Res.string.today_handoff_nobody)
-                    ),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
+    val kinds = listOf(HandoffKind.DropOff, HandoffKind.PickUp)
+
+    fun handoff(kind: HandoffKind) = if (kind == HandoffKind.PickUp) o.event.pickUp else o.event.dropOff
+
+    // Planned but nobody has it (the calendar's "Inte bestämt" in red). A hand-off that was never planned stays quiet.
+    fun isOpen(kind: HandoffKind) = handoff(kind)?.let { h -> h.personId?.let(people::get) == null } == true
+    val firstOpen = kinds.firstOrNull(::isOpen)
+    val parent = state.role == Role.Parent
+    Section(stringResource(Res.string.event_handoffs)) {
+        kinds.forEach { kind ->
+            val planned = handoff(kind)
+            val who = planned?.personId?.let(people::get)
+            val open = isOpen(kind)
+            val time = (if (kind == HandoffKind.PickUp) o.pickUpTime() else o.dropOffTime()) ?: return@forEach
+            val segment = handoffSegment(kind, time, who, isMe = who != null && who.id == state.myMemberId, planned = planned != null)
+            Row(Modifier.fillMaxWidth().heightIn(min = Spacing.touchTarget), verticalAlignment = Alignment.CenterVertically) {
+                if (open) {
+                    Icon(
+                        PussletIcons.PriorityHigh,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(end = Spacing.sm).size(20.dp),
+                    )
+                }
+                Text(annotate(segment.text, listOf(segment)), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                if (parent) ChangeHandoff(state.adults, who?.id) { onAssign(kind, it) }
             }
             val pending = state.requests.firstOrNull { it.kind == kind }
             if (pending != null) {
                 val from = people[pending.fromMemberId]?.name.orEmpty()
                 Banner(stringResource(Res.string.event_request_from, from), kind = BannerKind.Warning)
             }
-            if (state.role == Role.Parent) {
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    if (who != state.myMemberId) {
-                        Button(onClick = {
-                            onTake(kind)
-                        }, modifier = Modifier.heightIn(min = Spacing.touchTarget)) { Text(stringResource(Res.string.card_action_take)) }
-                    }
-                    if (pending == null && kind == HandoffKind.PickUp) {
-                        OutlinedButton(onClick = {
-                            onRequest(kind)
-                        }, modifier = Modifier.heightIn(min = Spacing.touchTarget)) {
-                            Text(stringResource(Res.string.event_request_pickup))
+            val canRequest = parent && pending == null && kind == HandoffKind.PickUp
+            if (parent && (open || canRequest)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                    if (open) {
+                        val take = stringResource(Res.string.card_action_take)
+                        if (kind == firstOpen) {
+                            Button(onClick = { onTake(kind) }, modifier = Modifier.heightIn(min = Spacing.touchTarget)) { Text(take) }
+                        } else {
+                            OutlinedButton(onClick = {
+                                onTake(kind)
+                            }, modifier = Modifier.heightIn(min = Spacing.touchTarget)) { Text(take) }
                         }
                     }
+                    if (canRequest) {
+                        TextButton(onClick = { onRequest(kind) }) { Text(stringResource(Res.string.event_request_pickup)) }
+                    }
                 }
+            }
+        }
+    }
+}
+
+/** "Ändra": a menu with "Inte bestämt" and the adults. */
+@Composable
+private fun ChangeHandoff(adults: List<FamilyPerson>, selected: String?, onPick: (String?) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        TextButton(onClick = { open = true }) { Text(stringResource(Res.string.action_change)) }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text(stringResource(Res.string.event_handoff_none)) }, onClick = {
+                open = false
+                if (selected != null) onPick(null)
+            })
+            adults.forEach { p ->
+                DropdownMenuItem(text = { Text(p.name) }, onClick = {
+                    open = false
+                    if (p.id != selected) onPick(p.id)
+                })
             }
         }
     }

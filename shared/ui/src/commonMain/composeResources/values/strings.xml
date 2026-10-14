@@ -104,32 +104,20 @@
     <string name="greeting_named">%1$s, %2$s</string>
 
     <!-- Today -->
-    <string name="today_weather_line">%1$d° nu · %2$d–%3$d°</string>
-    <string name="today_weather_tomorrow">I morgon · %1$d–%2$d°</string>
+    <string name="today_weather_tomorrow">I morgon %1$d–%2$d°</string>
     <string name="today_weather_stale">Väder från %1$s</string>
     <string name="today_weather_missing">Välj ort</string>
     <string name="today_weather_unavailable">Inget väder just nu</string>
     <string name="today_clothes_for">%1$s: %2$s</string>
-    <string name="today_timeline_title">Dagen</string>
-    <string name="today_packing_title">Ska med</string>
     <string name="today_packing_reason_event">till %1$s</string>
     <string name="today_packing_reason_handover">bytesdag</string>
-    <string name="today_meals_title">Mat</string>
     <string name="today_lunch">Lunch: %2$s (%1$s)</string>
-    <string name="today_dinner">Middag: %1$s</string>
-    <string name="today_no_dinner">Ingen middag planerad</string>
     <string name="today_plan_dinner">Planera middag</string>
     <string name="today_clash">%1$s åt %2$s till lunch</string>
-    <string name="today_upcoming_title">Kommande</string>
-    <string name="today_tasks_title">Att göra</string>
     <string name="today_custody">Hos %1$s</string>
-    <string name="today_custody_a11y">Barnen är hos %1$s</string>
     <string name="today_custody_handover">Byte %1$s till %2$s</string>
     <string name="today_custody_next">Nästa byte %1$s</string>
-    <string name="today_dropoff">Lämning</string>
-    <string name="today_pickup">Hämtning</string>
     <string name="today_handoff_nobody">Inte bestämt</string>
-    <string name="today_quiet">Lugn dag ☕</string>
     <string name="today_overdue">Försenad</string>
 
     <!-- Context cards -->
@@ -140,15 +128,9 @@
     <string name="card_unassigned_pickup">Ingen hämtar %1$s kl %2$s</string>
     <string name="card_unassigned_dropoff">Ingen lämnar %1$s kl %2$s</string>
     <string name="card_double_booked">%1$s har både %2$s och %3$s samtidigt</string>
-    <string name="card_study_day">%1$s %2$s – vem är hemma?</string>
-    <string name="card_party_gift">Kalas %1$s – present?</string>
-    <string name="card_squeeze_day">Klämdag %1$s – ledigt eller fritids?</string>
-    <string name="card_handover">Byte %1$s till %2$s</string>
     <string name="card_action_take">Jag tar det</string>
     <string name="card_action_remind">Påminn mig</string>
     <string name="card_action_open">Visa</string>
-    <string name="card_today">idag</string>
-    <string name="card_tomorrow">imorgon</string>
 
     <!-- Clothing advice -->
     <string name="advice_winter_overall">Vinteroverall</string>
@@ -277,10 +259,8 @@
     <string name="meal_dinner">Middag</string>
 
     <!-- Calendar -->
-    <string name="calendar_view_day">Dag</string>
     <string name="calendar_view_week">Vecka</string>
     <string name="calendar_view_month">Månad</string>
-    <string name="calendar_view_agenda">Agenda</string>
     <string name="calendar_layers">Filtrera</string>
     <string name="layer_family">Familjen</string>
     <string name="layer_subscriptions">Skola och förening</string>
@@ -298,8 +278,6 @@
     <string name="calendar_more_events">+%1$d till</string>
     <string name="event_all_day">Heldag</string>
     <string name="event_participants">Vem gäller det?</string>
-    <string name="event_dropoff">Lämnar</string>
-    <string name="event_pickup">Hämtar</string>
     <string name="event_handoffs">Lämning och hämtning</string>
     <string name="event_handoff_none">Inte bestämt</string>
     <string name="event_location">Plats</string>
@@ -701,8 +679,6 @@
     <string name="store_default_body">Används för listor som inte har en egen butik.</string>
     <string name="store_order_title">Gångordning</string>
     <string name="store_order_hint">Flytta avdelningarna i den ordning ni passerar dem i butiken.</string>
-    <string name="store_move_up">Flytta upp %1$s</string>
-    <string name="store_move_down">Flytta ner %1$s</string>
     <string name="store_reset_order">Återställ standardordning</string>
     <string name="store_delete_confirm">Ta bort butiken %1$s?</string>
     <string name="store_mode_all_done_title">Allt i vagnen!</string>
@@ -865,6 +841,70 @@
 
     <string name="action_move_up_named">Flytta upp %1$s</string>
     <string name="action_move_down_named">Flytta ner %1$s</string>
+
+    <!-- Calendar: week list, routines, filter, editor (UX Steg 2) -->
+    <string name="calendar_week_title">Vecka %1$d · %2$s</string>
+    <string name="calendar_range">%1$s–%2$s</string>
+    <string name="calendar_custody_period">Hos %1$s (%2$s)</string>
+    <string name="calendar_custody_period_for">%1$s hos %2$s (%3$s)</string>
+    <string name="calendar_routine_child">%1$s: %2$s</string>
+    <string name="calendar_handoff_dropoff">%1$s lämnar %2$s</string>
+    <string name="calendar_handoff_pickup">%1$s hämtar %2$s</string>
+    <string name="calendar_handoff_dropoff_me">Du lämnar %1$s</string>
+    <string name="calendar_handoff_pickup_me">Du hämtar %1$s</string>
+    <string name="calendar_handoff_dropoff_open">Lämning %1$s – %2$s</string>
+    <string name="calendar_handoff_pickup_open">Hämtning %1$s – %2$s</string>
+    <string name="calendar_filter_only">Bara %1$s</string>
+    <string name="calendar_filter_hidden">Dolt: %1$s</string>
+    <string name="calendar_filter_people">Vem</string>
+    <string name="calendar_filter_layers">Visa i kalendern</string>
+    <string name="calendar_open_day">Öppna dagen</string>
+    <string name="calendar_more_count">+%1$d</string>
+    <string name="calendar_events_one">1 händelse</string>
+    <string name="calendar_events_many">%1$d händelser</string>
+    <string name="calendar_more_details">Fler detaljer</string>
+    <string name="calendar_who_drops_off">Vem lämnar %1$s?</string>
+    <string name="calendar_who_picks_up">Vem hämtar %1$s?</string>
+
+    <!-- Idag – blocks (UX plan Steg 2, ADR-027): names on Anpassa Idag and the section titles -->
+    <string name="today_block_handoffs">Lämning och hämtning</string>
+    <string name="today_block_packing">Ska med</string>
+    <string name="today_block_dinner">Mat</string>
+    <string name="today_block_weather">Väder och kläder</string>
+    <string name="today_block_timeline">Idag händer</string>
+    <string name="today_block_tasks">Att göra</string>
+    <string name="today_block_upcoming">Kommande</string>
+    <string name="today_block_shopping">Inköpslistan</string>
+    <!-- Idag – Att lösa -->
+    <string name="today_more_problems">Fler att lösa (%1$d)</string>
+    <string name="today_request_pickup">%1$s frågar om du kan hämta %2$s %3$s</string>
+    <string name="today_request_dropoff">%1$s frågar om du kan lämna %2$s %3$s</string>
+    <string name="today_request_someone">Någon</string>
+    <string name="today_request_answer">Svara</string>
+    <!-- Idag – Morgonkollen -->
+    <string name="today_you_dropoff">Du lämnar %1$s</string>
+    <string name="today_you_pickup">Du hämtar %1$s</string>
+    <string name="today_person_dropoff">%1$s lämnar %2$s</string>
+    <string name="today_person_pickup">%1$s hämtar %2$s</string>
+    <string name="today_nobody_dropoff">Lämning %1$s</string>
+    <string name="today_nobody_pickup">Hämtning %1$s</string>
+    <string name="today_handoff_stop">%1$s %2$s</string>
+    <string name="today_packing_line">Ska med: %1$s</string>
+    <string name="today_item_for">%1$s (%2$s)</string>
+    <string name="today_packing_done">Allt är packat</string>
+    <string name="today_dinner_tonight">Ikväll: %1$s</string>
+    <string name="today_weather_temp">%1$d°</string>
+    <string name="state_expanded">Utfälld</string>
+    <string name="state_collapsed">Ihopfälld</string>
+    <!-- Idag – sections -->
+    <string name="today_show_whole_day">Visa hela dagen</string>
+    <string name="today_show_all_count">Visa alla (%1$d)</string>
+    <string name="today_reminder_gift">%1$s – present?</string>
+    <string name="today_reminder_study_day">%1$s – vem är hemma?</string>
+    <string name="today_reminder_squeeze">Klämdag – ledigt eller fritids?</string>
+    <string name="today_shopping_left">%1$s: %2$d kvar</string>
+    <string name="today_quiet_end">Inget mer idag</string>
+    <string name="today_customize">Anpassa Idag</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>

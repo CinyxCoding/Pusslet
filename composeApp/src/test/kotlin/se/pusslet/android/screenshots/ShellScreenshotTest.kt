@@ -82,7 +82,7 @@ class ShellScreenshotTest {
     fun calendarWeek() {
         launch()
         compose.onNodeWithText("Kalender").performClick()
-        compose.waitUntilAtLeastOneExists(hasText("Vecka 41"), timeoutMillis = 10_000)
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41 · oktober"), timeoutMillis = 10_000)
         snap("calendar_week")
     }
 
@@ -100,8 +100,9 @@ class ShellScreenshotTest {
     fun eventDetails() {
         launch()
         compose.onNodeWithText("Kalender").performClick()
-        compose.waitUntilAtLeastOneExists(hasText("Vecka 41"), timeoutMillis = 10_000)
-        compose.onAllNodesWithText("Skola", substring = true).onFirst().performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41 · oktober"), timeoutMillis = 10_000)
+        // School and preschool are quiet lines ("Simon: Johan lämnar 07:50 · …"); a tap opens the event.
+        compose.onAllNodesWithText("lämnar 07:50", substring = true).onFirst().performClick()
         compose.waitUntilAtLeastOneExists(hasText("Lämning och hämtning"), timeoutMillis = 10_000)
         snap("event_details")
     }
@@ -111,7 +112,7 @@ class ShellScreenshotTest {
     fun calendarWeekLargeText() {
         launch()
         openTab("Kalender")
-        compose.waitUntilAtLeastOneExists(hasText("Vecka 41"), timeoutMillis = 10_000)
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41 · oktober"), timeoutMillis = 10_000)
         snap("calendar_week_large_text")
     }
 

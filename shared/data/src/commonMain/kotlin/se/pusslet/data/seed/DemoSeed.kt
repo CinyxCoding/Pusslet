@@ -11,12 +11,14 @@ import se.pusslet.core.model.ChoreRotation
 import se.pusslet.core.model.ClothingCategory
 import se.pusslet.core.model.ClothingSize
 import se.pusslet.core.model.Contact
+import se.pusslet.core.model.CustodySchedule
 import se.pusslet.core.model.DietProfile
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilySettings
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.Handoff
+import se.pusslet.core.model.Household
 import se.pusslet.core.model.Ingredient
 import se.pusslet.core.model.ListKind
 import se.pusslet.core.model.LunchProviderType
@@ -52,8 +54,8 @@ import kotlin.time.Clock
 /**
  * "Familjen Lind" – a made-up family with a realistic week, relative to [today]: Sara and Johan, Ella (9),
  * Simon (4) and morfar Bengt who picks up on Thursdays. Used by the demo flavor, screenshots and portfolio.
- * Contains deliberate situations the app should handle: a pick-up conflict, lunch/dinner clashes, a study day
- * and a party without a present.
+ * Contains deliberate situations the app should handle: a pick-up conflict, lunch/dinner clashes, a study day,
+ * a party without a present and Ella's every-other-week custody with her dad Ahmed (at home this week).
  */
 class DemoSeed(private val family: FamilyRepository, private val docs: DocumentStore, private val clock: Clock = Clock.System) {
     // A linear script of one demo week; splitting it up would only scatter the story across functions.
@@ -107,6 +109,23 @@ class DemoSeed(private val family: FamilyRepository, private val docs: DocumentS
             SIMON,
             DietProfile(SIMON, allergies = setOf(Allergen.Peanut), consentedAt = clock.now()),
             DietProfile.serializer(),
+        )
+        // Växelvis boende: Ella lives every other week with her dad Ahmed, changing on Mondays. This week she is at home,
+        // next week with Ahmed (the calendar shows "Ella hos Sara (mån–sön)").
+        put(
+            Collections.Custody,
+            CUSTODY_ELLA,
+            CustodySchedule(
+                CUSTODY_ELLA,
+                childIds = listOf(ELLA),
+                households = listOf(
+                    Household("h-lind", "Sara", memberIds = listOf(sara, JOHAN), color = MemberColor.Sage),
+                    Household("h-ahmed", "Ahmed", color = MemberColor.Teal),
+                ),
+                anchorDate = monday,
+                handoverDay = DayOfWeek.MONDAY,
+            ),
+            CustodySchedule.serializer(),
         )
 
         // School, preschool and pick-ups. Thursdays morfar picks up.
@@ -484,6 +503,7 @@ class DemoSeed(private val family: FamilyRepository, private val docs: DocumentS
         const val BENGT = "m-bengt"
         const val ELLA = "c-ella"
         const val SIMON = "c-simon"
+        const val CUSTODY_ELLA = "cs-ella"
     }
 }
 

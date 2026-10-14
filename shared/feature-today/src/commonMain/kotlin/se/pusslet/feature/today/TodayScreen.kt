@@ -2,89 +2,81 @@ package se.pusslet.feature.today
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.conflicts.Conflict
 import se.pusslet.core.model.EventOccurrence
-import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.HandoffKind
-import se.pusslet.core.model.PackingReason
-import se.pusslet.core.today.ContextCard
-import se.pusslet.core.today.DayPreview
-import se.pusslet.core.today.Greeting
-import se.pusslet.core.today.TimelineItem
+import se.pusslet.core.model.PackingItem
+import se.pusslet.core.tasks.TaskOccurrence
+import se.pusslet.core.today.CustodyNote
+import se.pusslet.core.today.TodayBlock
 import se.pusslet.core.today.TodayPlan
-import se.pusslet.core.weather.ClothingGrouping
-import se.pusslet.core.weather.DaySummary
-import se.pusslet.ui.components.AvatarStack
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
-import se.pusslet.ui.components.CheckRow
-import se.pusslet.ui.components.ColorBadge
 import se.pusslet.ui.components.InfoPill
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.LoadingBox
-import se.pusslet.ui.components.PersonAvatar
+import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletIcons
+import se.pusslet.ui.components.QuietLine
 import se.pusslet.ui.components.RegisterAddButton
-import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SmallAction
+import se.pusslet.ui.components.TabHeader
 import se.pusslet.ui.format.formatDateLong
 import se.pusslet.ui.format.formatTime
-import se.pusslet.ui.format.formatTimeRange
 import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.format.relativeDay
 import se.pusslet.ui.format.weekLong
-import se.pusslet.ui.format.weekdayName
-import se.pusslet.ui.resources.*
+import se.pusslet.ui.format.weekdayShort
+import se.pusslet.ui.resources.Res
+import se.pusslet.ui.resources.action_add
+import se.pusslet.ui.resources.card_action_open
+import se.pusslet.ui.resources.card_action_take
+import se.pusslet.ui.resources.card_busy_dropoff
+import se.pusslet.ui.resources.card_busy_pickup
+import se.pusslet.ui.resources.card_double_booked
+import se.pusslet.ui.resources.card_nobody_dropoff
+import se.pusslet.ui.resources.card_nobody_pickup
+import se.pusslet.ui.resources.card_unassigned_dropoff
+import se.pusslet.ui.resources.card_unassigned_pickup
+import se.pusslet.ui.resources.today_custody
+import se.pusslet.ui.resources.today_custody_handover
+import se.pusslet.ui.resources.today_customize
+import se.pusslet.ui.resources.today_demo_family
+import se.pusslet.ui.resources.today_more_problems
+import se.pusslet.ui.resources.today_quiet_end
+import se.pusslet.ui.resources.today_request_answer
+import se.pusslet.ui.resources.today_request_dropoff
+import se.pusslet.ui.resources.today_request_pickup
+import se.pusslet.ui.resources.today_request_someone
 import se.pusslet.ui.theme.Spacing
-import kotlin.math.roundToInt
 
+/**
+ * Idag (UX plan, Idag): the answer first. The header and "Att lösa" are fixed; Morgonkollen and the sections follow the
+ * viewer's layout, and "Anpassa Idag" is always the last row ([onCustomize]).
+ */
 @Composable
 fun TodayRoute(
     onOpenOccurrence: (EventOccurrence) -> Unit,
     onPlanDinner: (LocalDate) -> Unit,
     onOpenSettings: () -> Unit,
-    onOpenHandover: (String) -> Unit,
     onQuickAdd: (LocalDate?) -> Unit = {},
+    onOpenCalendar: () -> Unit = {},
+    onOpenShopping: () -> Unit = {},
+    onOpenTasks: (() -> Unit)? = null,
+    onCustomize: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -94,514 +86,196 @@ fun TodayRoute(
     TodayScreen(
         state = state,
         contentPadding = contentPadding,
-        onTogglePacking = viewModel::setPacked,
-        onToggleTask = viewModel::setTaskDone,
-        onTakeHandoff = viewModel::takeHandoff,
-        onAddGiftTask = viewModel::addGiftTask,
-        onOpenOccurrence = onOpenOccurrence,
-        onPlanDinner = onPlanDinner,
-        onOpenSettings = onOpenSettings,
-        onOpenHandover = onOpenHandover,
+        actions = TodayActions(
+            onTogglePacking = viewModel::setPacked,
+            onToggleTask = viewModel::setTaskDone,
+            onTakeHandoff = viewModel::takeHandoff,
+            onAddGiftTask = viewModel::addGiftTask,
+            onOpenOccurrence = onOpenOccurrence,
+            onPlanDinner = onPlanDinner,
+            onOpenSettings = onOpenSettings,
+            onOpenCalendar = onOpenCalendar,
+            onOpenShopping = onOpenShopping,
+            onOpenTasks = onOpenTasks,
+            onCustomize = onCustomize,
+        ),
     )
 }
 
+/** What a tap on Idag can do. The defaults do nothing, for previews and screenshot tests of the screen alone. */
+data class TodayActions(
+    val onTogglePacking: (LocalDate, PackingItem, Boolean) -> Unit = { _, _, _ -> },
+    val onToggleTask: (TaskOccurrence, Boolean) -> Unit = { _, _ -> },
+    val onTakeHandoff: (EventOccurrence, HandoffKind) -> Unit = { _, _ -> },
+    val onAddGiftTask: (EventOccurrence, String) -> Unit = { _, _ -> },
+    val onOpenOccurrence: (EventOccurrence) -> Unit = {},
+    val onPlanDinner: (LocalDate) -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
+    /** "Fler att lösa" and "Visa hela dagen". */
+    val onOpenCalendar: () -> Unit = {},
+    /** The "Inköpslistan" row. */
+    val onOpenShopping: () -> Unit = {},
+    /** "Visa alla (n)" under "Att göra"; null while there is no task screen to open (the list is only capped). */
+    val onOpenTasks: (() -> Unit)? = null,
+    /** "Anpassa Idag". */
+    val onCustomize: () -> Unit = {},
+)
+
 @Composable
-fun TodayScreen(
-    state: TodayUiState,
-    contentPadding: PaddingValues = PaddingValues(),
-    onTogglePacking: (LocalDate, se.pusslet.core.model.PackingItem, Boolean) -> Unit = { _, _, _ -> },
-    onToggleTask: (se.pusslet.core.tasks.TaskOccurrence, Boolean) -> Unit = { _, _ -> },
-    onTakeHandoff: (EventOccurrence, HandoffKind) -> Unit = { _, _ -> },
-    onAddGiftTask: (EventOccurrence, String) -> Unit = { _, _ -> },
-    onOpenOccurrence: (EventOccurrence) -> Unit = {},
-    onPlanDinner: (LocalDate) -> Unit = {},
-    onOpenSettings: () -> Unit = {},
-    onOpenHandover: (String) -> Unit = {},
-) {
+fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValues(), actions: TodayActions = TodayActions()) {
     val plan = state.plan
     if (state.loading || plan == null) {
         LoadingBox()
         return
     }
+    val problems = plan.problems
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = Spacing.screenHorizontal,
             end = Spacing.screenHorizontal,
-            top = Spacing.lg + contentPadding.calculateTopPadding(),
+            top = Spacing.sm + contentPadding.calculateTopPadding(),
             bottom = Spacing.listBottomInset + contentPadding.calculateBottomPadding(),
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         item(key = "header") { Header(state, plan) }
-        // A caregiver cannot choose the place (family settings), so without one there is nothing to show them.
-        if (state.canEdit || state.weather != WeatherState.NoPlace) {
-            item(key = "weather") { WeatherCard(state, plan, onOpenSettings) }
+        // "Att lösa" can never be hidden: problems today and tomorrow, then requests to me.
+        items(problems.take(TodayModel.MAX_PROBLEMS), key = { problemKey(it) }) { ProblemBanner(it, state, actions) }
+        if (problems.size > TodayModel.MAX_PROBLEMS) {
+            item(key = "more-problems") {
+                NavRow(stringResource(Res.string.today_more_problems, problems.size - TodayModel.MAX_PROBLEMS), actions.onOpenCalendar)
+            }
         }
-        items(plan.cards, key = { cardKey(it) }) { card ->
-            ContextCardView(card, state, onTakeHandoff, onAddGiftTask, onOpenOccurrence, onOpenHandover)
+        items(state.requests, key = { "request-${it.request.id}" }) { RequestBanner(it, plan.date, actions.onOpenOccurrence) }
+        if (state.hero.isNotEmpty()) item(key = "hero") { MorningCheck(state, plan, actions) }
+        items(state.sections, key = { "section-${it.id}" }) { block ->
+            // Flat sections, separated by air (sectionGap), never by cards.
+            Column(Modifier.padding(top = Spacing.sectionGap - Spacing.md)) {
+                when (block) {
+                    TodayBlock.Timeline -> TimelineSection(state, plan, actions)
+                    TodayBlock.Tasks -> TasksSection(plan, actions)
+                    TodayBlock.Upcoming -> UpcomingSection(state, plan, actions)
+                    TodayBlock.Shopping -> ShoppingSection(plan, actions)
+                    // Morgonkollen rows are never sections.
+                    TodayBlock.Handoffs, TodayBlock.Packing, TodayBlock.Dinner, TodayBlock.Weather -> Unit
+                }
+            }
         }
-        item(key = "timeline") { TimelineCard(plan, onOpenOccurrence) }
-        // Empty is quiet (UX plan 1.1): no card that only says there is nothing.
-        if (plan.packing.any { it.items.isNotEmpty() }) item(key = "packing") { PackingCard(plan, onTogglePacking) }
-        if (state.canEdit || plan.dinner != null || plan.lunches.isNotEmpty()) {
-            item(key = "meals") { MealsCard(plan, state.canEdit, onPlanDinner) }
+        if (state.quiet) item(key = "quiet") { QuietLine(stringResource(Res.string.today_quiet_end)) }
+        item(key = "customize") {
+            NavRow(
+                stringResource(Res.string.today_customize),
+                actions.onCustomize,
+                // No extra air right after the quiet line, which has its own.
+                modifier = Modifier.padding(top = if (state.quiet) 0.dp else Spacing.lg),
+            )
         }
-        if (plan.myTasks.isNotEmpty()) item(key = "tasks") { TasksCard(plan, onToggleTask) }
-        val upcoming = plan.upcoming.filter { it.events.isNotEmpty() || it.holidays.isNotEmpty() || it.dinner != null }
-        if (upcoming.isNotEmpty()) item(key = "upcoming") { UpcomingCard(plan, upcoming, onOpenOccurrence) }
     }
 }
 
-private fun cardKey(card: ContextCard): String = when (card) {
-    is ContextCard.Problem -> "conflict-${card.conflict.occurrence.key}-${card.conflict::class.simpleName}"
-    is ContextCard.StudyDay -> "study-${card.date}"
-    is ContextCard.PartyGift -> "party-${card.date}-${card.eventTitle}"
-    is ContextCard.SqueezeDay -> "squeeze-${card.date}"
-    is ContextCard.HandoverSoon -> "handover-${card.schedule.id}-${card.handover.date}"
-}
-
+/** "Torsdag 8 oktober" and "Vecka 41 · Hos Ahmed". No greeting (ADR-026); the week is always visible. */
 @Composable
 private fun Header(state: TodayUiState, plan: TodayPlan) {
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            Text(
-                formatDateLong(plan.date).replaceFirstChar { it.uppercase() },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+    val subtitle = buildList {
+        add(weekLong(plan.week.week))
+        plan.holidays.forEach { add(stringResource(Labels.holiday(it.id))) }
+        plan.custodyNotes.forEach { note ->
+            add(
+                when (note) {
+                    is CustodyNote.With -> stringResource(Res.string.today_custody, note.household.name)
+                    is CustodyNote.Changeover ->
+                        stringResource(Res.string.today_custody_handover, formatTime(note.handover.time), note.handover.to.name)
+                },
             )
-            InfoPill(weekLong(plan.week.week))
-            if (state.demo) InfoPill(stringResource(Res.string.today_demo_family))
         }
-        val greeting = stringResource(
-            when (plan.greeting) {
-                Greeting.Morning -> Res.string.greeting_morning
-                Greeting.Day -> Res.string.greeting_day
-                Greeting.Evening -> Res.string.greeting_evening
-                Greeting.Night -> Res.string.greeting_night
-            },
-        )
-        Text(
-            state.me?.let { stringResource(Res.string.greeting_named, greeting, it.name) } ?: greeting,
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.semantics { heading() },
-        )
-        if (plan.holidays.isNotEmpty()) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                plan.holidays.forEach { h -> InfoPill(stringResource(Labels.holiday(h.id))) }
-            }
-        }
-        plan.custody.forEach { c ->
-            val household = c.household ?: return@forEach
-            // "Hos Ahmed" next to a house; TalkBack gets the whole sentence.
-            val custodyDescription = stringResource(Res.string.today_custody_a11y, household.name)
-            Row(
-                modifier = Modifier.clearAndSetSemantics { contentDescription = custodyDescription },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-            ) {
-                Icon(
-                    Icons.Filled.Home,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(stringResource(Res.string.today_custody, household.name), style = MaterialTheme.typography.bodyLarge)
-            }
-            c.handoverToday?.let { h ->
-                Text(
-                    stringResource(Res.string.today_custody_handover, formatTime(h.time), h.to.name),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
-            }
-        }
-    }
+    }.joinToString(SEPARATOR)
+    TabHeader(
+        title = formatDateLong(plan.date).replaceFirstChar { it.uppercase() },
+        subtitle = subtitle,
+        actions = { if (state.demo) InfoPill(stringResource(Res.string.today_demo_family)) },
+    )
 }
 
-@Composable
-private fun WeatherCard(state: TodayUiState, plan: TodayPlan, onOpenSettings: () -> Unit) {
-    val summary = plan.weather
-    when (val w = state.weather) {
-        WeatherState.NoPlace -> ChoosePlaceRow(onOpenSettings)
-        WeatherState.Unavailable -> SectionCard(title = null) {
-            QuietLine(stringResource(Res.string.today_weather_unavailable), PussletIcons.CloudOff)
-        }
-        WeatherState.Loading -> SectionCard(title = null) {
-            Text(stringResource(Res.string.loading), style = MaterialTheme.typography.bodyMedium)
-        }
-        is WeatherState.Ready -> SectionCard(title = null) {
-            if (summary == null) {
-                QuietLine(stringResource(Res.string.today_weather_unavailable), PussletIcons.CloudOff)
-            } else {
-                WeatherHeadline(summary, plan.weatherForTomorrow, staleSince = if (w.stale) w.fetchedAt.time else null)
-                ClothingRows(plan)
-            }
-        }
+/** Unique per problem: one event can lack both its drop-off and its pick-up, and a child can be double booked twice. */
+private fun problemKey(c: Conflict): String {
+    val detail = when (c) {
+        is Conflict.Unassigned -> c.kind.name
+        is Conflict.NobodyAvailable -> c.kind.name
+        is Conflict.AssigneeBusy -> c.kind.name
+        is Conflict.DoubleBooked -> "${c.childId}-${c.other.key}"
     }
+    return "problem-${c.date}-${c.occurrence.key}-${c::class.simpleName}-$detail"
 }
 
-/** No place chosen yet: the whole row is the button ("Välj ort ›"). */
+/** A real problem: filled, a whole sentence and always an action. Tomorrow's start with "Imorgon:". */
 @Composable
-private fun ChoosePlaceRow(onOpenSettings: () -> Unit) {
-    Card(
-        onClick = onOpenSettings,
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget).padding(horizontal = Spacing.lg),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            Icon(Icons.Filled.Place, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(
-                stringResource(Res.string.today_weather_missing),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
-            )
-            Icon(PussletIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
-/** "☁️ 14° nu · 9–16°", or "I morgon · 2–4°" in the evening. The weather word is the emoji's TalkBack description. */
-@Composable
-private fun WeatherHeadline(summary: DaySummary, forTomorrow: Boolean, staleSince: LocalTime?) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        val condition = stringResource(Labels.weather(summary.condition))
-        Text(
-            Labels.weatherEmoji(summary.condition),
-            style = MaterialTheme.typography.displaySmall,
-            modifier = Modifier.clearAndSetSemantics { contentDescription = condition },
-        )
-        Column(Modifier.weight(1f)) {
-            val min = summary.minTemperature.roundToInt()
-            val max = summary.maxTemperature.roundToInt()
-            // After 18:00 the card is about tomorrow, so the clothes can be laid out in the evening.
-            val headline = if (forTomorrow) {
-                stringResource(Res.string.today_weather_tomorrow, min, max)
-            } else {
-                val nowTemp = summary.now?.temperature ?: summary.maxTemperature
-                stringResource(Res.string.today_weather_line, nowTemp.roundToInt(), min, max)
-            }
-            Text(headline, style = MaterialTheme.typography.titleMedium)
-            if (staleSince != null) {
-                QuietLine(stringResource(Res.string.today_weather_stale, formatTime(staleSince)), PussletIcons.CloudOff)
-            }
-        }
-    }
-}
-
-/** One row per group of children who should wear the same: "Ella och Simon: tunn jacka · reflexväst" (UX plan 1.7). */
-@Composable
-private fun ClothingRows(plan: TodayPlan) {
-    val groups = remember(plan.clothing) { ClothingGrouping.group(plan.clothing) }
-    groups.forEach { group ->
-        val advice = group.advice.map { stringResource(Labels.advice(it)) }.joinToString(" · ")
-        Text(
-            stringResource(Res.string.today_clothes_for, joinNames(group.children.map { it.name }), advice),
-            style = MaterialTheme.typography.bodyMedium,
-        )
-    }
-}
-
-/** A small secondary line with a leading icon ("Väder från 07:10" with a cloud that is offline). */
-@Composable
-private fun QuietLine(text: String, icon: ImageVector) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
-        Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun ContextCardView(
-    card: ContextCard,
-    state: TodayUiState,
-    onTakeHandoff: (EventOccurrence, HandoffKind) -> Unit,
-    onAddGiftTask: (EventOccurrence, String) -> Unit,
-    onOpenOccurrence: (EventOccurrence) -> Unit,
-    onOpenHandover: (String) -> Unit,
-) {
+private fun ProblemBanner(c: Conflict, state: TodayUiState, actions: TodayActions) {
     val plan = state.plan ?: return
     val people = state.people
 
     fun names(ids: List<String>) = ids.mapNotNull { people[it]?.name }
-    when (card) {
-        is ContextCard.Problem -> {
-            val c = card.conflict
-            val text = when (c) {
-                is Conflict.NobodyAvailable -> stringResource(
-                    if (c.kind == HandoffKind.PickUp) Res.string.card_nobody_pickup else Res.string.card_nobody_dropoff,
-                    joinNames(names(c.busyAdultIds)),
-                    formatTime(c.time),
-                    joinNames(names(c.childIds)),
-                )
-                is Conflict.AssigneeBusy -> stringResource(
-                    if (c.kind == HandoffKind.PickUp) Res.string.card_busy_pickup else Res.string.card_busy_dropoff,
-                    people[c.personId]?.name.orEmpty(),
-                    joinNames(names(c.childIds)),
-                    formatTime(c.time),
-                    c.busyWith.event.title,
-                )
-                is Conflict.Unassigned -> stringResource(
-                    if (c.kind == HandoffKind.PickUp) Res.string.card_unassigned_pickup else Res.string.card_unassigned_dropoff,
-                    joinNames(names(c.childIds)),
-                    formatTime(c.time),
-                )
-                is Conflict.DoubleBooked -> stringResource(
-                    Res.string.card_double_booked,
-                    people[c.childId]?.name.orEmpty(),
-                    c.occurrence.event.title,
-                    c.other.event.title,
-                )
-            }
-            val prefix = if (c.date == plan.date) "" else relativeDay(c.date, plan.date) + ": "
-            Banner(prefix + text, kind = BannerKind.Problem, actions = {
-                val kind = when (c) {
-                    is Conflict.NobodyAvailable -> c.kind
-                    is Conflict.AssigneeBusy -> c.kind
-                    is Conflict.Unassigned -> c.kind
-                    is Conflict.DoubleBooked -> null
-                }
-                // "Jag tar det" only where the write reaches the family: never for a caregiver (UX plan 1.13).
-                if (state.canEdit && kind != null && !(c is Conflict.AssigneeBusy && c.personId == state.me?.id)) {
-                    SmallAction(stringResource(Res.string.card_action_take)) { onTakeHandoff(c.occurrence, kind) }
-                }
-                SmallAction(stringResource(Res.string.card_action_open)) { onOpenOccurrence(c.occurrence) }
-            })
-        }
-        is ContextCard.StudyDay -> Banner(
-            stringResource(Res.string.card_study_day, card.title, stringResource(Res.string.on_weekday, weekdayName(card.date.dayOfWeek))),
-            kind = BannerKind.Warning,
-            icon = PussletIcons.School,
+    val text = when (c) {
+        is Conflict.NobodyAvailable -> stringResource(
+            if (c.kind == HandoffKind.PickUp) Res.string.card_nobody_pickup else Res.string.card_nobody_dropoff,
+            joinNames(names(c.busyAdultIds)),
+            formatTime(c.time),
+            joinNames(names(c.childIds)),
         )
-        is ContextCard.PartyGift -> {
-            val remindLabel = stringResource(Res.string.card_action_remind)
-            val presentTitle = card.eventTitle
-            // "Påminn mig" adds a to-do for the day before, so it is only offered while there is none and to those who can add one.
-            val occurrence = if (card.taskId == null && state.canEdit) {
-                plan.upcoming.flatMap { it.events }.firstOrNull { it.event.title == presentTitle }
-            } else {
-                null
-            }
-            Banner(
-                stringResource(Res.string.card_party_gift, stringResource(Res.string.on_weekday, weekdayName(card.date.dayOfWeek))),
-                kind = BannerKind.Warning,
-                icon = PussletIcons.Gift,
-                actions = if (occurrence != null) {
-                    { SmallAction(remindLabel) { onAddGiftTask(occurrence, presentTitle) } }
-                } else {
-                    null
-                },
-            )
-        }
-        is ContextCard.SqueezeDay -> Banner(
-            stringResource(Res.string.card_squeeze_day, relativeDay(card.date, plan.date)),
-            kind = BannerKind.Warning,
-            icon = PussletIcons.CalendarMonth,
+        is Conflict.AssigneeBusy -> stringResource(
+            if (c.kind == HandoffKind.PickUp) Res.string.card_busy_pickup else Res.string.card_busy_dropoff,
+            people[c.personId]?.name.orEmpty(),
+            joinNames(names(c.childIds)),
+            formatTime(c.time),
+            c.busyWith.event.title,
         )
-        is ContextCard.HandoverSoon -> Banner(
-            stringResource(
-                Res.string.card_handover,
-                if (card.handover.date == plan.date) stringResource(Res.string.card_today) else stringResource(Res.string.card_tomorrow),
-                card.handover.to.name,
-            ),
-            kind = BannerKind.Info,
-            actions = { SmallAction(stringResource(Res.string.card_action_open)) { onOpenHandover(card.schedule.id) } },
+        is Conflict.Unassigned -> stringResource(
+            if (c.kind == HandoffKind.PickUp) Res.string.card_unassigned_pickup else Res.string.card_unassigned_dropoff,
+            joinNames(names(c.childIds)),
+            formatTime(c.time),
+        )
+        is Conflict.DoubleBooked -> stringResource(
+            Res.string.card_double_booked,
+            people[c.childId]?.name.orEmpty(),
+            c.occurrence.event.title,
+            c.other.event.title,
         )
     }
-}
-
-@Composable
-private fun TimelineCard(plan: TodayPlan, onOpenOccurrence: (EventOccurrence) -> Unit) {
-    SectionCard(stringResource(Res.string.today_timeline_title)) {
-        if (plan.timeline.isEmpty()) {
-            Text(
-                stringResource(Res.string.today_quiet),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        plan.timeline.forEach { item ->
-            when (item) {
-                is TimelineItem.HandoffItem -> HandoffRow(item)
-                is TimelineItem.EventItem -> EventRow(item, onOpenOccurrence)
-            }
-        }
+    val prefix = if (c.date == plan.date) "" else relativeDay(c.date, plan.date) + ": "
+    val kind = when (c) {
+        is Conflict.NobodyAvailable -> c.kind
+        is Conflict.AssigneeBusy -> c.kind
+        is Conflict.Unassigned -> c.kind
+        is Conflict.DoubleBooked -> null
     }
-}
-
-@Composable
-private fun TimeLabel(text: String) {
-    Text(text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.widthIn(min = 52.dp), maxLines = 1)
-}
-
-@Composable
-private fun HandoffRow(item: TimelineItem.HandoffItem) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
-        TimeLabel(formatTime(item.time))
-        AvatarStack(item.children, size = 24.dp)
-        val label = stringResource(if (item.kind == HandoffKind.PickUp) Res.string.today_pickup else Res.string.today_dropoff)
-        Column(Modifier.weight(1f)) {
-            Text(label + " · " + joinNames(item.children.map { it.name }), style = MaterialTheme.typography.bodyLarge)
-            val who = item.person
-            if (who == null) {
-                Text(
-                    stringResource(Res.string.today_handoff_nobody),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    PersonAvatar(who, size = 20.dp)
-                    Text(who.name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
+    // "Jag tar det" only where the write reaches the family: never for a caregiver (UX plan 1.13).
+    val canTake = state.canEdit && kind != null && !(c is Conflict.AssigneeBusy && c.personId == state.me?.id)
+    Banner(prefix + text, kind = BannerKind.Problem, actions = {
+        if (canTake && kind != null) {
+            SmallAction(stringResource(Res.string.card_action_take)) { actions.onTakeHandoff(c.occurrence, kind) }
         }
-    }
+        SmallAction(stringResource(Res.string.card_action_open)) { actions.onOpenOccurrence(c.occurrence) }
+    })
 }
 
+/** "Sara frågar om du kan hämta Ella fre 15:45 · Svara". A reminder to act on, so unfilled with a terracotta icon. */
 @Composable
-private fun EventRow(item: TimelineItem.EventItem, onOpenOccurrence: (EventOccurrence) -> Unit) {
-    val o = item.occurrence
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = Spacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
-        TimeLabel(if (o.allDay) stringResource(Res.string.all_day) else formatTime(o.start.time))
-        if (item.people.isNotEmpty()) {
-            AvatarStack(item.people, size = 24.dp)
-        } else {
-            val color = o.sourceColor
-            if (color != null) {
-                ColorBadge(color, o.sourceName?.take(1).orEmpty(), o.sourceName.orEmpty(), size = 24.dp)
-            } else {
-                Spacer(Modifier.width(24.dp))
-            }
-        }
-        Column(Modifier.weight(1f)) {
-            SmallTitle(o.event.title, onClick = { onOpenOccurrence(o) })
-            val details = buildList {
-                if (!o.allDay) add(formatTimeRange(o.start.time, o.end.time))
-                if (o.event.location.isNotBlank()) add(o.event.location)
-                when (o.source) {
-                    EventSource.Subscription -> add(stringResource(Res.string.event_source_subscription, o.sourceName.orEmpty()))
-                    EventSource.Device -> add(stringResource(Res.string.event_source_device))
-                    else -> Unit
-                }
-            }
-            if (details.isNotEmpty()) {
-                Text(
-                    details.joinToString(" · "),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
+private fun RequestBanner(r: TodayRequest, today: LocalDate, onOpenOccurrence: (EventOccurrence) -> Unit) {
+    val from = r.from?.name ?: stringResource(Res.string.today_request_someone)
+    val time = r.time?.let(::formatTime)
+    // Today it is just the time; another day gets the short weekday ("fre 15:45").
+    val day = if (r.date == today) null else weekdayShort(r.date.dayOfWeek)
+    val whenText = listOfNotNull(day, time).joinToString(" ")
+    val text = stringResource(
+        if (r.kind == HandoffKind.PickUp) Res.string.today_request_pickup else Res.string.today_request_dropoff,
+        from,
+        joinNames(r.children.map { it.name }),
+        whenText,
+    ).trim()
+    Banner(text, kind = BannerKind.Warning, icon = PussletIcons.Swap, actions = {
+        SmallAction(stringResource(Res.string.today_request_answer)) { onOpenOccurrence(r.occurrence) }
+    })
 }
 
-@Composable
-private fun SmallTitle(text: String, onClick: () -> Unit) {
-    androidx.compose.material3.TextButton(onClick = onClick, contentPadding = PaddingValues(0.dp), modifier = Modifier.height(32.dp)) {
-        Text(
-            text,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun PackingCard(plan: TodayPlan, onToggle: (LocalDate, se.pusslet.core.model.PackingItem, Boolean) -> Unit) {
-    SectionCard(stringResource(Res.string.today_packing_title)) {
-        plan.packing.filter { it.items.isNotEmpty() }.forEach { cp ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                PersonAvatar(cp.child, size = 24.dp)
-                Text(cp.child.name, style = MaterialTheme.typography.titleSmall)
-            }
-            cp.items.forEach { item ->
-                val reason = when (val r = item.reason) {
-                    is PackingReason.ForEvent -> stringResource(Res.string.today_packing_reason_event, r.eventTitle)
-                    PackingReason.Handover -> stringResource(Res.string.today_packing_reason_handover)
-                    is PackingReason.Rule -> null
-                }
-                CheckRow(item.text, item.checked, onCheckedChange = { onToggle(plan.date, item, it) }, supporting = reason)
-            }
-        }
-    }
-}
-
-@Composable
-private fun MealsCard(plan: TodayPlan, canEdit: Boolean, onPlanDinner: (LocalDate) -> Unit) {
-    SectionCard(stringResource(Res.string.today_meals_title)) {
-        plan.lunches.forEach { l ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                PersonAvatar(l.child, size = 24.dp)
-                Text(stringResource(Res.string.today_lunch, l.child.name, l.dishes.first()), style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-        val dinner = plan.dinner
-        if (dinner == null) {
-            // Planning the menu is for parents; a caregiver just sees the lunches (if any).
-            if (canEdit) {
-                Text(stringResource(Res.string.today_no_dinner), style = MaterialTheme.typography.bodyLarge)
-                SmallAction(stringResource(Res.string.today_plan_dinner)) { onPlanDinner(plan.date) }
-            }
-        } else {
-            Text(stringResource(Res.string.today_dinner, dinner.title), style = MaterialTheme.typography.titleMedium)
-            plan.lunchDinnerClash.forEach { (childId, keys) ->
-                val child = plan.lunches.firstOrNull { it.child.id == childId }?.child ?: return@forEach
-                Banner(stringResource(Res.string.today_clash, child.name, keys.joinToString(", ")), kind = BannerKind.Warning)
-            }
-        }
-    }
-}
-
-@Composable
-private fun TasksCard(plan: TodayPlan, onToggle: (se.pusslet.core.tasks.TaskOccurrence, Boolean) -> Unit) {
-    SectionCard(stringResource(Res.string.today_tasks_title)) {
-        plan.myTasks.take(MAX_TASKS).forEach { t ->
-            val supporting = t.date?.let { d ->
-                if (d < plan.date) stringResource(Res.string.today_overdue) else relativeDay(d, plan.date)
-            }
-            CheckRow(t.task.title, t.done, onCheckedChange = { onToggle(t, it) }, supporting = supporting)
-        }
-    }
-}
-
-/** The next days that have something on them; a day with nothing is simply left out. */
-@Composable
-private fun UpcomingCard(plan: TodayPlan, days: List<DayPreview>, onOpenOccurrence: (EventOccurrence) -> Unit) {
-    SectionCard(stringResource(Res.string.today_upcoming_title)) {
-        days.forEach { day ->
-            Column(Modifier.padding(vertical = Spacing.xs)) {
-                Text(relativeDay(day.date, plan.date).replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleSmall)
-                day.holidays.forEach {
-                    Text(
-                        stringResource(Labels.holiday(it.id)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.tertiary,
-                    )
-                }
-                day.events.take(MAX_UPCOMING).forEach { o ->
-                    val time = if (o.allDay) stringResource(Res.string.all_day) else formatTime(o.start.time)
-                    SmallTitle("$time  ${o.event.title}") { onOpenOccurrence(o) }
-                }
-                day.dinner?.let { Text(stringResource(Res.string.today_dinner, it), style = MaterialTheme.typography.bodyMedium) }
-            }
-        }
-    }
-}
-
-private const val MAX_TASKS = 6
-private const val MAX_UPCOMING = 4
+/** Joins the parts of one line ("Vecka 41 · Hos Ahmed"). */
+internal const val SEPARATOR = " · "

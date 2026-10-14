@@ -13,26 +13,38 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import se.pusslet.core.model.Child
 import se.pusslet.core.model.Completion
+import se.pusslet.core.model.CustodySchedule
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.HandoffRequest
+import se.pusslet.core.model.MealPlanWeek
+import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingItem
+import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.Place
 import se.pusslet.core.model.Role
+import se.pusslet.core.model.SchoolLunch
 import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
+import se.pusslet.core.today.TodayBlock
 import se.pusslet.core.today.TodayInput
+import se.pusslet.core.today.TodayLayout
+import se.pusslet.core.today.TodayLayouts
 import se.pusslet.core.today.TodayPlan
 import se.pusslet.core.today.TodayPlanner
 import se.pusslet.core.util.IdGenerator
@@ -42,6 +54,9 @@ import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
 import se.pusslet.data.repository.MealRepository
 import se.pusslet.data.repository.PackingRepository
+import se.pusslet.data.repository.PreferencesRepository
+import se.pusslet.data.repository.Prefs
+import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.repository.TaskRepository
 import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionProvider
@@ -60,6 +75,10 @@ sealed interface WeatherState {
     data class Ready(val place: Place, val fetchedAt: LocalDateTime, val stale: Boolean) : WeatherState
 }
 
+/**
+ * Everything Idag draws (UX plan, Idag): the header and "Att lösa" ([TodayPlan.problems], [requests]) can never be hidden;
+ * Morgonkollen ([hero]) and the [sections] follow the viewer's [layout].
+ */
 data class TodayUiState(
     val loading: Boolean = true,
     val plan: TodayPlan? = null,
@@ -75,6 +94,16 @@ data class TodayUiState(
     val canEdit: Boolean = true,
     /** The demo flavor's sample family ("Familjen Lind"), so a tester knows the data is not theirs. */
     val demo: Boolean = false,
+    /** The viewer's Idag: Prefs.TodayLayout merged with the role's default (`TodayLayouts.resolve`). */
+    val layout: TodayLayout = TodayLayouts.defaultFor(Role.Parent),
+    /** Morgonkollen rows, fixed order, at most five; empty = no card. */
+    val hero: List<HeroRow> = emptyList(),
+    /** The sections with something to show, in the viewer's order. */
+    val sections: List<TodayBlock> = emptyList(),
+    /** Unanswered hand-off requests to the viewer ("Sara frågar om du kan hämta Ella fre 15:45 · Svara"). */
+    val requests: List<TodayRequest> = emptyList(),
+    /** No section has anything to show: "Inget mer idag". */
+    val quiet: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -85,6 +114,8 @@ class TodayViewModel(
     meals: MealRepository,
     private val tasks: TaskRepository,
     lunches: LunchRepository,
+    shopping: ShoppingRepository,
+    prefs: PreferencesRepository,
     private val weatherSource: WeatherSource,
     private val sessions: SessionProvider,
     private val handoffs: HandoffAssigner,
@@ -94,7 +125,7 @@ class TodayViewModel(
 ) : ViewModel() {
     private val log = Logger.withTag("Today")
 
-    /** Ticks every minute so greetings, "now" and the date roll over by themselves. */
+    /** Ticks every minute so "now", passed rows and the date roll over by themselves. */
     private val now: Flow<LocalDateTime> = flow {
         while (true) {
             emit(clock.now().toLocalDateTime(zone))
@@ -109,9 +140,9 @@ class TodayViewModel(
 
     private data class Household(
         val people: List<FamilyPerson>,
-        val children: List<se.pusslet.core.model.Child>,
+        val children: List<Child>,
         val familyName: String,
-        val custody: List<se.pusslet.core.model.CustodySchedule>,
+        val custody: List<CustodySchedule>,
         val session: Session,
     )
 
@@ -130,10 +161,10 @@ class TodayViewModel(
     }
 
     private data class Extras(
-        val rules: List<se.pusslet.core.model.PackingRule>,
-        val checks: Map<String, se.pusslet.core.model.PackingChecks>,
-        val weeks: List<se.pusslet.core.model.MealPlanWeek>,
-        val lunches: Map<String, List<se.pusslet.core.model.SchoolLunch>>,
+        val rules: List<PackingRule>,
+        val checks: Map<String, PackingChecks>,
+        val weeks: List<MealPlanWeek>,
+        val lunches: Map<String, List<SchoolLunch>>,
         val tasks: List<FamilyTask>,
     )
 
@@ -141,16 +172,79 @@ class TodayViewModel(
         Extras(r, c, w, l, t)
     }
 
-    val state: StateFlow<TodayUiState> = combine(
-        now,
-        household,
-        occurrences,
-        extras,
-        combine(forecast, weatherState) { f, w ->
-            f to w
-        },
-    ) { n, h, occ, ex, fw ->
+    /** The viewer's layout; another member or a role change falls back to the role's default. */
+    private val layout: Flow<TodayLayout> = combine(sessions.session, prefs.observe(Prefs.TodayLayout)) { s, stored ->
+        TodayLayouts.resolve(s.role, s.memberId, stored)
+    }.distinctUntilChanged()
+
+    /** The shopping list is only read while "Inköpslistan" is switched on (it is off by default). */
+    private val shoppingSnapshot: Flow<ShoppingSnapshot?> = layout.map { it.isOn(TodayBlock.Shopping) }
+        .distinctUntilChanged()
+        .flatMapLatest { on ->
+            if (!on) {
+                flowOf(null)
+            } else {
+                combine(shopping.lists, shopping.items, shopping.presence, prefs.observe(Prefs.ActiveShoppingList)) { l, i, p, selected ->
+                    TodayModel.snapshot(l, i, p, selected)
+                }
+            }
+        }
+
+    /**
+     * Loads the forecast for the family's place and refreshes it hourly (the source caches for an hour anyway). It runs only
+     * while someone looks at Idag, so nothing polls SMHI from the back stack and a test's virtual clock can go idle. Starts
+     * with a value, so Idag never waits for the forecast.
+     */
+    private val weatherLoader: Flow<Unit> = family.settings.map { it.weatherPlace }
+        .distinctUntilChanged()
+        .flatMapLatest { place ->
+            flow {
+                lastPlace = place
+                loadWeather(place, force = false)
+                emit(Unit)
+                while (place != null) {
+                    delay(WEATHER_REFRESH_MS)
+                    loadWeather(place, force = false)
+                    emit(Unit)
+                }
+            }
+        }
+        .onStart { emit(Unit) }
+
+    private data class View(
+        val layout: TodayLayout,
+        val shopping: ShoppingSnapshot?,
+        val requests: List<HandoffRequest>,
+        val hasPlace: Boolean,
+        val forecast: Sourced<Forecast>?,
+        val weather: WeatherState,
+    )
+
+    private val view: Flow<View> = combine(
+        layout,
+        shoppingSnapshot,
+        calendar.handoffRequests,
+        family.settings.map { it.weatherPlace != null }.distinctUntilChanged(),
+        combine(forecast, weatherState, weatherLoader) { f, w, _ -> f to w },
+    ) { l, s, r, place, fw ->
+        View(l, s, r, place, fw.first, fw.second)
+    }
+
+    val state: StateFlow<TodayUiState> = combine(now, household, occurrences, extras, view) { n, h, occ, ex, v ->
+        build(n, h, occ, ex, v)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+        // Known before anything loads, so a caregiver never sees the + flash by.
+        TodayUiState(canEdit = sessions.session.value.canEdit),
+    )
+
+    private fun build(n: LocalDateTime, h: Household, occ: List<EventOccurrence>, ex: Extras, v: View): TodayUiState {
         val me = h.session.memberId
+        val people = h.people.associateBy { it.id }
+        val week = n.date.isoWeek
+        // Last week too: "Planera middag" is only offered to a family that planned a dinner this or last week.
+        val mealWeeks = setOf(week.previous(), week, n.date.plusDays(HORIZON_DAYS).isoWeek)
         val plan = TodayPlanner.build(
             TodayInput(
                 today = n.date,
@@ -163,47 +257,35 @@ class TodayViewModel(
                 packingRules = ex.rules,
                 packingChecks = ex.checks,
                 custody = h.custody,
-                mealWeeks = ex.weeks.filter { it.week == n.date.isoWeek || it.week == n.date.plusDays(HORIZON_DAYS).isoWeek },
+                mealWeeks = ex.weeks.filter { it.week in mealWeeks },
                 lunches = ex.lunches,
                 tasks = ex.tasks,
-                forecast = fw.first?.value,
+                forecast = v.forecast?.value,
+                hasWeatherPlace = v.hasPlace,
+                shopping = TodayModel.shopping(v.shopping, people, me, clock.now()),
             ),
         )
-        TodayUiState(
+        val canEdit = h.session.canEdit
+        val sections = TodayModel.sections(v.layout, plan)
+        return TodayUiState(
             loading = false,
             plan = plan,
             familyName = h.familyName,
-            me = h.people.firstOrNull { it.id == me },
-            people = h.people.associateBy { it.id },
-            weather = fw.second,
+            me = people[me],
+            people = people,
+            weather = v.weather,
             now = n,
-            canEdit = h.session.canEdit,
+            canEdit = canEdit,
             demo = h.session.demo,
+            layout = v.layout,
+            hero = TodayModel.heroRows(v.layout, plan, canEdit, weatherLoading = v.weather == WeatherState.Loading),
+            sections = sections,
+            requests = TodayModel.requests(me, v.requests, occ, people, n.date, n.time),
+            quiet = sections.isEmpty(),
         )
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
-        // Known before anything loads, so a caregiver never sees the + flash by.
-        TodayUiState(canEdit = sessions.session.value.canEdit),
-    )
+    }
 
     private val Session.canEdit: Boolean get() = role == Role.Parent
-
-    init {
-        viewModelScope.launch {
-            family.settings.map { it.weatherPlace }.distinctUntilChanged().collect { place ->
-                lastPlace = place
-                loadWeather(place, force = false)
-            }
-        }
-        // Refresh the forecast hourly while the screen is alive (the source caches for an hour anyway).
-        viewModelScope.launch {
-            while (true) {
-                delay(WEATHER_REFRESH_MS)
-                loadWeather(lastPlace, force = false)
-            }
-        }
-    }
 
     fun refreshWeather() {
         viewModelScope.launch { loadWeather(lastPlace, force = true) }
@@ -250,7 +332,7 @@ class TodayViewModel(
         viewModelScope.launch { handoffs.assign(occurrence, kind, me) }
     }
 
-    /** "Kalas på lördag – present är inte köpt": create the to-do linked to the party. */
+    /** "Kalas på lördag – present?": "Påminn mig" creates the to-do linked to the party, due the day before. */
     fun addGiftTask(occurrence: EventOccurrence, title: String) {
         val session = sessions.session.value
         if (!session.canEdit) return

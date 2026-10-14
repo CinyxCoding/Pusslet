@@ -1,7 +1,6 @@
 package se.pusslet.feature.calendar
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,25 +15,20 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,48 +37,57 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.first
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.holidays.HolidayKind
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.FamilyPerson
-import se.pusslet.core.recurrence.EventExpander
+import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.time.isoWeek
+import se.pusslet.core.time.plusDays
+import se.pusslet.core.time.startOfWeek
 import se.pusslet.data.repository.CalendarLayer
 import se.pusslet.data.repository.CalendarView
-import se.pusslet.ui.components.AvatarStack
-import se.pusslet.ui.components.ColorBadge
 import se.pusslet.ui.components.Labels
-import se.pusslet.ui.components.PersonChips
+import se.pusslet.ui.components.NavRow
+import se.pusslet.ui.components.QuietLine
 import se.pusslet.ui.components.RegisterAddButton
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.WeekSwitcher
 import se.pusslet.ui.format.formatDateLong
-import se.pusslet.ui.format.formatTime
-import se.pusslet.ui.format.formatTimeRange
 import se.pusslet.ui.format.monthName
-import se.pusslet.ui.format.weekLong
-import se.pusslet.ui.format.weekShort
+import se.pusslet.ui.format.monthShort
 import se.pusslet.ui.format.weekdayShort
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.PussletThemeExtras
 import se.pusslet.ui.theme.Spacing
 
+/** The calendar tab. [onOpenDay] opens the day screen (`Route.CalendarDay`) from a day header. */
 @Composable
 fun CalendarRoute(
     onOpenOccurrence: (EventOccurrence) -> Unit,
-    onNewEvent: (LocalDate) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
     onQuickAdd: (LocalDate?) -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: CalendarViewModel = koinViewModel(),
@@ -97,16 +99,22 @@ fun CalendarRoute(
         onView = viewModel::setView,
         onStep = viewModel::step,
         onToday = viewModel::goToday,
-        onDay = viewModel::showDay,
+        onOpenDay = onOpenDay,
+        onSelectDay = viewModel::selectDay,
         onTogglePerson = viewModel::togglePerson,
-        onClearFilter = viewModel::clearFilter,
+        onClearPeople = viewModel::clearPeople,
         onToggleLayer = viewModel::toggleLayer,
+        onShowAll = viewModel::showAll,
         onOpenOccurrence = onOpenOccurrence,
-        onNewEvent = onNewEvent,
+        onTake = viewModel::take,
         onQuickAdd = onQuickAdd,
     )
 }
 
+/**
+ * One control row on top (UX plan, Kalender 1): the week (or month) with ‹ ›, "Vecka | Månad" and the filter. The week is a
+ * list with the date in a column on the left; school and preschool are quiet lines under the date.
+ */
 @Composable
 fun CalendarScreen(
     state: CalendarUiState,
@@ -114,410 +122,291 @@ fun CalendarScreen(
     onView: (CalendarView) -> Unit = {},
     onStep: (Boolean) -> Unit = {},
     onToday: () -> Unit = {},
-    onDay: (LocalDate) -> Unit = {},
+    onOpenDay: (LocalDate) -> Unit = {},
+    onSelectDay: (LocalDate) -> Unit = {},
     onTogglePerson: (String) -> Unit = {},
-    onClearFilter: () -> Unit = {},
+    onClearPeople: () -> Unit = {},
     onToggleLayer: (CalendarLayer) -> Unit = {},
+    onShowAll: () -> Unit = {},
     onOpenOccurrence: (EventOccurrence) -> Unit = {},
-    onNewEvent: (LocalDate) -> Unit = {},
+    onTake: (EventOccurrence, HandoffKind) -> Unit = { _, _ -> },
     onQuickAdd: (LocalDate?) -> Unit = {},
 ) {
-    // The round + opens quick add on the shown week or the selected day (UX plan 1.2). Day has no +: an empty hour opens
-    // the editor there. Caregivers cannot add events (1.13).
-    RegisterAddButton(
-        label = stringResource(Res.string.action_add),
-        enabled = state.canEdit && state.view != CalendarView.Day,
-    ) { onQuickAdd(state.addDate) }
+    // The round + opens quick add on the shown week or the selected day (UX plan 1.2). Caregivers cannot add events (1.13).
+    RegisterAddButton(label = stringResource(Res.string.action_add), enabled = state.canEdit) { onQuickAdd(state.addDate) }
     val anchor = state.anchor ?: return
     val today = state.today ?: anchor
     val people = state.people.associateBy { it.id }
-    // "Idag" always brings today into view, also when the shown week already is the current one (UX plan 1.10).
+    var filterOpen by rememberSaveable { mutableStateOf(false) }
+    // "Idag" (only offered on another week or month) also brings today into view in the week list.
     var todayRequests by remember { mutableIntStateOf(0) }
-    val goToday = {
-        todayRequests++
-        onToday()
-    }
+    val bottom = contentPadding.calculateBottomPadding() + Spacing.listBottomInset
     Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
-        Header(state, anchor, today, onStep, goToday, onToggleLayer)
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = Spacing.screenHorizontal)) {
-            val views = listOf(
-                CalendarView.Day to Res.string.calendar_view_day,
-                CalendarView.Week to Res.string.calendar_view_week,
-                CalendarView.Month to Res.string.calendar_view_month,
-                CalendarView.Agenda to Res.string.calendar_view_agenda,
-            )
-            views.forEachIndexed { i, (v, label) ->
-                SegmentedButton(
-                    selected = state.view == v,
-                    onClick = { onView(v) },
-                    shape = SegmentedButtonDefaults.itemShape(i, views.size),
-                    colors = SelectionColors.segmentedButton(),
-                    label = { Text(stringResource(label), maxLines = 1) },
-                )
-            }
+        Controls(
+            state = state,
+            anchor = anchor,
+            today = today,
+            onStep = onStep,
+            onView = onView,
+            onToday = {
+                todayRequests++
+                onToday()
+            },
+            onFilter = { filterOpen = true },
+        )
+        filterSummary(state)?.let { FilterLine(it, onShowAll) }
+        if (state.view == CalendarView.Month) {
+            MonthView(state, anchor, today, people, bottom, onSelectDay, onOpenDay, onOpenOccurrence, onTake)
+        } else {
+            WeekList(state, today, people, bottom, todayRequests, onOpenDay, onOpenOccurrence, onTake)
         }
-        if (state.people.isNotEmpty()) {
-            PersonChips(
-                state.people,
-                state.personFilter,
-                onTogglePerson,
-                Modifier.padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm),
-                allLabel = stringResource(Res.string.calendar_filter_all),
-                onAll = onClearFilter,
-            )
-        }
-        val bottom = contentPadding.calculateBottomPadding() + Spacing.listBottomInset
-        when (state.view) {
-            CalendarView.Day -> DayView(state.days.firstOrNull(), people, bottom, onOpenOccurrence, onNewEvent, canAdd = state.canEdit)
-            CalendarView.Week -> ListView(
-                state.days,
-                today,
-                people,
-                bottom,
-                onOpenOccurrence,
-                onDay,
-                showEmptyDays = true,
-                todayRequests = todayRequests,
-            )
-            CalendarView.Agenda -> ListView(
-                state.days.filter {
-                    it.occurrences.isNotEmpty() || it.holidays.isNotEmpty()
-                },
-                today,
-                people,
-                bottom,
-                onOpenOccurrence,
-                onDay,
-                showEmptyDays = false,
-                todayRequests = todayRequests,
-            )
-            CalendarView.Month -> MonthView(state.days, anchor, today, people, onDay)
-        }
+    }
+    if (filterOpen) {
+        CalendarFilterSheet(state, onTogglePerson, onClearPeople, onToggleLayer, onDismiss = { filterOpen = false })
     }
 }
 
 @Composable
-private fun Header(
+private fun Controls(
     state: CalendarUiState,
     anchor: LocalDate,
     today: LocalDate,
     onStep: (Boolean) -> Unit,
+    onView: (CalendarView) -> Unit,
     onToday: () -> Unit,
-    onToggleLayer: (CalendarLayer) -> Unit,
+    onFilter: () -> Unit,
 ) {
-    var menu by remember { mutableStateOf(false) }
-    Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.xs, vertical = Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = { onStep(false) }) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(Res.string.calendar_previous))
-        }
-        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-            // The year only shows when it is not this year ("oktober", "januari 2027").
-            val month = monthName(anchor.month.ordinal + 1) + if (anchor.year != today.year) " " + anchor.year else ""
-            val title = when (state.view) {
-                CalendarView.Day -> formatDateLong(anchor, referenceYear = today.year).replaceFirstChar { it.uppercase() }
-                CalendarView.Week -> weekLong(anchor.isoWeek.week)
-                CalendarView.Month, CalendarView.Agenda -> month.replaceFirstChar { it.uppercase() }
-            }
-            Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() }, maxLines = 1)
-            if (state.view == CalendarView.Week || state.view == CalendarView.Day) {
-                Text(
-                    if (state.view == CalendarView.Day) weekShort(anchor) else month,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        val goToday = stringResource(Res.string.calendar_go_today)
-        TextButton(onClick = onToday, modifier = Modifier.semantics { contentDescription = goToday }) {
-            Text(stringResource(Res.string.today))
-        }
-        IconButton(onClick = { onStep(true) }) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(Res.string.calendar_next))
-        }
-        Box {
-            IconButton(onClick = {
-                menu = true
-            }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.calendar_layers)) }
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                Text(
-                    stringResource(Res.string.calendar_layers),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.padding(Spacing.md),
-                )
-                listOf(
-                    CalendarLayer.Family to Res.string.layer_family,
-                    CalendarLayer.Subscriptions to Res.string.layer_subscriptions,
-                    CalendarLayer.Device to Res.string.layer_device,
-                    CalendarLayer.Holidays to Res.string.layer_holidays,
-                    CalendarLayer.Custody to Res.string.layer_custody,
-                ).forEach { (layer, label) ->
-                    DropdownMenuItem(
-                        text = { Text(stringResource(label)) },
-                        trailingIcon = { Switch(checked = layer in state.layers, onCheckedChange = null) },
-                        onClick = { onToggleLayer(layer) },
+    val month = state.view == CalendarView.Month
+    Column(Modifier.fillMaxWidth().padding(horizontal = Spacing.screenHorizontal)) {
+        WeekSwitcher(
+            title = if (month) monthTitle(anchor, today) else weekTitle(anchor, today),
+            subtitle = if (month) null else custodyWeekText(state.custodyWeek),
+            onPrevious = { onStep(false) },
+            onNext = { onStep(true) },
+            onToday = if (state.showsToday) null else onToday,
+        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            SingleChoiceSegmentedButtonRow {
+                val views = listOf(CalendarView.Week to Res.string.calendar_view_week, CalendarView.Month to Res.string.calendar_view_month)
+                views.forEachIndexed { i, (v, label) ->
+                    SegmentedButton(
+                        selected = state.view == v,
+                        onClick = { onView(v) },
+                        shape = SegmentedButtonDefaults.itemShape(i, views.size),
+                        colors = SelectionColors.segmentedButton(),
+                        label = { Text(stringResource(label), maxLines = 1) },
                     )
                 }
             }
+            Spacer(Modifier.weight(1f))
+            FilterButton(state, onFilter)
         }
     }
 }
 
+/** "Vecka 41 · oktober", "Vecka 44 · okt–nov"; the year only when it is not this year. */
 @Composable
-private fun ListView(
-    days: List<CalendarDay>,
+private fun weekTitle(anchor: LocalDate, today: LocalDate): String {
+    val monday = anchor.startOfWeek()
+    val sunday = monday.plusDays(6)
+    val year = if (sunday.year != today.year) " " + sunday.year else ""
+    val months = if (monday.month == sunday.month) {
+        monthName(monday.month.ordinal + 1)
+    } else {
+        stringResource(Res.string.calendar_range, monthShort(monday.month.ordinal + 1), monthShort(sunday.month.ordinal + 1))
+    }
+    return stringResource(Res.string.calendar_week_title, anchor.isoWeek.week, months + year)
+}
+
+/** "Oktober", "Januari 2027". */
+@Composable
+private fun monthTitle(anchor: LocalDate, today: LocalDate): String =
+    monthName(anchor.month.ordinal + 1).replaceFirstChar { it.uppercase() } + if (anchor.year != today.year) " " + anchor.year else ""
+
+/** The filter icon, with a dot while a filter is on. */
+@Composable
+private fun FilterButton(state: CalendarUiState, onClick: () -> Unit) {
+    val summary = filterSummary(state)
+    IconButton(onClick = onClick, modifier = Modifier.semantics { if (summary != null) stateDescription = summary }) {
+        BadgedBox(badge = { if (state.filterActive) Badge(containerColor = MaterialTheme.colorScheme.primary) }) {
+            Icon(CalendarIcons.Filter, contentDescription = stringResource(Res.string.calendar_layers))
+        }
+    }
+}
+
+/** "Bara Simon · Visa alla": an active filter is never only a dot (UX plan, Kalender 3). */
+@Composable
+private fun FilterLine(summary: String, onShowAll: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(start = Spacing.screenHorizontal, end = Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            summary,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onShowAll) { Text(stringResource(Res.string.action_show_all)) }
+    }
+}
+
+@Composable
+private fun WeekList(
+    state: CalendarUiState,
     today: LocalDate,
     people: Map<String, FamilyPerson>,
-    bottomPadding: androidx.compose.ui.unit.Dp,
-    onOpen: (EventOccurrence) -> Unit,
-    onDay: (LocalDate) -> Unit,
-    showEmptyDays: Boolean,
+    bottomPadding: Dp,
     todayRequests: Int,
+    onOpenDay: (LocalDate) -> Unit,
+    onOpen: (EventOccurrence) -> Unit,
+    onTake: (EventOccurrence, HandoffKind) -> Unit,
 ) {
-    val empty = days.isEmpty() || (days.all { it.occurrences.isEmpty() && it.holidays.isEmpty() } && !showEmptyDays)
+    val days = state.days
+    val empty = days.all { it.isEmpty }
+    val first = if (empty) 1 else 0
     val listState = rememberLazyListState()
-    // Open the week at today (not Monday); other weeks open at their start. "Idag" scrolls back to today.
+    val density = LocalDensity.current
+    // The week opens at Monday so that most of it shows (UX plan, Kalender 1: at least five days). Today is scrolled into
+    // view only when its date would be hidden under the bottom bar; "Idag" does the same.
     LaunchedEffect(days.firstOrNull()?.date, todayRequests) {
-        val index = days.indexOfFirst { it.date >= today }
-        listState.scrollToItem(if (index > 0) index + (if (empty) 1 else 0) else 0)
+        listState.scrollToItem(0)
+        val index = days.indexOfFirst { it.date == today }
+        if (index < 0) return@LaunchedEffect
+        val layout = snapshotFlow { listState.layoutInfo }.first { it.visibleItemsInfo.isNotEmpty() }
+        val item = layout.visibleItemsInfo.firstOrNull { it.index == index + first }
+        val limit = layout.viewportEndOffset - layout.afterContentPadding + with(density) { Spacing.listBottomInset.roundToPx() }
+        if (item == null || item.offset + with(density) { DateCellHeight.roundToPx() } > limit) listState.scrollToItem(index + first)
     }
     LazyColumn(
         Modifier.fillMaxSize(),
         state = listState,
-        contentPadding = PaddingValues(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, bottom = bottomPadding),
+        contentPadding = PaddingValues(
+            start = Spacing.screenHorizontal,
+            end = Spacing.screenHorizontal,
+            top = Spacing.xs,
+            bottom = bottomPadding,
+        ),
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        if (empty) {
-            item {
-                Text(
-                    stringResource(Res.string.calendar_empty_week),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(vertical = Spacing.xl),
-                )
-            }
-        }
+        if (empty) item(key = "empty") { QuietLine(stringResource(Res.string.calendar_empty_week)) }
         items(days, key = { it.date.toString() }) { day ->
-            DaySection(day, today, people, onOpen, onDay)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                DateCell(day, day.date == today, today, onOpenDay)
+                Column(Modifier.weight(1f)) { DayContent(day, people, state.canEdit, onOpen, onTake, changeovers = false) }
+            }
         }
     }
 }
 
+/** The day header of the week list: weekday over the date, today in sage, red days in red. Opens the day screen. */
 @Composable
-private fun DaySection(
-    day: CalendarDay,
+private fun DateCell(day: CalendarDay, isToday: Boolean, today: LocalDate, onOpenDay: (LocalDate) -> Unit) {
+    val date = day.date
+    val colors = MaterialTheme.colorScheme
+    val long = formatDateLong(date, referenceYear = today.year).replaceFirstChar { it.uppercase() }
+    // An empty day is quiet on screen; TalkBack still hears "Inget planerat" with the date.
+    val description = if (day.isEmpty) long + ", " + stringResource(Res.string.calendar_empty_day) else long
+    val openDay = stringResource(Res.string.calendar_open_day)
+    Column(
+        Modifier
+            .width(DateColumn)
+            .heightIn(min = DateCellHeight)
+            .clip(MaterialTheme.shapes.small)
+            .clickable(onClickLabel = openDay, role = Role.Button) { onOpenDay(date) }
+            .semantics {
+                heading()
+                contentDescription = description
+            },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            weekdayShort(date.dayOfWeek),
+            style = MaterialTheme.typography.labelMedium,
+            color = if (day.redDay) colors.error else colors.onSurfaceVariant,
+        )
+        Box(
+            Modifier.size(36.dp).clip(CircleShape).background(if (isToday) colors.primary else Color.Transparent),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                date.day.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                color = when {
+                    isToday -> colors.onPrimary
+                    day.redDay -> colors.error
+                    else -> colors.onSurface
+                },
+            )
+        }
+    }
+}
+
+/** Month (UX plan, Kalender 5): the grid on top, the selected day below. A tap on a day selects it and stays in the month. */
+@Composable
+private fun MonthView(
+    state: CalendarUiState,
+    anchor: LocalDate,
     today: LocalDate,
     people: Map<String, FamilyPerson>,
+    bottomPadding: Dp,
+    onSelect: (LocalDate) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
     onOpen: (EventOccurrence) -> Unit,
-    onDay: (LocalDate) -> Unit,
+    onTake: (EventOccurrence, HandoffKind) -> Unit,
 ) {
-    val isToday = day.date == today
-    val dateText = formatDateLong(day.date, referenceYear = today.year).replaceFirstChar { it.uppercase() }
-    // An empty day is quiet on screen; TalkBack still hears "Inget planerat" with the date.
-    val emptyDay = stringResource(Res.string.calendar_empty_day)
-    val headerDescription = if (day.occurrences.isEmpty()) "$dateText, $emptyDay" else null
-    Row(Modifier.fillMaxWidth()) {
-        // Custody band: a thin coloured strip per schedule ("bakgrundsband").
-        day.custody.forEach { h ->
-            val colors = PussletThemeExtras.colors.member(h.color)
-            Box(Modifier.width(4.dp).heightIn(min = 56.dp).background(colors.container).semantics { contentDescription = h.name })
-            Spacer(Modifier.width(2.dp))
-        }
-        Column(Modifier.weight(1f).padding(start = Spacing.sm)) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .semantics { if (headerDescription != null) contentDescription = headerDescription }
-                    .clickable { onDay(day.date) }
-                    .padding(vertical = Spacing.xs),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-            ) {
-                DateBadge(day.date, isToday, day.redDay)
-                Text(
-                    dateText,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (day.redDay) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            day.holidays.forEach { h ->
-                Text(
-                    stringResource(Labels.holiday(h.id)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
-            }
-            day.occurrences.forEach { o -> OccurrenceRow(o, day.date, people, onOpen) }
-        }
-    }
-}
-
-@Composable
-private fun DateBadge(date: LocalDate, isToday: Boolean, red: Boolean) {
-    val bg = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh
-    val fg = when {
-        isToday -> MaterialTheme.colorScheme.onPrimary
-        red -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-    Box(Modifier.size(36.dp).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
-        Text(date.day.toString(), color = fg, style = MaterialTheme.typography.labelLarge)
-    }
-}
-
-@Composable
-fun OccurrenceRow(o: EventOccurrence, onDate: LocalDate, people: Map<String, FamilyPerson>, onOpen: (EventOccurrence) -> Unit) {
-    val participants = o.event.participantIds.mapNotNull { people[it] }
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(RoundedCornerShape(12.dp)).clickable {
-            onOpen(o)
-        }.padding(vertical = Spacing.xs),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
-        val time = when {
-            o.allDay -> stringResource(Res.string.all_day)
-            o.start.date < onDate -> "…" + formatTime(o.end.time)
-            else -> formatTime(o.start.time)
-        }
-        Text(time, style = MaterialTheme.typography.labelLarge, modifier = Modifier.widthIn(min = 52.dp))
-        when {
-            participants.isNotEmpty() -> AvatarStack(participants, size = 24.dp)
-            o.sourceColor != null -> o.sourceColor?.let {
-                ColorBadge(it, o.sourceName?.take(1).orEmpty(), o.sourceName.orEmpty(), size = 24.dp)
-            }
-            else -> Spacer(Modifier.width(24.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(
-                o.event.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            // The start time stands in its own column, so the detail line only says when it ends ("till 16:00").
-            val endsHere = !o.allDay && o.start.date == onDate && o.end.date == onDate && o.end.time != o.start.time
-            val details = buildList {
-                if (endsHere) add(stringResource(Res.string.calendar_until, formatTime(o.end.time)))
-                if (o.event.location.isNotBlank()) add(o.event.location)
-            }
-            if (details.isNotEmpty()) {
-                Text(
-                    details.joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
-            }
-        }
-    }
-}
-
-/** Day view: all-day events on top, then an hour grid from 06 to 22 with events placed at their start hour. */
-@Composable
-private fun DayView(
-    day: CalendarDay?,
-    people: Map<String, FamilyPerson>,
-    bottomPadding: androidx.compose.ui.unit.Dp,
-    onOpen: (EventOccurrence) -> Unit,
-    onNew: (LocalDate) -> Unit,
-    canAdd: Boolean,
-) {
-    if (day == null) return
-    val timed = day.occurrences.filter { !it.allDay }
-    val newEvent = stringResource(Res.string.calendar_new_event)
+    val selected = state.selectedDay
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, bottom = bottomPadding),
     ) {
-        item {
-            day.holidays.forEach { h ->
-                Text(
-                    stringResource(Labels.holiday(h.id)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.tertiary,
+        item(key = "grid") { MonthGrid(state.days, anchor, today, state.selected, people, onSelect) }
+        if (selected != null) {
+            item(key = "header") {
+                NavRow(
+                    text = formatDateLong(selected.date, referenceYear = today.year).replaceFirstChar { it.uppercase() },
+                    onClick = { onOpenDay(selected.date) },
+                    modifier = Modifier.padding(top = Spacing.sm).semantics { heading() },
                 )
             }
-            day.occurrences.filter { it.allDay }.forEach { OccurrenceRow(it, day.date, people, onOpen) }
-        }
-        val firstHour = minOf(DAY_START, timed.minOfOrNull { if (it.start.date < day.date) 0 else it.start.hour } ?: DAY_START)
-        val lastHour = maxOf(DAY_END, timed.maxOfOrNull { it.end.hour } ?: DAY_END)
-        items((firstHour..lastHour).toList(), key = { "h$it" }) { hour ->
-            val starting = timed.filter { (if (it.start.date < day.date) 0 else it.start.hour) == hour }
-            // An empty hour opens the editor for that day; caregivers cannot add events (UX plan 1.13).
-            val addHere = canAdd && starting.isEmpty()
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp)
-                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                    .then(if (addHere) Modifier.clickable(onClickLabel = newEvent) { onNew(day.date) } else Modifier),
-            ) {
-                // 24-hour labels without ":00" ("08").
-                Text(
-                    hour.toString().padStart(2, '0'),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.width(48.dp).padding(top = Spacing.xs),
-                )
-                Column(Modifier.weight(1f)) {
-                    starting.forEach { o -> EventBlock(o, people, onOpen) }
+            item(key = "day") {
+                Column {
+                    if (selected.isEmpty) {
+                        QuietLine(stringResource(Res.string.calendar_empty_day))
+                    } else {
+                        DayContent(selected, people, state.canEdit, onOpen, onTake)
+                    }
                 }
             }
         }
     }
 }
 
+/** Month grid with ISO week numbers in the first column. */
 @Composable
-private fun EventBlock(o: EventOccurrence, people: Map<String, FamilyPerson>, onOpen: (EventOccurrence) -> Unit) {
-    val first = o.event.participantIds.firstNotNullOfOrNull { people[it] }
-    val colors = first?.let { PussletThemeExtras.colors.member(it.color) }
-    val minutes = EventExpander.wallClockDuration(o.start, o.end).inWholeMinutes.coerceIn(30, 180)
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(2.dp)
-            .heightIn(min = (minutes * 0.8).dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(colors?.container ?: MaterialTheme.colorScheme.secondaryContainer)
-            .clickable { onOpen(o) }
-            .padding(Spacing.sm),
-    ) {
-        Text(
-            o.event.title,
-            color = colors?.content ?: MaterialTheme.colorScheme.onSecondaryContainer,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-        )
-        Text(
-            formatTimeRange(o.start.time, o.end.time),
-            color = colors?.content ?: MaterialTheme.colorScheme.onSecondaryContainer,
-            style = MaterialTheme.typography.labelSmall,
-        )
-    }
-}
-
-/** Month grid with ISO week numbers in the first column. Dots show who has something that day. */
-@Composable
-private fun MonthView(
+private fun MonthGrid(
     days: List<CalendarDay>,
     anchor: LocalDate,
     today: LocalDate,
+    selected: LocalDate?,
     people: Map<String, FamilyPerson>,
-    onDay: (LocalDate) -> Unit,
+    onSelect: (LocalDate) -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = Spacing.sm)) {
-        Row(Modifier.fillMaxWidth()) {
+    val colors = MaterialTheme.colorScheme
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth().padding(vertical = Spacing.xs)) {
             Text(
                 stringResource(Res.string.calendar_week_abbr),
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.width(32.dp),
+                color = colors.onSurfaceVariant,
+                modifier = Modifier.width(WeekNumberColumn),
                 textAlign = TextAlign.Center,
             )
-            kotlinx.datetime.DayOfWeek.entries.forEach { d ->
+            DayOfWeek.entries.forEach { d ->
                 Text(
                     weekdayShort(d),
                     style = MaterialTheme.typography.labelMedium,
+                    color = colors.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                 )
@@ -528,64 +417,105 @@ private fun MonthView(
                 Text(
                     week.first().date.isoWeek.week.toString(),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.width(32.dp).padding(top = Spacing.md),
+                    color = colors.onSurfaceVariant,
+                    modifier = Modifier.width(WeekNumberColumn).padding(top = Spacing.sm),
                     textAlign = TextAlign.Center,
                 )
                 week.forEach { day ->
-                    val inMonth = day.date.month == anchor.month
-                    Column(
-                        Modifier.weight(1f).aspectRatio(0.8f).clip(RoundedCornerShape(8.dp)).clickable { onDay(day.date) }.padding(2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        val isToday = day.date == today
-                        Box(
-                            Modifier.size(
-                                28.dp,
-                            ).clip(
-                                CircleShape,
-                            ).background(
-                                if (isToday) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent,
-                            ),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                day.date.day.toString(),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = when {
-                                    isToday -> MaterialTheme.colorScheme.onPrimary
-                                    day.redDay -> MaterialTheme.colorScheme.error
-                                    !inMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                },
-                            )
-                        }
-                        day.custody.firstOrNull()?.let { h ->
-                            Box(Modifier.fillMaxWidth().height(3.dp).background(PussletThemeExtras.colors.member(h.color).container))
-                        }
-                        val who = day.occurrences.flatMap { o -> o.event.participantIds.mapNotNull { people[it] } }.distinctBy { it.id }
-                        Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
-                            who.take(MAX_DOTS).forEach { p ->
-                                Box(Modifier.size(6.dp).clip(CircleShape).background(PussletThemeExtras.colors.member(p.color).container))
-                            }
-                        }
-                        val extra = day.occurrences.size
-                        if (extra >
-                            0
-                        ) {
-                            Text(
-                                extra.toString(),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
+                    MonthCell(
+                        day = day,
+                        inMonth = day.date.month == anchor.month,
+                        isToday = day.date == today,
+                        isSelected = day.date == selected,
+                        people = people,
+                        onSelect = onSelect,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
     }
 }
 
-private const val DAY_START = 6
-private const val DAY_END = 22
-private const val MAX_DOTS = 4
+@Composable
+private fun MonthCell(
+    day: CalendarDay,
+    inMonth: Boolean,
+    isToday: Boolean,
+    isSelected: Boolean,
+    people: Map<String, FamilyPerson>,
+    onSelect: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val extras = PussletThemeExtras.colors
+    val redDayName = day.holidays.firstOrNull { it.kind == HolidayKind.PublicHoliday }?.let { stringResource(Labels.holiday(it.id)) }
+    val description = buildList {
+        add(formatDateLong(day.date))
+        redDayName?.let { add(it) }
+        val count = day.events.size
+        if (count == 1) add(stringResource(Res.string.calendar_events_one))
+        if (count > 1) add(stringResource(Res.string.calendar_events_many, count))
+    }.joinToString(", ")
+    Column(
+        modifier
+            .heightIn(min = MonthCellHeight)
+            .clip(MaterialTheme.shapes.small)
+            .selectable(selected = isSelected, onClick = { onSelect(day.date) })
+            .semantics { contentDescription = description }
+            .padding(vertical = Spacing.xxs),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
+    ) {
+        val background = when {
+            isToday -> colors.primary
+            isSelected -> colors.primaryContainer
+            else -> Color.Transparent
+        }
+        Box(Modifier.size(32.dp).clip(CircleShape).background(background), contentAlignment = Alignment.Center) {
+            Text(
+                day.date.day.toString(),
+                style = MaterialTheme.typography.labelLarge,
+                color = when {
+                    isToday -> colors.onPrimary
+                    isSelected -> colors.onPrimaryContainer
+                    day.redDay -> colors.error
+                    !inMonth -> colors.onSurfaceVariant.copy(alpha = 0.5f)
+                    else -> colors.onSurface
+                },
+            )
+        }
+        // Red days get the holiday's name, as much of it as fits; the selected day below shows it in full.
+        redDayName?.let {
+            Text(it, style = MaterialTheme.typography.labelSmall, color = colors.error, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        day.custody.firstOrNull()?.let { h ->
+            Box(Modifier.fillMaxWidth(0.6f).height(3.dp).clip(RoundedCornerShape(2.dp)).background(extras.member(h.color).container))
+        }
+        // Dots only for what is not routine: at most three, then "+N".
+        if (day.events.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+                day.events.take(MAX_DOTS).forEach { o ->
+                    val color = o.event.participantIds.firstNotNullOfOrNull { people[it] }?.let { extras.member(it.color).container }
+                        ?: o.sourceColor?.let { extras.member(it).container }
+                        ?: colors.onSurfaceVariant
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(color))
+                }
+                if (day.events.size > MAX_DOTS) {
+                    Text(
+                        stringResource(Res.string.calendar_more_count, day.events.size - MAX_DOTS),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** The date column of the week list; also the minimum height of a day. */
+private val DateColumn = 48.dp
+private val DateCellHeight = 56.dp
+private val WeekNumberColumn = 28.dp
+private val MonthCellHeight = 52.dp
+private const val MAX_DOTS = 3

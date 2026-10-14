@@ -148,6 +148,16 @@ object PussletIcons {
         )
     }
 
+    /** First-time hints. */
+    val Lightbulb: ImageVector by lazy {
+        icon(
+            "Lightbulb",
+            "M9,21c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-1H9V21z" +
+                "M12,2C8.14,2 5,5.14 5,9c0,2.38 1.19,4.47 3,5.74V17c0,0.55 0.45,1 1,1h6c0.55,0 1,-0.45 1,-1v-2.26" +
+                "c1.81,-1.27 3,-3.36 3,-5.74C19,5.14 15.86,2 12,2z",
+        )
+    }
+
     /** Trailing chevron on rows that open something (›). */
     val ChevronRight: ImageVector by lazy {
         icon("ChevronRight", "M10,6L8.59,7.41 13.17,12l-4.58,4.59L10,18l6,-6z")

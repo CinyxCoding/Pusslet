@@ -14,12 +14,15 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.TimeZone
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
+import se.pusslet.core.model.Role
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.BackendConfig
 import se.pusslet.data.BackendMode
@@ -33,8 +36,11 @@ import se.pusslet.data.remote.LocalOnlyAuthRepository
 import se.pusslet.data.remote.LocalOnlyFamilyRemote
 import se.pusslet.data.repository.DeviceCalendarSource
 import se.pusslet.data.repository.NoDeviceCalendars
+import se.pusslet.data.seed.DemoSeed
+import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.OfflineRemoteStore
 import se.pusslet.data.sync.RemoteStore
+import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.shell.di.appModules
 import java.io.File
 import kotlin.time.Clock
@@ -43,6 +49,7 @@ import kotlin.time.Instant
 /**
  * The real app graph (Room, repositories, view models) with a fixed clock, an in-memory database, no backend and a
  * recorded SMHI forecast, so screenshots are reproducible. Seeds the demo family "Familjen Lind" when [seed] is true.
+ * First-time hints are dismissed, so they never show in goldens (UX plan 4.7).
  */
 object TestEnvironment {
     val zone: TimeZone = TimeZone.of("Europe/Stockholm")
@@ -54,7 +61,8 @@ object TestEnvironment {
         override fun now(): Instant = now
     }
 
-    fun start(context: Context, seed: Boolean = true) {
+    /** [asBengt]: the phone belongs to morfar Bengt (a caregiver), so the simple helper view opens (ADR-029). */
+    fun start(context: Context, seed: Boolean = true, asBengt: Boolean = false) {
         if (GlobalContext.getOrNull() != null) stop()
         val config = BackendConfig(BackendMode.LocalOnly, seedDemoData = seed, versionName = "test")
         val platform = module {
@@ -80,7 +88,15 @@ object TestEnvironment {
             allowOverride(true)
             modules(listOf(platform, dataModule, overrides) + appModules)
         }.koin
-        koin.get<AppCoordinator>().start()
+        runBlocking { koin.get<FirstTimeHints>().dismissAll() }
+        val coordinator = koin.get<AppCoordinator>()
+        coordinator.start()
+        if (asBengt) {
+            runBlocking {
+                coordinator.ready.first { it }
+                koin.get<SessionProvider>().update { it.copy(memberId = DemoSeed.BENGT, role = Role.Caregiver) }
+            }
+        }
     }
 
     fun stop() {

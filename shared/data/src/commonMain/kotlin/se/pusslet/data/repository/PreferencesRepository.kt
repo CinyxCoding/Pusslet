@@ -67,6 +67,15 @@ object Prefs {
      * follows the role's default (`TodayLayouts.resolve`), and broken JSON reads as `null`.
      */
     val TodayLayout = PrefKey("today.layout", StoredTodayLayout.serializer().nullable, null)
+
+    /**
+     * A caregiver chose "Visa hela appen" instead of the simple helper view (ADR-029). Device-local; only changes what is
+     * shown, never what the caregiver may do. "Enkel vy" in Mer sets it back.
+     */
+    val HelperFullView = PrefKey("helper.fullView", Boolean.serializer(), false)
+
+    /** First-time hints this phone has dismissed with "Jag förstår" (UX plan 4.7). Ids from `HintIds`; device-local. */
+    val SeenHints = PrefKey("hints.seen", SetSerializer(String.serializer()), emptySet())
 }
 
 class PreferencesRepository(private val dao: PreferenceDao, private val json: Json = Json { ignoreUnknownKeys = true }) {

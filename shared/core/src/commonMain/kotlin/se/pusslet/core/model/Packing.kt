@@ -2,6 +2,7 @@ package se.pusslet.core.model
 
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import se.pusslet.core.time.IsoWeek
@@ -70,7 +71,11 @@ data class PackingItem(
 sealed interface PackingReason {
     data class Rule(val ruleId: String) : PackingReason
 
-    data class ForEvent(val eventTitle: String) : PackingReason
+    /**
+     * For a tagged event or the event's own items. [start] is when the event starts that day (null for all-day events and
+     * events that started on an earlier day), so the helper view can tell what goes with a child after a pick-up.
+     */
+    data class ForEvent(val eventTitle: String, val start: LocalTime? = null) : PackingReason
 
     data object Handover : PackingReason
 }

@@ -45,8 +45,17 @@ sealed interface Route {
 
     @Serializable data object Settings : Route
 
-    /** "Anpassa Idag" (ADR-027). */
+    /** "Anpassa Idag" (ADR-027); in the helper view "Visa på startsidan". */
     @Serializable data object TodayLayout : Route
+
+    /** The helper view's only root (UX plan Steg 3, ADR-029): `HelperShell` has no tabs. */
+    @Serializable data object HelperHome : Route
+
+    /** "Hela veckan": 14 days of what is shared with the caregiver. */
+    @Serializable data object HelperWeek : Route
+
+    /** "Inställningar och hjälp" in the helper view. */
+    @Serializable data object HelperSettings : Route
 
     @Serializable data object AboutData : Route
 

@@ -45,6 +45,7 @@ import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.data.usecase.AcceptedRequestApplier
 import se.pusslet.data.usecase.DataPrivacy
+import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.MealShopping
@@ -88,6 +89,7 @@ val dataModule: Module = module {
     single { HandoffAssigner(get()) }
     single { HandoffRequests(get(), get(), get(), get()) }
     single { AcceptedRequestApplier(get(), get(), get(), get(), get()) }
+    single { FirstTimeHints(get()) }
     single { DataPrivacy(get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }

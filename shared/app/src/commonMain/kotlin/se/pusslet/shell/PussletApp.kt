@@ -117,7 +117,14 @@ fun PussletApp(
             when {
                 !state.ready -> LoadingBox()
                 !state.onboarded -> OnboardingFlow(incoming, onIncomingHandled)
-                else -> MainShell(incoming, onIncomingHandled)
+                // Caregivers get the simple helper view unless they chose the full app (UX plan Steg 3, ADR-029).
+                state.mode == ShellMode.Helper ->
+                    HelperShell(incoming, onIncomingHandled, onShowFullApp = { shell.setHelperFullView(true) })
+                else -> MainShell(
+                    incoming,
+                    onIncomingHandled,
+                    onSimpleView = if (state.caregiverInFullApp) ({ shell.setHelperFullView(false) }) else null,
+                )
             }
         }
     }
@@ -143,7 +150,7 @@ private fun OnboardingFlow(incoming: IncomingIntent?, onIncomingHandled: () -> U
 }
 
 @Composable
-private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) {
+private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit, onSimpleView: (() -> Unit)? = null) {
     val navigator = rememberAppNavigator()
     val quickAdd: QuickAddViewModel = koinViewModel()
     var showQuickAdd by rememberSaveable { mutableStateOf(false) }
@@ -216,7 +223,7 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
             snackbarHost = { SnackbarHost(snackbar) },
         ) { padding ->
             Box(Modifier.fillMaxSize()) {
-                AppNavDisplay(navigator, padding, openQuickAdd)
+                AppNavDisplay(navigator, padding, openQuickAdd, onSimpleView)
             }
         }
     }
@@ -226,7 +233,12 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
 }
 
 @Composable
-private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues, onQuickAdd: (LocalDate?) -> Unit) {
+private fun AppNavDisplay(
+    navigator: AppNavigator,
+    padding: PaddingValues,
+    onQuickAdd: (LocalDate?) -> Unit,
+    onSimpleView: (() -> Unit)? = null,
+) {
     val openOccurrence: (EventOccurrence) -> Unit = { navigator.navigate(Route.EventDetails(it.event.id, it.occurrenceDate)) }
     NavDisplay(
         backStack = navigator.backStack,
@@ -315,7 +327,10 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues, onQui
             }
             entry<Route.StoreEditor> { r -> StoreEditorRoute(r.storeId, onDone = navigator::goBack) }
             entry<Route.Pantry> { PantryRoute(onBack = navigator::goBack) }
-            entry<Route.More> { MoreScreen(onOpen = { navigator.navigate(it.route()) }, contentPadding = padding) }
+            entry<Route.More> {
+                // "Enkel vy" first, for a caregiver who chose the full app.
+                MoreScreen(onOpen = { navigator.navigate(it.route()) }, contentPadding = padding, onSimpleView = onSimpleView)
+            }
             entry<Route.Tasks> { TasksScreen() }
             entry<Route.EventEditor> { r -> EventEditorRoute(r.eventId, r.date, r.occurrenceDate, onDone = navigator::goBack) }
             entry<Route.EventDetails> { r ->

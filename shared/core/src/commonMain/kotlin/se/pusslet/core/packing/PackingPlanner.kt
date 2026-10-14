@@ -1,6 +1,7 @@
 package se.pusslet.core.packing
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import se.pusslet.core.custody.CustodyCalculator
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.CustodySchedule
@@ -31,7 +32,7 @@ object PackingPlanner {
             val reason: PackingReason? = when (val trigger = rule.trigger) {
                 is PackingTrigger.Weekly -> if (matchesWeekly(trigger, date)) PackingReason.Rule(rule.id) else null
                 is PackingTrigger.EventTag -> todays.firstOrNull { o -> o.event.tags.any { it.equals(trigger.tag, ignoreCase = true) } }
-                    ?.let { PackingReason.ForEvent(it.event.title) }
+                    ?.let { PackingReason.ForEvent(it.event.title, startOn(it, date)) }
                 is PackingTrigger.OnDate -> if (trigger.date == date) PackingReason.Rule(rule.id) else null
                 PackingTrigger.Handover -> if (custody.any { child.id in it.childIds && CustodyCalculator.isHandoverDay(it, date) }) {
                     PackingReason.Handover
@@ -47,11 +48,14 @@ object PackingPlanner {
         for (o in todays) {
             o.event.packingItems.forEachIndexed { i, text ->
                 val key = "event:${o.event.id}:$i"
-                items += PackingItem(key, child.id, text, PackingReason.ForEvent(o.event.title), checked[key] == true)
+                items += PackingItem(key, child.id, text, PackingReason.ForEvent(o.event.title, startOn(o, date)), checked[key] == true)
             }
         }
         child.id to items.distinctBy { it.text.lowercase() }
     }
+
+    /** The start time on [date]; null for all-day events and for events that began on an earlier day. */
+    private fun startOn(o: EventOccurrence, date: LocalDate): LocalTime? = if (!o.allDay && o.start.date == date) o.start.time else null
 
     fun matchesWeekly(trigger: PackingTrigger.Weekly, date: LocalDate): Boolean {
         if (date.dayOfWeek !in trigger.days) return false

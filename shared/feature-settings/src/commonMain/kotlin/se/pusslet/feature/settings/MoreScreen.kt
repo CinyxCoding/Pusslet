@@ -35,9 +35,12 @@ private data class MoreItem(val dest: MoreDestination, val title: StringResource
 /**
  * The Mer tab (UX plan 1.12 and Steg 2): two groups – the family and everyday life, then the app with "Om Pusslet" last –
  * of full-width rows with a chevron, no subtitles and no +.
+ *
+ * [onSimpleView] is only passed for a caregiver who chose the full app: "Enkel vy" then comes first and switches back to
+ * the helper view (UX plan Steg 3, ADR-029).
  */
 @Composable
-fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues = PaddingValues()) {
+fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues = PaddingValues(), onSimpleView: (() -> Unit)? = null) {
     // "Uppgifter och sysslor" (MoreDestination.Tasks) stays hidden until the tasks phase is done; its route is kept.
     val groups = listOf(
         Res.string.more_group_family to listOf(
@@ -65,6 +68,20 @@ fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues 
                     .padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, bottom = Spacing.md)
                     .semantics { heading() },
             )
+        }
+        if (onSimpleView != null) {
+            item(key = "simple-view") {
+                ListRow(
+                    title = stringResource(Res.string.helper_simple_view),
+                    leading = { Icon(PussletIcons.Sun, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                    trailing = {
+                        Icon(PussletIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    },
+                    modifier = Modifier
+                        .clickable(role = Role.Button, onClick = onSimpleView)
+                        .padding(horizontal = Spacing.screenHorizontal),
+                )
+            }
         }
         groups.forEach { (title, rows) ->
             item(key = "group-${rows.first().dest.name}") {

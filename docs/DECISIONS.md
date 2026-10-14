@@ -232,6 +232,20 @@ problem idag, fyllt och alltid med en åtgärd. Medlemsfärger betyder aldrig st
 **Kontext:** Fyra vyer (Dag, Vecka, Månad, Agenda) gjorde kalendern svår att förstå, och Dag-vyn fastnade som standard.
 **Beslut:** Segmentet visar ”Vecka | Månad”. Agenda går upp i veckolistan och Dag öppnas från dagrubriken som egen skärm.
 
+## ADR-029 – Enkel hjälparvy
+**Kontext:** Morfar Bengt hämtar på torsdagar. Han behöver se när han hämtar och lämnar och kunna svara Ja eller Nej, inte
+familjens alla flikar, kalendervyer och inställningar. Stor text ska fungera utan att något klipps (BRIEF §5 gav hjälpare
+samma skal som föräldrar).
+**Beslut:** En hjälpare får `HelperShell`: ingen bottenmeny, ingen rund + och ingen snabbinmatning, en egen
+`HelperNavigator` med undersidor högst två nivåer ned (Hela veckan, händelse, inköpslistan, inställningar). Startsidan
+byggs av `HelperPlanner` i core (förfrågningar först, sedan ”Idag” med hans uppdrag, Ska med, Att göra och Kommande) på data
+som först filtreras genom `CaregiverVisibility` och `EffectiveHandoffs`. `HelperTheme` har ingen text under 18 sp och knappar
+och rader på minst 64 dp. ”Visa hela appen” sparas lokalt i `Prefs.HelperFullView` och ”Enkel vy” överst i Mer tar tillbaka
+den; valet styr bara visningen, aldrig behörigheten (den ligger i Firestore-reglerna).
+**Konsekvens:** Avviker från BRIEF §5 för hjälpare. Blocken på hjälparens startsida använder samma modell och samma lagring
+som Idag (`Prefs.TodayLayout`, ADR-027). Förälderns förhandsvisning (”Så ser Bengt appen”) kan återanvända skärmen med samma
+planerare.
+
 ## ADR-030 – Hjälparens svar på förfrågningar
 **Kontext:** Morfar Bengt ska kunna svara Ja eller Nej på "Kan du hämta Ella?", men hjälpare får inte skriva händelser
 (ADR-015). I dag nekade reglerna inte ens felaktiga ändringar i `handoffRequests`.

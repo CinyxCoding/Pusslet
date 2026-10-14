@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -36,8 +37,8 @@ class ShellScreenshotTest {
     @After
     fun tearDown() = TestEnvironment.stop()
 
-    private fun launch(seed: Boolean = true, waitFor: String = "Ella") {
-        TestEnvironment.start(ApplicationProvider.getApplicationContext(), seed)
+    private fun launch(seed: Boolean = true, waitFor: String = "Ella", asBengt: Boolean = false) {
+        TestEnvironment.start(ApplicationProvider.getApplicationContext(), seed, asBengt)
         compose.setContent { PussletApp() }
         compose.waitUntilAtLeastOneExists(hasText(waitFor, substring = true), timeoutMillis = 15_000)
         compose.waitForIdle()
@@ -151,6 +152,28 @@ class ShellScreenshotTest {
         compose.onNodeWithText("Mer").performClick()
         compose.waitForIdle()
         snap("more")
+    }
+
+    /** Morfar Bengt's phone: the simple helper view, with no bottom bar and no round + (UX plan Steg 3). */
+    @Test
+    fun helperHome() {
+        launch(waitFor = "Du hämtar", asBengt = true)
+        compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertCountEquals(0)
+        snap("helper_home")
+    }
+
+    @Test
+    @Config(qualifiers = "+night")
+    fun helperHomeDark() {
+        launch(waitFor = "Du hämtar", asBengt = true)
+        snap("helper_home_dark")
+    }
+
+    @Test
+    @Config(fontScale = 2.0f)
+    fun helperHomeLargeText() {
+        launch(waitFor = "Du hämtar", asBengt = true)
+        snap("helper_home_large_text")
     }
 
     @Test

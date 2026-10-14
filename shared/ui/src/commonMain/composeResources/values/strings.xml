@@ -1010,6 +1010,10 @@
     <string name="helper_full_view_note">Kalender, mat och inköpslista som föräldrarna ser dem. Du kan byta tillbaka i Mer.</string>
     <string name="helper_simple_view">Enkel vy</string>
 
+    <string name="hint_got_it">Jag förstår</string>
+
+    <string name="helper_hint_home">Här ser du när du hämtar och lämnar.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
 </resources>

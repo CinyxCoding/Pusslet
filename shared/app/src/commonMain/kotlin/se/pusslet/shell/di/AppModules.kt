@@ -3,6 +3,7 @@ package se.pusslet.shell.di
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import se.pusslet.data.AppCoordinator
 import se.pusslet.feature.calendar.calendarModule
 import se.pusslet.feature.family.familyModule
 import se.pusslet.feature.meals.mealsModule
@@ -13,7 +14,7 @@ import se.pusslet.shell.ShellViewModel
 import se.pusslet.shell.quickadd.QuickAddViewModel
 
 val shellModule: Module = module {
-    viewModel { ShellViewModel(get(), get(), get()) }
+    viewModel { ShellViewModel(get<AppCoordinator>(), get(), get()) }
     viewModel { QuickAddViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }
 

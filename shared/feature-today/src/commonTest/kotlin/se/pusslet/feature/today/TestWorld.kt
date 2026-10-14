@@ -99,12 +99,16 @@ object NoWeather : WeatherSource {
 }
 
 /** Real repositories over the in-memory document store, the way the app wires them, for view model tests. */
-class TestWorld(role: Role = Role.Parent, now: Instant = Instant.parse("2026-10-13T06:00:00Z")) {
+class TestWorld(
+    role: Role = Role.Parent,
+    now: Instant = Instant.parse("2026-10-13T06:00:00Z"),
+    memberId: String = "m-sara",
+) {
     val clock = object : Clock {
         override fun now() = now
     }
     val zone = TimeZone.of("Europe/Stockholm")
-    val sessions = FixedSessionProvider(Session(familyId = "f", memberId = "m-sara", uid = "u", role = role))
+    val sessions = FixedSessionProvider(Session(familyId = "f", memberId = memberId, uid = "u", role = role))
     val docs = DocumentStore(InMemorySyncLocalStore(), sessions, clock)
     val ids = SequentialIdGenerator()
     val prefs = PreferencesRepository(FakePreferenceDao())

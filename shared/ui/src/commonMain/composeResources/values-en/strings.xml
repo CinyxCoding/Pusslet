@@ -1009,6 +1009,10 @@
     <string name="helper_full_view_note">Calendar, meals and shopping as the parents see them. You can switch back in More.</string>
     <string name="helper_simple_view">Simple view</string>
 
+    <string name="hint_got_it">Got it</string>
+
+    <string name="helper_hint_home">This is where you see when you pick up and drop off.</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>
 </resources>

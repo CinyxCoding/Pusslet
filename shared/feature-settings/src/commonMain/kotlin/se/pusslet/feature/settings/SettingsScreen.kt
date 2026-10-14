@@ -56,6 +56,7 @@ import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.TimeWindow
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SelectionColors
@@ -194,7 +195,7 @@ class SettingsViewModel(
 }
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewModel: SettingsViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val calendars by viewModel.calendars.collectAsStateWithLifecycle()
     val platform = LocalPlatformActions.current
@@ -223,6 +224,7 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMod
                     }
                 }
                 SwitchRow(stringResource(Res.string.settings_dynamic_color), state.dynamicColor, viewModel::setDynamic)
+                NavRow(stringResource(Res.string.today_customize), onClick = onCustomizeToday)
                 Text(stringResource(Res.string.settings_language), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     listOf(

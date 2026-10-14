@@ -906,6 +906,16 @@
     <string name="today_quiet_end">Inget mer idag</string>
     <string name="today_customize">Anpassa Idag</string>
 
+    <string name="today_layout_intro">Det du stänger av finns kvar i flikarna. Det som måste lösas visas alltid.</string>
+    <string name="today_layout_hero">Morgonkollen</string>
+    <string name="today_layout_sections">Längre ned</string>
+    <string name="today_layout_weather_place">Välj ort i Inställningar</string>
+    <string name="today_layout_reset">Återställ till standard</string>
+    <string name="today_layout_reset_done">Idag är som från början igen</string>
+    <string name="today_layout_move_up">Flytta upp</string>
+    <string name="today_layout_move_down">Flytta ner</string>
+    <string name="today_layout_position">%1$s, plats %2$d av %3$d</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
 </resources>

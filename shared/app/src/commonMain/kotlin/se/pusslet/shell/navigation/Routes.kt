@@ -45,6 +45,9 @@ sealed interface Route {
 
     @Serializable data object Settings : Route
 
+    /** "Anpassa Idag" (ADR-027). */
+    @Serializable data object TodayLayout : Route
+
     @Serializable data object AboutData : Route
 
     @Serializable data object Privacy : Route

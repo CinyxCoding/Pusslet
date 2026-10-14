@@ -73,6 +73,7 @@ import se.pusslet.feature.shopping.StoreEditorRoute
 import se.pusslet.feature.shopping.StoreModeRoute
 import se.pusslet.feature.shopping.StoresRoute
 import se.pusslet.feature.tasks.TasksScreen
+import se.pusslet.feature.today.TodayLayoutRoute
 import se.pusslet.feature.today.TodayRoute
 import se.pusslet.shell.navigation.AppNavigator
 import se.pusslet.shell.navigation.Route
@@ -243,6 +244,7 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues, onQui
                     onQuickAdd = onQuickAdd,
                     onOpenCalendar = { navigator.selectTab(TopLevelTab.Calendar) },
                     onOpenShopping = { navigator.selectTab(TopLevelTab.Shopping) },
+                    onCustomize = { navigator.navigate(Route.TodayLayout) },
                     contentPadding = padding,
                 )
             }
@@ -339,7 +341,10 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues, onQui
             entry<Route.Join> { r -> JoinRoute(initialCode = r.code, onBack = navigator::goBack, onJoined = navigator::reset) }
             entry<Route.Custody> { r -> CustodyEditorRoute(r.scheduleId, onDone = navigator::goBack) }
             entry<Route.Handover> { r -> HandoverRoute(r.scheduleId, onBack = navigator::goBack) }
-            entry<Route.Settings> { SettingsRoute(onBack = navigator::goBack) }
+            entry<Route.Settings> {
+                SettingsRoute(onBack = navigator::goBack, onCustomizeToday = { navigator.navigate(Route.TodayLayout) })
+            }
+            entry<Route.TodayLayout> { TodayLayoutRoute(onBack = navigator::goBack) }
             entry<Route.Account> { AccountRoute(onBack = navigator::goBack) }
             entry<Route.AboutData> { AboutDataRoute(onBack = navigator::goBack) }
             entry<Route.Privacy> { PrivacyRoute(onBack = navigator::goBack, onForgotten = navigator::reset) }

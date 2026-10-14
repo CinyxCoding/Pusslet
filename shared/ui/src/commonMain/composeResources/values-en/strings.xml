@@ -905,6 +905,16 @@
     <string name="today_quiet_end">Nothing more today</string>
     <string name="today_customize">Customize Today</string>
 
+    <string name="today_layout_intro">What you turn off is still in the tabs. Things that need sorting out always show.</string>
+    <string name="today_layout_hero">Morning check</string>
+    <string name="today_layout_sections">Further down</string>
+    <string name="today_layout_weather_place">Choose a place in Settings</string>
+    <string name="today_layout_reset">Reset to default</string>
+    <string name="today_layout_reset_done">Today is back to the default</string>
+    <string name="today_layout_move_up">Move up</string>
+    <string name="today_layout_move_down">Move down</string>
+    <string name="today_layout_position">%1$s, position %2$d of %3$d</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>
 </resources>

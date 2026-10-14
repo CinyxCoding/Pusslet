@@ -862,6 +862,9 @@
 
     <string name="today_demo_family">Sample family</string>
 
+    <string name="action_move_up_named">Move %1$s up</string>
+    <string name="action_move_down_named">Move %1$s down</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>
 </resources>

@@ -9,8 +9,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.SetSerializer
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import se.pusslet.core.today.StoredTodayLayout
 import se.pusslet.data.db.PreferenceDao
 import se.pusslet.data.db.PreferenceEntity
 
@@ -59,6 +61,12 @@ object Prefs {
 
     /** Set by "Visa första start igen" (developer tools): the demo family is not seeded again at start-up. */
     val SkipDemoSeed = PrefKey("dev.skipDemoSeed", Boolean.serializer(), false)
+
+    /**
+     * "Anpassa Idag": only what the user changed, for one member (ADR-027). Device-local like [Theme], never synced; `null`
+     * follows the role's default (`TodayLayouts.resolve`), and broken JSON reads as `null`.
+     */
+    val TodayLayout = PrefKey("today.layout", StoredTodayLayout.serializer().nullable, null)
 }
 
 class PreferencesRepository(private val dao: PreferenceDao, private val json: Json = Json { ignoreUnknownKeys = true }) {

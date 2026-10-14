@@ -36,10 +36,10 @@ Material 3-skalan, något större brödtext för att kunna läsas i farten. Allt
 | Stil | Storlek / radhöjd | Vikt | Används till |
 |---|---|---|---|
 | headlineMedium | 28 / 36 | Normal | Skärmrubrik (Idag-hälsning, listans namn) |
-| headlineSmall | 22 / 30 | Medium | — |
-| titleLarge | 20 / 28 | Medium | Veckonummer, ark-rubriker, avdelningar i butiksläge |
+| headlineSmall | 22 / 30 | Medium | Flikrubrik (`TabHeader`: ”Torsdag 8 oktober”) |
+| titleLarge | 20 / 28 | Medium | Sektionsrubriker (`Section`), veckan i `WeekSwitcher`, ark-rubriker, avdelningar i butiksläge |
 | titleMedium | 16 / 24 | SemiBold | Kortrubriker, veckodagar |
-| titleSmall | 14 / 20 | SemiBold | Avdelningsrubriker, sektionsrubriker |
+| titleSmall | 14 / 20 | SemiBold | Avdelningsrubriker i inköpslistan |
 | bodyLarge | 17 / 25 | Normal | Listrader, varor, ingredienser |
 | bodyMedium | 15 / 22 | Normal | Stödtext |
 | bodySmall | 14 / 20 | Normal | Detaljrader, hjälptext under fält |
@@ -53,7 +53,8 @@ Rubriker får `semantics { heading() }` så TalkBack kan hoppa mellan dem. Typst
 
 ## Avstånd och former
 
-4 dp-rutnät (`Spacing`): `xxs 2 · xs 4 · sm 8 · md 12 · lg 16 · xl 24 · xxl 32`. Skärmkant 16 dp.
+4 dp-rutnät (`Spacing`): `xxs 2 · xs 4 · sm 8 · md 12 · lg 16 · xl 24 · xxl 32`. Skärmkant 16 dp. Mellan två sektioner
+`sectionGap` 32 dp; flikrötternas listor har `listBottomInset` 88 dp luft i botten.
 Träffytor minst **48 dp**, primära rader och knappar **56 dp**, butikslägets rader **72 dp** ("en hand, en tumme").
 Former: 6 / 10 / 16 / 24 / 32 dp (extraSmall … extraLarge). Kort använder medium (16 dp).
 
@@ -76,12 +77,35 @@ Former: 6 / 10 / 16 / 24 / 32 dp (extraSmall … extraLarge). Kort använder med
 - **Omordning** görs med upp/ner-knappar (fungerar med TalkBack) – dra-och-släpp är i så fall ett tillägg, aldrig enda
   sättet.
 - **Edge-to-edge:** innehåll får `contentPadding` från skalets `Scaffold`; inga hårdkodade systemfältshöjder.
-- **Samma form, samma sak.** En knapp gör något, `NavRow` öppnar, FilterChip filtrerar, `InfoPill` informerar.
-  `onClick = {}` är förbjudet. Högst en fylld knapp per skärm eller ark.
+- **Samma form, samma sak.** En knapp gör något, `NavRow` öppnar, `OutlinedValueField` väljer ett värde, FilterChip
+  filtrerar, `InfoPill` informerar. `onClick = {}` är förbjudet. Högst en fylld knapp per skärm eller ark. Se tabellen
+  nedan.
 - **Anpassningsbar startsida** (ADR-027). Svaret står först och ligger fast; blocken under går att slå av och ordna om;
   det som måste lösas döljs aldrig; nya block kommer avstängda; anpassningen ligger som en rad längst ned.
 - **Kvitton** säger vad som hände och var: ”2 varor på listan · Visa”. Ångra visas bara när den verkligen återställer.
 - **Hjälparvyn** (Role.Caregiver) har ingen text under 18 sp och tryckytor på 64 dp (ADR-029).
+
+### Komponenter
+
+Allt ligger i `shared/ui/.../components/`. Varje form betyder en sak; välj efter vad raden gör, inte efter hur den ska se
+ut. Komponenterna lägger inte till skärmkanten själva – det gör skärmen (`Spacing.screenHorizontal`).
+
+| Komponent | Använd när | Inte för |
+|---|---|---|
+| `TabHeader` | Överst på en flikrot eller helskärm utan toppfält: ”Torsdag 8 oktober” med underraden ”Vecka 41”. En rubrik för TalkBack, högst två ikonknappar. | Undersidor och ark (`PussletTopBar`, arkets rubrik) |
+| `WeekSwitcher` | Bläddra veckor i Kalender och Mat: ”Vecka 41 · oktober” till vänster, ‹ › till höger. ”Idag” bara när en annan vecka visas. Läses upp när veckan byts. | Välja en dag (`WeekStripPicker`) |
+| `Section` / `SectionHeader` | Platt avsnitt: titleLarge-rubrik, valfri ikon och en tyst åtgärd (”Visa alla”), innehållet under. `sectionGap` mellan avsnitten. `SectionHeader` när raderna är egna poster i en LazyColumn. | Kort och avdelare (`SectionCard` utgår på huvudskärmarna) |
+| `HeroCard` | Skärmens enda fokusyta i havre (`secondaryContainer`): svaret skärmen finns till för, t.ex. Morgonkollen. | Listor, påminnelser, Problem, en andra fokusyta |
+| `SentenceRow` | En mening per rad, personen först: ”Johan lämnar Simon 07:50”. Egna rader (”Du …”) i fetstil och sage, högst en underrad, › när raden öppnar något. En TalkBack-nod; en knapp till höger (”Jag tar det”) är en egen. | Rader som bara leder vidare (`NavRow`) |
+| `NavRow` | En rad som öppnar något: ”Anpassa Idag ›”, ”Näring för veckan ›”, raderna i Mer. Full bredd, ›, minst 56 dp. | Att göra något (knapp) eller välja ett värde |
+| `QuietLine` | En tyst, centrerad rad när inget mer finns: ”Inget mer idag”. | En helt tom skärm (`EmptyState` med en åtgärd) |
+| `OutlinedValueField` | Väljer ett värde i en väljare (ark, dialog, meny): ser ut som ett kantat textfält med ▾. Platshållare i stället för ”–” (”Ingen enhet”, ”Inte bestämt”). `highlight` = osäker tolkning, i terrakotta. | Fritext (textfält). Den platta `ValueField` finns kvar för befintliga skärmar. |
+| `WeekStripPicker` | Byta dag inom en vecka i ett ark: sju chips mån–sön, vald dag i sage, idag kantad. Radbryts i stället för att klippas vid stor text. | Bläddra veckor (`WeekSwitcher`) |
+| `ReorderButtons` | Flytta en rad upp eller ned (butikens avdelningar, Idags sektioner): två knappar på 48 dp med radens namn för TalkBack (”Flytta upp Mejeri”). Översta upp och nedersta ned är avstängda. | – |
+| `showUndo` | Kvitto med Ångra (”Mjölk bockad · Ångra”). Ersätter snackbaren som syns och svarar `true` när man trycker Ångra. | Ändringar som Ångra inte återställer helt |
+| `Banner` | Uppmärksamhet i tre nivåer: Info (en rad), Warning (ofylld, terrakottaikon), Problem (fyllt, med åtgärd). | Sådant som inte kräver uppmärksamhet |
+| `InfoPill` | Informerar: ”Vecka 41”, helgdagens namn, en tagg. Ingen klick, ingen ripple; vald i sage (”Idag”). | Knappar och filter (FilterChip) |
+| `CheckRow` / `SwitchRow` | Kryssruta eller switch där hela raden är tryckytan (minst 48 respektive 56 dp). | – |
 
 Hela underlaget och arbetsplanen finns i [UX_PLAN.md](UX_PLAN.md).
 

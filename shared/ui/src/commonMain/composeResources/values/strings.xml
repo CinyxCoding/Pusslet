@@ -863,6 +863,9 @@
 
     <string name="today_demo_family">Exempelfamilj</string>
 
+    <string name="action_move_up_named">Flytta upp %1$s</string>
+    <string name="action_move_down_named">Flytta ner %1$s</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
 </resources>

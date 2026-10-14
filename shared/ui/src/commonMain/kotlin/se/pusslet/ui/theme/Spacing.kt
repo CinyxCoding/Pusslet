@@ -21,6 +21,9 @@ object Spacing {
 
     /** Bottom padding for tab-root lists so the last row is never under the round + (ADR-023). */
     val listBottomInset = 88.dp
+
+    /** Air between two flat `Section`s; sections are separated by space, not by cards or dividers. */
+    val sectionGap = 32.dp
 }
 
 internal val PussletShapes = Shapes(

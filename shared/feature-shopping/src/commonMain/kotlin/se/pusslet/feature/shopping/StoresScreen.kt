@@ -15,14 +15,11 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -63,6 +60,7 @@ import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PussletTopBar
+import se.pusslet.ui.components.ReorderButtons
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
@@ -298,11 +296,12 @@ private fun AisleOrderRow(
             modifier = Modifier.padding(end = Spacing.xs),
         )
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        IconButton(onClick = { onMove(-1) }, enabled = canMoveUp) {
-            Icon(Icons.Filled.KeyboardArrowUp, contentDescription = stringResource(Res.string.store_move_up, label))
-        }
-        IconButton(onClick = { onMove(1) }, enabled = canMoveDown) {
-            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = stringResource(Res.string.store_move_down, label))
-        }
+        ReorderButtons(
+            name = label,
+            canMoveUp = canMoveUp,
+            canMoveDown = canMoveDown,
+            onMoveUp = { onMove(-1) },
+            onMoveDown = { onMove(1) },
+        )
     }
 }

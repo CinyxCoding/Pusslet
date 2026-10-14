@@ -9,7 +9,6 @@
     <string name="nav_shopping">Handla</string>
     <string name="nav_more">Mer</string>
     <string name="quick_add">Lägg till</string>
-    <string name="quick_add_description">Snabbinmatning: skriv vad som ska hända</string>
     <string name="navigate_back">Tillbaka</string>
 
     <!-- Common -->
@@ -33,7 +32,6 @@
     <string name="optional">valfritt</string>
     <string name="loading">Laddar…</string>
     <string name="error_generic">Något gick snett. Försök igen om en stund.</string>
-    <string name="offline_notice">Du är offline – ändringar sparas och skickas när du har nät igen.</string>
     <string name="list_separator">, </string>
     <string name="and_separator"> och </string>
 
@@ -106,54 +104,48 @@
     <string name="greeting_named">%1$s, %2$s</string>
 
     <!-- Today -->
-    <string name="today_weather_now">%1$d° just nu</string>
-    <string name="today_weather_range">%1$d° till %2$d° under dagen</string>
-    <string name="today_weather_tomorrow">I morgon · %1$s</string>
-    <string name="today_weather_stale">Väder från %1$s – kunde inte uppdatera</string>
-    <string name="today_weather_missing">Välj ort i inställningarna för att få väder och klädråd.</string>
-    <string name="today_weather_unavailable">Vädret kunde inte hämtas just nu.</string>
+    <string name="today_weather_line">%1$d° nu · %2$d–%3$d°</string>
+    <string name="today_weather_tomorrow">I morgon · %1$d–%2$d°</string>
+    <string name="today_weather_stale">Väder från %1$s</string>
+    <string name="today_weather_missing">Välj ort</string>
+    <string name="today_weather_unavailable">Inget väder just nu</string>
     <string name="today_clothes_for">%1$s: %2$s</string>
     <string name="today_timeline_title">Dagen</string>
-    <string name="today_packing_title">Ska med idag</string>
-    <string name="today_packing_empty">Inget extra att packa idag.</string>
+    <string name="today_packing_title">Ska med</string>
     <string name="today_packing_reason_event">till %1$s</string>
     <string name="today_packing_reason_handover">bytesdag</string>
-    <string name="today_meals_title">Mat idag</string>
-    <string name="today_lunch">Lunch för %1$s: %2$s</string>
+    <string name="today_meals_title">Mat</string>
+    <string name="today_lunch">Lunch: %2$s (%1$s)</string>
     <string name="today_dinner">Middag: %1$s</string>
-    <string name="today_no_dinner">Ingen middag planerad än.</string>
+    <string name="today_no_dinner">Ingen middag planerad</string>
     <string name="today_plan_dinner">Planera middag</string>
-    <string name="today_clash">%1$s har redan ätit %2$s till lunch</string>
-    <string name="today_upcoming_title">Kommande dagar</string>
-    <string name="today_upcoming_nothing">Lugnt</string>
-    <string name="today_tasks_title">Att göra för dig</string>
-    <string name="today_no_tasks">Inget på din lista. Skönt!</string>
-    <string name="today_custody">Barnen är hos: %1$s</string>
-    <string name="today_custody_handover">Byte idag kl %1$s – till %2$s</string>
+    <string name="today_clash">%1$s åt %2$s till lunch</string>
+    <string name="today_upcoming_title">Kommande</string>
+    <string name="today_tasks_title">Att göra</string>
+    <string name="today_custody">Hos %1$s</string>
+    <string name="today_custody_a11y">Barnen är hos %1$s</string>
+    <string name="today_custody_handover">Byte %1$s till %2$s</string>
     <string name="today_custody_next">Nästa byte %1$s</string>
     <string name="today_dropoff">Lämning</string>
     <string name="today_pickup">Hämtning</string>
-    <string name="today_handoff_line">%1$s %2$s</string>
-    <string name="today_handoff_nobody">Ingen är satt än</string>
-    <string name="today_quiet">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
+    <string name="today_handoff_nobody">Inte bestämt</string>
+    <string name="today_quiet">Lugn dag ☕</string>
     <string name="today_overdue">Försenad</string>
-    <string name="today_holiday">%1$s</string>
 
     <!-- Context cards -->
-    <string name="card_nobody_pickup">%1$s är upptagna kl %2$s – ingen kan hämta %3$s</string>
-    <string name="card_nobody_dropoff">%1$s är upptagna kl %2$s – ingen kan lämna %3$s</string>
+    <string name="card_nobody_pickup">Ingen kan hämta %3$s kl %2$s – %1$s har annat inbokat</string>
+    <string name="card_nobody_dropoff">Ingen kan lämna %3$s kl %2$s – %1$s har annat inbokat</string>
     <string name="card_busy_pickup">%1$s ska hämta %2$s kl %3$s men har %4$s</string>
     <string name="card_busy_dropoff">%1$s ska lämna %2$s kl %3$s men har %4$s</string>
     <string name="card_unassigned_pickup">Ingen hämtar %1$s kl %2$s</string>
     <string name="card_unassigned_dropoff">Ingen lämnar %1$s kl %2$s</string>
     <string name="card_double_booked">%1$s har både %2$s och %3$s samtidigt</string>
     <string name="card_study_day">%1$s %2$s – vem är hemma?</string>
-    <string name="card_party_gift">Kalas %1$s – present är inte köpt</string>
+    <string name="card_party_gift">Kalas %1$s – present?</string>
     <string name="card_squeeze_day">Klämdag %1$s – ledigt eller fritids?</string>
-    <string name="card_handover">Byte %1$s: barnen flyttar till %2$s</string>
-    <string name="card_action_ask">Fråga om hjälp</string>
+    <string name="card_handover">Byte %1$s till %2$s</string>
     <string name="card_action_take">Jag tar det</string>
-    <string name="card_action_add_task">Lägg till att göra</string>
+    <string name="card_action_remind">Påminn mig</string>
     <string name="card_action_open">Visa</string>
     <string name="card_today">idag</string>
     <string name="card_tomorrow">imorgon</string>
@@ -186,7 +178,6 @@
     <string name="weather_thunder">Åska</string>
     <string name="weather_sleet">Snöblandat regn</string>
     <string name="weather_snow">Snö</string>
-    <string name="weather_source">Prognos: SMHI</string>
 
     <!-- Holidays -->
     <string name="holiday_NewYearsDay">Nyårsdagen</string>
@@ -247,7 +238,7 @@
     <string name="repeat_custom">Eget mönster</string>
 
     <!-- Quick add -->
-    <string name="quickadd_title">Vad ska hända?</string>
+    <string name="quickadd_title">Lägg till</string>
     <string name="quickadd_hint">T.ex. ”Simon fotboll tis 17:30 varje vecka”</string>
     <string name="quickadd_interpreted">Jag tolkade detta som…</string>
     <string name="quickadd_uncertain">Kolla det som är markerat – tryck för att ändra.</string>
@@ -258,7 +249,7 @@
     <string name="quickadd_kind_handoff">Hämta/lämna</string>
     <string name="quickadd_save">Spara</string>
     <string name="quickadd_save_all">Spara %1$d saker</string>
-    <string name="quickadd_saved">Sparat!</string>
+    <string name="quickadd_saved">Sparat</string>
     <string name="quickadd_examples">Prova till exempel</string>
     <string name="quickadd_example_1">Ella kalas lör 14-16 hos Vera, köp present</string>
     <string name="quickadd_example_2">mjölk, 2 gurka, pasta</string>
@@ -267,7 +258,7 @@
     <string name="quickadd_handoff_pickup">%1$s hämtar %2$s</string>
     <string name="quickadd_handoff_dropoff">%1$s lämnar %2$s</string>
     <string name="quickadd_handoff_all_children">barnen</string>
-    <string name="quickadd_no_handoff_found">Det fanns ingen lämning/hämtning den dagen, så jag lade till en ny hämtning kl %1$s.</string>
+    <string name="quickadd_no_handoff_found">Ny hämtning kl %1$s (fanns ingen)</string>
     <string name="quickadd_linked_task">Kopplad till händelsen</string>
     <string name="quickadd_meal_slot">%1$s, %2$s</string>
     <string name="field_title">Titel</string>
@@ -290,15 +281,15 @@
     <string name="calendar_view_week">Vecka</string>
     <string name="calendar_view_month">Månad</string>
     <string name="calendar_view_agenda">Agenda</string>
-    <string name="calendar_layers">Visa i kalendern</string>
-    <string name="layer_family">Familjens händelser</string>
-    <string name="layer_subscriptions">Prenumerationer (skola, förening)</string>
-    <string name="layer_device">Mina egna kalendrar</string>
+    <string name="calendar_layers">Filtrera</string>
+    <string name="layer_family">Familjen</string>
+    <string name="layer_subscriptions">Skola och förening</string>
+    <string name="layer_device">Mina kalendrar</string>
     <string name="layer_holidays">Helgdagar</string>
     <string name="layer_custody">Växelvis boende</string>
     <string name="calendar_filter_all">Alla</string>
     <string name="calendar_empty_day">Inget planerat</string>
-    <string name="calendar_empty_week">Inget planerat den här veckan. Lägg till med +.</string>
+    <string name="calendar_empty_week">Inget planerat den här veckan</string>
     <string name="calendar_new_event">Ny händelse</string>
     <string name="calendar_edit_event">Redigera händelse</string>
     <string name="calendar_previous">Föregående</string>
@@ -310,7 +301,7 @@
     <string name="event_dropoff">Lämnar</string>
     <string name="event_pickup">Hämtar</string>
     <string name="event_handoffs">Lämning och hämtning</string>
-    <string name="event_handoff_none">Behövs inte</string>
+    <string name="event_handoff_none">Inte bestämt</string>
     <string name="event_location">Plats</string>
     <string name="event_note">Anteckning</string>
     <string name="event_tags">Typ av händelse</string>
@@ -345,7 +336,7 @@
     <string name="onboarding_create">Skapa vår familj</string>
     <string name="onboarding_join">Jag har en inbjudan</string>
     <string name="onboarding_demo">Utforska med en exempelfamilj</string>
-    <string name="onboarding_step">Steg %1$d av %2$d</string>
+    <string name="onboarding_step">%1$d av %2$d</string>
     <string name="onboarding_family_title">Vilka är ni?</string>
     <string name="onboarding_family_name">Familjens namn</string>
     <string name="onboarding_family_name_hint">Familjen Lind</string>
@@ -408,7 +399,7 @@
     <string name="invite_create">Skapa inbjudan</string>
     <string name="invite_code_label">Kod</string>
     <string name="invite_valid_until">Gäller till %1$s</string>
-    <string name="invite_share_text">Hej! Gå med i %1$s i %2$s: %3$s – eller skriv koden %4$s i appen.</string>
+    <string name="invite_share_text">Hej, gå med i %1$s i %2$s: %3$s – eller skriv koden %4$s i appen.</string>
     <string name="invite_needs_account">Logga in först, så kan familjen delas mellan era telefoner.</string>
     <string name="invite_qr_description">QR-kod för inbjudan</string>
 
@@ -416,7 +407,7 @@
     <string name="child_new">Nytt barn</string>
     <string name="child_edit">Redigera %1$s</string>
     <string name="child_name">Förnamn</string>
-    <string name="child_avatar">Symbol</string>
+    <string name="child_avatar">Bild</string>
     <string name="child_color">Färg</string>
     <string name="child_birth_date">Födelsedatum</string>
     <string name="child_birth_hint">ÅÅÅÅ-MM-DD</string>
@@ -425,7 +416,7 @@
     <string name="child_lunch">Skollunch</string>
     <string name="lunch_none">Visa inte</string>
     <string name="lunch_skolmaten">skolmaten.se</string>
-    <string name="lunch_rss">Egen RSS-länk</string>
+    <string name="lunch_rss">Annan länk till matsedeln</string>
     <string name="lunch_manual">Skriv in själv</string>
     <string name="lunch_reference_hint">Skolans sida på skolmaten.se eller länk</string>
     <string name="child_sizes">Klädstorlekar</string>
@@ -508,14 +499,12 @@
     <!-- More -->
     <string name="more_title">Mer</string>
     <string name="more_family">Familjen</string>
-    <string name="more_family_body">Barn, vuxna, inbjudningar och växelvis boende</string>
     <string name="more_tasks">Uppgifter och sysslor</string>
-    <string name="more_tasks_body">Att göra, sysslor som roterar och hur det fördelas</string>
     <string name="more_recipes">Recept</string>
     <string name="more_settings">Inställningar</string>
-    <string name="more_account">Konto och synk</string>
+    <string name="more_account">Konto och delning</string>
     <string name="more_about_data">Om data</string>
-    <string name="more_privacy">Integritet och dina data</string>
+    <string name="more_privacy">Integritet</string>
 
     <!-- Settings -->
     <string name="settings_title">Inställningar</string>
@@ -529,7 +518,7 @@
     <string name="language_system">Telefonens språk</string>
     <string name="language_sv">Svenska</string>
     <string name="language_en">English</string>
-    <string name="settings_weather_place">Ort för väder</string>
+    <string name="settings_weather_place">Välj ort</string>
     <string name="settings_weather_place_none">Ingen ort vald</string>
     <string name="settings_notifications">Notiser</string>
     <string name="settings_morning">Morgonkoll</string>
@@ -537,7 +526,7 @@
     <string name="settings_quiet_hours">Tysta timmar</string>
     <string name="settings_quiet_hours_body">Inga notiser %1$s–%2$s</string>
     <string name="settings_calendars">Kalendrar</string>
-    <string name="settings_device_calendars">Visa mina egna kalendrar</string>
+    <string name="settings_device_calendars">Visa mina kalendrar</string>
     <string name="settings_device_calendars_body">Så att krockar med jobbet syns. Kräver behörighet till kalendern.</string>
     <string name="settings_export_calendar">Lägg familjens händelser i</string>
     <string name="settings_export_none">Exportera inte</string>
@@ -547,7 +536,7 @@
     <string name="settings_version">Version %1$s</string>
 
     <!-- Account -->
-    <string name="account_title">Konto och synk</string>
+    <string name="account_title">Konto och delning</string>
     <string name="account_signed_out">Just nu sparas allt bara på den här telefonen. Logga in för att dela med familjen.</string>
     <string name="account_email">E-post</string>
     <string name="account_password">Lösenord</string>
@@ -572,7 +561,7 @@
 
     <!-- About data -->
     <string name="about_title">Om data</string>
-    <string name="about_intro">Pusslet hämtar öppna data från de här källorna. Tack!</string>
+    <string name="about_intro">Pusslet hämtar öppna data från de här källorna. Stort tack till dem.</string>
     <string name="about_no_ai">Pusslet använder ingen AI-tjänst. All tolkning sker med regler direkt i telefonen.</string>
     <string name="source_livsmedel">Livsmedelsverkets livsmedelsdatabas</string>
     <string name="source_livsmedel_body">Näringsvärden. Licens CC BY 4.0, källa: Livsmedelsverket.</string>
@@ -592,7 +581,7 @@
     <string name="source_never">Inte hämtat än</string>
 
     <!-- Privacy -->
-    <string name="privacy_title">Integritet och dina data</string>
+    <string name="privacy_title">Integritet</string>
     <string name="privacy_summary">Familjens uppgifter lagras på telefonen och – när ni loggar in – hos Google Firebase inom EU. Barn behöver bara ett förnamn. Inget säljs, ingen reklam, ingen AI.</string>
     <string name="privacy_sensitive">Allergier och kost sparas bara om du aktivt väljer det, och kan tas bort när som helst.</string>
     <string name="privacy_export">Exportera all data</string>
@@ -631,29 +620,27 @@
     <!-- Shopping list -->
     <string name="list_kind_grocery">Mat</string>
     <string name="list_kind_other">Annat</string>
-    <string name="shopping_add_hint">Lägg till, t.ex. 2 l mjölk, bröd</string>
+    <string name="shopping_add_hint">Lägg till vara</string>
     <string name="shopping_add_action">Lägg till på listan</string>
     <string name="shopping_scan">Skanna streckkod</string>
     <string name="shopping_store_mode">Jag handlar nu</string>
-    <string name="shopping_from_meals">Från matsedeln</string>
+    <string name="shopping_from_meals">Handla till veckan</string>
     <string name="shopping_suggestions_title">Brukar ni köpa</string>
     <string name="shopping_suggestions_dismiss">Inte nu</string>
     <string name="shopping_suggestion_add">Lägg till %1$s</string>
-    <string name="shopping_shopper_now">%1$s handlar just nu – lägg till det du behöver, så kommer det med.</string>
-    <string name="shopping_someone_shopping">Någon i familjen handlar just nu – lägg till det du behöver.</string>
+    <string name="shopping_shopper_now">%1$s handlar nu</string>
+    <string name="shopping_someone_shopping">Någon handlar nu</string>
     <string name="shopping_in_cart_count">I vagnen (%1$d)</string>
     <string name="shopping_clear_checked">Rensa avbockade</string>
-    <string name="shopping_show_checked">Visa</string>
-    <string name="shopping_hide_checked">Dölj</string>
     <string name="shopping_empty_title">Listan är tom</string>
-    <string name="shopping_empty_body">Skriv vad ni behöver ovan, skanna en vara eller hämta ingredienserna från matsedeln.</string>
+    <string name="shopping_empty_body">T.ex. ”2 l mjölk, bröd”</string>
     <string name="shopping_added">Tillagt: %1$s</string>
-    <string name="shopping_already_on_list">Finns redan på listan: %1$s</string>
+    <string name="shopping_already_on_list">%1$s fanns redan</string>
     <string name="shopping_removed">%1$s borttagen</string>
     <string name="shopping_in_cart_toast">%1$s i vagnen</string>
     <string name="shopping_all_done">Allt i vagnen! Bra jobbat 🎉</string>
-    <string name="shopping_generated">Listan är uppdaterad från matsedeln.</string>
-    <string name="shopping_generated_nothing">Inget nytt att lägga till från matsedeln.</string>
+    <string name="shopping_generated">Listan uppdaterad</string>
+    <string name="shopping_generated_nothing">Inget nytt att lägga till</string>
     <string name="shopping_unknown_title">Okänd vara</string>
     <string name="shopping_unknown_body">Streckkoden %1$s finns inte i Open Food Facts (eller så är du offline). Vad heter varan?</string>
     <string name="shopping_item_name">Vara</string>
@@ -670,7 +657,6 @@
     <string name="shopping_list_name">Namn på listan</string>
     <string name="shopping_store_none">Ingen särskild butik (standardordning)</string>
     <string name="shopping_edit_item">Ändra vara</string>
-    <string name="shopping_edit_item_named">Ändra %1$s</string>
     <string name="shopping_amount">Mängd</string>
     <string name="shopping_unit">Enhet</string>
     <string name="shopping_unit_none">–</string>
@@ -678,7 +664,7 @@
     <string name="shopping_note">Anteckning</string>
     <string name="shopping_price">Eget pris, kr (valfritt)</string>
     <string name="shopping_added_by">Tillagd av %1$s</string>
-    <string name="shopping_left_count">Kvar att handla: %1$d</string>
+    <string name="shopping_left_count">%1$d kvar</string>
     <string name="shopping_nothing_left">Allt är handlat</string>
     <string name="shopping_subtitle_store">%1$s · %2$s</string>
     <string name="shopping_state_in_cart">I vagnen</string>
@@ -687,28 +673,28 @@
     <string name="shopping_put_back">Lägg tillbaka på listan</string>
 
     <!-- Shopping: from the meal plan -->
-    <string name="meals_to_list_title">Handla till matsedeln</string>
+    <string name="meals_to_list_title">Handla till veckan</string>
     <string name="meals_to_list_this_week">Den här veckan</string>
     <string name="meals_to_list_next_week">Nästa vecka</string>
     <string name="meals_to_list_summary">%1$s – nya: %2$d · ändrade: %3$d · borttagna: %4$d</string>
     <string name="meals_to_list_empty">Inget att lägga till för %1$s. Planera middagar med recept i matsedeln – eller så finns allt redan på listan.</string>
     <string name="meals_to_list_confirm">Uppdatera listan</string>
-    <string name="meals_to_list_pantry_on">Det ni har i hemma-lagret räknas bort. Salt, peppar och vatten hoppas över.</string>
-    <string name="meals_to_list_pantry_off">Salt, peppar och vatten hoppas över. Slå på hemma-lagret om ni vill räkna bort det ni redan har.</string>
+    <string name="meals_to_list_pantry_on">Det ni har hemma räknas bort. Salt, peppar och vatten hoppas över.</string>
+    <string name="meals_to_list_pantry_off">Salt, peppar och vatten hoppas över. Det ni har hemma räknas inte bort.</string>
 
     <!-- Shopping: pantry -->
-    <string name="pantry_title">Hemma-lager</string>
+    <string name="pantry_title">Det vi har hemma</string>
     <string name="pantry_intro">Skriv upp det ni har hemma, så räknas det bort när listan görs från matsedeln. Utan mängd räknas det som att ni har tillräckligt.</string>
     <string name="pantry_use">Räkna bort det vi har hemma</string>
     <string name="pantry_add_hint">T.ex. 1 kg mjöl, ris</string>
-    <string name="pantry_empty">Inget i hemma-lagret än.</string>
+    <string name="pantry_empty">Inget uppskrivet än</string>
     <string name="pantry_enough">Tillräckligt</string>
     <string name="pantry_remove">Ta bort %1$s</string>
 
     <!-- Shopping: stores and store mode -->
     <string name="stores_title">Butiker</string>
     <string name="stores_add">Ny butik</string>
-    <string name="stores_empty">Lägg till butiken ni brukar handla i och sortera avdelningarna i den ordning ni går – då kommer listan i samma ordning.</string>
+    <string name="stores_empty">Lägg till er butik, så följer listan gångarna</string>
     <string name="store_edit">Ändra butik</string>
     <string name="store_name">Butikens namn</string>
     <string name="store_default">Standardbutik</string>
@@ -721,7 +707,7 @@
     <string name="store_delete_confirm">Ta bort butiken %1$s?</string>
     <string name="store_mode_all_done_title">Allt i vagnen!</string>
     <string name="store_mode_all_done_body">Skönt. Nu är det bara kassan kvar.</string>
-    <string name="store_mode_finish">Klar med handlingen</string>
+    <string name="store_mode_finish">Klar</string>
 
     <!-- Meals: week plan -->
     <string name="meals_section_week">Matsedel</string>
@@ -729,7 +715,7 @@
     <string name="meals_previous_week">Förra veckan</string>
     <string name="meals_next_week">Nästa vecka</string>
     <string name="meals_week_menu">Fler val för veckan</string>
-    <string name="meals_this_week">Till den här veckan</string>
+    <string name="meals_this_week">Den här veckan</string>
     <string name="meals_shop_for_week">Handla till veckan</string>
     <string name="meals_copy_previous">Kopiera förra veckan</string>
     <string name="meals_save_favorite">Spara som favoritvecka</string>
@@ -737,45 +723,45 @@
     <string name="meals_favorites_hint">Välj en vecka att lägga in. Dagar som redan är planerade skrivs över.</string>
     <string name="meals_favorite_name">Namn, t.ex. Höstvecka</string>
     <string name="meals_plan_slot">Planera %1$s</string>
-    <string name="meals_nothing_planned">Inget planerat än</string>
-    <string name="meals_busy_evening">%1$s %2$s – välj gärna något snabbt</string>
+    <string name="meals_plan_short">Planera</string>
+    <string name="meals_nothing_planned">Inget planerat</string>
+    <string name="meals_busy_evening">%2$s %1$s – något snabbt?</string>
     <string name="meals_leftovers_from">Rester från %1$s</string>
     <string name="meals_cook_double">Gör dubbelt</string>
     <string name="meals_cook_double_hint">Resterna planeras in nästa lediga dag.</string>
     <string name="meals_open_recipe">Recept</string>
-    <string name="meals_add_lunch">Skollunch för %1$s</string>
-    <string name="meals_clash">Samma sorts mat som skollunchen för %1$s</string>
+    <string name="meals_add_lunch">Fyll i skollunch (%1$s)</string>
+    <string name="meals_clash">Samma som lunchen (%1$s)</string>
     <string name="meals_lunch_title">Skollunch för %1$s, %2$s</string>
     <string name="meals_lunch_hint">Rätter, en per rad</string>
     <string name="meals_sheet_title">%1$s, %2$s</string>
     <string name="meals_what_hint">Vad blir det? Recept eller t.ex. tacos</string>
     <string name="meals_recipe_chosen">Recept valt</string>
     <string name="meals_suggestions">Förslag</string>
-    <string name="meals_no_suggestions">Lägg till några recept så kommer förslag här – eller skriv vad det blir.</string>
+    <string name="meals_no_suggestions">Inga förslag än – skriv vad det blir</string>
     <string name="meals_free_text_hint">Inget recept heter så – det sparas som det är skrivet.</string>
     <string name="meals_note">Anteckning</string>
     <string name="meals_move">Flytta till…</string>
     <string name="reason_favorite">Favorit</string>
     <string name="reason_not_recently">Länge sedan</string>
-    <string name="reason_quick">Snabbt en upptagen kväll</string>
-    <string name="reason_uses_pantry">Använder det ni har hemma</string>
-    <string name="reason_varies">Varierar veckan</string>
-    <string name="reason_not_lunch">Inte samma som skollunchen</string>
+    <string name="reason_quick">Snabbt</string>
+    <string name="reason_uses_pantry">Finns hemma</string>
+    <string name="reason_varies">Omväxling</string>
+    <string name="reason_not_lunch">Inte som lunchen</string>
 
     <!-- Recipes -->
     <string name="recipe_import">Importera från länk</string>
     <string name="recipe_new">Nytt recept</string>
     <string name="recipe_edit">Ändra recept</string>
-    <string name="recipe_search">Sök recept eller ingrediens</string>
+    <string name="recipe_search">Sök recept</string>
     <string name="recipe_empty_title">Inga recept än</string>
-    <string name="recipe_empty_body">Importera från en receptsida (ICA, Arla, Köket …) eller skriv in familjens egna favoriter.</string>
+    <string name="recipe_empty_body">Hämta från en receptsida eller skriv in era egna</string>
     <string name="recipe_no_match">Inga recept matchar.</string>
     <string name="recipe_minutes">%1$d min</string>
-    <string name="recipe_servings_short">%1$d port.</string>
     <string name="recipe_favorite">Favorit</string>
     <string name="recipe_make_favorite">Markera som favorit</string>
     <string name="recipe_unfavorite">Ta bort som favorit</string>
-    <string name="recipe_match_foods">Matcha ingredienser</string>
+    <string name="recipe_match_foods">Förbättra uppskattningen</string>
     <string name="recipe_match_hint">Välj vilket livsmedel varje ingrediens är, så blir näringsöversikten bättre. Valet sparas för hela familjen.</string>
     <string name="recipe_match_confirmed">Bekräftad</string>
     <string name="recipe_match_none">Hittade inget liknande i Livsmedelsdatabasen.</string>
@@ -840,21 +826,43 @@
     <string name="nutrition_grams">%1$s g</string>
     <string name="nutrition_coverage">Uppskattat från %1$d av %2$d ingredienser, för %3$d portioner.</string>
     <string name="nutrition_loading">Räknar …</string>
-    <string name="nutrition_unavailable">Näringsdata hämtas från Livsmedelsverket första gången – försök igen när du har nät.</string>
-    <string name="nutrition_source">Källa: Livsmedelsverkets livsmedelsdatabas (CC BY 4.0).</string>
+    <string name="nutrition_unavailable">Behöver nät första gången</string>
+    <string name="nutrition_source">Källa: Livsmedelsverket</string>
 
     <!-- Meals: week nutrition -->
-    <string name="week_nutrition_title">Näring för veckans middagar</string>
-    <string name="week_nutrition_intro">En ungefärlig översikt per portion för de planerade recepten.</string>
-    <string name="week_nutrition_calculate">Räkna ut</string>
-    <string name="week_nutrition_no_recipes">Planera några middagar med recept så kan vi räkna på dem.</string>
+    <string name="week_nutrition_title">Näring för veckan</string>
+    <string name="week_nutrition_no_recipes">Planera middagar med recept först</string>
     <string name="week_nutrition_average">I snitt per portion:</string>
     <string name="week_nutrition_coverage">Beräknat för %1$d av %2$d måltider med recept.</string>
 
+    <string name="quickadd_saved_item">1 vara på listan</string>
+    <string name="quickadd_saved_items">%1$d varor på listan</string>
+    <string name="quickadd_saved_event">I kalendern %1$s</string>
+    <string name="quickadd_saved_meal">På matsedeln %1$s</string>
+    <string name="quickadd_saved_task">Sparat i Att göra</string>
+    <string name="quickadd_saved_pickup">%1$s hämtar %2$s</string>
+    <string name="quickadd_saved_dropoff">%1$s lämnar %2$s</string>
+    <string name="quickadd_no_dropoff_found">Ny lämning kl %1$s (fanns ingen)</string>
+    <string name="quickadd_day_time">%1$s %2$s</string>
+    <string name="quickadd_action_show">Visa</string>
+
+    <string name="shopping_ticked">%1$s bockad</string>
+    <string name="shopping_checked_count">Avbockat (%1$d)</string>
+    <string name="shopping_cleared">%1$d varor rensade</string>
+    <string name="shopping_show_checked_a11y">Visa avbockade</string>
+    <string name="shopping_hide_checked_a11y">Dölj avbockade</string>
+
+    <string name="meals_recipe_from_link">Från länk</string>
+    <string name="meals_recipe_type_in">Skriv in själv</string>
+    <string name="meals_recipe_paste_text">Klistra in text</string>
+
+    <string name="calendar_until">till %1$s</string>
+
+    <string name="settings_dev_title">Utvecklare</string>
+    <string name="settings_dev_replay_onboarding">Visa första start igen</string>
+
+    <string name="today_demo_family">Exempelfamilj</string>
+
     <!-- Placeholders used until a feature is wired up -->
-    <string name="empty_today">Inga händelser idag. Njut av lugnet ☕ – eller lägg till något med +</string>
-    <string name="empty_calendar">Kalendern är tom än så länge.</string>
-    <string name="empty_meals">Ingen matsedel planerad den här veckan.</string>
-    <string name="empty_shopping">Inköpslistan är tom. Skönt!</string>
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
 </resources>

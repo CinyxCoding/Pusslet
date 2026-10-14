@@ -23,6 +23,7 @@ import se.pusslet.core.meals.MealSuggester
 import se.pusslet.core.meals.MealSuggestion
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.EventOccurrence
+import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilySettings
 import se.pusslet.core.model.FavoriteWeek
 import se.pusslet.core.model.MealEntry
@@ -51,6 +52,9 @@ import kotlin.time.Clock
 /** A child's school lunch on a day, and the dish words it shares with the planned dinner (empty = no clash). */
 data class ChildLunch(val child: Child, val dishes: List<String>, val clash: Set<String>)
 
+/** Children who eat the same school lunch share one row: "Lunch: Köttbullar (Ella, Simon)". */
+data class LunchGroup(val children: List<Child>, val dishes: List<String>)
+
 data class DayPlan(
     val date: LocalDate,
     val entries: Map<MealSlot, MealEntry>,
@@ -61,6 +65,8 @@ data class DayPlan(
     /** Sunday or a public holiday (röd dag). */
     val redDay: Boolean,
     val isToday: Boolean,
+    /** Ids of the children without school this day (weekend, holiday, "lov" or "studiedag"): no school-lunch prompt. */
+    val noSchool: Set<String> = emptySet(),
 ) {
     val dinner: MealEntry? get() = entries[MealSlot.Dinner]
     val hasClash: Boolean get() = lunches.any { it.clash.isNotEmpty() }
@@ -80,6 +86,9 @@ data class MealsUiState(
     val canEdit: Boolean = true,
 ) {
     val plannedCount: Int get() = days.count { it.dinner != null }
+
+    /** The meal the round + plans: dinner, unless the family only plans other meals. */
+    val mainSlot: MealSlot get() = if (MealSlot.Dinner in slots) MealSlot.Dinner else slots.firstOrNull() ?: MealSlot.Dinner
 }
 
 sealed interface WeekNutritionState {
@@ -193,14 +202,16 @@ class MealsViewModel(
             val lunch = h.lunches[child.id].orEmpty().firstOrNull { it.date == date } ?: return@mapNotNull null
             ChildLunch(child, lunch.dishes, dinnerTitle?.let { MealClash.between(lunch.dishes, it) }.orEmpty())
         }
+        val dayOccurrences = p.occurrences.filter { it.overlapsDate(date) }
         return DayPlan(
             date = date,
             entries = entries,
             lunches = lunchesToday,
-            busy = EveningLoad.busyEvents(p.occurrences.filter { it.overlapsDate(date) }, date),
+            busy = EveningLoad.busyEvents(dayOccurrences, date),
             holidays = SwedishHolidays.forDate(date),
             redDay = SwedishHolidays.isRedDay(date),
             isToday = date == now,
+            noSchool = childrenWithoutSchool(date, h.children, dayOccurrences),
         )
     }
 
@@ -271,6 +282,12 @@ class MealsViewModel(
         editing.value = date to slot
     }
 
+    /** The round + on Matsedel: opens the planning sheet for the first day still to plan (see [nextDayToPlan]). */
+    fun openNextToPlan() {
+        val s = state.value
+        nextDayToPlan(s.days, s.mainSlot)?.let { openDay(it, s.mainSlot) }
+    }
+
     fun closeDay() {
         editing.value = null
     }
@@ -334,3 +351,39 @@ class MealsViewModel(
         const val STOP_TIMEOUT_MS = 5_000L
     }
 }
+
+/**
+ * The day the round + plans: the first day from today without [slot] planned (from Monday in another week). When
+ * everything is planned it is today (or Monday), so the sheet still opens on a sensible day.
+ */
+internal fun nextDayToPlan(days: List<DayPlan>, slot: MealSlot = MealSlot.Dinner): LocalDate? {
+    val todayIndex = days.indexOfFirst { it.isToday }
+    val from = if (todayIndex >= 0) days.drop(todayIndex) else days
+    return (from.firstOrNull { slot !in it.entries } ?: from.firstOrNull())?.date
+}
+
+/**
+ * Children without school on [date]: everyone on weekends and holidays, and the children a "lov" or "studiedag" event
+ * is for (an event without participants counts for every child). [occurrences] are the day's events.
+ */
+internal fun childrenWithoutSchool(date: LocalDate, children: List<Child>, occurrences: List<EventOccurrence>): Set<String> {
+    if (SwedishHolidays.isNonWorkingDay(date)) return children.mapTo(LinkedHashSet()) { it.id }
+    val off = occurrences.filter { o -> o.event.tags.any { tag -> NO_SCHOOL_TAGS.any { it.equals(tag, ignoreCase = true) } } }
+    return children.filter { c -> off.any { o -> o.event.participantIds.isEmpty() || c.id in o.event.participantIds } }
+        .mapTo(LinkedHashSet()) { it.id }
+}
+
+private val NO_SCHOOL_TAGS = listOf(EventTags.HOLIDAY_BREAK, EventTags.STUDY_DAY)
+
+/**
+ * One row per school lunch: children with the same dish share it. The day card compares the first dish (the one it
+ * shows); [wholeMenu] compares every dish, for the planning sheet that lists them all.
+ */
+internal fun groupLunches(lunches: List<ChildLunch>, wholeMenu: Boolean = false): List<LunchGroup> =
+    lunches.filter { it.dishes.isNotEmpty() }
+        .groupBy { lunch ->
+            val dishes = if (wholeMenu) lunch.dishes else lunch.dishes.take(1)
+            dishes.joinToString("\n") { it.trim().lowercase() }
+        }
+        .values
+        .map { same -> LunchGroup(same.map { it.child }, same.first().dishes) }

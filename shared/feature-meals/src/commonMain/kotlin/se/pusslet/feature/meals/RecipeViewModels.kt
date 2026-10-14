@@ -6,13 +6,14 @@ import co.touchlab.kermit.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -151,10 +152,22 @@ class RecipeDetailsViewModel(
 
     private val portions: Flow<Int?> = combine(recipe, servings) { r, s -> r?.let { s ?: it.servings } }
 
+    /** "Försök igen" after [NutritionState.Unavailable]: recalculates for the current recipe and portions. */
+    private val nutritionRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     private val nutritionState: Flow<NutritionState> = combine(recipe, portions, recipes.ingredientMappings) { r, p, _ -> r to p }
-        .mapLatest { (r, p) ->
-            if (r == null || p == null) return@mapLatest NutritionState.Loading
-            nutrition.summary(r, p)?.let { NutritionState.Ready(it) } ?: NutritionState.Unavailable
+        .flatMapLatest { (r, p) ->
+            flow {
+                if (r == null || p == null) {
+                    emit(NutritionState.Loading)
+                    return@flow
+                }
+                emit(nutritionOf(r, p))
+                nutritionRetries.collect {
+                    emit(NutritionState.Loading)
+                    emit(nutritionOf(r, p))
+                }
+            }
         }
         .onStart { emit(NutritionState.Loading) }
 
@@ -178,6 +191,9 @@ class RecipeDetailsViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), RecipeDetailsState())
 
+    private suspend fun nutritionOf(recipe: Recipe, portions: Int): NutritionState =
+        nutrition.summary(recipe, portions)?.let { NutritionState.Ready(it) } ?: NutritionState.Unavailable
+
     fun load(id: String) {
         if (recipeId.value != id) {
             recipeId.value = id
@@ -187,6 +203,11 @@ class RecipeDetailsViewModel(
 
     fun setServings(count: Int) {
         servings.value = count.coerceIn(1, MAX_SERVINGS)
+    }
+
+    /** Tries the food database again, e.g. once the phone is back online. */
+    fun retryNutrition() {
+        nutritionRetries.tryEmit(Unit)
     }
 
     fun toggleFavorite() {

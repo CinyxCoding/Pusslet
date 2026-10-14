@@ -27,6 +27,7 @@ import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.model.Place
+import se.pusslet.core.model.Role
 import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.time.isoWeek
@@ -42,6 +43,7 @@ import se.pusslet.data.repository.LunchRepository
 import se.pusslet.data.repository.MealRepository
 import se.pusslet.data.repository.PackingRepository
 import se.pusslet.data.repository.TaskRepository
+import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sources.Sourced
 import se.pusslet.data.sources.WeatherSource
@@ -66,6 +68,13 @@ data class TodayUiState(
     val people: Map<String, FamilyPerson> = emptyMap(),
     val weather: WeatherState = WeatherState.Loading,
     val now: LocalDateTime? = null,
+    /**
+     * Parents can change things from Idag. Caregivers (morfar) only get what the rules let them do, so no "Jag tar det",
+     * "Påminn mig", "Planera middag", weather place or + (UX plan 1.13).
+     */
+    val canEdit: Boolean = true,
+    /** The demo flavor's sample family ("Familjen Lind"), so a tester knows the data is not theirs. */
+    val demo: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -103,10 +112,17 @@ class TodayViewModel(
         val children: List<se.pusslet.core.model.Child>,
         val familyName: String,
         val custody: List<se.pusslet.core.model.CustodySchedule>,
+        val session: Session,
     )
 
-    private val household: Flow<Household> = combine(family.people, family.children, family.family, family.custody) { p, c, f, cu ->
-        Household(p, c, f?.name.orEmpty(), cu)
+    private val household: Flow<Household> = combine(
+        family.people,
+        family.children,
+        family.family,
+        family.custody,
+        sessions.session,
+    ) { p, c, f, cu, s ->
+        Household(p, c, f?.name.orEmpty(), cu, s)
     }
 
     private val occurrences: Flow<List<EventOccurrence>> = today.flatMapLatest { d ->
@@ -134,7 +150,7 @@ class TodayViewModel(
             f to w
         },
     ) { n, h, occ, ex, fw ->
-        val me = sessions.session.value.memberId
+        val me = h.session.memberId
         val plan = TodayPlanner.build(
             TodayInput(
                 today = n.date,
@@ -161,8 +177,17 @@ class TodayViewModel(
             people = h.people.associateBy { it.id },
             weather = fw.second,
             now = n,
+            canEdit = h.session.canEdit,
+            demo = h.session.demo,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TodayUiState())
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
+        // Known before anything loads, so a caregiver never sees the + flash by.
+        TodayUiState(canEdit = sessions.session.value.canEdit),
+    )
+
+    private val Session.canEdit: Boolean get() = role == Role.Parent
 
     init {
         viewModelScope.launch {
@@ -218,13 +243,18 @@ class TodayViewModel(
 
     /** "Jag tar det": assign the current user to a hand-off in one tap. */
     fun takeHandoff(occurrence: EventOccurrence, kind: HandoffKind) {
-        val me = sessions.session.value.memberId ?: return
+        val session = sessions.session.value
+        // The rules refuse a caregiver's write; the local copy would show something the family never sees.
+        if (!session.canEdit) return
+        val me = session.memberId ?: return
         viewModelScope.launch { handoffs.assign(occurrence, kind, me) }
     }
 
     /** "Kalas på lördag – present är inte köpt": create the to-do linked to the party. */
     fun addGiftTask(occurrence: EventOccurrence, title: String) {
-        val me = sessions.session.value.memberId
+        val session = sessions.session.value
+        if (!session.canEdit) return
+        val me = session.memberId
         viewModelScope.launch {
             val task = FamilyTask(
                 id = ids.newId(),

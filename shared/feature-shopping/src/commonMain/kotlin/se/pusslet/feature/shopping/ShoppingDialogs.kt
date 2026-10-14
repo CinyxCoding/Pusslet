@@ -54,6 +54,7 @@ import se.pusslet.core.units.QuantityParser
 import se.pusslet.core.units.Units
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.ValueField
 import se.pusslet.ui.format.weekLong
 import se.pusslet.ui.resources.*
@@ -126,6 +127,7 @@ private fun NewListDialog(onDismiss: () -> Unit, onCreate: (String, ListKind) ->
                             selected = kind == k,
                             onClick = { kind = k },
                             shape = SegmentedButtonDefaults.itemShape(index, ListKind.entries.size),
+                            colors = SelectionColors.segmentedButton(),
                             label = { Text(stringResource(Labels.listKind(k)), maxLines = 1) },
                         )
                     }
@@ -434,6 +436,7 @@ internal fun MealPlanSheet(
                             onPickWeek(index)
                         },
                         shape = SegmentedButtonDefaults.itemShape(index, 2),
+                        colors = SelectionColors.segmentedButton(),
                         label = { Text(stringResource(label), maxLines = 1) },
                     )
                 }

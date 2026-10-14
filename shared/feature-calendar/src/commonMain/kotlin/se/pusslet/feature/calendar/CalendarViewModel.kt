@@ -22,6 +22,7 @@ import se.pusslet.core.holidays.SwedishHolidays
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.Household
+import se.pusslet.core.model.Role
 import se.pusslet.core.time.datesUntil
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.time.startOfWeek
@@ -31,6 +32,7 @@ import se.pusslet.data.repository.CalendarView
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
+import se.pusslet.data.session.SessionProvider
 import kotlin.time.Clock
 
 data class CalendarDay(
@@ -50,35 +52,69 @@ data class CalendarUiState(
     val people: List<FamilyPerson> = emptyList(),
     val personFilter: Set<String> = emptySet(),
     val layers: Set<CalendarLayer> = CalendarLayer.entries.toSet(),
-)
+    /** Caregivers see what is shared with them but cannot add events (UX plan 1.13). */
+    val role: Role = Role.Parent,
+) {
+    val canEdit: Boolean get() = role == Role.Parent
+
+    /**
+     * The day the round + hands to quick add (UX plan 1.2): the selected day, else the first day of another week (or
+     * month) than the current one, else null so that quick add uses today.
+     */
+    val addDate: LocalDate?
+        get() {
+            val a = anchor ?: return null
+            val t = today ?: return null
+            return when (view) {
+                CalendarView.Day -> a
+                CalendarView.Week -> a.startOfWeek().takeIf { it != t.startOfWeek() }
+                CalendarView.Month -> LocalDate(a.year, a.month, 1).takeIf { a.year != t.year || a.month != t.month }
+                CalendarView.Agenda -> a.takeIf { t !in a..a.plusDays(CalendarViewModel.AGENDA_DAYS) }
+            }
+        }
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalendarViewModel(
     private val calendar: CalendarRepository,
     private val family: FamilyRepository,
     private val prefs: PreferencesRepository,
+    sessions: SessionProvider,
     private val clock: Clock,
     private val zone: TimeZone,
 ) : ViewModel() {
     private val anchor = MutableStateFlow(clock.todayIn(zone))
 
+    /**
+     * The view chosen in this visit, ahead of the stored one. A tapped date opens Day here without storing it, so the
+     * calendar never gets stuck in Day after a restart (UX plan 1.10); only an explicit view switch is stored.
+     */
+    private val chosenView = MutableStateFlow<CalendarView?>(null)
+
     private data class Window(val view: CalendarView, val anchor: LocalDate, val from: LocalDate, val to: LocalDate)
 
-    private val window = combine(prefs.observe(Prefs.CalendarViewMode), anchor) { view, a ->
+    private data class Settings(val filter: Set<String>, val layers: Set<CalendarLayer>, val role: Role)
+
+    private val window = combine(prefs.observe(Prefs.CalendarViewMode), chosenView, anchor) { stored, chosen, a ->
+        val view = chosen ?: stored
         val (from, to) = rangeFor(view, a)
         Window(view, a, from, to)
     }
 
     private val occurrences = window.flatMapLatest { w -> calendar.occurrences(w.from, w.to, zone) }
 
-    private val filters = combine(prefs.observe(Prefs.CalendarPersonFilter), prefs.observe(Prefs.CalendarLayers)) { f, l -> f to l }
+    private val settings = combine(
+        prefs.observe(Prefs.CalendarPersonFilter),
+        prefs.observe(Prefs.CalendarLayers),
+        sessions.session,
+    ) { f, l, s -> Settings(f, l, s.role) }
 
-    val state: StateFlow<CalendarUiState> = combine(window, occurrences, family.people, family.custody, filters) {
+    val state: StateFlow<CalendarUiState> = combine(window, occurrences, family.people, family.custody, settings) {
         w,
         occ,
         people,
         custody,
-        (filter, layers),
+        (filter, layers, role),
         ->
         val visible = if (filter.isEmpty()) occ else occ.filter { o -> o.event.participantIds.any { it in filter } }
         val days = w.from.datesUntil(w.to).map { d ->
@@ -90,16 +126,19 @@ class CalendarViewModel(
                 redDay = SwedishHolidays.isRedDay(d),
             )
         }
-        CalendarUiState(w.view, w.anchor, clock.todayIn(zone), days, people, filter, layers)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
+        CalendarUiState(w.view, w.anchor, clock.todayIn(zone), days, people, filter, layers, role)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState(role = sessions.session.value.role))
 
+    /** An explicit view switch: shown right away and stored as the view the calendar opens with. */
     fun setView(view: CalendarView) {
+        chosenView.value = view
         viewModelScope.launch { prefs.set(Prefs.CalendarViewMode, view) }
     }
 
+    /** A tapped date opens that day for now; the stored view stays as it was. */
     fun showDay(date: LocalDate) {
         anchor.value = date
-        setView(CalendarView.Day)
+        chosenView.value = CalendarView.Day
     }
 
     fun goToday() {

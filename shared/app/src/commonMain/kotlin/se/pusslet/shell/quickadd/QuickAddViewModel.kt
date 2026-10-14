@@ -21,6 +21,7 @@ import se.pusslet.core.quickadd.QuickAddEdits
 import se.pusslet.core.quickadd.QuickAddResult
 import se.pusslet.core.quickadd.SwedishQuickAddParser
 import se.pusslet.core.quickadd.UncertainField
+import se.pusslet.core.time.plusDays
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
@@ -66,15 +67,27 @@ class QuickAddViewModel(
     val state: StateFlow<QuickAddUiState> = _state.asStateFlow()
     private var parseJob: Job? = null
 
+    /** The day the opening screen shows (Kalender's selected day), used when the text names no date of its own. */
+    private var presetDate: LocalDate? = null
+
     init {
         viewModelScope.launch { family.people.collect { p -> _state.update { it.copy(people = p) } } }
         viewModelScope.launch { prefs.observe(Prefs.RecentQuickAdds).collect { r -> _state.update { it.copy(recent = r) } } }
     }
 
-    fun start(prefill: String = "") {
+    /**
+     * Opens quick add. [initialText] prefills the field (text shared from another app). [date] is the day the opening
+     * screen shows: "simskola 17:00" typed on Kalender's Saturday lands on Saturday, while "imorgon" or "fredag" still win.
+     */
+    fun start(initialText: String? = null, date: LocalDate? = null) {
+        val prefill = initialText.orEmpty()
+        presetDate = date
         _state.update { it.copy(text = prefill, actions = emptyList(), uncertain = emptySet(), saving = false) }
         if (prefill.isNotBlank()) parseNow(prefill)
     }
+
+    /** Today in the family's time zone, for the confirmation ("I kalendern lör 14:00"). */
+    fun today(): LocalDate = clock.now().toLocalDateTime(zone).date
 
     fun onTextChange(text: String) {
         _state.update { it.copy(text = text) }
@@ -87,7 +100,10 @@ class QuickAddViewModel(
 
     private fun parseNow(text: String) {
         val now = clock.now().toLocalDateTime(zone)
-        val result = parser.parse(text, QuickAddContext(now.date, now.time, _state.value.people, sessions.session.value.memberId))
+        val ctx = QuickAddContext(now.date, now.time, _state.value.people, sessions.session.value.memberId)
+        val parsed = parser.parse(text, ctx)
+        val preset = presetDate
+        val result = if (preset != null) QuickAddPresetDate.apply(parser, parsed, ctx, preset) else parsed
         _state.update { it.copy(actions = result.actions, uncertain = result.uncertain, today = now.date) }
     }
 
@@ -100,8 +116,8 @@ class QuickAddViewModel(
     }
 
     fun convert(index: Int, kind: ActionKind) {
-        val today = _state.value.today ?: clock.now().toLocalDateTime(zone).date
-        edit(index, UncertainField.Kind) { QuickAddEdits.convert(it, kind, today) }
+        val fallbackDate = presetDate ?: _state.value.today ?: today()
+        edit(index, UncertainField.Kind) { QuickAddEdits.convert(it, kind, fallbackDate) }
     }
 
     fun setTitle(index: Int, title: String) = edit(index, UncertainField.Title) { QuickAddEdits.withTitle(it, title) }
@@ -139,5 +155,23 @@ class QuickAddViewModel(
 
     private companion object {
         const val PARSE_DEBOUNCE_MS = 120L
+    }
+}
+
+/**
+ * Quick add opened from a screen that shows a day uses that day when the text names no date of its own (UX plan 1.2).
+ * Without a written date the parser falls back to today (or tomorrow when the time has passed) and marks the date
+ * uncertain. Such a date moves along when "today" moves one day; a written one ("fredag", "14 okt") does not, so it
+ * is left alone ("imorgon" is never uncertain). Opening from today's own screen changes nothing.
+ */
+internal object QuickAddPresetDate {
+    fun apply(parser: SwedishQuickAddParser, result: QuickAddResult, ctx: QuickAddContext, preset: LocalDate): QuickAddResult {
+        val primary = result.actions.firstOrNull() ?: return result
+        val parsedDate = QuickAddEdits.dateOf(primary)
+        if (preset == ctx.today || parsedDate == null || UncertainField.Date !in result.uncertain) return result
+        val shifted = parser.parse(result.input, ctx.copy(today = ctx.today.plusDays(1))).actions.firstOrNull()
+        if (shifted == null || QuickAddEdits.dateOf(shifted) != parsedDate.plusDays(1)) return result
+        val actions = result.actions.toMutableList().also { it[0] = QuickAddEdits.withDate(primary, preset) }
+        return result.copy(actions = actions, uncertain = result.uncertain - UncertainField.Date)
     }
 }

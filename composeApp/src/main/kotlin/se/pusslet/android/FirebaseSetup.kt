@@ -24,8 +24,14 @@ object FirebaseSetup {
             BuildConfig.FIREBASE_PROJECT_ID.isBlank() || BuildConfig.FIREBASE_APP_ID.isBlank() -> BackendMode.LocalOnly
             else -> BackendMode.Firebase
         }
-        val config =
-            BackendConfig(mode, BuildConfig.SEED_DEMO_DATA, BuildConfig.VERSION_NAME, BuildConfig.EMULATOR_HOST, BuildConfig.LINK_HOST)
+        val config = BackendConfig(
+            mode,
+            BuildConfig.SEED_DEMO_DATA,
+            BuildConfig.VERSION_NAME,
+            BuildConfig.EMULATOR_HOST,
+            BuildConfig.LINK_HOST,
+            developerTools = BuildConfig.DEVELOPER_TOOLS,
+        )
         if (mode == BackendMode.LocalOnly) {
             log.i { "No Firebase configuration for this flavor; running local-only" }
             return config

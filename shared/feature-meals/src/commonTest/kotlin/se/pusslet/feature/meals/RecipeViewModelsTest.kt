@@ -140,6 +140,24 @@ class RecipeViewModelsTest {
     }
 
     @Test
+    fun nutritionCanBeRetriedOnceOnline() = runTest {
+        val world = TestWorld()
+        world.foods.online = false
+        world.recipes.save(recipe("r1", "Färs", "500 g nötfärs"))
+        val vm = details(world)
+        vm.load("r1")
+        assertIs<NutritionState.Unavailable>(vm.state.value.nutrition)
+
+        vm.retryNutrition()
+        assertIs<NutritionState.Unavailable>(vm.state.value.nutrition, "still offline")
+
+        world.foods.online = true
+        vm.retryNutrition()
+        val ready = assertIs<NutritionState.Ready>(vm.state.value.nutrition)
+        assertEquals(250.0, ready.summary.perPortion.energyKcal ?: 0.0, 0.5)
+    }
+
+    @Test
     fun confirmingAFoodMatchIsRemembered() = runTest {
         val world = TestWorld()
         world.recipes.save(recipe("r1", "Färs", "500 g nötfärs"))

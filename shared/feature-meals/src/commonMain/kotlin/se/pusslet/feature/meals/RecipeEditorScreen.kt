@@ -44,23 +44,26 @@ import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PussletTopBar
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
 /**
  * New or edited recipe. Ingredients and steps are plain text, one per line, so a recipe can be typed or pasted fast;
- * "Klistra in recept" splits pasted text into the fields (rule based, the user checks the result).
+ * "Klistra in recept" splits pasted text into the fields (rule based, the user checks the result). [startPasting] opens
+ * the paste dialog right away ("Klistra in text" under the round + on Recept).
  */
 @Composable
 fun RecipeEditorRoute(
     recipeId: String?,
     sourceUrl: String?,
     onDone: (savedId: String?) -> Unit,
+    startPasting: Boolean = false,
     viewModel: RecipeEditorViewModel = koinViewModel(),
 ) {
     LaunchedEffect(recipeId, sourceUrl) { viewModel.load(recipeId, sourceUrl) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    var pasting by rememberSaveable { mutableStateOf(sourceUrl != null && recipeId == null) }
+    var pasting by rememberSaveable { mutableStateOf(recipeId == null && (startPasting || sourceUrl != null)) }
     LaunchedEffect(state.savedId) { state.savedId?.let { onDone(it) } }
 
     Scaffold(
@@ -155,6 +158,7 @@ private fun RecipeEditorForm(
                     selected = tag in form.tags,
                     onClick = { onChange { f -> f.copy(tags = if (tag in f.tags) f.tags - tag else f.tags + tag) } },
                     label = { Text(stringResource(tagLabel(tag))) },
+                    colors = SelectionColors.filterChip(),
                 )
             }
         }
@@ -170,6 +174,7 @@ private fun RecipeEditorForm(
                     selected = form.mainComponent == c,
                     onClick = { onChange { f -> f.copy(mainComponent = if (f.mainComponent == c) null else c) } },
                     label = { Text(stringResource(componentLabel(c))) },
+                    colors = SelectionColors.filterChip(),
                 )
             }
         }

@@ -74,7 +74,15 @@ data class ShoppingUiState(
     val usePantry: Boolean = false,
 ) {
     val openCount: Int get() = groups.sumOf { it.items.size }
+
+    /** Nothing on the list at all, e.g. a brand-new list ("Listan är tom"). */
     val isEmpty: Boolean get() = openCount == 0 && checked.isEmpty()
+
+    /** Everything is ticked off ("Allt är handlat"); a list with nothing on it is [isEmpty] instead. */
+    val allBought: Boolean get() = openCount == 0 && checked.isNotEmpty()
+
+    /** "Jag handlar nu" only makes sense while something is left to buy. */
+    val canStartShopping: Boolean get() = list != null && openCount > 0
 }
 
 /** Preview of "Handla till matsedeln" for one week. */
@@ -88,10 +96,16 @@ sealed interface ShoppingMessage {
 
     data class Removed(val item: ShoppingItem) : ShoppingMessage
 
-    /** Ticked off in store mode (offers "Ångra"). */
-    data class InCart(val item: ShoppingItem) : ShoppingMessage
+    /**
+     * Ticked off, offering "Ångra": "Mjölk i vagnen" in store mode, "Mjölk bockad" on the planning list. [item] is the
+     * item as it was before, so restoring it puts it back in the same aisle.
+     */
+    data class InCart(val item: ShoppingItem, val inStore: Boolean) : ShoppingMessage
 
-    /** The last item went into the cart. */
+    /** "Rensa avbockade" removed [items] ("6 varor rensade · Ångra"); restoring puts them back exactly as they were. */
+    data class Cleared(val items: List<ShoppingItem>) : ShoppingMessage
+
+    /** The last item went into the cart in store mode. */
     data object AllDone : ShoppingMessage
 
     /** Open Food Facts does not know the code (or we are offline): ask for a name. */
@@ -253,12 +267,16 @@ class ShoppingViewModel(
 
     fun undoAdd(outcome: AddOutcome) = launchSafely { adder.undo(outcome) }
 
+    /**
+     * Ticks [item] off (or puts it back). Ticking off always offers "Ångra"; only the last item in store mode celebrates
+     * ("Allt i vagnen!") instead.
+     */
     fun setChecked(item: ShoppingItem, checked: Boolean, inStore: Boolean = false) = launchSafely {
         val wasLast = checked && state.value.openCount == 1 && state.value.groups.any { g -> g.items.any { it.id == item.id } }
         shopping.setChecked(item, checked)
         when {
-            wasLast -> messageChannel.send(ShoppingMessage.AllDone)
-            checked && inStore -> messageChannel.send(ShoppingMessage.InCart(item))
+            wasLast && inStore -> messageChannel.send(ShoppingMessage.AllDone)
+            checked -> messageChannel.send(ShoppingMessage.InCart(item, inStore))
         }
     }
 
@@ -277,7 +295,17 @@ class ShoppingViewModel(
         shopping.saveItem(item.copy(name = item.name.trim()))
     }
 
-    fun clearChecked() = launchSafely { state.value.list?.let { shopping.clearChecked(it.id) } }
+    /** "Rensa avbockade": removes the ticked-off items and remembers them for "Ångra" ([restoreCleared]). */
+    fun clearChecked() = launchSafely {
+        val list = state.value.list ?: return@launchSafely
+        val cleared = shopping.getItems(list.id).filter { it.checked }
+        if (cleared.isEmpty()) return@launchSafely
+        cleared.forEach { shopping.deleteItem(it.id) }
+        messageChannel.send(ShoppingMessage.Cleared(cleared))
+    }
+
+    /** Undo for "Rensa avbockade": the cleared items come back ticked off, as they were. */
+    fun restoreCleared(items: List<ShoppingItem>) = launchSafely { shopping.saveItems(items) }
 
     fun addSuggestion(s: StapleSuggestion) = launchSafely {
         report(adder.addItems(listIdForAdding(), listOf(ParsedItem(s.name))))

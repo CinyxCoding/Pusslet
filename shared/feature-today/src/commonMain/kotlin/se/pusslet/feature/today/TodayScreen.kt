@@ -9,19 +9,29 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AssistChip
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.conflicts.Conflict
@@ -37,17 +48,23 @@ import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.PackingReason
 import se.pusslet.core.today.ContextCard
+import se.pusslet.core.today.DayPreview
 import se.pusslet.core.today.Greeting
 import se.pusslet.core.today.TimelineItem
 import se.pusslet.core.today.TodayPlan
+import se.pusslet.core.weather.ClothingGrouping
+import se.pusslet.core.weather.DaySummary
 import se.pusslet.ui.components.AvatarStack
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.CheckRow
 import se.pusslet.ui.components.ColorBadge
+import se.pusslet.ui.components.InfoPill
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PersonAvatar
+import se.pusslet.ui.components.PussletIcons
+import se.pusslet.ui.components.RegisterAddButton
 import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SmallAction
 import se.pusslet.ui.format.formatDateLong
@@ -67,10 +84,13 @@ fun TodayRoute(
     onPlanDinner: (LocalDate) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHandover: (String) -> Unit,
+    onQuickAdd: (LocalDate?) -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // The round + opens quick add, which starts on today. Caregivers cannot save anything there, so they get no + (UX plan 1.13).
+    RegisterAddButton(label = stringResource(Res.string.action_add), enabled = state.canEdit) { onQuickAdd(null) }
     TodayScreen(
         state = state,
         contentPadding = contentPadding,
@@ -109,20 +129,27 @@ fun TodayScreen(
             start = Spacing.screenHorizontal,
             end = Spacing.screenHorizontal,
             top = Spacing.lg + contentPadding.calculateTopPadding(),
-            bottom = Spacing.xxl * 3 + contentPadding.calculateBottomPadding(),
+            bottom = Spacing.listBottomInset + contentPadding.calculateBottomPadding(),
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         item(key = "header") { Header(state, plan) }
-        item(key = "weather") { WeatherCard(state, plan, onOpenSettings) }
+        // A caregiver cannot choose the place (family settings), so without one there is nothing to show them.
+        if (state.canEdit || state.weather != WeatherState.NoPlace) {
+            item(key = "weather") { WeatherCard(state, plan, onOpenSettings) }
+        }
         items(plan.cards, key = { cardKey(it) }) { card ->
             ContextCardView(card, state, onTakeHandoff, onAddGiftTask, onOpenOccurrence, onOpenHandover)
         }
         item(key = "timeline") { TimelineCard(plan, onOpenOccurrence) }
-        if (plan.packing.isNotEmpty()) item(key = "packing") { PackingCard(plan, onTogglePacking) }
-        item(key = "meals") { MealsCard(plan, onPlanDinner) }
-        item(key = "tasks") { TasksCard(plan, onToggleTask) }
-        item(key = "upcoming") { UpcomingCard(plan, onOpenOccurrence) }
+        // Empty is quiet (UX plan 1.1): no card that only says there is nothing.
+        if (plan.packing.any { it.items.isNotEmpty() }) item(key = "packing") { PackingCard(plan, onTogglePacking) }
+        if (state.canEdit || plan.dinner != null || plan.lunches.isNotEmpty()) {
+            item(key = "meals") { MealsCard(plan, state.canEdit, onPlanDinner) }
+        }
+        if (plan.myTasks.isNotEmpty()) item(key = "tasks") { TasksCard(plan, onToggleTask) }
+        val upcoming = plan.upcoming.filter { it.events.isNotEmpty() || it.holidays.isNotEmpty() || it.dinner != null }
+        if (upcoming.isNotEmpty()) item(key = "upcoming") { UpcomingCard(plan, upcoming, onOpenOccurrence) }
     }
 }
 
@@ -143,7 +170,8 @@ private fun Header(state: TodayUiState, plan: TodayPlan) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            SuggestionChip(onClick = {}, label = { Text(weekLong(plan.week.week)) })
+            InfoPill(weekLong(plan.week.week))
+            if (state.demo) InfoPill(stringResource(Res.string.today_demo_family))
         }
         val greeting = stringResource(
             when (plan.greeting) {
@@ -160,12 +188,26 @@ private fun Header(state: TodayUiState, plan: TodayPlan) {
         )
         if (plan.holidays.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                plan.holidays.forEach { h -> AssistChip(onClick = {}, label = { Text(stringResource(Labels.holiday(h.id))) }) }
+                plan.holidays.forEach { h -> InfoPill(stringResource(Labels.holiday(h.id))) }
             }
         }
         plan.custody.forEach { c ->
             val household = c.household ?: return@forEach
-            Text(stringResource(Res.string.today_custody, household.name), style = MaterialTheme.typography.bodyLarge)
+            // "Hos Ahmed" next to a house; TalkBack gets the whole sentence.
+            val custodyDescription = stringResource(Res.string.today_custody_a11y, household.name)
+            Row(
+                modifier = Modifier.clearAndSetSemantics { contentDescription = custodyDescription },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                Icon(
+                    Icons.Filled.Home,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(stringResource(Res.string.today_custody, household.name), style = MaterialTheme.typography.bodyLarge)
+            }
             c.handoverToday?.let { h ->
                 Text(
                     stringResource(Res.string.today_custody_handover, formatTime(h.time), h.to.name),
@@ -180,65 +222,96 @@ private fun Header(state: TodayUiState, plan: TodayPlan) {
 @Composable
 private fun WeatherCard(state: TodayUiState, plan: TodayPlan, onOpenSettings: () -> Unit) {
     val summary = plan.weather
-    SectionCard(title = null) {
-        when (val w = state.weather) {
-            WeatherState.NoPlace -> {
-                Text(stringResource(Res.string.today_weather_missing), style = MaterialTheme.typography.bodyMedium)
-                SmallAction(stringResource(Res.string.settings_weather_place), onOpenSettings)
-            }
-            WeatherState.Unavailable -> Text(
-                stringResource(Res.string.today_weather_unavailable),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            WeatherState.Loading -> Text(stringResource(Res.string.loading), style = MaterialTheme.typography.bodyMedium)
-            is WeatherState.Ready -> if (summary == null) {
-                Text(stringResource(Res.string.today_weather_unavailable), style = MaterialTheme.typography.bodyMedium)
+    when (val w = state.weather) {
+        WeatherState.NoPlace -> ChoosePlaceRow(onOpenSettings)
+        WeatherState.Unavailable -> SectionCard(title = null) {
+            QuietLine(stringResource(Res.string.today_weather_unavailable), PussletIcons.CloudOff)
+        }
+        WeatherState.Loading -> SectionCard(title = null) {
+            Text(stringResource(Res.string.loading), style = MaterialTheme.typography.bodyMedium)
+        }
+        is WeatherState.Ready -> SectionCard(title = null) {
+            if (summary == null) {
+                QuietLine(stringResource(Res.string.today_weather_unavailable), PussletIcons.CloudOff)
             } else {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    Text(Labels.weatherEmoji(summary.condition), style = MaterialTheme.typography.displaySmall)
-                    Column(Modifier.weight(1f)) {
-                        val condition = stringResource(Labels.weather(summary.condition))
-                        // After 18:00 the card is about tomorrow, so the clothes can be laid out in the evening.
-                        val headline = if (plan.weatherForTomorrow) {
-                            stringResource(Res.string.today_weather_tomorrow, condition)
-                        } else {
-                            val nowTemp = summary.now?.temperature ?: summary.maxTemperature
-                            stringResource(Res.string.today_weather_now, nowTemp.roundToInt()) + " · " + condition
-                        }
-                        Text(headline, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(
-                                Res.string.today_weather_range,
-                                summary.minTemperature.roundToInt(),
-                                summary.maxTemperature.roundToInt(),
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        if (w.stale) {
-                            Text(
-                                stringResource(Res.string.today_weather_stale, formatTime(w.fetchedAt.time)),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                }
-                plan.clothing.filter { it.advice.isNotEmpty() }.forEach { c ->
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                        PersonAvatar(c.child, size = 28.dp)
-                        Text(
-                            c.advice.map { stringResource(Labels.advice(it)) }.joinToString(" · "),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
-                }
-                Text(
-                    stringResource(Res.string.weather_source),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                WeatherHeadline(summary, plan.weatherForTomorrow, staleSince = if (w.stale) w.fetchedAt.time else null)
+                ClothingRows(plan)
             }
         }
+    }
+}
+
+/** No place chosen yet: the whole row is the button ("Välj ort ›"). */
+@Composable
+private fun ChoosePlaceRow(onOpenSettings: () -> Unit) {
+    Card(
+        onClick = onOpenSettings,
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget).padding(horizontal = Spacing.lg),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            Icon(Icons.Filled.Place, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                stringResource(Res.string.today_weather_missing),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(PussletIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** "☁️ 14° nu · 9–16°", or "I morgon · 2–4°" in the evening. The weather word is the emoji's TalkBack description. */
+@Composable
+private fun WeatherHeadline(summary: DaySummary, forTomorrow: Boolean, staleSince: LocalTime?) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        val condition = stringResource(Labels.weather(summary.condition))
+        Text(
+            Labels.weatherEmoji(summary.condition),
+            style = MaterialTheme.typography.displaySmall,
+            modifier = Modifier.clearAndSetSemantics { contentDescription = condition },
+        )
+        Column(Modifier.weight(1f)) {
+            val min = summary.minTemperature.roundToInt()
+            val max = summary.maxTemperature.roundToInt()
+            // After 18:00 the card is about tomorrow, so the clothes can be laid out in the evening.
+            val headline = if (forTomorrow) {
+                stringResource(Res.string.today_weather_tomorrow, min, max)
+            } else {
+                val nowTemp = summary.now?.temperature ?: summary.maxTemperature
+                stringResource(Res.string.today_weather_line, nowTemp.roundToInt(), min, max)
+            }
+            Text(headline, style = MaterialTheme.typography.titleMedium)
+            if (staleSince != null) {
+                QuietLine(stringResource(Res.string.today_weather_stale, formatTime(staleSince)), PussletIcons.CloudOff)
+            }
+        }
+    }
+}
+
+/** One row per group of children who should wear the same: "Ella och Simon: tunn jacka · reflexväst" (UX plan 1.7). */
+@Composable
+private fun ClothingRows(plan: TodayPlan) {
+    val groups = remember(plan.clothing) { ClothingGrouping.group(plan.clothing) }
+    groups.forEach { group ->
+        val advice = group.advice.map { stringResource(Labels.advice(it)) }.joinToString(" · ")
+        Text(
+            stringResource(Res.string.today_clothes_for, joinNames(group.children.map { it.name }), advice),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+/** A small secondary line with a leading icon ("Väder från 07:10" with a cloud that is offline). */
+@Composable
+private fun QuietLine(text: String, icon: ImageVector) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -292,7 +365,8 @@ private fun ContextCardView(
                     is Conflict.Unassigned -> c.kind
                     is Conflict.DoubleBooked -> null
                 }
-                if (kind != null && !(c is Conflict.AssigneeBusy && c.personId == state.me?.id)) {
+                // "Jag tar det" only where the write reaches the family: never for a caregiver (UX plan 1.13).
+                if (state.canEdit && kind != null && !(c is Conflict.AssigneeBusy && c.personId == state.me?.id)) {
                     SmallAction(stringResource(Res.string.card_action_take)) { onTakeHandoff(c.occurrence, kind) }
                 }
                 SmallAction(stringResource(Res.string.card_action_open)) { onOpenOccurrence(c.occurrence) }
@@ -301,18 +375,23 @@ private fun ContextCardView(
         is ContextCard.StudyDay -> Banner(
             stringResource(Res.string.card_study_day, card.title, stringResource(Res.string.on_weekday, weekdayName(card.date.dayOfWeek))),
             kind = BannerKind.Warning,
+            icon = PussletIcons.School,
         )
         is ContextCard.PartyGift -> {
-            val giftTitle = stringResource(Res.string.card_action_add_task)
+            val remindLabel = stringResource(Res.string.card_action_remind)
+            val presentTitle = card.eventTitle
+            // "Påminn mig" adds a to-do for the day before, so it is only offered while there is none and to those who can add one.
+            val occurrence = if (card.taskId == null && state.canEdit) {
+                plan.upcoming.flatMap { it.events }.firstOrNull { it.event.title == presentTitle }
+            } else {
+                null
+            }
             Banner(
                 stringResource(Res.string.card_party_gift, stringResource(Res.string.on_weekday, weekdayName(card.date.dayOfWeek))),
                 kind = BannerKind.Warning,
-                actions = if (card.taskId == null) {
-                    {
-                        val occurrence = plan.upcoming.flatMap { it.events }.firstOrNull { it.event.title == card.eventTitle }
-                        val presentTitle = card.eventTitle
-                        if (occurrence != null) SmallAction(giftTitle) { onAddGiftTask(occurrence, presentTitle) }
-                    }
+                icon = PussletIcons.Gift,
+                actions = if (occurrence != null) {
+                    { SmallAction(remindLabel) { onAddGiftTask(occurrence, presentTitle) } }
                 } else {
                     null
                 },
@@ -320,7 +399,8 @@ private fun ContextCardView(
         }
         is ContextCard.SqueezeDay -> Banner(
             stringResource(Res.string.card_squeeze_day, relativeDay(card.date, plan.date)),
-            kind = BannerKind.Info,
+            kind = BannerKind.Warning,
+            icon = PussletIcons.CalendarMonth,
         )
         is ContextCard.HandoverSoon -> Banner(
             stringResource(
@@ -444,14 +524,6 @@ private fun SmallTitle(text: String, onClick: () -> Unit) {
 @Composable
 private fun PackingCard(plan: TodayPlan, onToggle: (LocalDate, se.pusslet.core.model.PackingItem, Boolean) -> Unit) {
     SectionCard(stringResource(Res.string.today_packing_title)) {
-        val any = plan.packing.any { it.items.isNotEmpty() }
-        if (!any) {
-            Text(
-                stringResource(Res.string.today_packing_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
         plan.packing.filter { it.items.isNotEmpty() }.forEach { cp ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 PersonAvatar(cp.child, size = 24.dp)
@@ -470,7 +542,7 @@ private fun PackingCard(plan: TodayPlan, onToggle: (LocalDate, se.pusslet.core.m
 }
 
 @Composable
-private fun MealsCard(plan: TodayPlan, onPlanDinner: (LocalDate) -> Unit) {
+private fun MealsCard(plan: TodayPlan, canEdit: Boolean, onPlanDinner: (LocalDate) -> Unit) {
     SectionCard(stringResource(Res.string.today_meals_title)) {
         plan.lunches.forEach { l ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
@@ -480,8 +552,11 @@ private fun MealsCard(plan: TodayPlan, onPlanDinner: (LocalDate) -> Unit) {
         }
         val dinner = plan.dinner
         if (dinner == null) {
-            Text(stringResource(Res.string.today_no_dinner), style = MaterialTheme.typography.bodyLarge)
-            SmallAction(stringResource(Res.string.today_plan_dinner)) { onPlanDinner(plan.date) }
+            // Planning the menu is for parents; a caregiver just sees the lunches (if any).
+            if (canEdit) {
+                Text(stringResource(Res.string.today_no_dinner), style = MaterialTheme.typography.bodyLarge)
+                SmallAction(stringResource(Res.string.today_plan_dinner)) { onPlanDinner(plan.date) }
+            }
         } else {
             Text(stringResource(Res.string.today_dinner, dinner.title), style = MaterialTheme.typography.titleMedium)
             plan.lunchDinnerClash.forEach { (childId, keys) ->
@@ -495,13 +570,6 @@ private fun MealsCard(plan: TodayPlan, onPlanDinner: (LocalDate) -> Unit) {
 @Composable
 private fun TasksCard(plan: TodayPlan, onToggle: (se.pusslet.core.tasks.TaskOccurrence, Boolean) -> Unit) {
     SectionCard(stringResource(Res.string.today_tasks_title)) {
-        if (plan.myTasks.isEmpty()) {
-            Text(
-                stringResource(Res.string.today_no_tasks),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
         plan.myTasks.take(MAX_TASKS).forEach { t ->
             val supporting = t.date?.let { d ->
                 if (d < plan.date) stringResource(Res.string.today_overdue) else relativeDay(d, plan.date)
@@ -511,10 +579,11 @@ private fun TasksCard(plan: TodayPlan, onToggle: (se.pusslet.core.tasks.TaskOccu
     }
 }
 
+/** The next days that have something on them; a day with nothing is simply left out. */
 @Composable
-private fun UpcomingCard(plan: TodayPlan, onOpenOccurrence: (EventOccurrence) -> Unit) {
+private fun UpcomingCard(plan: TodayPlan, days: List<DayPreview>, onOpenOccurrence: (EventOccurrence) -> Unit) {
     SectionCard(stringResource(Res.string.today_upcoming_title)) {
-        plan.upcoming.forEach { day ->
+        days.forEach { day ->
             Column(Modifier.padding(vertical = Spacing.xs)) {
                 Text(relativeDay(day.date, plan.date).replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleSmall)
                 day.holidays.forEach {
@@ -522,13 +591,6 @@ private fun UpcomingCard(plan: TodayPlan, onOpenOccurrence: (EventOccurrence) ->
                         stringResource(Labels.holiday(it.id)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.tertiary,
-                    )
-                }
-                if (day.events.isEmpty() && day.dinner == null) {
-                    Text(
-                        stringResource(Res.string.today_upcoming_nothing),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 day.events.take(MAX_UPCOMING).forEach { o ->

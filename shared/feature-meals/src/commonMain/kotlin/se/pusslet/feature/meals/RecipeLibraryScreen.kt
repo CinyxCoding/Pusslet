@@ -3,7 +3,6 @@ package se.pusslet.feature.meals
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,14 +11,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,9 +28,11 @@ import se.pusslet.core.model.RecipeTag
 import se.pusslet.ui.components.EmptyState
 import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
+/** Mat › Recept: search, tag filters and the family's recipes. New recipes come from the round + (UX plan 1.2). */
 @Composable
 fun RecipeLibraryScreen(
     state: RecipeLibraryState,
@@ -42,8 +40,6 @@ fun RecipeLibraryScreen(
     onQuery: (String) -> Unit = {},
     onToggleTag: (RecipeTag) -> Unit = {},
     onOpen: (String) -> Unit = {},
-    onNew: () -> Unit = {},
-    onImport: () -> Unit = {},
 ) {
     if (state.loading) {
         LoadingBox()
@@ -55,21 +51,10 @@ fun RecipeLibraryScreen(
             start = Spacing.screenHorizontal,
             end = Spacing.screenHorizontal,
             top = Spacing.xs,
-            bottom = Spacing.xxl * 3 + bottomPadding.calculateBottomPadding(),
+            bottom = Spacing.listBottomInset + bottomPadding.calculateBottomPadding(),
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
-        if (state.canEdit) {
-            item(key = "actions") {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                    Button(onClick = onImport) { Text(stringResource(Res.string.recipe_import)) }
-                    OutlinedButton(onClick = onNew) {
-                        Icon(Icons.Filled.Add, contentDescription = null)
-                        Text(stringResource(Res.string.recipe_new))
-                    }
-                }
-            }
-        }
         if (state.total > 0) {
             item(key = "search") {
                 OutlinedTextField(
@@ -91,6 +76,7 @@ fun RecipeLibraryScreen(
                             selected = tag in state.tags,
                             onClick = { onToggleTag(tag) },
                             label = { Text(stringResource(tagLabel(tag))) },
+                            colors = SelectionColors.filterChip(),
                         )
                     }
                 }
@@ -110,15 +96,14 @@ fun RecipeLibraryScreen(
 
 @Composable
 private fun RecipeRow(recipe: Recipe, onClick: () -> Unit) {
+    // "45 min · ICA": portions and tags live in the recipe itself.
     val details = buildList {
         recipe.totalMinutes?.let { add(stringResource(Res.string.recipe_minutes, it)) }
-        add(stringResource(Res.string.recipe_servings_short, recipe.servings))
-        recipe.tags.sortedBy { it.ordinal }.take(2).forEach { add(stringResource(tagLabel(it))) }
         recipe.sourceName?.let { add(it) }
     }
     ListRow(
         title = recipe.title,
-        supporting = details.joinToString(" · "),
+        supporting = details.joinToString(" · ").ifEmpty { null },
         modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
         trailing = if (recipe.favorite) {
             {

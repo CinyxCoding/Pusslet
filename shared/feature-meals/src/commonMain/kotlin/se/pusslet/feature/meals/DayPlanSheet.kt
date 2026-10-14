@@ -24,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -48,6 +47,7 @@ import se.pusslet.core.meals.MealSuggestion
 import se.pusslet.core.meals.SuggestionReason
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
+import se.pusslet.ui.components.InfoPill
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.format.formatDateLong
@@ -166,9 +166,9 @@ private fun DayContext(state: DayEditorState) {
             color = MaterialTheme.colorScheme.tertiary,
         )
     }
-    state.lunches.forEach { lunch ->
+    groupLunches(state.lunches, wholeMenu = true).forEach { lunch ->
         Text(
-            stringResource(Res.string.today_lunch, lunch.child.firstName, lunch.dishes.joinToString(", ")),
+            stringResource(Res.string.today_lunch, lunch.children.joinToString(", ") { it.firstName }, lunch.dishes.joinToString(", ")),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -207,9 +207,10 @@ private fun Suggestions(suggestions: List<MealSuggestion>, chosen: String?, onPi
                 if (s.recipe.id == chosen) Icon(Icons.Filled.Check, contentDescription = stringResource(Res.string.meals_recipe_chosen))
             }
             if (s.reasons.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    s.reasons.sortedBy { it.ordinal }.forEach { reason ->
-                        SuggestionChip(onClick = { onPick(s.recipe) }, label = { Text(stringResource(reasonLabel(reason))) })
+                // At most two reasons, on one line (they inform; the whole row picks).
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    s.reasons.sortedBy { REASON_PRIORITY.indexOf(it) }.take(MAX_REASONS).forEach { reason ->
+                        InfoPill(stringResource(reasonLabel(reason)))
                     }
                 }
             }
@@ -290,3 +291,14 @@ internal fun reasonLabel(reason: SuggestionReason): StringResource = when (reaso
 }
 
 private const val MAX_MATCHES = 8
+private const val MAX_REASONS = 2
+
+/** The reasons about this very day first; "Favorit" last, since the star already says it. */
+private val REASON_PRIORITY = listOf(
+    SuggestionReason.QuickForBusyEvening,
+    SuggestionReason.DiffersFromSchoolLunch,
+    SuggestionReason.UsesWhatYouHave,
+    SuggestionReason.VariesTheWeek,
+    SuggestionReason.NotRecently,
+    SuggestionReason.Favorite,
+)

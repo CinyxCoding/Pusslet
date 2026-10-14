@@ -1,5 +1,6 @@
 package se.pusslet.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -76,9 +76,19 @@ fun SectionCard(
     }
 }
 
-enum class BannerKind { Info, Warning, Problem }
+/** The three attention levels (UX plan 1.5). They differ in form and icon, not only in colour. */
+enum class BannerKind {
+    /** A quiet line: icon and text in the secondary text colour, no card. */
+    Info,
 
-/** Contextual card for things that need attention ("Ingen kan hämta Ella"). */
+    /** A reminder: unfilled card with a terracotta topic icon (gift, school …). */
+    Warning,
+
+    /** A real problem today: filled `errorContainer` card with "!" and, ideally, an action. */
+    Problem,
+}
+
+/** Something that needs attention, from a quiet note to "Ingen kan hämta Ella kl 15:45". */
 @Composable
 fun Banner(
     text: String,
@@ -88,25 +98,45 @@ fun Banner(
     icon: ImageVector? = null,
     actions: (@Composable () -> Unit)? = null,
 ) {
-    val (container, content) = when (kind) {
-        BannerKind.Info -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
-        BannerKind.Warning -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-        BannerKind.Problem -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-    }
-    Card(modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = container, contentColor = content)) {
-        Column(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)) {
-            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                Icon(
-                    icon ?: if (kind == BannerKind.Info) Icons.Filled.Info else Icons.Filled.Warning,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp).padding(top = Spacing.xxs),
-                )
-                Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            }
+    val colors = MaterialTheme.colorScheme
+    when (kind) {
+        BannerKind.Info -> Column(modifier.fillMaxWidth().padding(vertical = Spacing.xs)) {
+            BannerLine(text, icon ?: Icons.Filled.Info, iconTint = colors.onSurfaceVariant, textColor = colors.onSurfaceVariant)
             if (actions != null) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { actions() }
             }
         }
+        BannerKind.Warning -> Card(
+            modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = colors.surface, contentColor = colors.onSurface),
+            border = BorderStroke(1.dp, colors.outlineVariant),
+        ) {
+            BannerBody(text, icon ?: Icons.Filled.Info, iconTint = colors.tertiary, actions = actions)
+        }
+        BannerKind.Problem -> Card(
+            modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = colors.errorContainer, contentColor = colors.onErrorContainer),
+        ) {
+            BannerBody(text, icon ?: PussletIcons.PriorityHigh, iconTint = colors.onErrorContainer, actions = actions)
+        }
+    }
+}
+
+@Composable
+private fun BannerBody(text: String, icon: ImageVector, iconTint: Color, actions: (@Composable () -> Unit)?) {
+    Column(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md)) {
+        BannerLine(text, icon, iconTint = iconTint, textColor = Color.Unspecified)
+        if (actions != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { actions() }
+        }
+    }
+}
+
+@Composable
+private fun BannerLine(text: String, icon: ImageVector, iconTint: Color, textColor: Color) {
+    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp).padding(top = Spacing.xxs))
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = textColor, modifier = Modifier.weight(1f))
     }
 }
 

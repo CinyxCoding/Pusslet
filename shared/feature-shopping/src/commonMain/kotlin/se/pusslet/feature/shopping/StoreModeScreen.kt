@@ -125,10 +125,10 @@ fun StoreModeScreen(
     ) {
         item(key = "left") {
             Text(
-                if (state.openCount == 0) {
-                    stringResource(Res.string.shopping_nothing_left)
-                } else {
-                    stringResource(Res.string.shopping_left_count, state.openCount)
+                when {
+                    state.isEmpty -> stringResource(Res.string.shopping_empty_title)
+                    state.allBought -> stringResource(Res.string.shopping_nothing_left)
+                    else -> stringResource(Res.string.shopping_left_count, state.openCount)
                 },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -151,7 +151,6 @@ fun StoreModeScreen(
             items(group.items, key = { it.id }) { item ->
                 ItemRow(
                     item = item,
-                    addedBy = null,
                     onToggle = { onToggle(item, it) },
                     onEdit = { onEdit(item) },
                     large = true,
@@ -173,7 +172,6 @@ fun StoreModeScreen(
             items(state.checked, key = { it.id }) { item ->
                 ItemRow(
                     item = item,
-                    addedBy = null,
                     onToggle = { onToggle(item, it) },
                     onEdit = { onEdit(item) },
                     large = true,

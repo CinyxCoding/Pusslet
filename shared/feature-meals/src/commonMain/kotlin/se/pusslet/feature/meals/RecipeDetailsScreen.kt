@@ -160,6 +160,7 @@ fun RecipeDetailsRoute(
             onAddToList = viewModel::addToShoppingList,
             onPlan = { pickDate = true },
             onMatch = { showMatching = true },
+            onRetryNutrition = viewModel::retryNutrition,
         )
     }
 
@@ -205,6 +206,7 @@ fun RecipeDetailsScreen(
     onAddToList: () -> Unit = {},
     onPlan: () -> Unit = {},
     onMatch: () -> Unit = {},
+    onRetryNutrition: () -> Unit = {},
 ) {
     val recipe = state.recipe ?: return
     val platform = LocalPlatformActions.current
@@ -272,7 +274,9 @@ fun RecipeDetailsScreen(
                 }
             }
         }
-        item(key = "nutrition") { NutritionCard(state.nutrition, state.servings, onMatch = onMatch, canMatch = state.canEdit) }
+        item(key = "nutrition") {
+            NutritionCard(state.nutrition, state.servings, onMatch = onMatch, canMatch = state.canEdit, onRetry = onRetryNutrition)
+        }
     }
 }
 
@@ -318,7 +322,7 @@ private fun IngredientsCard(ingredients: List<Ingredient>) {
 
 /** Neutral and informative (no targets, no judging words); always says how complete the estimate is and its source. */
 @Composable
-private fun NutritionCard(state: NutritionState, servings: Int, onMatch: () -> Unit, canMatch: Boolean) {
+private fun NutritionCard(state: NutritionState, servings: Int, onMatch: () -> Unit, canMatch: Boolean, onRetry: () -> Unit) {
     SectionCard(title = stringResource(Res.string.nutrition_title)) {
         when (state) {
             NutritionState.Loading -> Row(
@@ -328,8 +332,10 @@ private fun NutritionCard(state: NutritionState, servings: Int, onMatch: () -> U
                 CircularProgressIndicator(Modifier.padding(Spacing.xs))
                 Text(stringResource(Res.string.nutrition_loading), style = MaterialTheme.typography.bodyMedium)
             }
-            NutritionState.Unavailable ->
+            NutritionState.Unavailable -> {
                 Text(stringResource(Res.string.nutrition_unavailable), style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = onRetry) { Text(stringResource(Res.string.action_retry)) }
+            }
             is NutritionState.Ready -> NutritionValues(state.summary, servings)
         }
         if (canMatch && state is NutritionState.Ready) {

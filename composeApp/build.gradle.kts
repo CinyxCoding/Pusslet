@@ -91,6 +91,7 @@ android {
             resValue("string", "app_name", "$appName Demo")
             buildConfigField("String", "BACKEND", "\"emulator\"")
             buildConfigField("boolean", "SEED_DEMO_DATA", "true")
+            buildConfigField("boolean", "DEVELOPER_TOOLS", "true")
             // "demo-" project ids make the emulators run without any real Firebase project.
             firebase(
                 mapOf(
@@ -109,6 +110,7 @@ android {
             resValue("string", "app_name", "$appName Dev")
             buildConfigField("String", "BACKEND", "\"firebase\"")
             buildConfigField("boolean", "SEED_DEMO_DATA", "false")
+            buildConfigField("boolean", "DEVELOPER_TOOLS", "true")
             firebase(firebaseOptions("dev", "$baseApplicationId.dev"))
         }
         // Production (google-services.json in src/prod/).
@@ -116,6 +118,7 @@ android {
             dimension = "env"
             buildConfigField("String", "BACKEND", "\"firebase\"")
             buildConfigField("boolean", "SEED_DEMO_DATA", "false")
+            buildConfigField("boolean", "DEVELOPER_TOOLS", "false")
             firebase(firebaseOptions("prod", baseApplicationId))
         }
     }

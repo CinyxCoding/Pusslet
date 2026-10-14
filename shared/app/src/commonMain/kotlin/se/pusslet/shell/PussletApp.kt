@@ -5,9 +5,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -19,6 +18,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,17 +29,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.EventOccurrence
@@ -78,18 +79,24 @@ import se.pusslet.shell.navigation.TopLevelTab
 import se.pusslet.shell.navigation.rememberAppNavigator
 import se.pusslet.shell.quickadd.QuickAddSheet
 import se.pusslet.shell.quickadd.QuickAddViewModel
+import se.pusslet.shell.quickadd.ReceiptAction
+import se.pusslet.shell.quickadd.ReceiptContext
+import se.pusslet.shell.quickadd.receiptMessage
+import se.pusslet.ui.components.AddButtonState
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.LocalAddButton
 import se.pusslet.ui.components.PussletIcons
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_undo
+import se.pusslet.ui.resources.months_short
 import se.pusslet.ui.resources.nav_calendar
 import se.pusslet.ui.resources.nav_meals
 import se.pusslet.ui.resources.nav_more
 import se.pusslet.ui.resources.nav_shopping
 import se.pusslet.ui.resources.nav_today
-import se.pusslet.ui.resources.quick_add
-import se.pusslet.ui.resources.quick_add_description
-import se.pusslet.ui.resources.quickadd_saved
+import se.pusslet.ui.resources.quickadd_action_show
+import se.pusslet.ui.resources.weekdays_short
 import se.pusslet.ui.theme.PussletTheme
 
 /**
@@ -140,6 +147,10 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
     var showQuickAdd by rememberSaveable { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    // Each tab root says what the round + does there (ADR-023); screens without a registration have no +.
+    val addButton = remember { AddButtonState() }
+    val weekdaysShort = stringArrayResource(Res.array.weekdays_short)
+    val monthsShort = stringArrayResource(Res.array.months_short)
 
     LaunchedEffect(incoming) {
         when (incoming) {
@@ -158,32 +169,53 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
         onIncomingHandled()
     }
 
+    val openQuickAdd: (LocalDate?) -> Unit = { date ->
+        quickAdd.start(date = date)
+        showQuickAdd = true
+    }
+
     fun onSaved(outcome: QuickAddOutcome) {
         showQuickAdd = false
+        val context = ReceiptContext(quickAdd.today(), weekdaysShort, monthsShort, quickAdd.state.value.people)
         scope.launch {
+            val message = receiptMessage(outcome.receipt, context)
+            val actionLabel = when (message.action) {
+                ReceiptAction.Undo -> getString(Res.string.action_undo)
+                ReceiptAction.Show -> getString(Res.string.quickadd_action_show)
+                null -> null
+            }
             val result = snackbar.showSnackbar(
-                getString(Res.string.quickadd_saved),
-                getString(Res.string.action_undo),
-                duration = SnackbarDuration.Long,
+                message.text,
+                actionLabel,
+                duration = if (actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short,
             )
-            if (result == SnackbarResult.ActionPerformed) quickAdd.undo(outcome)
+            if (result == SnackbarResult.ActionPerformed) {
+                when (message.action) {
+                    ReceiptAction.Undo -> quickAdd.undo(outcome)
+                    ReceiptAction.Show -> navigator.selectTab(TopLevelTab.Shopping)
+                    null -> Unit
+                }
+            }
         }
     }
 
-    Scaffold(
-        bottomBar = { if (navigator.atTabRoot) PussletBottomBar(navigator) },
-        floatingActionButton = {
-            if (navigator.atTabRoot && navigator.currentTab != TopLevelTab.More) {
-                QuickAddButton(onClick = {
-                    quickAdd.start()
-                    showQuickAdd = true
-                })
+    CompositionLocalProvider(LocalAddButton provides addButton) {
+        Scaffold(
+            bottomBar = { if (navigator.atTabRoot) PussletBottomBar(navigator) },
+            floatingActionButton = {
+                val label = addButton.label
+                if (navigator.atTabRoot && label != null) {
+                    // Round and without text; the label is the TalkBack name ("Lägg till vara").
+                    FloatingActionButton(onClick = { addButton.click() }) {
+                        Icon(Icons.Filled.Add, contentDescription = label)
+                    }
+                }
+            },
+            snackbarHost = { SnackbarHost(snackbar) },
+        ) { padding ->
+            Box(Modifier.fillMaxSize()) {
+                AppNavDisplay(navigator, padding, openQuickAdd)
             }
-        },
-        snackbarHost = { SnackbarHost(snackbar) },
-    ) { padding ->
-        Box(Modifier.fillMaxSize()) {
-            AppNavDisplay(navigator, padding)
         }
     }
     if (showQuickAdd) {
@@ -192,7 +224,7 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) 
 }
 
 @Composable
-private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
+private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues, onQuickAdd: (LocalDate?) -> Unit) {
     val openOccurrence: (EventOccurrence) -> Unit = { navigator.navigate(Route.EventDetails(it.event.id, it.occurrenceDate)) }
     NavDisplay(
         backStack = navigator.backStack,
@@ -208,18 +240,23 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                     onPlanDinner = { navigator.navigate(Route.Meals) },
                     onOpenSettings = { navigator.navigate(Route.Settings) },
                     onOpenHandover = { navigator.navigate(Route.Handover(it)) },
+                    onQuickAdd = onQuickAdd,
                     contentPadding = padding,
                 )
             }
             entry<Route.Calendar> {
-                CalendarRoute(onOpenOccurrence = openOccurrence, onNewEvent = {
-                    navigator.navigate(Route.EventEditor(date = it))
-                }, contentPadding = padding)
+                CalendarRoute(
+                    onOpenOccurrence = openOccurrence,
+                    onNewEvent = { navigator.navigate(Route.EventEditor(date = it)) },
+                    onQuickAdd = onQuickAdd,
+                    contentPadding = padding,
+                )
             }
             entry<Route.Meals> {
                 MealsRoute(
                     onOpenRecipe = { navigator.navigate(Route.RecipeDetails(it)) },
                     onNewRecipe = { navigator.navigate(Route.RecipeEditor()) },
+                    onPasteRecipe = { navigator.navigate(Route.RecipeEditor(paste = true)) },
                     onImportRecipe = { navigator.navigate(Route.RecipeImport()) },
                     onShopForWeek = { navigator.navigate(Route.Shopping) },
                     contentPadding = padding,
@@ -229,7 +266,7 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues) {
                 RecipeDetailsRoute(r.recipeId, onBack = navigator::goBack, onEdit = { navigator.navigate(Route.RecipeEditor(it)) })
             }
             entry<Route.RecipeEditor> { r ->
-                RecipeEditorRoute(r.recipeId, r.sourceUrl, onDone = { saved ->
+                RecipeEditorRoute(r.recipeId, r.sourceUrl, startPasting = r.paste, onDone = { saved ->
                     navigator.goBack()
                     // A new recipe opens right away; an edited one is already open underneath.
                     if (saved != null && r.recipeId == null) navigator.navigate(Route.RecipeDetails(saved))
@@ -309,44 +346,40 @@ private fun MoreDestination.route(): Route = when (this) {
     MoreDestination.Privacy -> Route.Privacy
 }
 
-@Composable
-private fun QuickAddButton(onClick: () -> Unit) {
-    val description = stringResource(Res.string.quick_add_description)
-    ExtendedFloatingActionButton(
-        onClick = onClick,
-        icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-        text = { Text(stringResource(Res.string.quick_add)) },
-        modifier = Modifier.semantics { contentDescription = description },
-    )
-}
-
 private data class TabSpec(val tab: TopLevelTab, val label: StringResource, val icon: ImageVector)
 
 private val tabs = listOf(
-    TabSpec(TopLevelTab.Today, Res.string.nav_today, PussletIcons.Today),
+    TabSpec(TopLevelTab.Today, Res.string.nav_today, PussletIcons.Sun),
     TabSpec(TopLevelTab.Calendar, Res.string.nav_calendar, PussletIcons.CalendarMonth),
     TabSpec(TopLevelTab.Meals, Res.string.nav_meals, PussletIcons.Restaurant),
     TabSpec(TopLevelTab.Shopping, Res.string.nav_shopping, Icons.Filled.ShoppingCart),
-    TabSpec(TopLevelTab.More, Res.string.nav_more, Icons.Filled.Menu),
+    TabSpec(TopLevelTab.More, Res.string.nav_more, PussletIcons.MoreHoriz),
 )
 
 @Composable
 private fun PussletBottomBar(navigator: AppNavigator) {
-    // With very large text only the selected tab keeps its label, so labels never wrap or get cut.
-    val compact = LocalDensity.current.fontScale > LARGE_FONT_SCALE
     NavigationBar {
         tabs.forEach { spec ->
-            val label = stringResource(spec.label)
             NavigationBarItem(
                 selected = navigator.currentTab == spec.tab,
                 onClick = { navigator.selectTab(spec.tab) },
-                // Hidden labels still need a name for TalkBack.
-                icon = { Icon(spec.icon, contentDescription = if (compact) label else null) },
-                label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-                alwaysShowLabel = !compact,
+                // The label names the tab for TalkBack too.
+                icon = { Icon(spec.icon, contentDescription = null) },
+                label = { NavLabel(stringResource(spec.label)) },
+                colors = SelectionColors.navigationBarItem(),
             )
         }
     }
 }
 
-private const val LARGE_FONT_SCALE = 1.3f
+/** Labels always show (UX plan 1.3). Only their font scale is capped, so five labels fit even with very large text. */
+@Composable
+private fun NavLabel(text: String) {
+    val density = LocalDensity.current
+    val capped = Density(density.density, fontScale = minOf(density.fontScale, MAX_LABEL_FONT_SCALE))
+    CompositionLocalProvider(LocalDensity provides capped) {
+        Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+private const val MAX_LABEL_FONT_SCALE = 1.3f

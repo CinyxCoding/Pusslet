@@ -3,11 +3,15 @@ package se.pusslet.data
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import se.pusslet.core.model.Family
@@ -23,6 +27,7 @@ import se.pusslet.data.sync.Collections
 import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.RemotePermissionException
 import se.pusslet.data.sync.SyncEngine
+import se.pusslet.data.sync.SyncLocalStore
 import kotlin.time.Clock
 
 enum class BackendMode {
@@ -43,6 +48,8 @@ data class BackendConfig(
     val emulatorHost: String = "10.0.2.2",
     /** Host for invite links (https://<linkHost>/join/<code>). */
     val linkHost: String = "pusslet.web.app",
+    /** Developer rows in Settings ("Visa första start igen"): demo and dev builds only, never prod. Defaults to the demo flavor. */
+    val developerTools: Boolean = seedDemoData,
 )
 
 /**
@@ -68,10 +75,14 @@ class AppCoordinator(
     /** True once the session is restored (and the demo family seeded): the UI can decide between onboarding and Today. */
     val ready: kotlinx.coroutines.flow.StateFlow<Boolean> = _ready
 
+    /** True while the family on this device is the example family ("Familjen Lind"), for a quiet "Exempelfamilj" row. */
+    val isDemo: Flow<Boolean> = sessions.session.map { it.demo }.distinctUntilChanged()
+
     fun start() {
         scope.launch {
             val session = sessions.load()
-            if (config.seedDemoData && !session.hasFamily) {
+            // After "Visa första start igen" the welcome screen stays, even when the app is restarted.
+            if (config.seedDemoData && !session.hasFamily && !prefs.get(Prefs.SkipDemoSeed)) {
                 seed.seed(clock.todayIn(zone))
                 prefs.set(Prefs.OnboardingDone, true)
             }
@@ -124,10 +135,33 @@ class AppCoordinator(
     }
 
     /** Leaves the current family on this device (data stays for the others). */
-    suspend fun forgetFamilyOnDevice(local: se.pusslet.data.sync.SyncLocalStore) {
+    suspend fun forgetFamilyOnDevice(local: SyncLocalStore) {
         val fid = sessions.session.value.familyId ?: return
         engine.stop()
         local.deleteFamily(fid)
         sessions.update { it.copy(familyId = null, memberId = null, demo = false) }
+    }
+
+    /**
+     * Developer tool ([BackendConfig.developerTools] only): removes the family and the example data from this device
+     * and resets onboarding, so the welcome screen shows again. The demo family is not seeded again at the next start.
+     * Fails soft: returns false (and changes nothing visible) when it is not allowed or something went wrong.
+     */
+    suspend fun replayOnboarding(local: SyncLocalStore): Boolean {
+        if (!config.developerTools) return false
+        // The screen that asked is torn down as soon as the session changes; finish the steps anyway.
+        return withContext(NonCancellable) {
+            try {
+                prefs.set(Prefs.SkipDemoSeed, true)
+                forgetFamilyOnDevice(local)
+                prefs.set(Prefs.OnboardingDone, false)
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.w { "Could not reset onboarding (${e::class.simpleName})" }
+                false
+            }
+        }
     }
 }

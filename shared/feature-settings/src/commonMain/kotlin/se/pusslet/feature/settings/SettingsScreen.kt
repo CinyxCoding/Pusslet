@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -40,7 +41,9 @@ import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.Place
+import se.pusslet.core.model.Role
 import se.pusslet.core.model.SwedishPlaces
+import se.pusslet.data.AppCoordinator
 import se.pusslet.data.BackendConfig
 import se.pusslet.data.repository.AppTheme
 import se.pusslet.data.repository.CalendarRepository
@@ -51,8 +54,11 @@ import se.pusslet.data.repository.MorningBrief
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.TimeWindow
+import se.pusslet.data.session.SessionProvider
+import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.components.TimeField
 import se.pusslet.ui.components.ValueField
@@ -73,6 +79,11 @@ data class SettingsUiState(
     val exportCalendar: Long = -1,
     val crashReports: Boolean = false,
     val version: String = "",
+    /** Weather place and calendar export write what the family shares; caregivers cannot (firestore.rules). */
+    val canEditFamily: Boolean = true,
+    /** Demo and dev builds: the developer rows ("Visa första start igen"). */
+    val developerTools: Boolean = false,
+    val replayFailed: Boolean = false,
 )
 
 class SettingsViewModel(
@@ -81,8 +92,12 @@ class SettingsViewModel(
     private val deviceCalendars: DeviceCalendarSource,
     private val calendar: CalendarRepository,
     config: BackendConfig,
+    sessions: SessionProvider,
+    private val coordinator: AppCoordinator,
+    private val local: SyncLocalStore,
 ) : ViewModel() {
     val calendars = MutableStateFlow<List<DeviceCalendar>>(emptyList())
+    private val replayFailed = MutableStateFlow(false)
 
     private val appearance =
         combine(prefs.observe(Prefs.Theme), prefs.observe(Prefs.DynamicColor), family.settings) { t, d, s -> Triple(t, d, s.weatherPlace) }
@@ -103,9 +118,33 @@ class SettingsViewModel(
             Triple(r, e, c)
         }
 
-    val state: StateFlow<SettingsUiState> = combine(appearance, notify, cal) { a, n, c ->
-        SettingsUiState(a.first, a.second, a.third, n.first, n.second, n.third, c.first, c.second, c.third, config.versionName)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState(version = config.versionName))
+    private val access = combine(sessions.session, replayFailed) { s, failed -> (s.role == Role.Parent) to failed }
+
+    val state: StateFlow<SettingsUiState> = combine(appearance, notify, cal, access) { a, n, c, x ->
+        SettingsUiState(
+            a.first,
+            a.second,
+            a.third,
+            n.first,
+            n.second,
+            n.third,
+            c.first,
+            c.second,
+            c.third,
+            config.versionName,
+            canEditFamily = x.first,
+            developerTools = config.developerTools,
+            replayFailed = x.second,
+        )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        SettingsUiState(
+            version = config.versionName,
+            canEditFamily = sessions.session.value.role == Role.Parent,
+            developerTools = config.developerTools,
+        ),
+    )
 
     fun loadCalendars() {
         viewModelScope.launch { calendars.value = deviceCalendars.calendars() }
@@ -142,6 +181,9 @@ class SettingsViewModel(
         calendars.value = deviceCalendars.calendars()
     }
 
+    /** Developer tools: forgets the family on this device and resets onboarding; the shell then shows the welcome screen. */
+    fun replayOnboarding() = launch { replayFailed.value = !coordinator.replayOnboarding(local) }
+
     private fun launch(block: suspend () -> Unit) {
         viewModelScope.launch { block() }
     }
@@ -172,9 +214,12 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMod
                         AppTheme.Light to Res.string.theme_light,
                         AppTheme.Dark to Res.string.theme_dark,
                     ).forEach { (t, label) ->
-                        FilterChip(selected = state.theme == t, onClick = {
-                            viewModel.setTheme(t)
-                        }, label = { Text(stringResource(label)) })
+                        FilterChip(
+                            selected = state.theme == t,
+                            onClick = { viewModel.setTheme(t) },
+                            label = { Text(stringResource(label)) },
+                            colors = SelectionColors.filterChip(),
+                        )
                     }
                 }
                 SwitchRow(stringResource(Res.string.settings_dynamic_color), state.dynamicColor, viewModel::setDynamic)
@@ -185,19 +230,26 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMod
                         "sv" to Res.string.language_sv,
                         "en" to Res.string.language_en,
                     ).forEach { (tag, label) ->
-                        FilterChip(selected = language == tag, onClick = {
-                            language = tag
-                            platform.setLanguage(tag)
-                        }, label = { Text(stringResource(label)) })
+                        FilterChip(
+                            selected = language == tag,
+                            onClick = {
+                                language = tag
+                                platform.setLanguage(tag)
+                            },
+                            label = { Text(stringResource(label)) },
+                            colors = SelectionColors.filterChip(),
+                        )
                     }
                 }
             }
-            SectionCard(stringResource(Res.string.settings_weather_place)) {
-                ValueField(
-                    stringResource(Res.string.settings_weather_place),
-                    state.place?.name?.ifBlank { null } ?: stringResource(Res.string.settings_weather_place_none),
-                    onClick = { pickPlace = true },
-                )
+            if (state.canEditFamily) {
+                SectionCard(stringResource(Res.string.settings_weather_place)) {
+                    ValueField(
+                        stringResource(Res.string.settings_weather_place),
+                        state.place?.name?.ifBlank { null } ?: stringResource(Res.string.settings_weather_place_none),
+                        onClick = { pickPlace = true },
+                    )
+                }
             }
             SectionCard(stringResource(Res.string.settings_notifications)) {
                 SwitchRow(
@@ -250,22 +302,29 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMod
                 calendars.filter { !it.ownedByApp }.forEach { c ->
                     SwitchRow(c.name, c.id in state.readCalendars, { viewModel.toggleReadCalendar(c.id) }, supporting = c.accountName)
                 }
-                if (hasPermission) {
+                if (hasPermission && state.canEditFamily) {
                     Text(stringResource(Res.string.settings_export_calendar), style = MaterialTheme.typography.labelLarge)
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                        FilterChip(selected = state.exportCalendar < 0, onClick = {
-                            viewModel.setExport(null, appCalendarName)
-                        }, label = { Text(stringResource(Res.string.settings_export_none)) })
+                        FilterChip(
+                            selected = state.exportCalendar < 0,
+                            onClick = { viewModel.setExport(null, appCalendarName) },
+                            label = { Text(stringResource(Res.string.settings_export_none)) },
+                            colors = SelectionColors.filterChip(),
+                        )
                         val app = calendars.firstOrNull { it.ownedByApp }
                         FilterChip(
                             selected = app != null && state.exportCalendar == app.id,
                             onClick = { viewModel.setExport(app?.id ?: SettingsViewModel.APP_CALENDAR, appCalendarName) },
                             label = { Text(stringResource(Res.string.settings_export_app_calendar)) },
+                            colors = SelectionColors.filterChip(),
                         )
                         calendars.filter { it.writable && !it.ownedByApp }.forEach { c ->
-                            FilterChip(selected = state.exportCalendar == c.id, onClick = {
-                                viewModel.setExport(c.id, appCalendarName)
-                            }, label = { Text(c.name) })
+                            FilterChip(
+                                selected = state.exportCalendar == c.id,
+                                onClick = { viewModel.setExport(c.id, appCalendarName) },
+                                label = { Text(c.name) },
+                                colors = SelectionColors.filterChip(),
+                            )
                         }
                     }
                 }
@@ -277,6 +336,21 @@ fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMod
                     viewModel::setCrashReports,
                     supporting = stringResource(Res.string.settings_crash_reports_body),
                 )
+            }
+            if (state.developerTools) {
+                SectionCard(stringResource(Res.string.settings_dev_title)) {
+                    OutlinedButton(
+                        onClick = viewModel::replayOnboarding,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
+                    ) { Text(stringResource(Res.string.settings_dev_replay_onboarding)) }
+                    if (state.replayFailed) {
+                        Text(
+                            stringResource(Res.string.error_generic),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
             }
             Text(
                 stringResource(Res.string.settings_version, state.version),

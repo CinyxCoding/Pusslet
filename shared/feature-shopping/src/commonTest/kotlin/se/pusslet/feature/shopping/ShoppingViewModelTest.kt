@@ -210,6 +210,7 @@ class ShoppingViewModelTest {
 
         vm.setChecked(milk, true, inStore = true)
         val inCart = assertIs<ShoppingMessage.InCart>(messages.last())
+        assertTrue(inCart.inStore)
         assertEquals(listOf("Mjölk"), vm.state.value.checked.map { it.name })
         assertEquals(1, purchases.log.size, "ticking off feeds the purchase history")
 
@@ -222,7 +223,76 @@ class ShoppingViewModelTest {
         assertEquals(0, vm.state.value.openCount)
 
         vm.clearChecked()
+        assertEquals(2, assertIs<ShoppingMessage.Cleared>(messages.last()).items.size)
         assertTrue(vm.state.value.isEmpty)
+    }
+
+    @Test
+    fun tickingOffOnThePlanningListAlsoOffersUndo() = runTest {
+        seed()
+        val (vm, messages) = viewModel()
+        vm.add("mjölk, bröd")
+        val milk = vm.state.value.groups.flatMap { it.items }.first { it.name == "Mjölk" }
+
+        vm.setChecked(milk, true)
+        val ticked = assertIs<ShoppingMessage.InCart>(messages.last())
+        assertFalse(ticked.inStore, "\"Mjölk bockad\", not \"i vagnen\"")
+        assertEquals(listOf("Mjölk"), vm.state.value.checked.map { it.name })
+
+        vm.restore(ticked.item)
+        assertTrue(vm.state.value.checked.isEmpty())
+        assertEquals(Aisle.Dairy, vm.state.value.groups.first { g -> g.items.any { it.name == "Mjölk" } }.aisle, "same aisle again")
+
+        // The last item on the planning list still offers "Ångra" instead of celebrating.
+        vm.state.value.groups.flatMap { it.items }.forEach { vm.setChecked(it, true) }
+        assertIs<ShoppingMessage.InCart>(messages.last())
+        assertTrue(messages.none { it is ShoppingMessage.AllDone })
+    }
+
+    @Test
+    fun clearingTickedItemsCanBeUndone() = runTest {
+        seed()
+        val (vm, messages) = viewModel()
+        vm.add("mjölk, bröd, ost")
+        vm.state.value.groups.flatMap { it.items }.filter { it.name != "Ost" }.forEach { vm.setChecked(it, true) }
+        assertEquals(2, vm.state.value.checked.size)
+
+        vm.clearChecked()
+        val cleared = assertIs<ShoppingMessage.Cleared>(messages.last())
+        assertEquals(setOf("Mjölk", "Bröd"), cleared.items.map { it.name }.toSet())
+        assertTrue(vm.state.value.checked.isEmpty())
+        assertEquals(1, vm.state.value.openCount)
+
+        vm.restoreCleared(cleared.items)
+        assertEquals(setOf("Mjölk", "Bröd"), vm.state.value.checked.map { it.name }.toSet(), "back as ticked off")
+        assertEquals(1, vm.state.value.openCount)
+
+        // Nothing ticked off: nothing to clear and no snackbar.
+        vm.state.value.checked.forEach { vm.remove(it) }
+        val before = messages.size
+        vm.clearChecked()
+        assertEquals(before, messages.size)
+    }
+
+    @Test
+    fun aNewListIsEmptyRatherThanAllBought() = runTest {
+        seed()
+        val (vm, _) = viewModel()
+        with(vm.state.value) {
+            assertTrue(isEmpty, "\"Listan är tom\"")
+            assertFalse(allBought, "not \"Allt är handlat\"")
+            assertFalse(canStartShopping, "no \"Jag handlar nu\" without anything to buy")
+        }
+
+        vm.add("mjölk")
+        assertTrue(vm.state.value.canStartShopping)
+
+        vm.setChecked(vm.state.value.groups.single().items.single(), true)
+        with(vm.state.value) {
+            assertFalse(isEmpty)
+            assertTrue(allBought)
+            assertFalse(canStartShopping)
+        }
     }
 
     @Test

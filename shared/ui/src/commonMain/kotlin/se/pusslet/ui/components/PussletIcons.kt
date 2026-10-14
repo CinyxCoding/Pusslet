@@ -93,6 +93,66 @@ object PussletIcons {
         )
     }
 
+    /** Idag in the bottom bar (Material "WbSunny"). */
+    val Sun: ImageVector by lazy {
+        icon(
+            "Sun",
+            "M6.76,4.84l-1.8,-1.79 -1.41,1.41 1.79,1.79 1.42,-1.41zM4,10.5L1,10.5v2h3v-2zM13,0.55h-2L11,3.5h2L13,0.55z" +
+                "M20.45,4.46l-1.41,-1.41 -1.79,1.79 1.41,1.41 1.79,-1.79zM17.24,18.16l1.79,1.8 1.41,-1.41 -1.8,-1.79 -1.4,1.4z" +
+                "M20,10.5v2h3v-2h-3zM12,5.5c-3.31,0 -6,2.69 -6,6s2.69,6 6,6 6,-2.69 6,-6 -2.69,-6 -6,-6z" +
+                "M11,22.45h2L13,19.5h-2v2.95zM3.55,18.54l1.41,1.41 1.79,-1.8 -1.41,-1.41 -1.79,1.8z",
+        )
+    }
+
+    /** Mer in the bottom bar. */
+    val MoreHoriz: ImageVector by lazy {
+        icon(
+            "MoreHoriz",
+            "M6,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2zM18,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2z" +
+                "M12,10c-1.1,0 -2,0.9 -2,2s0.9,2 2,2 2,-0.9 2,-2 -0.9,-2 -2,-2z",
+        )
+    }
+
+    /** Party reminders (Material "CardGiftcard"). */
+    val Gift: ImageVector by lazy {
+        icon(
+            "Gift",
+            "M20,6h-2.18c0.11,-0.31 0.18,-0.65 0.18,-1 0,-1.66 -1.34,-3 -3,-3 -1.05,0 -1.96,0.54 -2.5,1.35l-0.5,0.67 -0.5,-0.68" +
+                "C10.96,2.54 10.05,2 9,2 7.34,2 6,3.34 6,5c0,0.35 0.07,0.69 0.18,1L4,6c-1.11,0 -1.99,0.89 -1.99,2L2,19" +
+                "c0,1.11 0.89,2 2,2h16c1.11,0 2,-0.89 2,-2L22,8c0,-1.11 -0.89,-2 -2,-2z" +
+                "M15,4c0.55,0 1,0.45 1,1s-0.45,1 -1,1 -1,-0.45 -1,-1 0.45,-1 1,-1z" +
+                "M9,4c0.55,0 1,0.45 1,1s-0.45,1 -1,1 -1,-0.45 -1,-1 0.45,-1 1,-1z" +
+                "M20,19L4,19v-2h16v2zM20,14L4,14L4,8h5.08L7,10.83 8.62,12 11,8.76l1,-1.36 1,1.36L15.38,12 17,10.83 14.92,8L20,8v6z",
+        )
+    }
+
+    /** Study days and school breaks. */
+    val School: ImageVector by lazy {
+        icon("School", "M5,13.18v4L12,21l7,-3.82v-4L12,17l-7,-3.82zM12,3L1,9l11,6 9,-4.91V17h2V9L12,3z")
+    }
+
+    /** Problems (the filled attention level). */
+    val PriorityHigh: ImageVector by lazy {
+        icon("PriorityHigh", "M12,19m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0zM10,3h4v12h-4z")
+    }
+
+    /** Offline or stale data. */
+    val CloudOff: ImageVector by lazy {
+        icon(
+            "CloudOff",
+            "M19.35,10.04C18.67,6.59 15.64,4 12,4c-1.48,0 -2.85,0.43 -4.01,1.17l1.46,1.46C10.21,6.23 11.08,6 12,6" +
+                "c3.04,0 5.5,2.46 5.5,5.5v0.5H19c1.66,0 3,1.34 3,3 0,1.13 -0.64,2.11 -1.56,2.62l1.45,1.45" +
+                "C23.16,18.16 24,16.68 24,15c0,-2.64 -2.05,-4.78 -4.65,-4.96z" +
+                "M3,5.27l2.75,2.74C2.56,8.15 0,10.77 0,14c0,3.31 2.69,6 6,6h11.73l2,2L21,20.73 4.27,4 3,5.27z" +
+                "M7.73,10l8,8H6c-2.21,0 -4,-1.79 -4,-4s1.79,-4 4,-4h1.73z",
+        )
+    }
+
+    /** Trailing chevron on rows that open something (›). */
+    val ChevronRight: ImageVector by lazy {
+        icon("ChevronRight", "M10,6L8.59,7.41 13.17,12l-4.58,4.59L10,18l6,-6z")
+    }
+
     private fun icon(name: String, path: String): ImageVector = ImageVector.Builder(
         name = name,
         defaultWidth = 24.dp,

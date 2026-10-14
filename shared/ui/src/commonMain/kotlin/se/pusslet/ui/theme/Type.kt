@@ -7,7 +7,7 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Material 3 type scale tuned for glanceability: slightly larger body text, calmer headline weights.
- * All sizes are in sp so system font scaling (up to 200 %) applies.
+ * All sizes are in sp so system font scaling (up to 200 %) applies. No style is below 14 sp (UX plan 1.4).
  */
 internal val PussletTypography: Typography = Typography().run {
     copy(
@@ -20,7 +20,10 @@ internal val PussletTypography: Typography = Typography().run {
         titleSmall = titleSmall.copy(fontWeight = FontWeight.SemiBold),
         bodyLarge = bodyLarge.copy(fontSize = 17.sp, lineHeight = 25.sp),
         bodyMedium = bodyMedium.copy(fontSize = 15.sp, lineHeight = 22.sp),
+        bodySmall = bodySmall.copy(fontSize = 14.sp, lineHeight = 20.sp),
         labelLarge = labelLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp),
+        labelMedium = labelMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
+        labelSmall = labelSmall.copy(fontSize = 14.sp, lineHeight = 20.sp),
     )
 }
 

@@ -15,9 +15,11 @@ import kotlinx.datetime.LocalTime
 import se.pusslet.core.meals.SuggestionReason
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.Event
+import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.LunchProviderType
 import se.pusslet.core.model.LunchSource
 import se.pusslet.core.model.MainComponent
+import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.Recipe
@@ -202,6 +204,108 @@ class MealsViewModelTest {
         assertEquals(2, vm.state.value.plannedCount)
         vm.deleteFavorite(vm.state.value.favorites.single())
         assertTrue(vm.state.value.favorites.isEmpty())
+    }
+
+    @Test
+    fun plusOpensTheFirstDayStillToPlan() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        vm.openNextToPlan()
+        assertEquals(tuesday, vm.dayEditor.value?.date, "today when tonight is not planned")
+        assertEquals(MealSlot.Dinner, vm.dayEditor.value?.slot)
+        vm.closeDay()
+
+        vm.plan(tuesday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+        vm.openNextToPlan()
+        assertEquals(tuesday.plusDays(1), vm.dayEditor.value?.date, "Monday is past, so Wednesday")
+        vm.closeDay()
+
+        (2..5).forEach { vm.plan(tuesday.plusDays(it), MealSlot.Dinner, "soppa", null, cookDouble = false, servings = null, note = "") }
+        vm.plan(tuesday.plusDays(1), MealSlot.Dinner, "fisk", null, cookDouble = false, servings = null, note = "")
+        vm.openNextToPlan()
+        assertEquals(tuesday, vm.dayEditor.value?.date, "everything from today is planned: today")
+        vm.closeDay()
+
+        vm.nextWeek()
+        vm.openNextToPlan()
+        assertEquals(monday.plusDays(7), vm.dayEditor.value?.date, "another week starts on Monday")
+    }
+
+    @Test
+    fun nextDayToPlanFollowsTheRules() {
+        fun day(offset: Int, planned: Boolean, today: Boolean = false) = DayPlan(
+            date = monday.plusDays(offset),
+            entries = if (planned) mapOf(MealSlot.Dinner to MealEntry(monday.plusDays(offset), title = "mat")) else emptyMap(),
+            lunches = emptyList(),
+            busy = emptyList(),
+            holidays = emptyList(),
+            redDay = false,
+            isToday = today,
+        )
+        val otherWeek = listOf(day(0, planned = true), day(1, planned = false), day(2, planned = false))
+        assertEquals(monday.plusDays(1), nextDayToPlan(otherWeek))
+        val thisWeek = listOf(day(0, planned = false), day(1, planned = true, today = true), day(2, planned = true))
+        assertEquals(monday.plusDays(1), nextDayToPlan(thisWeek), "all planned from today: today")
+        assertEquals(monday, nextDayToPlan(listOf(day(0, planned = true), day(1, planned = true))), "all planned: Monday")
+        assertNull(nextDayToPlan(emptyList()))
+    }
+
+    @Test
+    fun noSchoolOnWeekendsHolidaysBreaksAndStudyDays() = runTest {
+        val world = TestWorld().apply { seed() }
+        world.family.saveChild(Child("c-simon", "Simon", lunch = LunchSource(LunchProviderType.Manual)))
+        val wednesday = tuesday.plusDays(1)
+        val thursday = tuesday.plusDays(2)
+        world.calendar.saveEvent(
+            Event(
+                id = "e-studiedag",
+                title = "Studiedag",
+                start = LocalDateTime(wednesday, LocalTime(0, 0)),
+                end = LocalDateTime(thursday, LocalTime(0, 0)),
+                allDay = true,
+                participantIds = listOf("c-ella"),
+                tags = listOf(EventTags.STUDY_DAY),
+            ),
+        )
+        world.calendar.saveEvent(
+            Event(
+                id = "e-lov",
+                title = "Höstlov",
+                start = LocalDateTime(thursday, LocalTime(0, 0)),
+                end = LocalDateTime(thursday.plusDays(1), LocalTime(0, 0)),
+                allDay = true,
+                tags = listOf("Lov"),
+            ),
+        )
+        val vm = viewModel(world)
+        val days = vm.state.value.days
+        assertEquals(emptySet(), days[1].noSchool, "an ordinary Tuesday")
+        assertEquals(setOf("c-ella"), days[2].noSchool, "Ella's study day")
+        assertEquals(setOf("c-ella", "c-simon"), days[3].noSchool, "a break without participants is for everyone")
+        assertEquals(setOf("c-ella", "c-simon"), days[5].noSchool, "Saturday")
+        assertEquals(setOf("c-ella", "c-simon"), days[6].noSchool, "Sunday")
+
+        val children = listOf(Child("c-ella", "Ella"))
+        assertEquals(setOf("c-ella"), childrenWithoutSchool(LocalDate(2026, 5, 14), children, emptyList()), "Kristi himmelsfärd")
+    }
+
+    @Test
+    fun childrenWithTheSameLunchShareOneRow() = runTest {
+        val world = TestWorld().apply { seed() }
+        world.family.saveChild(Child("c-simon", "Simon", lunch = LunchSource(LunchProviderType.Manual)))
+        world.family.saveChild(Child("c-ida", "Ida", lunch = LunchSource(LunchProviderType.Manual)))
+        val vm = viewModel(world)
+        vm.setLunch("c-ella", tuesday, "Köttbullar med potatis\nVegobullar")
+        vm.setLunch("c-simon", tuesday, "köttbullar med potatis")
+        vm.setLunch("c-ida", tuesday, "Fiskgratäng")
+        val lunches = vm.state.value.days[1].lunches
+
+        val rows = groupLunches(lunches)
+        assertEquals(listOf(listOf("Ella", "Simon"), listOf("Ida")), rows.map { row -> row.children.map { it.firstName } })
+        assertEquals("Köttbullar med potatis", rows.first().dishes.first())
+
+        val sheetRows = groupLunches(lunches, wholeMenu = true)
+        assertEquals(3, sheetRows.size, "the sheet lists every dish, and Simon's menu has only one")
     }
 
     @Test

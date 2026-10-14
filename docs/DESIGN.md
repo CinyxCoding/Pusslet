@@ -11,16 +11,18 @@ Dynamic color (Android 12+) är ett tillval i Inställningar; det egna schemat �
 
 | Roll | Ljust | Mörkt | Används till |
 |---|---|---|---|
-| primary | Sage40 `#4A6851` | Sage80 `#AFCFB4` | Huvudknappar, valda flikar, avdelningsrubriker i inköpslistan |
-| primaryContainer | Sage90 `#CDE8D1` | Sage30 `#354F3B` | Valda chips, markerad dag |
+| primary | Sage40 `#4A6851` | Sage80 `#AFCFB4` | Huvudknappar, +, avdelningsrubriker i inköpslistan, ”Du” |
+| primaryContainer | Sage90 `#CDE8D1` | Sage30 `#354F3B` | Valt läge: vald flik, segment och filterchip (`SelectionColors`), idag, `InfoPill` vald |
 | secondary | Oat40 `#6C5B44` | Oat80 `#D9C4A4` | Sekundära åtgärder |
-| secondaryContainer | Oat90 `#F4E2C6` | Oat30 `#54442F` | Info-banners ("Sara handlar nu") |
-| tertiary | Terracotta40 `#99442A` | Terracotta80 `#FFB59D` | Varningar utan fara: krock med skollunchen, upptagen kväll |
-| tertiaryContainer | Terracotta90 `#FFDBD0` | Terracotta30 `#7B2E16` | Varningsbanners |
-| error | Error40 `#B3261E` | Error80 `#F2B8B5` | Riktiga problem ("ingen kan hämta Ella"), röda dagar |
-| surface / background | Neutral98 `#FBF8F3` | Neutral10 `#1A1C18` | Bakgrund – varm off-white, aldrig ren vit |
-| surfaceContainerLow | Neutral96 `#F6F3EC` | Neutral12 `#1E201C` | Kort (`SectionCard`) |
-| onSurfaceVariant | NeutralVariant30 | NeutralVariant80 | Sekundär text, detaljer |
+| secondaryContainer | Oat90 `#F4E2C6` | Oat30 `#54442F` | Fokusytan – högst en per skärm |
+| tertiary | Terracotta40 `#99442A` | Terracotta80 `#FFB59D` | Påminnelse eller osäker tolkning, som ikon/text: Warning-ikonen, krock med skollunchen |
+| tertiaryContainer | Terracotta90 `#FFDBD0` | Terracotta30 `#7B2E16` | — (Warning är ofylld, inga terrakottafyllda kort) |
+| error / errorContainer | Error40 `#B3261E` | Error80 `#F2B8B5` | Problem idag, fyllt (`errorContainer`) och med åtgärd ("ingen kan hämta Ella"), röda dagar |
+| surface / background | Neutral98 `#FBF8F3` | Neutral10 `#1A1C18` | Bakgrund – varm off-white, aldrig ren vit; även Warning-kortets yta |
+| surfaceContainerLow | Neutral96 `#F6F3EC` | Neutral12 `#1E201C` | Kort (`SectionCard`), förhandsvisningen i snabbinmatningen |
+| surfaceContainerHigh | `#EBE8E1` | Neutral17 | `InfoPill` (ej vald) |
+| outlineVariant | NeutralVariant80 | NeutralVariant30 | Kantlinjen runt Warning |
+| onSurfaceVariant | NeutralVariant30 | NeutralVariant80 | Sekundär text, detaljer, Info-raden |
 
 **Medlemsfärger** (8 st: Sage, Terracotta, Ocean, Plum, Ochre, Teal, Rose, Slate) har egna container/innehåll-par
 för ljust och mörkt läge. Alla par klarar WCAG AA (4,5:1) – testat i `MemberPaletteTest`. Färg är **aldrig** enda
@@ -40,7 +42,10 @@ Material 3-skalan, något större brödtext för att kunna läsas i farten. Allt
 | titleSmall | 14 / 20 | SemiBold | Avdelningsrubriker, sektionsrubriker |
 | bodyLarge | 17 / 25 | Normal | Listrader, varor, ingredienser |
 | bodyMedium | 15 / 22 | Normal | Stödtext |
+| bodySmall | 14 / 20 | Normal | Detaljrader, hjälptext under fält |
 | labelLarge | 15 | SemiBold | Knappar |
+| labelMedium | 14 / 20 | Medium | Fältetiketter, `InfoPill` |
+| labelSmall | 14 / 20 | Medium | Små etiketter (timmar i dagvyn) – samma storlek som labelMedium, ingen stil under 14 sp |
 | StoreModeItemStyle | 24 / 32 | Medium | Varor i butiksläget ("stor text") |
 
 Rubriker får `semantics { heading() }` så TalkBack kan hoppa mellan dem. Typstegen går åt ett håll (22 > 20 > 17 > 15 >

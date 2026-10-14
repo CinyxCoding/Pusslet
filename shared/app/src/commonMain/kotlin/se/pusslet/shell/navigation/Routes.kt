@@ -62,7 +62,7 @@ sealed interface Route {
     @Serializable data class RecipeDetails(val recipeId: String) : Route
 
     /** New (no id) or edited recipe; [sourceUrl] starts a new one from a link without recipe data. */
-    @Serializable data class RecipeEditor(val recipeId: String? = null, val sourceUrl: String? = null) : Route
+    @Serializable data class RecipeEditor(val recipeId: String? = null, val sourceUrl: String? = null, val paste: Boolean = false) : Route
 
     @Serializable data class RecipeImport(val url: String? = null) : Route
 }

@@ -41,6 +41,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,7 +60,6 @@ import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.EventOccurrence
-import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.recurrence.EventExpander
 import se.pusslet.core.time.isoWeek
@@ -69,6 +69,8 @@ import se.pusslet.ui.components.AvatarStack
 import se.pusslet.ui.components.ColorBadge
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.PersonChips
+import se.pusslet.ui.components.RegisterAddButton
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.format.formatDateLong
 import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.formatTimeRange
@@ -84,6 +86,7 @@ import se.pusslet.ui.theme.Spacing
 fun CalendarRoute(
     onOpenOccurrence: (EventOccurrence) -> Unit,
     onNewEvent: (LocalDate) -> Unit,
+    onQuickAdd: (LocalDate?) -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: CalendarViewModel = koinViewModel(),
 ) {
@@ -100,6 +103,7 @@ fun CalendarRoute(
         onToggleLayer = viewModel::toggleLayer,
         onOpenOccurrence = onOpenOccurrence,
         onNewEvent = onNewEvent,
+        onQuickAdd = onQuickAdd,
     )
 }
 
@@ -116,12 +120,25 @@ fun CalendarScreen(
     onToggleLayer: (CalendarLayer) -> Unit = {},
     onOpenOccurrence: (EventOccurrence) -> Unit = {},
     onNewEvent: (LocalDate) -> Unit = {},
+    onQuickAdd: (LocalDate?) -> Unit = {},
 ) {
+    // The round + opens quick add on the shown week or the selected day (UX plan 1.2). Day has no +: an empty hour opens
+    // the editor there. Caregivers cannot add events (1.13).
+    RegisterAddButton(
+        label = stringResource(Res.string.action_add),
+        enabled = state.canEdit && state.view != CalendarView.Day,
+    ) { onQuickAdd(state.addDate) }
     val anchor = state.anchor ?: return
     val today = state.today ?: anchor
     val people = state.people.associateBy { it.id }
+    // "Idag" always brings today into view, also when the shown week already is the current one (UX plan 1.10).
+    var todayRequests by remember { mutableIntStateOf(0) }
+    val goToday = {
+        todayRequests++
+        onToday()
+    }
     Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
-        Header(state, anchor, onStep, onToday, onToggleLayer)
+        Header(state, anchor, today, onStep, goToday, onToggleLayer)
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = Spacing.screenHorizontal)) {
             val views = listOf(
                 CalendarView.Day to Res.string.calendar_view_day,
@@ -134,6 +151,7 @@ fun CalendarScreen(
                     selected = state.view == v,
                     onClick = { onView(v) },
                     shape = SegmentedButtonDefaults.itemShape(i, views.size),
+                    colors = SelectionColors.segmentedButton(),
                     label = { Text(stringResource(label), maxLines = 1) },
                 )
             }
@@ -148,10 +166,19 @@ fun CalendarScreen(
                 onAll = onClearFilter,
             )
         }
-        val bottom = contentPadding.calculateBottomPadding() + Spacing.xxl * 3
+        val bottom = contentPadding.calculateBottomPadding() + Spacing.listBottomInset
         when (state.view) {
-            CalendarView.Day -> DayView(state.days.firstOrNull(), people, bottom, onOpenOccurrence, onNewEvent)
-            CalendarView.Week -> ListView(state.days, today, people, bottom, onOpenOccurrence, onDay, showEmptyDays = true)
+            CalendarView.Day -> DayView(state.days.firstOrNull(), people, bottom, onOpenOccurrence, onNewEvent, canAdd = state.canEdit)
+            CalendarView.Week -> ListView(
+                state.days,
+                today,
+                people,
+                bottom,
+                onOpenOccurrence,
+                onDay,
+                showEmptyDays = true,
+                todayRequests = todayRequests,
+            )
             CalendarView.Agenda -> ListView(
                 state.days.filter {
                     it.occurrences.isNotEmpty() || it.holidays.isNotEmpty()
@@ -162,6 +189,7 @@ fun CalendarScreen(
                 onOpenOccurrence,
                 onDay,
                 showEmptyDays = false,
+                todayRequests = todayRequests,
             )
             CalendarView.Month -> MonthView(state.days, anchor, today, people, onDay)
         }
@@ -172,6 +200,7 @@ fun CalendarScreen(
 private fun Header(
     state: CalendarUiState,
     anchor: LocalDate,
+    today: LocalDate,
     onStep: (Boolean) -> Unit,
     onToday: () -> Unit,
     onToggleLayer: (CalendarLayer) -> Unit,
@@ -182,22 +211,26 @@ private fun Header(
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(Res.string.calendar_previous))
         }
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            // The year only shows when it is not this year ("oktober", "januari 2027").
+            val month = monthName(anchor.month.ordinal + 1) + if (anchor.year != today.year) " " + anchor.year else ""
             val title = when (state.view) {
-                CalendarView.Day -> formatDateLong(anchor).replaceFirstChar { it.uppercase() }
+                CalendarView.Day -> formatDateLong(anchor, referenceYear = today.year).replaceFirstChar { it.uppercase() }
                 CalendarView.Week -> weekLong(anchor.isoWeek.week)
-                CalendarView.Month, CalendarView.Agenda -> monthName(anchor.month.ordinal + 1).replaceFirstChar { it.uppercase() } + " " +
-                    anchor.year
+                CalendarView.Month, CalendarView.Agenda -> month.replaceFirstChar { it.uppercase() }
             }
             Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() }, maxLines = 1)
             if (state.view == CalendarView.Week || state.view == CalendarView.Day) {
                 Text(
-                    if (state.view == CalendarView.Day) weekShort(anchor) else monthName(anchor.month.ordinal + 1) + " " + anchor.year,
+                    if (state.view == CalendarView.Day) weekShort(anchor) else month,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
-        TextButton(onClick = onToday) { Text(stringResource(Res.string.today)) }
+        val goToday = stringResource(Res.string.calendar_go_today)
+        TextButton(onClick = onToday, modifier = Modifier.semantics { contentDescription = goToday }) {
+            Text(stringResource(Res.string.today))
+        }
         IconButton(onClick = { onStep(true) }) {
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = stringResource(Res.string.calendar_next))
         }
@@ -238,11 +271,12 @@ private fun ListView(
     onOpen: (EventOccurrence) -> Unit,
     onDay: (LocalDate) -> Unit,
     showEmptyDays: Boolean,
+    todayRequests: Int,
 ) {
     val empty = days.isEmpty() || (days.all { it.occurrences.isEmpty() && it.holidays.isEmpty() } && !showEmptyDays)
     val listState = rememberLazyListState()
-    // Open the week at today (not Monday); other weeks open at their start.
-    LaunchedEffect(days.firstOrNull()?.date) {
+    // Open the week at today (not Monday); other weeks open at their start. "Idag" scrolls back to today.
+    LaunchedEffect(days.firstOrNull()?.date, todayRequests) {
         val index = days.indexOfFirst { it.date >= today }
         listState.scrollToItem(if (index > 0) index + (if (empty) 1 else 0) else 0)
     }
@@ -276,6 +310,10 @@ private fun DaySection(
     onDay: (LocalDate) -> Unit,
 ) {
     val isToday = day.date == today
+    val dateText = formatDateLong(day.date, referenceYear = today.year).replaceFirstChar { it.uppercase() }
+    // An empty day is quiet on screen; TalkBack still hears "Inget planerat" with the date.
+    val emptyDay = stringResource(Res.string.calendar_empty_day)
+    val headerDescription = if (day.occurrences.isEmpty()) "$dateText, $emptyDay" else null
     Row(Modifier.fillMaxWidth()) {
         // Custody band: a thin coloured strip per schedule ("bakgrundsband").
         day.custody.forEach { h ->
@@ -285,13 +323,17 @@ private fun DaySection(
         }
         Column(Modifier.weight(1f).padding(start = Spacing.sm)) {
             Row(
-                Modifier.fillMaxWidth().clickable { onDay(day.date) }.padding(vertical = Spacing.xs),
+                Modifier
+                    .fillMaxWidth()
+                    .semantics { if (headerDescription != null) contentDescription = headerDescription }
+                    .clickable { onDay(day.date) }
+                    .padding(vertical = Spacing.xs),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             ) {
                 DateBadge(day.date, isToday, day.redDay)
                 Text(
-                    formatDateLong(day.date).replaceFirstChar { it.uppercase() },
+                    dateText,
                     style = MaterialTheme.typography.titleSmall,
                     color = if (day.redDay) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 )
@@ -301,13 +343,6 @@ private fun DaySection(
                     stringResource(Labels.holiday(h.id)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.tertiary,
-                )
-            }
-            if (day.occurrences.isEmpty()) {
-                Text(
-                    stringResource(Res.string.calendar_empty_day),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             day.occurrences.forEach { o -> OccurrenceRow(o, day.date, people, onOpen) }
@@ -359,14 +394,11 @@ fun OccurrenceRow(o: EventOccurrence, onDate: LocalDate, people: Map<String, Fam
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            // The start time stands in its own column, so the detail line only says when it ends ("till 16:00").
+            val endsHere = !o.allDay && o.start.date == onDate && o.end.date == onDate && o.end.time != o.start.time
             val details = buildList {
-                if (!o.allDay) add(formatTimeRange(o.start.time, o.end.time))
+                if (endsHere) add(stringResource(Res.string.calendar_until, formatTime(o.end.time)))
                 if (o.event.location.isNotBlank()) add(o.event.location)
-                when (o.source) {
-                    EventSource.Subscription -> add(stringResource(Res.string.event_source_subscription, o.sourceName.orEmpty()))
-                    EventSource.Device -> add(stringResource(Res.string.event_source_device))
-                    else -> Unit
-                }
             }
             if (details.isNotEmpty()) {
                 Text(
@@ -388,9 +420,11 @@ private fun DayView(
     bottomPadding: androidx.compose.ui.unit.Dp,
     onOpen: (EventOccurrence) -> Unit,
     onNew: (LocalDate) -> Unit,
+    canAdd: Boolean,
 ) {
     if (day == null) return
     val timed = day.occurrences.filter { !it.allDay }
+    val newEvent = stringResource(Res.string.calendar_new_event)
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, bottom = bottomPadding),
@@ -409,14 +443,23 @@ private fun DayView(
         val lastHour = maxOf(DAY_END, timed.maxOfOrNull { it.end.hour } ?: DAY_END)
         items((firstHour..lastHour).toList(), key = { "h$it" }) { hour ->
             val starting = timed.filter { (if (it.start.date < day.date) 0 else it.start.hour) == hour }
-            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))) {
+            // An empty hour opens the editor for that day; caregivers cannot add events (UX plan 1.13).
+            val addHere = canAdd && starting.isEmpty()
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    .then(if (addHere) Modifier.clickable(onClickLabel = newEvent) { onNew(day.date) } else Modifier),
+            ) {
+                // 24-hour labels without ":00" ("08").
                 Text(
-                    hour.toString().padStart(2, '0') + ":00",
+                    hour.toString().padStart(2, '0'),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.width(48.dp).padding(top = Spacing.xs),
                 )
-                Column(Modifier.weight(1f).clickable { if (starting.isEmpty()) onNew(day.date) }) {
+                Column(Modifier.weight(1f)) {
                     starting.forEach { o -> EventBlock(o, people, onOpen) }
                 }
             }

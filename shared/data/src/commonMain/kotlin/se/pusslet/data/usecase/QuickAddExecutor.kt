@@ -35,6 +35,18 @@ import se.pusslet.data.session.SessionProvider
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 
+/** Where a created event landed: its (first) day and start time, null for all day. */
+data class SavedSlot(val date: LocalDate, val time: LocalTime?)
+
+/** A drop-off/pick-up that quick add assigned. [created] means the day had none, so a new one was added. */
+data class AssignedHandoff(
+    val kind: HandoffKind,
+    val personId: String,
+    val date: LocalDate,
+    val time: LocalTime?,
+    val created: Boolean,
+)
+
 /** What was saved, for the confirmation message and "Ångra". */
 data class QuickAddOutcome(
     /** Events created (undo deletes them). */
@@ -46,7 +58,67 @@ data class QuickAddOutcome(
     val meals: List<Pair<LocalDate, MealSlot>> = emptyList(),
     /** True when a hand-off had to be created because the day had none. */
     val createdHandoffEvent: Boolean = false,
-)
+    /** The first new event in the calendar (typed, or a repeating hand-off), for "I kalendern lör 14:00". */
+    val firstEvent: SavedSlot? = null,
+    /** The last single-day hand-off that was changed or created. */
+    val handoff: AssignedHandoff? = null,
+) {
+    /** What the confirmation says: what happened and where, and whether "Ångra" really restores (UX plan 1.8). */
+    val receipt: QuickAddReceipt
+        get() {
+            val created = eventIds.size + taskIds.size + itemIds.size + meals.size
+            val assigned = handoff
+            val first = firstEvent
+            return when {
+                created == 0 && assigned != null && !assigned.created -> QuickAddReceipt.HandoffChanged(assigned)
+                created == 0 -> QuickAddReceipt.Saved(undo = false)
+                itemIds.size == created && modifiedEventIds.isEmpty() -> QuickAddReceipt.Items(itemIds.size)
+                first != null -> QuickAddReceipt.InCalendar(first)
+                assigned != null && assigned.created -> QuickAddReceipt.HandoffCreated(assigned)
+                meals.size == created -> QuickAddReceipt.OnMenu(meals.first().first)
+                taskIds.size == created -> QuickAddReceipt.TaskSaved
+                else -> QuickAddReceipt.Saved(undo = true)
+            }
+        }
+}
+
+/** The confirmation after quick add; the shell turns it into text. [undo] is true only when "Ångra" really restores. */
+sealed interface QuickAddReceipt {
+    val undo: Boolean
+
+    /** Only shopping items: "2 varor på listan · Visa". */
+    data class Items(val count: Int) : QuickAddReceipt {
+        override val undo: Boolean get() = false
+    }
+
+    /** "I kalendern lör 14:00 · Ångra". */
+    data class InCalendar(val slot: SavedSlot) : QuickAddReceipt {
+        override val undo: Boolean get() = true
+    }
+
+    /** "På matsedeln fre · Ångra". */
+    data class OnMenu(val date: LocalDate) : QuickAddReceipt {
+        override val undo: Boolean get() = true
+    }
+
+    /** "Sparat i Att göra · Ångra". */
+    data object TaskSaved : QuickAddReceipt {
+        override val undo: Boolean get() = true
+    }
+
+    /** Only an existing drop-off/pick-up changed person ("Johan hämtar fre"). Changed hand-offs are not undone. */
+    data class HandoffChanged(val handoff: AssignedHandoff) : QuickAddReceipt {
+        override val undo: Boolean get() = false
+    }
+
+    /** The day had no drop-off/pick-up, so a new one was added ("Ny hämtning kl 15:30 (fanns ingen) · Ångra"). */
+    data class HandoffCreated(val handoff: AssignedHandoff) : QuickAddReceipt {
+        override val undo: Boolean get() = true
+    }
+
+    /** Anything else: "Sparat". */
+    data class Saved(override val undo: Boolean) : QuickAddReceipt
+}
 
 /** Applies the parser's actions (possibly corrected by the user in the preview) to the repositories. */
 class QuickAddExecutor(
@@ -73,7 +145,10 @@ class QuickAddExecutor(
                     val event = toEvent(action, me)
                     calendar.saveEvent(event)
                     lastEventId = event.id
-                    outcome = outcome.copy(eventIds = outcome.eventIds + event.id)
+                    outcome = outcome.copy(
+                        eventIds = outcome.eventIds + event.id,
+                        firstEvent = outcome.firstEvent ?: SavedSlot(action.date, action.startTime),
+                    )
                 }
                 is QuickAddAction.CreateTask -> {
                     val task = FamilyTask(
@@ -148,7 +223,10 @@ class QuickAddExecutor(
         }
         if (dayOccurrences.isNotEmpty() && action.recurringDays.isEmpty()) {
             dayOccurrences.forEach { handoffs.assign(it, action.kind, action.personId, action.time) }
-            return outcome.copy(modifiedEventIds = outcome.modifiedEventIds + dayOccurrences.map { it.event.id })
+            return outcome.copy(
+                modifiedEventIds = outcome.modifiedEventIds + dayOccurrences.map { it.event.id },
+                handoff = AssignedHandoff(action.kind, action.personId, action.date, action.time, created = false),
+            )
         }
         val time = action.time ?: if (action.kind == HandoffKind.PickUp) LocalTime(16, 0) else LocalTime(8, 0)
         val rrule = action.recurringDays.takeIf { it.isNotEmpty() }?.let { days ->
@@ -164,7 +242,13 @@ class QuickAddExecutor(
             childIds = children,
             rrule = rrule,
         )
-        return outcome.copy(eventIds = outcome.eventIds + event.id, createdHandoffEvent = true)
+        val created = outcome.copy(eventIds = outcome.eventIds + event.id, createdHandoffEvent = true)
+        // A repeating hand-off is a new series in the calendar; a single one filled a day that had none.
+        return if (rrule != null) {
+            created.copy(firstEvent = created.firstEvent ?: SavedSlot(action.date, time))
+        } else {
+            created.copy(handoff = AssignedHandoff(action.kind, action.personId, action.date, time, created = true))
+        }
     }
 
     private fun toEvent(a: QuickAddAction.CreateEvent, me: String?): Event {

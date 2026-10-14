@@ -20,6 +20,7 @@ import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.seed.DemoSeed
+import se.pusslet.feature.family.nextChildColor
 import kotlin.math.abs
 import kotlin.time.Clock
 
@@ -56,6 +57,18 @@ class OnboardingViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = _state.asStateFlow()
+
+    init {
+        // "Visa första start igen" (developer tools) clears the flag while this view model may still hold a finished
+        // run (step Done, or saving after the demo): start over from the welcome screen then.
+        viewModelScope.launch {
+            var wasDone = false
+            prefs.observe(Prefs.OnboardingDone).collect { done ->
+                if (wasDone && !done) _state.value = OnboardingUiState()
+                wasDone = done
+            }
+        }
+    }
 
     fun go(step: OnboardingStep) = _state.update { it.copy(step = step) }
 
@@ -103,7 +116,7 @@ class OnboardingViewModel(
             family.createFamily(name, s.myName)
             val used = mutableListOf(MemberColor.Sage)
             s.children.filter { it.name.isNotBlank() }.forEach { draft ->
-                val color = MemberColor.nextFree(used).also { used += it }
+                val color = nextChildColor(used).also { used += it }
                 val year = draft.birthYear.trim().toIntOrNull()?.takeIf { it in MIN_YEAR..clock.todayIn(zone).year }
                 family.saveChild(
                     Child(

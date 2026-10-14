@@ -36,6 +36,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -52,6 +55,7 @@ import se.pusslet.data.usecase.QuickAddOutcome
 import se.pusslet.ui.components.DateField
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.PersonChips
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.TimeField
 import se.pusslet.ui.components.ValueField
 import se.pusslet.ui.format.describe
@@ -101,6 +105,7 @@ fun QuickAddContent(
     onClose: () -> Unit,
 ) {
     val focus = remember { FocusRequester() }
+    val keyboard = LocalSoftwareKeyboardController.current
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     Column(
         Modifier
@@ -121,7 +126,8 @@ fun QuickAddContent(
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
             placeholder = { Text(stringResource(Res.string.quickadd_hint)) },
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { onSave() }),
+            // Done only closes the keyboard; saving is the button's job, after a look at the preview (UX plan 1.8).
+            keyboardActions = KeyboardActions(onDone = { keyboard?.hide() }),
             minLines = 1,
             maxLines = 4,
         )
@@ -261,16 +267,15 @@ private fun ActionCard(
                             onStart(index, LocalTime(DEFAULT_HOUR, 0))
                         })
                     }
-                    if (action.recurrence != null) {
-                        ValueField(
+                    val recurrence = action.recurrence
+                    if (recurrence != null) {
+                        ReadOnlyField(
                             stringResource(Res.string.field_repeat),
-                            describe(action.recurrence),
-                            onClick = {},
-                            highlight =
-                                UncertainField.Recurrence in uncertain,
+                            describe(recurrence),
+                            highlight = UncertainField.Recurrence in uncertain,
                         )
                     }
-                    if (action.location.isNotBlank()) ValueField(stringResource(Res.string.field_location), action.location, onClick = {})
+                    if (action.location.isNotBlank()) ReadOnlyField(stringResource(Res.string.field_location), action.location)
                     if (action.tags.isNotEmpty()) {
                         Text(
                             action.tags.map { t ->
@@ -377,6 +382,20 @@ private fun TitleField(value: String, highlight: Boolean, onChange: (String) -> 
     )
 }
 
+/** The parser's reading as plain text, not a button: it cannot be changed here (UX plan 1.6). */
+@Composable
+private fun ReadOnlyField(label: String, value: String, highlight: Boolean = false) {
+    val color = if (highlight) MaterialTheme.colorScheme.tertiary else Color.Unspecified
+    Column(Modifier.fillMaxWidth().padding(vertical = Spacing.xs).semantics(mergeDescendants = true) {}) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (highlight) color else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(value, style = MaterialTheme.typography.bodyLarge, color = color)
+    }
+}
+
 @Composable
 private fun PeopleField(
     people: List<FamilyPerson>,
@@ -409,11 +428,12 @@ private fun KindChips(current: ActionKind, highlight: Boolean, modifier: Modifie
                         ) {
                             MaterialTheme.colorScheme.tertiary
                         } else {
-                            androidx.compose.ui.graphics.Color.Unspecified
+                            Color.Unspecified
                         },
                     )
                 },
                 modifier = Modifier.heightIn(min = 40.dp),
+                colors = SelectionColors.filterChip(),
             )
         }
     }

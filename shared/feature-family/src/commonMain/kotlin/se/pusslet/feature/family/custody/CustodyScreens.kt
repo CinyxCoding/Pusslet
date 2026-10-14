@@ -72,6 +72,7 @@ import se.pusslet.ui.components.ColorBadge
 import se.pusslet.ui.components.DateField
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.TimeField
 import se.pusslet.ui.format.formatDateShort
 import se.pusslet.ui.format.formatTime
@@ -191,6 +192,7 @@ fun CustodyEditorRoute(scheduleId: String?, onDone: () -> Unit, viewModel: Custo
                             }
                         },
                         label = { Text(c.firstName) },
+                        colors = SelectionColors.filterChip(),
                     )
                 }
             }
@@ -311,6 +313,7 @@ fun CustodyEditorRoute(scheduleId: String?, onDone: () -> Unit, viewModel: Custo
                                         }
                                     },
                                     label = { Text(h.name) },
+                                    colors = SelectionColors.filterChip(),
                                 )
                             }
                         }

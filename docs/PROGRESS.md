@@ -61,13 +61,15 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 Ägarens test av fas 2: funktionerna fungerar, men UI:t kändes rörigt med för mycket text. Plan med beslut i
 `docs/UX_PLAN.md`, ADR-023–033.
 - [x] Kvällskoll: från 18:00 visar Idag morgondagens väder och klädråd (ADR-022)
-- [ ] 1.0 Baslinje-goldens (kräver Android-miljö)
-- [ ] 1.1 Mindre text: skrivregler, omskrivningar, `StringBudgetTest`
-- [ ] 1.2 Rund +, ett sätt att lägga till per skärm
-- [ ] 1.3–1.6 Etiketter i bottenfältet, sage för valt, 14 sp, tre uppmärksamhetsnivåer, `InfoPill`
-- [ ] 1.7–1.12 Klädråd grupperade, kvitton, Handla-ångra, kalender, Mat idag först, Mer
-- [ ] 1.13 Hjälpare ser bara knappar som fungerar
-- [ ] 1.14–1.15 Första start i demo, första barnets färg
+- [x] 1.0 Baslinjetester för Mat, Handla, butiksläge och Kalender med stor text (PNG:erna spelas in av ägaren:
+  `./gradlew :composeApp:recordRoborazziDemoDebug`)
+- [x] 1.1 Mindre text: skrivregler, ~80 omskrivningar, 24 oanvända nycklar borta, `StringBudgetTest`
+- [x] 1.2 Rund +, ett sätt att lägga till per skärm (`RegisterAddButton`); Handla lägger till via ett fält ovanför tangentbordet
+- [x] 1.3–1.6 Etiketter i bottenfältet, sage för valt, 14 sp, tre uppmärksamhetsnivåer, `InfoPill`
+- [x] 1.7–1.12 Klädråd grupperade, kvitton (”2 varor på listan · Visa”), Handla-ångra, kalendern fastnar inte i Dag,
+  Mat visar idag först, Mer utan undertexter
+- [x] 1.13 Hjälpare ser bara knappar som fungerar (Idag, Kalender, Inställningar)
+- [x] 1.14–1.15 ”Visa första start igen” i demo/dev, ”Exempelfamilj” på Idag, första barnet blir aldrig terrakotta
 - [ ] 2.0 Gemensamma komponenter
 - [ ] Idag A: block och Morgonkollen · Idag B: Anpassa Idag
 - [ ] Steg 2 per flik: Handla, Mat, Kalender, Mer
@@ -120,5 +122,7 @@ Nästa steg: kör fas 2 på emulator (`installDemoDebug`), spela in skärmdumpar
 - Delade bilder (SEND image/*) tas inte emot än (receptlänkar gör det sedan fas 2).
 - CI hade aldrig gått igenom: `gradlew` saknade körbarhetsbiten i git. Rättat 2026-10-13; sedan dess grönt (Android, iOS,
   Firestore-regler).
+- Molnsessionerna kan inte bygga Android (Googles Maven är blockerad), men en egen JVM-kompilering av alla delade moduler
+  (commonMain + commonTest, med stubbar för Room/lifecycle) körs lokalt där och fångar de flesta kompileringsfel före CI.
 - Molnsessioner (claude.ai/code) behöver `dl.google.com` tillåtet i miljöns nätverksinställningar för att kunna bygga Android
   (Googles Maven och SDK). Maven Central svarar dessutom ofta 429 där; se docs/SETUP.md.

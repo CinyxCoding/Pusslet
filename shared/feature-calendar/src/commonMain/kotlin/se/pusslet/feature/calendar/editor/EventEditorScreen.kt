@@ -52,6 +52,7 @@ import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PersonChips
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.components.TimeField
 import se.pusslet.ui.components.ValueField
@@ -162,7 +163,12 @@ fun EventEditorScreen(
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     EventTags.all.forEach { tag ->
                         val label = Labels.tag(tag)?.let { stringResource(it) } ?: tag
-                        FilterChip(selected = tag in d.tags, onClick = { onToggleTag(tag) }, label = { Text(label) })
+                        FilterChip(
+                            selected = tag in d.tags,
+                            onClick = { onToggleTag(tag) },
+                            label = { Text(label) },
+                            colors = SelectionColors.filterChip(),
+                        )
                     }
                 }
             }

@@ -56,6 +56,9 @@ object Prefs {
     val DismissedStaples = PrefKey("shopping.dismissedStaples", MapSerializer(String.serializer(), Long.serializer()), emptyMap())
     val RecentQuickAdds = PrefKey("quickadd.recent", ListSerializer(String.serializer()), emptyList())
     val DeviceId = PrefKey("device.id", String.serializer(), "")
+
+    /** Set by "Visa första start igen" (developer tools): the demo family is not seeded again at start-up. */
+    val SkipDemoSeed = PrefKey("dev.skipDemoSeed", Boolean.serializer(), false)
 }
 
 class PreferencesRepository(private val dao: PreferenceDao, private val json: Json = Json { ignoreUnknownKeys = true }) {

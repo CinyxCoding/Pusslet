@@ -1,6 +1,10 @@
 package se.pusslet.android.screenshots
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -40,6 +44,10 @@ class ShellScreenshotTest {
     }
 
     private fun snap(name: String) = compose.onRoot().captureRoboImage("src/test/snapshots/$name.png")
+
+    /** A bottom-bar tab; "Mat" alone would also match the meals heading on Idag. */
+    private fun openTab(label: String) =
+        compose.onNode(hasText(label) and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
 
     @Test
     fun todayLight() {
@@ -83,7 +91,8 @@ class ShellScreenshotTest {
         launch()
         compose.onNodeWithText("Kalender").performClick()
         compose.onNodeWithText("Månad").performClick()
-        compose.waitUntilAtLeastOneExists(hasText("Oktober 2026"), timeoutMillis = 10_000)
+        // The year only shows when it is not this year (UX plan 1.1).
+        compose.waitUntilAtLeastOneExists(hasText("Oktober"), timeoutMillis = 10_000)
         snap("calendar_month")
     }
 
@@ -95,6 +104,44 @@ class ShellScreenshotTest {
         compose.onAllNodesWithText("Skola", substring = true).onFirst().performClick()
         compose.waitUntilAtLeastOneExists(hasText("Lämning och hämtning"), timeoutMillis = 10_000)
         snap("event_details")
+    }
+
+    @Test
+    @Config(fontScale = 1.5f)
+    fun calendarWeekLargeText() {
+        launch()
+        openTab("Kalender")
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41"), timeoutMillis = 10_000)
+        snap("calendar_week_large_text")
+    }
+
+    @Test
+    fun mealsWeek() {
+        launch()
+        openTab("Mat")
+        compose.waitUntilAtLeastOneExists(hasText("Matsedel"), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("meals_week")
+    }
+
+    @Test
+    fun shoppingList() {
+        launch()
+        openTab("Handla")
+        compose.waitUntilAtLeastOneExists(hasText("Veckohandling"), timeoutMillis = 10_000)
+        snap("shopping_list")
+    }
+
+    @Test
+    fun storeMode() {
+        launch()
+        openTab("Handla")
+        compose.waitUntilAtLeastOneExists(hasText("Jag handlar nu"), timeoutMillis = 10_000)
+        compose.onNodeWithText("Jag handlar nu").performClick()
+        // Store mode is a sub page: the back arrow is what tells it apart from the list.
+        compose.waitUntilAtLeastOneExists(hasContentDescription("Tillbaka"), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("store_mode")
     }
 
     @Test

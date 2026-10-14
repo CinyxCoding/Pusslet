@@ -60,12 +60,14 @@ import se.pusslet.core.model.LunchProviderType
 import se.pusslet.core.model.LunchSource
 import se.pusslet.core.model.MemberColor
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.feature.family.nextChildColor
 import se.pusslet.feature.family.school.SchoolPickerDialog
 import se.pusslet.ui.components.ColorBadge
 import se.pusslet.ui.components.DatePickerSheet
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.components.ValueField
 import se.pusslet.ui.format.formatDateLong
@@ -93,7 +95,7 @@ class ChildEditorViewModel(private val family: FamilyRepository, private val clo
         viewModelScope.launch {
             val existing = childId?.let { id -> family.children.first().firstOrNull { it.id == id } }
             val used = family.people.first().map { it.color }
-            val child = existing ?: Child(family.newChildId(), "", MemberColor.nextFree(used))
+            val child = existing ?: Child(family.newChildId(), "", nextChildColor(used))
             val diet = family.diets.first().firstOrNull { it.personId == child.id }
             _state.value = ChildEditorState(
                 child = child,
@@ -198,11 +200,19 @@ fun ChildEditorRoute(childId: String?, onDone: () -> Unit, viewModel: ChildEdito
             )
             Text(stringResource(Res.string.child_avatar), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                FilterChip(selected = child.avatar == null, onClick = {
-                    viewModel.edit { it.copy(avatar = null) }
-                }, label = { Text(child.firstName.take(1).ifEmpty { "A" }) })
+                FilterChip(
+                    selected = child.avatar == null,
+                    onClick = { viewModel.edit { it.copy(avatar = null) } },
+                    label = { Text(child.firstName.take(1).ifEmpty { "A" }) },
+                    colors = SelectionColors.filterChip(),
+                )
                 avatars.forEach { a ->
-                    FilterChip(selected = child.avatar == a, onClick = { viewModel.edit { it.copy(avatar = a) } }, label = { Text(a) })
+                    FilterChip(
+                        selected = child.avatar == a,
+                        onClick = { viewModel.edit { it.copy(avatar = a) } },
+                        label = { Text(a) },
+                        colors = SelectionColors.filterChip(),
+                    )
                 }
             }
             Text(stringResource(Res.string.child_color), style = MaterialTheme.typography.labelLarge)
@@ -408,14 +418,22 @@ private fun DietSection(state: ChildEditorState, child: Child, vm: ChildEditorVi
         if (state.dietEnabled && diet != null) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Allergen.entries.forEach { a ->
-                    FilterChip(selected = a in diet.allergies, onClick = {
-                        vm.toggleAllergen(a)
-                    }, label = { Text(stringResource(Labels.allergen(a))) })
+                    FilterChip(
+                        selected = a in diet.allergies,
+                        onClick = { vm.toggleAllergen(a) },
+                        label = { Text(stringResource(Labels.allergen(a))) },
+                        colors = SelectionColors.filterChip(),
+                    )
                 }
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 Diet.entries.forEach { d ->
-                    FilterChip(selected = d in diet.diets, onClick = { vm.toggleDiet(d) }, label = { Text(stringResource(Labels.diet(d))) })
+                    FilterChip(
+                        selected = d in diet.diets,
+                        onClick = { vm.toggleDiet(d) },
+                        label = { Text(stringResource(Labels.diet(d))) },
+                        colors = SelectionColors.filterChip(),
+                    )
                 }
             }
             diet.consentedAt?.let {

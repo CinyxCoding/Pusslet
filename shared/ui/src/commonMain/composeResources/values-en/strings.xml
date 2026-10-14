@@ -9,7 +9,6 @@
     <string name="nav_shopping">Shopping</string>
     <string name="nav_more">More</string>
     <string name="quick_add">Add</string>
-    <string name="quick_add_description">Quick add: type what is happening</string>
     <string name="navigate_back">Back</string>
 
     <!-- Common -->
@@ -33,7 +32,6 @@
     <string name="optional">optional</string>
     <string name="loading">Loading…</string>
     <string name="error_generic">Something went wrong. Please try again in a moment.</string>
-    <string name="offline_notice">You are offline – changes are saved and sent when you are back online.</string>
     <string name="list_separator">, </string>
     <string name="and_separator"> and </string>
 
@@ -105,54 +103,48 @@
     <string name="greeting_named">%1$s, %2$s</string>
 
     <!-- Today -->
-    <string name="today_weather_now">%1$d° right now</string>
-    <string name="today_weather_range">%1$d° to %2$d° during the day</string>
-    <string name="today_weather_tomorrow">Tomorrow · %1$s</string>
-    <string name="today_weather_stale">Weather from %1$s – could not update</string>
-    <string name="today_weather_missing">Choose a place in settings to get weather and clothing tips.</string>
-    <string name="today_weather_unavailable">The weather could not be loaded right now.</string>
+    <string name="today_weather_line">%1$d° now · %2$d–%3$d°</string>
+    <string name="today_weather_tomorrow">Tomorrow · %1$d–%2$d°</string>
+    <string name="today_weather_stale">Weather from %1$s</string>
+    <string name="today_weather_missing">Choose place</string>
+    <string name="today_weather_unavailable">No weather right now</string>
     <string name="today_clothes_for">%1$s: %2$s</string>
     <string name="today_timeline_title">The day</string>
-    <string name="today_packing_title">To bring today</string>
-    <string name="today_packing_empty">Nothing extra to pack today.</string>
+    <string name="today_packing_title">To bring</string>
     <string name="today_packing_reason_event">for %1$s</string>
     <string name="today_packing_reason_handover">changeover day</string>
-    <string name="today_meals_title">Food today</string>
-    <string name="today_lunch">Lunch for %1$s: %2$s</string>
+    <string name="today_meals_title">Food</string>
+    <string name="today_lunch">Lunch: %2$s (%1$s)</string>
     <string name="today_dinner">Dinner: %1$s</string>
-    <string name="today_no_dinner">No dinner planned yet.</string>
+    <string name="today_no_dinner">No dinner planned</string>
     <string name="today_plan_dinner">Plan dinner</string>
-    <string name="today_clash">%1$s already had %2$s for lunch</string>
-    <string name="today_upcoming_title">Coming days</string>
-    <string name="today_upcoming_nothing">Quiet</string>
-    <string name="today_tasks_title">Your to-dos</string>
-    <string name="today_no_tasks">Nothing on your list. Nice!</string>
-    <string name="today_custody">The children are with: %1$s</string>
-    <string name="today_custody_handover">Changeover today at %1$s – to %2$s</string>
+    <string name="today_clash">%1$s had %2$s for lunch</string>
+    <string name="today_upcoming_title">Coming up</string>
+    <string name="today_tasks_title">To do</string>
+    <string name="today_custody">With %1$s</string>
+    <string name="today_custody_a11y">The children are with %1$s</string>
+    <string name="today_custody_handover">Changeover %1$s to %2$s</string>
     <string name="today_custody_next">Next changeover %1$s</string>
     <string name="today_dropoff">Drop-off</string>
     <string name="today_pickup">Pick-up</string>
-    <string name="today_handoff_line">%1$s %2$s</string>
-    <string name="today_handoff_nobody">Nobody assigned yet</string>
-    <string name="today_quiet">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
+    <string name="today_handoff_nobody">Not decided</string>
+    <string name="today_quiet">A calm day ☕</string>
     <string name="today_overdue">Overdue</string>
-    <string name="today_holiday">%1$s</string>
 
     <!-- Context cards -->
-    <string name="card_nobody_pickup">%1$s are busy at %2$s – nobody can pick up %3$s</string>
-    <string name="card_nobody_dropoff">%1$s are busy at %2$s – nobody can drop off %3$s</string>
+    <string name="card_nobody_pickup">Nobody can pick up %3$s at %2$s (busy: %1$s)</string>
+    <string name="card_nobody_dropoff">Nobody can drop off %3$s at %2$s (busy: %1$s)</string>
     <string name="card_busy_pickup">%1$s should pick up %2$s at %3$s but has %4$s</string>
     <string name="card_busy_dropoff">%1$s should drop off %2$s at %3$s but has %4$s</string>
     <string name="card_unassigned_pickup">Nobody is picking up %1$s at %2$s</string>
     <string name="card_unassigned_dropoff">Nobody is dropping off %1$s at %2$s</string>
     <string name="card_double_booked">%1$s has both %2$s and %3$s at the same time</string>
     <string name="card_study_day">%1$s %2$s – who is at home?</string>
-    <string name="card_party_gift">Party %1$s – no present bought yet</string>
-    <string name="card_squeeze_day">Bridge day %1$s – day off or after-school care?</string>
-    <string name="card_handover">Changeover %1$s: the children move to %2$s</string>
-    <string name="card_action_ask">Ask for help</string>
+    <string name="card_party_gift">Party %1$s – present?</string>
+    <string name="card_squeeze_day">Bridge day %1$s – off or after-school care?</string>
+    <string name="card_handover">Changeover %1$s to %2$s</string>
     <string name="card_action_take">I'll take it</string>
-    <string name="card_action_add_task">Add a to-do</string>
+    <string name="card_action_remind">Remind me</string>
     <string name="card_action_open">Show</string>
     <string name="card_today">today</string>
     <string name="card_tomorrow">tomorrow</string>
@@ -185,7 +177,6 @@
     <string name="weather_thunder">Thunder</string>
     <string name="weather_sleet">Sleet</string>
     <string name="weather_snow">Snow</string>
-    <string name="weather_source">Forecast: SMHI</string>
 
     <!-- Holidays -->
     <string name="holiday_NewYearsDay">New Year's Day</string>
@@ -246,7 +237,7 @@
     <string name="repeat_custom">Custom pattern</string>
 
     <!-- Quick add -->
-    <string name="quickadd_title">What's happening?</string>
+    <string name="quickadd_title">Add</string>
     <string name="quickadd_hint">E.g. “Simon football Tue 17:30 every week”</string>
     <string name="quickadd_interpreted">I understood this as…</string>
     <string name="quickadd_uncertain">Check the highlighted parts – tap to change.</string>
@@ -257,7 +248,7 @@
     <string name="quickadd_kind_handoff">Pick-up/drop-off</string>
     <string name="quickadd_save">Save</string>
     <string name="quickadd_save_all">Save %1$d things</string>
-    <string name="quickadd_saved">Saved!</string>
+    <string name="quickadd_saved">Saved</string>
     <string name="quickadd_examples">Try for example</string>
     <string name="quickadd_example_1">Ella kalas lör 14-16 hos Vera, köp present</string>
     <string name="quickadd_example_2">mjölk, 2 gurka, pasta</string>
@@ -266,7 +257,7 @@
     <string name="quickadd_handoff_pickup">%1$s picks up %2$s</string>
     <string name="quickadd_handoff_dropoff">%1$s drops off %2$s</string>
     <string name="quickadd_handoff_all_children">the children</string>
-    <string name="quickadd_no_handoff_found">There was no drop-off/pick-up that day, so I added a new pick-up at %1$s.</string>
+    <string name="quickadd_no_handoff_found">New pick-up at %1$s (there was none)</string>
     <string name="quickadd_linked_task">Linked to the event</string>
     <string name="quickadd_meal_slot">%1$s, %2$s</string>
     <string name="field_title">Title</string>
@@ -289,15 +280,15 @@
     <string name="calendar_view_week">Week</string>
     <string name="calendar_view_month">Month</string>
     <string name="calendar_view_agenda">Agenda</string>
-    <string name="calendar_layers">Show in the calendar</string>
-    <string name="layer_family">Family events</string>
-    <string name="layer_subscriptions">Subscriptions (school, club)</string>
-    <string name="layer_device">My own calendars</string>
+    <string name="calendar_layers">Filter</string>
+    <string name="layer_family">Family</string>
+    <string name="layer_subscriptions">School and clubs</string>
+    <string name="layer_device">My calendars</string>
     <string name="layer_holidays">Public holidays</string>
     <string name="layer_custody">Shared custody</string>
     <string name="calendar_filter_all">Everyone</string>
     <string name="calendar_empty_day">Nothing planned</string>
-    <string name="calendar_empty_week">Nothing planned this week. Add something with +.</string>
+    <string name="calendar_empty_week">Nothing planned this week</string>
     <string name="calendar_new_event">New event</string>
     <string name="calendar_edit_event">Edit event</string>
     <string name="calendar_previous">Previous</string>
@@ -309,7 +300,7 @@
     <string name="event_dropoff">Drops off</string>
     <string name="event_pickup">Picks up</string>
     <string name="event_handoffs">Drop-off and pick-up</string>
-    <string name="event_handoff_none">Not needed</string>
+    <string name="event_handoff_none">Not decided</string>
     <string name="event_location">Place</string>
     <string name="event_note">Note</string>
     <string name="event_tags">Kind of event</string>
@@ -344,7 +335,7 @@
     <string name="onboarding_create">Create our family</string>
     <string name="onboarding_join">I have an invite</string>
     <string name="onboarding_demo">Explore with an example family</string>
-    <string name="onboarding_step">Step %1$d of %2$d</string>
+    <string name="onboarding_step">%1$d of %2$d</string>
     <string name="onboarding_family_title">Who are you?</string>
     <string name="onboarding_family_name">Family name</string>
     <string name="onboarding_family_name_hint">The Lind family</string>
@@ -407,7 +398,7 @@
     <string name="invite_create">Create invite</string>
     <string name="invite_code_label">Code</string>
     <string name="invite_valid_until">Valid until %1$s</string>
-    <string name="invite_share_text">Hi! Join %1$s in %2$s: %3$s – or enter the code %4$s in the app.</string>
+    <string name="invite_share_text">Hi, join %1$s in %2$s: %3$s – or enter the code %4$s in the app.</string>
     <string name="invite_needs_account">Sign in first so the family can be shared between your phones.</string>
     <string name="invite_qr_description">Invite QR code</string>
 
@@ -415,7 +406,7 @@
     <string name="child_new">New child</string>
     <string name="child_edit">Edit %1$s</string>
     <string name="child_name">First name</string>
-    <string name="child_avatar">Symbol</string>
+    <string name="child_avatar">Picture</string>
     <string name="child_color">Colour</string>
     <string name="child_birth_date">Date of birth</string>
     <string name="child_birth_hint">YYYY-MM-DD</string>
@@ -424,7 +415,7 @@
     <string name="child_lunch">School lunch</string>
     <string name="lunch_none">Don't show</string>
     <string name="lunch_skolmaten">skolmaten.se</string>
-    <string name="lunch_rss">Own RSS link</string>
+    <string name="lunch_rss">Other menu link</string>
     <string name="lunch_manual">Enter it myself</string>
     <string name="lunch_reference_hint">The school's page on skolmaten.se or a link</string>
     <string name="child_sizes">Clothing sizes</string>
@@ -507,14 +498,12 @@
     <!-- More -->
     <string name="more_title">More</string>
     <string name="more_family">The family</string>
-    <string name="more_family_body">Children, adults, invites and shared custody</string>
     <string name="more_tasks">Tasks and chores</string>
-    <string name="more_tasks_body">To-dos, rotating chores and how they are shared</string>
     <string name="more_recipes">Recipes</string>
     <string name="more_settings">Settings</string>
-    <string name="more_account">Account and sync</string>
+    <string name="more_account">Account and sharing</string>
     <string name="more_about_data">About the data</string>
-    <string name="more_privacy">Privacy and your data</string>
+    <string name="more_privacy">Privacy</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
@@ -528,7 +517,7 @@
     <string name="language_system">Phone language</string>
     <string name="language_sv">Svenska</string>
     <string name="language_en">English</string>
-    <string name="settings_weather_place">Place for weather</string>
+    <string name="settings_weather_place">Choose place</string>
     <string name="settings_weather_place_none">No place chosen</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_morning">Morning check</string>
@@ -536,7 +525,7 @@
     <string name="settings_quiet_hours">Quiet hours</string>
     <string name="settings_quiet_hours_body">No notifications %1$s–%2$s</string>
     <string name="settings_calendars">Calendars</string>
-    <string name="settings_device_calendars">Show my own calendars</string>
+    <string name="settings_device_calendars">Show my calendars</string>
     <string name="settings_device_calendars_body">So clashes with work show up. Needs calendar permission.</string>
     <string name="settings_export_calendar">Put family events in</string>
     <string name="settings_export_none">Don't export</string>
@@ -546,7 +535,7 @@
     <string name="settings_version">Version %1$s</string>
 
     <!-- Account -->
-    <string name="account_title">Account and sync</string>
+    <string name="account_title">Account and sharing</string>
     <string name="account_signed_out">Right now everything is stored only on this phone. Sign in to share with the family.</string>
     <string name="account_email">Email</string>
     <string name="account_password">Password</string>
@@ -571,7 +560,7 @@
 
     <!-- About data -->
     <string name="about_title">About the data</string>
-    <string name="about_intro">Pusslet uses open data from these sources. Thank you!</string>
+    <string name="about_intro">Pusslet uses open data from these sources. Many thanks to them.</string>
     <string name="about_no_ai">Pusslet does not use any AI service. All interpretation is done with rules on the phone.</string>
     <string name="source_livsmedel">Swedish Food Agency food database</string>
     <string name="source_livsmedel_body">Nutrition values. Licence CC BY 4.0, source: Livsmedelsverket.</string>
@@ -591,7 +580,7 @@
     <string name="source_never">Not fetched yet</string>
 
     <!-- Privacy -->
-    <string name="privacy_title">Privacy and your data</string>
+    <string name="privacy_title">Privacy</string>
     <string name="privacy_summary">The family's information is stored on the phone and – once you sign in – with Google Firebase within the EU. Children only need a first name. Nothing is sold, no ads, no AI.</string>
     <string name="privacy_sensitive">Allergies and diet are only stored if you actively choose so, and can be removed at any time.</string>
     <string name="privacy_export">Export all data</string>
@@ -630,29 +619,27 @@
     <!-- Shopping list -->
     <string name="list_kind_grocery">Groceries</string>
     <string name="list_kind_other">Other</string>
-    <string name="shopping_add_hint">Add, e.g. 2 l milk, bread</string>
+    <string name="shopping_add_hint">Add item</string>
     <string name="shopping_add_action">Add to the list</string>
     <string name="shopping_scan">Scan barcode</string>
     <string name="shopping_store_mode">I'm shopping now</string>
-    <string name="shopping_from_meals">From the meal plan</string>
+    <string name="shopping_from_meals">Shop for the week</string>
     <string name="shopping_suggestions_title">You usually buy</string>
     <string name="shopping_suggestions_dismiss">Not now</string>
     <string name="shopping_suggestion_add">Add %1$s</string>
-    <string name="shopping_shopper_now">%1$s is shopping right now – add what you need and it comes along.</string>
-    <string name="shopping_someone_shopping">Someone in the family is shopping right now – add what you need.</string>
+    <string name="shopping_shopper_now">%1$s is shopping now</string>
+    <string name="shopping_someone_shopping">Someone is shopping now</string>
     <string name="shopping_in_cart_count">In the cart (%1$d)</string>
     <string name="shopping_clear_checked">Clear ticked items</string>
-    <string name="shopping_show_checked">Show</string>
-    <string name="shopping_hide_checked">Hide</string>
     <string name="shopping_empty_title">The list is empty</string>
-    <string name="shopping_empty_body">Type what you need above, scan a product or get the ingredients from the meal plan.</string>
+    <string name="shopping_empty_body">E.g. “2 l milk, bread”</string>
     <string name="shopping_added">Added: %1$s</string>
-    <string name="shopping_already_on_list">Already on the list: %1$s</string>
+    <string name="shopping_already_on_list">%1$s was already there</string>
     <string name="shopping_removed">%1$s removed</string>
     <string name="shopping_in_cart_toast">%1$s in the cart</string>
     <string name="shopping_all_done">Everything's in the cart! Nice work 🎉</string>
-    <string name="shopping_generated">The list is updated from the meal plan.</string>
-    <string name="shopping_generated_nothing">Nothing new to add from the meal plan.</string>
+    <string name="shopping_generated">List updated</string>
+    <string name="shopping_generated_nothing">Nothing new to add</string>
     <string name="shopping_unknown_title">Unknown product</string>
     <string name="shopping_unknown_body">The barcode %1$s isn't in Open Food Facts (or you're offline). What's the product called?</string>
     <string name="shopping_item_name">Item</string>
@@ -669,7 +656,6 @@
     <string name="shopping_list_name">List name</string>
     <string name="shopping_store_none">No particular store (default order)</string>
     <string name="shopping_edit_item">Edit item</string>
-    <string name="shopping_edit_item_named">Edit %1$s</string>
     <string name="shopping_amount">Amount</string>
     <string name="shopping_unit">Unit</string>
     <string name="shopping_unit_none">–</string>
@@ -677,7 +663,7 @@
     <string name="shopping_note">Note</string>
     <string name="shopping_price">Own price, SEK (optional)</string>
     <string name="shopping_added_by">Added by %1$s</string>
-    <string name="shopping_left_count">Left to buy: %1$d</string>
+    <string name="shopping_left_count">%1$d left</string>
     <string name="shopping_nothing_left">All bought</string>
     <string name="shopping_subtitle_store">%1$s · %2$s</string>
     <string name="shopping_state_in_cart">In the cart</string>
@@ -686,28 +672,28 @@
     <string name="shopping_put_back">Put back on the list</string>
 
     <!-- Shopping: from the meal plan -->
-    <string name="meals_to_list_title">Shop for the meal plan</string>
+    <string name="meals_to_list_title">Shop for the week</string>
     <string name="meals_to_list_this_week">This week</string>
     <string name="meals_to_list_next_week">Next week</string>
     <string name="meals_to_list_summary">%1$s – new: %2$d · changed: %3$d · removed: %4$d</string>
     <string name="meals_to_list_empty">Nothing to add for %1$s. Plan dinners with recipes in the meal plan – or everything is already on the list.</string>
     <string name="meals_to_list_confirm">Update the list</string>
-    <string name="meals_to_list_pantry_on">What you have in the pantry is deducted. Salt, pepper and water are skipped.</string>
-    <string name="meals_to_list_pantry_off">Salt, pepper and water are skipped. Turn on the pantry to deduct what you already have.</string>
+    <string name="meals_to_list_pantry_on">What you have at home is deducted. Salt, pepper and water are skipped.</string>
+    <string name="meals_to_list_pantry_off">Salt, pepper and water are skipped. What you have at home is not deducted.</string>
 
     <!-- Shopping: pantry -->
-    <string name="pantry_title">Pantry</string>
+    <string name="pantry_title">What we have at home</string>
     <string name="pantry_intro">Note what you have at home and it is deducted when the list is made from the meal plan. Without an amount it counts as enough.</string>
     <string name="pantry_use">Deduct what we have at home</string>
     <string name="pantry_add_hint">E.g. 1 kg flour, rice</string>
-    <string name="pantry_empty">Nothing in the pantry yet.</string>
+    <string name="pantry_empty">Nothing noted yet</string>
     <string name="pantry_enough">Enough</string>
     <string name="pantry_remove">Remove %1$s</string>
 
     <!-- Shopping: stores and store mode -->
     <string name="stores_title">Stores</string>
     <string name="stores_add">New store</string>
-    <string name="stores_empty">Add the store you usually shop at and sort the aisles in the order you walk them – the list then follows the same order.</string>
+    <string name="stores_empty">Add your store and the list follows its aisles</string>
     <string name="store_edit">Edit store</string>
     <string name="store_name">Store name</string>
     <string name="store_default">Default store</string>
@@ -720,7 +706,7 @@
     <string name="store_delete_confirm">Delete the store %1$s?</string>
     <string name="store_mode_all_done_title">Everything's in the cart!</string>
     <string name="store_mode_all_done_body">Lovely. Only the checkout left.</string>
-    <string name="store_mode_finish">Done shopping</string>
+    <string name="store_mode_finish">Done</string>
 
     <!-- Meals: week plan -->
     <string name="meals_section_week">Meal plan</string>
@@ -728,7 +714,7 @@
     <string name="meals_previous_week">Previous week</string>
     <string name="meals_next_week">Next week</string>
     <string name="meals_week_menu">More options for the week</string>
-    <string name="meals_this_week">Go to this week</string>
+    <string name="meals_this_week">This week</string>
     <string name="meals_shop_for_week">Shop for the week</string>
     <string name="meals_copy_previous">Copy last week</string>
     <string name="meals_save_favorite">Save as favourite week</string>
@@ -736,45 +722,45 @@
     <string name="meals_favorites_hint">Pick a week to add. Days already planned are replaced.</string>
     <string name="meals_favorite_name">Name, e.g. Autumn week</string>
     <string name="meals_plan_slot">Plan %1$s</string>
-    <string name="meals_nothing_planned">Nothing planned yet</string>
-    <string name="meals_busy_evening">%1$s at %2$s – maybe something quick</string>
+    <string name="meals_plan_short">Plan</string>
+    <string name="meals_nothing_planned">Nothing planned</string>
+    <string name="meals_busy_evening">%2$s %1$s – something quick?</string>
     <string name="meals_leftovers_from">Leftovers from %1$s</string>
     <string name="meals_cook_double">Cook double</string>
     <string name="meals_cook_double_hint">The leftovers are planned for the next free day.</string>
     <string name="meals_open_recipe">Recipe</string>
-    <string name="meals_add_lunch">School lunch for %1$s</string>
-    <string name="meals_clash">Same kind of food as %1$s's school lunch</string>
+    <string name="meals_add_lunch">Add school lunch (%1$s)</string>
+    <string name="meals_clash">Same as lunch (%1$s)</string>
     <string name="meals_lunch_title">School lunch for %1$s, %2$s</string>
     <string name="meals_lunch_hint">Dishes, one per line</string>
     <string name="meals_sheet_title">%1$s, %2$s</string>
     <string name="meals_what_hint">What's for dinner? A recipe or e.g. tacos</string>
     <string name="meals_recipe_chosen">Recipe chosen</string>
     <string name="meals_suggestions">Suggestions</string>
-    <string name="meals_no_suggestions">Add a few recipes and suggestions show up here – or just type what it'll be.</string>
+    <string name="meals_no_suggestions">No suggestions yet – just type it</string>
     <string name="meals_free_text_hint">No recipe by that name – it's saved as written.</string>
     <string name="meals_note">Note</string>
     <string name="meals_move">Move to…</string>
     <string name="reason_favorite">Favourite</string>
-    <string name="reason_not_recently">Not for a while</string>
-    <string name="reason_quick">Quick for a busy evening</string>
-    <string name="reason_uses_pantry">Uses what you have</string>
-    <string name="reason_varies">Varies the week</string>
-    <string name="reason_not_lunch">Not the same as school lunch</string>
+    <string name="reason_not_recently">Been a while</string>
+    <string name="reason_quick">Quick</string>
+    <string name="reason_uses_pantry">At home</string>
+    <string name="reason_varies">Variety</string>
+    <string name="reason_not_lunch">Not like lunch</string>
 
     <!-- Recipes -->
     <string name="recipe_import">Import from link</string>
     <string name="recipe_new">New recipe</string>
     <string name="recipe_edit">Edit recipe</string>
-    <string name="recipe_search">Search recipes or ingredients</string>
+    <string name="recipe_search">Search recipes</string>
     <string name="recipe_empty_title">No recipes yet</string>
-    <string name="recipe_empty_body">Import from a recipe site or type in the family's own favourites.</string>
+    <string name="recipe_empty_body">Import from a recipe site or add your own</string>
     <string name="recipe_no_match">No recipes match.</string>
     <string name="recipe_minutes">%1$d min</string>
-    <string name="recipe_servings_short">%1$d servings</string>
     <string name="recipe_favorite">Favourite</string>
     <string name="recipe_make_favorite">Mark as favourite</string>
     <string name="recipe_unfavorite">Remove from favourites</string>
-    <string name="recipe_match_foods">Match ingredients</string>
+    <string name="recipe_match_foods">Improve estimate</string>
     <string name="recipe_match_hint">Choose which food each ingredient is to improve the nutrition overview. The choice is saved for the whole family.</string>
     <string name="recipe_match_confirmed">Confirmed</string>
     <string name="recipe_match_none">Nothing similar found in the food database.</string>
@@ -839,21 +825,43 @@
     <string name="nutrition_grams">%1$s g</string>
     <string name="nutrition_coverage">Estimated from %1$d of %2$d ingredients, for %3$d servings.</string>
     <string name="nutrition_loading">Calculating …</string>
-    <string name="nutrition_unavailable">Nutrition data is downloaded from the Swedish Food Agency the first time – try again when you're online.</string>
-    <string name="nutrition_source">Source: Swedish Food Agency food database (CC BY 4.0).</string>
+    <string name="nutrition_unavailable">Needs internet the first time</string>
+    <string name="nutrition_source">Source: Swedish Food Agency</string>
 
     <!-- Meals: week nutrition -->
-    <string name="week_nutrition_title">Nutrition for the week's dinners</string>
-    <string name="week_nutrition_intro">A rough overview per serving for the planned recipes.</string>
-    <string name="week_nutrition_calculate">Calculate</string>
-    <string name="week_nutrition_no_recipes">Plan a few dinners with recipes and we can calculate them.</string>
+    <string name="week_nutrition_title">Nutrition for the week</string>
+    <string name="week_nutrition_no_recipes">Plan dinners with recipes first</string>
     <string name="week_nutrition_average">On average per serving:</string>
     <string name="week_nutrition_coverage">Calculated for %1$d of %2$d meals with recipes.</string>
 
+    <string name="quickadd_saved_item">1 item on the list</string>
+    <string name="quickadd_saved_items">%1$d items on the list</string>
+    <string name="quickadd_saved_event">In the calendar %1$s</string>
+    <string name="quickadd_saved_meal">On the menu %1$s</string>
+    <string name="quickadd_saved_task">Saved to To do</string>
+    <string name="quickadd_saved_pickup">%1$s picks up %2$s</string>
+    <string name="quickadd_saved_dropoff">%1$s drops off %2$s</string>
+    <string name="quickadd_no_dropoff_found">New drop-off at %1$s (there was none)</string>
+    <string name="quickadd_day_time">%1$s %2$s</string>
+    <string name="quickadd_action_show">Show</string>
+
+    <string name="shopping_ticked">%1$s ticked off</string>
+    <string name="shopping_checked_count">Ticked off (%1$d)</string>
+    <string name="shopping_cleared">%1$d items cleared</string>
+    <string name="shopping_show_checked_a11y">Show ticked off items</string>
+    <string name="shopping_hide_checked_a11y">Hide ticked off items</string>
+
+    <string name="meals_recipe_from_link">From a link</string>
+    <string name="meals_recipe_type_in">Type it in</string>
+    <string name="meals_recipe_paste_text">Paste text</string>
+
+    <string name="calendar_until">until %1$s</string>
+
+    <string name="settings_dev_title">Developer</string>
+    <string name="settings_dev_replay_onboarding">Show first run again</string>
+
+    <string name="today_demo_family">Sample family</string>
+
     <!-- Placeholders used until a feature is wired up -->
-    <string name="empty_today">Nothing planned today. Enjoy the calm ☕ – or add something with +</string>
-    <string name="empty_calendar">The calendar is empty for now.</string>
-    <string name="empty_meals">No meal plan for this week yet.</string>
-    <string name="empty_shopping">The shopping list is empty. Nice!</string>
     <string name="empty_more">Family, tasks and settings live here.</string>
 </resources>

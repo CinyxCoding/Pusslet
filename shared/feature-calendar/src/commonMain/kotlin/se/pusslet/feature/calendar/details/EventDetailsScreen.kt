@@ -12,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,6 +62,7 @@ import se.pusslet.feature.calendar.editor.reminderLabel
 import se.pusslet.ui.components.AvatarStack
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
+import se.pusslet.ui.components.InfoPill
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PussletTopBar
@@ -273,13 +273,10 @@ fun EventDetailsScreen(
                 HandoffCard(state, o, people, onTake, onAssign, onRequest)
             }
             if (o.event.tags.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                // Tags inform; they are not buttons (UX plan 1.6).
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     o.event.tags.forEach { tag ->
-                        AssistChip(onClick = {}, label = {
-                            Text(
-                                Labels.tag(tag)?.let { stringResource(it) } ?: tag.replaceFirstChar { it.uppercase() },
-                            )
-                        })
+                        InfoPill(Labels.tag(tag)?.let { stringResource(it) } ?: tag.replaceFirstChar { it.uppercase() })
                     }
                 }
             }

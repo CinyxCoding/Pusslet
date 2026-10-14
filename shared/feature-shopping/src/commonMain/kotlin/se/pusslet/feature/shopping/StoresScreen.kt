@@ -20,7 +20,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -129,11 +129,10 @@ fun StoresRoute(onBack: () -> Unit, onEdit: (String?) -> Unit, viewModel: Stores
         topBar = { PussletTopBar(stringResource(Res.string.stores_title), onBack = onBack) },
         floatingActionButton = {
             if (state.canManage) {
-                ExtendedFloatingActionButton(
-                    onClick = { onEdit(null) },
-                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    text = { Text(stringResource(Res.string.stores_add)) },
-                )
+                // A sub page with its own round + ("Ny butik"), no text on the button (ADR-023).
+                FloatingActionButton(onClick = { onEdit(null) }) {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.stores_add))
+                }
             }
         },
     ) { padding ->
@@ -147,7 +146,7 @@ fun StoresRoute(onBack: () -> Unit, onEdit: (String?) -> Unit, viewModel: Stores
                 start = Spacing.screenHorizontal,
                 end = Spacing.screenHorizontal,
                 top = padding.calculateTopPadding(),
-                bottom = padding.calculateBottomPadding() + Spacing.xxl * 3,
+                bottom = padding.calculateBottomPadding() + Spacing.listBottomInset,
             ),
         ) {
             if (state.stores.isEmpty()) {

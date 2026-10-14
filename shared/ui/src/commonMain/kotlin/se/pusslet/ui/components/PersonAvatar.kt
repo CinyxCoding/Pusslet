@@ -88,7 +88,7 @@ fun PersonChips(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (allLabel != null && onAll != null) {
-            FilterChip(selected = selected.isEmpty(), onClick = onAll, label = { Text(allLabel) })
+            FilterChip(selected = selected.isEmpty(), onClick = onAll, label = { Text(allLabel) }, colors = SelectionColors.filterChip())
         }
         people.forEach { p ->
             FilterChip(
@@ -96,6 +96,7 @@ fun PersonChips(
                 onClick = { onToggle(p.id) },
                 label = { Text(p.name) },
                 leadingIcon = { PersonAvatar(p, size = 20.dp) },
+                colors = SelectionColors.filterChip(),
             )
         }
     }

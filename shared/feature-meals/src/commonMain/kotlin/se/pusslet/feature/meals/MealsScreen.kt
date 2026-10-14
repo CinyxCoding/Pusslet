@@ -4,35 +4,43 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,9 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,10 +65,14 @@ import se.pusslet.core.model.LunchProviderType
 import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
-import se.pusslet.ui.components.ColorBadge
+import se.pusslet.ui.components.InfoPill
 import se.pusslet.ui.components.Labels
+import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.PussletIcons
+import se.pusslet.ui.components.RegisterAddButton
 import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.SmallAction
 import se.pusslet.ui.format.formatDateShort
 import se.pusslet.ui.format.formatTime
@@ -73,6 +85,8 @@ enum class MealsSection { Week, Recipes }
 
 /**
  * The Mat tab: the week's meal plan (with school lunches, clash warnings and busy evenings) and the recipe library.
+ * The round + plans the next dinner on Matsedel and adds a recipe on Recept (UX plan 1.2). [onPasteRecipe] opens the
+ * recipe editor with the paste dialog; until the shell wires it, "Klistra in text" opens the plain editor.
  */
 @Composable
 fun MealsRoute(
@@ -81,6 +95,7 @@ fun MealsRoute(
     onImportRecipe: () -> Unit,
     onShopForWeek: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
+    onPasteRecipe: () -> Unit = onNewRecipe,
     viewModel: MealsViewModel = koinViewModel(),
     library: RecipeLibraryViewModel = koinViewModel(),
 ) {
@@ -89,6 +104,7 @@ fun MealsRoute(
     val libraryState by library.state.collectAsStateWithLifecycle()
     val weekNutrition by viewModel.weekNutrition.collectAsStateWithLifecycle()
     var section by rememberSaveable { mutableStateOf(MealsSection.Week) }
+    var choosingRecipe by rememberSaveable { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
         SingleChoiceSegmentedButtonRow(
@@ -103,40 +119,53 @@ fun MealsRoute(
                     selected = section == s,
                     onClick = { section = s },
                     shape = SegmentedButtonDefaults.itemShape(i, sections.size),
+                    colors = SelectionColors.segmentedButton(),
                     label = { Text(stringResource(label), maxLines = 1) },
                 )
             }
         }
         val bottom = PaddingValues(bottom = contentPadding.calculateBottomPadding())
         when (section) {
-            MealsSection.Week -> WeekPlanScreen(
-                state = state,
-                weekNutrition = weekNutrition,
-                bottomPadding = bottom,
-                actions = WeekActions(
-                    onPrevious = viewModel::previousWeek,
-                    onNext = viewModel::nextWeek,
-                    onThisWeek = viewModel::thisWeek,
-                    onOpenDay = viewModel::openDay,
-                    onCopyPrevious = viewModel::copyPreviousWeek,
-                    onSaveFavorite = viewModel::saveFavorite,
-                    onApplyFavorite = viewModel::applyFavorite,
-                    onDeleteFavorite = viewModel::deleteFavorite,
-                    onSetLunch = viewModel::setLunch,
-                    onOpenRecipe = onOpenRecipe,
-                    onShopForWeek = onShopForWeek,
-                    onCalculateNutrition = viewModel::calculateWeekNutrition,
-                ),
-            )
-            MealsSection.Recipes -> RecipeLibraryScreen(
-                state = libraryState,
-                bottomPadding = bottom,
-                onQuery = library::setQuery,
-                onToggleTag = library::toggleTag,
-                onOpen = onOpenRecipe,
-                onNew = onNewRecipe,
-                onImport = onImportRecipe,
-            )
+            MealsSection.Week -> {
+                RegisterAddButton(
+                    label = stringResource(Res.string.meals_plan_slot, stringResource(Labels.mealSlot(state.mainSlot)).lowercase()),
+                    enabled = state.canEdit && !state.loading,
+                    onClick = viewModel::openNextToPlan,
+                )
+                WeekPlanScreen(
+                    state = state,
+                    weekNutrition = weekNutrition,
+                    bottomPadding = bottom,
+                    actions = WeekActions(
+                        onPrevious = viewModel::previousWeek,
+                        onNext = viewModel::nextWeek,
+                        onThisWeek = viewModel::thisWeek,
+                        onOpenDay = viewModel::openDay,
+                        onCopyPrevious = viewModel::copyPreviousWeek,
+                        onSaveFavorite = viewModel::saveFavorite,
+                        onApplyFavorite = viewModel::applyFavorite,
+                        onDeleteFavorite = viewModel::deleteFavorite,
+                        onSetLunch = viewModel::setLunch,
+                        onOpenRecipe = onOpenRecipe,
+                        onShopForWeek = onShopForWeek,
+                        onCalculateNutrition = viewModel::calculateWeekNutrition,
+                    ),
+                )
+            }
+            MealsSection.Recipes -> {
+                RegisterAddButton(
+                    label = stringResource(Res.string.recipe_new),
+                    enabled = libraryState.canEdit && !libraryState.loading,
+                    onClick = { choosingRecipe = true },
+                )
+                RecipeLibraryScreen(
+                    state = libraryState,
+                    bottomPadding = bottom,
+                    onQuery = library::setQuery,
+                    onToggleTag = library::toggleTag,
+                    onOpen = onOpenRecipe,
+                )
+            }
         }
     }
     editor?.let { e ->
@@ -162,6 +191,14 @@ fun MealsRoute(
             },
         )
     }
+    if (choosingRecipe) {
+        NewRecipeSheet(
+            onDismiss = { choosingRecipe = false },
+            onImport = onImportRecipe,
+            onTypeIn = onNewRecipe,
+            onPaste = onPasteRecipe,
+        )
+    }
 }
 
 data class WeekActions(
@@ -181,6 +218,7 @@ data class WeekActions(
 
 private enum class WeekDialog { None, SaveFavorite, Favorites }
 
+/** Matsedel: the week header stays put and the days scroll, opening at today's card (UX plan 1.11). */
 @Composable
 fun WeekPlanScreen(
     state: MealsUiState,
@@ -193,29 +231,43 @@ fun WeekPlanScreen(
         return
     }
     var dialog by rememberSaveable { mutableStateOf(WeekDialog.None) }
-    var lunchTarget by remember { mutableStateOf<Pair<Child, DayPlan>?>(null) }
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            start = Spacing.screenHorizontal,
-            end = Spacing.screenHorizontal,
-            top = Spacing.xs,
-            bottom = Spacing.xxl * 3 + bottomPadding.calculateBottomPadding(),
-        ),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
-    ) {
-        item(key = "header") { WeekHeader(state, actions, onDialog = { dialog = it }) }
-        items(state.days, key = { it.date.toString() }) { day ->
-            DayCard(
-                day = day,
-                state = state,
-                onOpen = { slot -> actions.onOpenDay(day.date, slot) },
-                onOpenRecipe = actions.onOpenRecipe,
-                onEditLunch = { child -> lunchTarget = child to day },
-            )
+    var lunchTarget by remember { mutableStateOf<Pair<List<Child>, DayPlan>?>(null) }
+    val listState = rememberLazyListState()
+    // This week opens at today's card (not Monday); other weeks open at Monday. Only once per week shown, so coming
+    // back from a recipe keeps the place in the list.
+    var scrolledTo by rememberSaveable { mutableStateOf<String?>(null) }
+    LaunchedEffect(state.week) {
+        val week = state.week?.let { "${it.weekYear}-${it.week}" }
+        if (week != scrolledTo) {
+            scrolledTo = week
+            listState.scrollToItem(state.days.indexOfFirst { it.isToday }.coerceAtLeast(0))
         }
-        if (state.plannedCount > 0) {
-            item(key = "nutrition") { WeekNutritionCard(weekNutrition, actions.onCalculateNutrition) }
+    }
+    Column(Modifier.fillMaxSize()) {
+        WeekHeader(state, actions, onDialog = { dialog = it }, modifier = Modifier.padding(horizontal = Spacing.screenHorizontal))
+        LazyColumn(
+            Modifier.fillMaxWidth().weight(1f),
+            state = listState,
+            contentPadding = PaddingValues(
+                start = Spacing.screenHorizontal,
+                end = Spacing.screenHorizontal,
+                top = Spacing.xs,
+                bottom = Spacing.listBottomInset + bottomPadding.calculateBottomPadding(),
+            ),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        ) {
+            items(state.days, key = { it.date.toString() }) { day ->
+                DayCard(
+                    day = day,
+                    state = state,
+                    onOpen = { slot -> actions.onOpenDay(day.date, slot) },
+                    onOpenRecipe = actions.onOpenRecipe,
+                    onEditLunch = { children -> lunchTarget = children to day },
+                )
+            }
+            if (state.plannedCount > 0) {
+                item(key = "nutrition") { WeekNutritionCard(weekNutrition, actions.onCalculateNutrition) }
+            }
         }
     }
     when (dialog) {
@@ -237,13 +289,14 @@ fun WeekPlanScreen(
             onDelete = actions.onDeleteFavorite,
         )
     }
-    lunchTarget?.let { (child, day) ->
+    lunchTarget?.let { (children, day) ->
         LunchDialog(
-            child = child,
+            children = children,
             day = day,
             onDismiss = { lunchTarget = null },
             onSave = { text ->
-                actions.onSetLunch(child.id, day.date, text)
+                // Children who shared the row get the same lunch.
+                children.forEach { actions.onSetLunch(it.id, day.date, text) }
                 lunchTarget = null
             },
         )
@@ -251,10 +304,10 @@ fun WeekPlanScreen(
 }
 
 @Composable
-private fun WeekHeader(state: MealsUiState, actions: WeekActions, onDialog: (WeekDialog) -> Unit) {
+private fun WeekHeader(state: MealsUiState, actions: WeekActions, onDialog: (WeekDialog) -> Unit, modifier: Modifier = Modifier) {
     val week = state.week ?: return
     var menu by remember { mutableStateOf(false) }
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = actions.onPrevious) {
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = stringResource(Res.string.meals_previous_week))
         }
@@ -321,25 +374,18 @@ private fun DayCard(
     state: MealsUiState,
     onOpen: (MealSlot) -> Unit,
     onOpenRecipe: (String) -> Unit,
-    onEditLunch: (Child) -> Unit,
+    onEditLunch: (List<Child>) -> Unit,
 ) {
-    SectionCard(title = null) {
+    DayContainer(focus = day.isToday) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Text(
                 weekdayName(day.date.dayOfWeek).replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (day.isToday) FontWeight.Bold else null,
                 color = if (day.redDay) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.semantics { heading() },
             )
             Text(formatDateShort(day.date), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (day.isToday) {
-                Text(
-                    stringResource(Res.string.today),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
+            if (day.isToday) InfoPill(stringResource(Res.string.today), selected = true)
         }
         day.holidays.forEach { h ->
             Text(
@@ -348,24 +394,20 @@ private fun DayCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        val showSlot = state.slots.size > 1
         state.slots.forEach { slot ->
             val entry = day.entries[slot]
-            if (entry != null) {
-                PlannedMeal(
+            when {
+                entry != null -> PlannedMeal(
                     entry = entry,
                     slot = slot,
                     state = state,
-                    showSlot = state.slots.size > 1,
+                    showSlot = showSlot,
                     onOpen = { onOpen(slot) },
                     onOpenRecipe = onOpenRecipe,
                 )
-            } else if (state.canEdit) {
-                TextButton(onClick = { onOpen(slot) }) {
-                    Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.padding(end = Spacing.xs))
-                    Text(stringResource(Res.string.meals_plan_slot, stringResource(Labels.mealSlot(slot)).lowercase()))
-                }
-            } else {
-                Text(stringResource(Res.string.meals_nothing_planned), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                state.canEdit -> PlanRow(slot, showSlot, onClick = { onOpen(slot) })
+                else -> Text(stringResource(Res.string.meals_nothing_planned), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         if (day.busy.isNotEmpty() && day.dinner == null) {
@@ -380,6 +422,46 @@ private fun DayCard(
     }
 }
 
+/** Today's card is the screen's one focus surface (havre); the other days are flat (UX plan 1.11). */
+@Composable
+private fun DayContainer(focus: Boolean, content: @Composable ColumnScope.() -> Unit) {
+    if (focus) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        ) {
+            Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm), content = content)
+        }
+    } else {
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = Spacing.lg, vertical = Spacing.xs),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            content = content,
+        )
+    }
+}
+
+/** The quiet "Planera" row of an empty day; TalkBack hears "Planera middag". */
+@Composable
+private fun PlanRow(slot: MealSlot, showSlot: Boolean, onClick: () -> Unit) {
+    val slotName = stringResource(Labels.mealSlot(slot)).lowercase()
+    val description = stringResource(Res.string.meals_plan_slot, slotName)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = Spacing.touchTarget)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            if (showSlot) description else stringResource(Res.string.meals_plan_short),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
 @Composable
 private fun PlannedMeal(
     entry: MealEntry,
@@ -390,17 +472,25 @@ private fun PlannedMeal(
     onOpenRecipe: (String) -> Unit,
 ) {
     val recipe: Recipe? = entry.recipeId?.let { id -> state.recipes.firstOrNull { it.id == id } }
+    // Only what is special about this dinner; time, portions and tags live in the recipe.
     val details = buildList {
         entry.leftoversFrom?.let { add(stringResource(Res.string.meals_leftovers_from, weekdayName(it.dayOfWeek))) }
         if (entry.cookDouble) add(stringResource(Res.string.meals_cook_double))
-        recipe?.totalMinutes?.let { add(stringResource(Res.string.recipe_minutes, it)) }
         if (entry.note.isNotBlank()) add(entry.note)
+    }
+    // Parents open the planning sheet; helpers, who cannot plan, open the recipe.
+    val onRowClick: (() -> Unit)? = when {
+        state.canEdit -> onOpen
+        recipe != null -> {
+            { onOpenRecipe(recipe.id) }
+        }
+        else -> null
     }
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = Spacing.touchTarget)
-            .clickable(enabled = state.canEdit, role = Role.Button, onClick = onOpen),
+            .clickable(enabled = onRowClick != null, role = Role.Button) { onRowClick?.invoke() },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -420,51 +510,100 @@ private fun PlannedMeal(
                 )
             }
         }
-        if (recipe != null) SmallAction(stringResource(Res.string.meals_open_recipe)) { onOpenRecipe(recipe.id) }
+        if (recipe != null) {
+            IconButton(onClick = { onOpenRecipe(recipe.id) }) {
+                Icon(
+                    PussletIcons.ChevronRight,
+                    contentDescription = stringResource(Res.string.meals_open_recipe),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
+/**
+ * One row per school lunch, shared by the children who eat the same dish, and the clash with dinner said once. Typed-in
+ * lunches can be filled in on school days only (not weekends, holidays, "lov" or "studiedag").
+ */
 @Composable
-private fun LunchRows(day: DayPlan, state: MealsUiState, onEditLunch: (Child) -> Unit) {
-    val byChild = day.lunches.associateBy { it.child.id }
-    state.children.forEach { child ->
-        val lunch = byChild[child.id]
-        val manual = child.lunch?.provider == LunchProviderType.Manual
-        if (lunch == null && !(manual && state.canEdit)) return@forEach
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clickable(enabled = manual && state.canEdit, role = Role.Button) { onEditLunch(child) }
-                .padding(vertical = Spacing.xxs),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        ) {
-            ColorBadge(child.color, child.avatar ?: child.firstName.take(1).uppercase(), child.firstName, size = 20.dp)
-            Column(Modifier.weight(1f)) {
-                Text(
-                    if (lunch != null) {
-                        stringResource(Res.string.today_lunch, child.firstName, lunch.dishes.first())
-                    } else {
-                        stringResource(Res.string.meals_add_lunch, child.firstName)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+private fun LunchRows(day: DayPlan, state: MealsUiState, onEditLunch: (List<Child>) -> Unit) {
+    val manualIds = state.children.filter { it.lunch?.provider == LunchProviderType.Manual }.map { it.id }.toSet()
+    groupLunches(day.lunches).forEach { group ->
+        val editable = if (state.canEdit) group.children.filter { it.id in manualIds } else emptyList()
+        LunchLine(
+            text = stringResource(Res.string.today_lunch, group.children.joinToString(", ") { it.firstName }, group.dishes.first()),
+            onClick = if (editable.isNotEmpty()) {
+                { onEditLunch(editable) }
+            } else {
+                null
+            },
+        )
+    }
+    val clashing = day.lunches.filter { it.clash.isNotEmpty() }
+    if (clashing.isNotEmpty()) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Icon(
+                Icons.Filled.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                stringResource(Res.string.meals_clash, clashing.joinToString(", ") { it.child.firstName }),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+        }
+    }
+    if (!state.canEdit) return
+    val withLunch = day.lunches.map { it.child.id }.toSet()
+    state.children
+        .filter { it.id in manualIds && it.id !in withLunch && it.id !in day.noSchool }
+        .forEach { child ->
+            LunchLine(text = stringResource(Res.string.meals_add_lunch, child.firstName), onClick = { onEditLunch(listOf(child)) })
+        }
+}
+
+@Composable
+private fun LunchLine(text: String, onClick: (() -> Unit)?) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = onClick != null, role = Role.Button) { onClick?.invoke() }
+            .padding(vertical = Spacing.xxs),
+    )
+}
+
+/** What the round + on Recept opens: a recipe from a link, typed in, or pasted text split into the fields. */
+@Composable
+private fun NewRecipeSheet(onDismiss: () -> Unit, onImport: () -> Unit, onTypeIn: () -> Unit, onPaste: () -> Unit) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(Modifier.fillMaxWidth().padding(bottom = Spacing.xl).navigationBarsPadding()) {
+            Text(
+                stringResource(Res.string.recipe_new),
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.sm).semantics { heading() },
+            )
+            val choices = listOf(
+                Res.string.meals_recipe_from_link to onImport,
+                Res.string.meals_recipe_type_in to onTypeIn,
+                Res.string.meals_recipe_paste_text to onPaste,
+            )
+            choices.forEach { (label, choose) ->
+                ListRow(
+                    title = stringResource(label),
+                    modifier = Modifier
+                        .clickable(role = Role.Button) {
+                            onDismiss()
+                            choose()
+                        }
+                        .padding(horizontal = Spacing.screenHorizontal),
                 )
-                if (lunch != null && lunch.clash.isNotEmpty()) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                        Icon(
-                            Icons.Filled.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(16.dp),
-                        )
-                        Text(
-                            stringResource(Res.string.meals_clash, child.firstName),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.tertiary,
-                        )
-                    }
-                }
             }
         }
     }
@@ -532,12 +671,16 @@ private fun FavoritesDialog(
 }
 
 @Composable
-private fun LunchDialog(child: Child, day: DayPlan, onDismiss: () -> Unit, onSave: (String) -> Unit) {
-    val current = day.lunches.firstOrNull { it.child.id == child.id }?.dishes?.joinToString("\n").orEmpty()
-    var text by rememberSaveable(child.id, day.date.toString()) { mutableStateOf(current) }
+private fun LunchDialog(children: List<Child>, day: DayPlan, onDismiss: () -> Unit, onSave: (String) -> Unit) {
+    val ids = children.map { it.id }
+    val current = day.lunches.firstOrNull { it.child.id in ids }?.dishes?.joinToString("\n").orEmpty()
+    var text by rememberSaveable(ids.joinToString(), day.date.toString()) { mutableStateOf(current) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.meals_lunch_title, child.firstName, weekdayName(day.date.dayOfWeek))) },
+        title = {
+            val names = children.joinToString(", ") { it.firstName }
+            Text(stringResource(Res.string.meals_lunch_title, names, weekdayName(day.date.dayOfWeek)))
+        },
         text = {
             OutlinedTextField(
                 value = text,
@@ -553,18 +696,38 @@ private fun LunchDialog(child: Child, day: DayPlan, onDismiss: () -> Unit, onSav
     )
 }
 
-/** "Näring för veckans middagar": calculated on request, averaged per portion, neutral and with its source. */
+/**
+ * "Näring för veckan": folded to one row until asked for (the first time downloads Livsmedelsverket's food list), then
+ * averaged per portion, neutral and with its source.
+ */
 @Composable
 private fun WeekNutritionCard(state: WeekNutritionState, onCalculate: () -> Unit) {
+    if (state == WeekNutritionState.Idle) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = Spacing.primaryTouchTarget)
+                .clickable(role = Role.Button, onClick = onCalculate)
+                .padding(horizontal = Spacing.lg),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(Res.string.week_nutrition_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(Icons.Filled.KeyboardArrowDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
     SectionCard(title = stringResource(Res.string.week_nutrition_title)) {
         when (state) {
-            WeekNutritionState.Idle -> {
-                Text(stringResource(Res.string.week_nutrition_intro), style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = onCalculate) { Text(stringResource(Res.string.week_nutrition_calculate)) }
-            }
-            WeekNutritionState.Loading -> BodyText(Res.string.nutrition_loading)
+            WeekNutritionState.Idle, WeekNutritionState.Loading -> BodyText(Res.string.nutrition_loading)
             WeekNutritionState.NoRecipes -> BodyText(Res.string.week_nutrition_no_recipes)
-            WeekNutritionState.Unavailable -> BodyText(Res.string.nutrition_unavailable)
+            WeekNutritionState.Unavailable -> {
+                BodyText(Res.string.nutrition_unavailable)
+                TextButton(onClick = onCalculate) { Text(stringResource(Res.string.action_retry)) }
+            }
             is WeekNutritionState.Ready -> {
                 Text(stringResource(Res.string.week_nutrition_average), style = MaterialTheme.typography.bodyMedium)
                 NutrientRows(state.week.averagePerPortion)

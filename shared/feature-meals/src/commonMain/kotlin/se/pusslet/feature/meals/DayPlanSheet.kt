@@ -4,7 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -15,14 +14,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,6 +39,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -47,9 +47,9 @@ import se.pusslet.core.meals.MealSuggestion
 import se.pusslet.core.meals.SuggestionReason
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
-import se.pusslet.ui.components.InfoPill
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.SwitchRow
+import se.pusslet.ui.components.WeekStripPicker
 import se.pusslet.ui.format.formatDateLong
 import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.weekdayName
@@ -57,102 +57,87 @@ import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
 /**
- * Planning one meal: suggestions with their reasons ("snabbt – fotboll 17:30", "inte samma som skollunchen"),
- * the recipe library filtered as you type, or just free text ("tacos"). "Gör dubbelt" plans leftovers automatically.
+ * Planning one meal (UX plan, Mat 4): the day (changeable with the week strip), what is going on that day, then one tap on a
+ * suggestion (three at first, "Visa fler" for the rest) or a recipe that matches what is typed plans it and closes the sheet.
+ * Free text ("tacos") is saved with "Spara", which never scrolls away. "Gör dubbelt", "Anteckning", "Flytta till…" and
+ * "Ta bort" wait under "Fler val".
  */
 @Composable
 internal fun DayPlanSheet(
     state: DayEditorState,
-    canEdit: Boolean,
     onDismiss: () -> Unit,
-    onSave: (title: String, recipeId: String?, cookDouble: Boolean, servings: Int?, note: String) -> Unit,
+    onSave: (title: String, recipeId: String?, cookDouble: Boolean, note: String) -> Unit,
+    onPick: (recipe: Recipe, cookDouble: Boolean, note: String) -> Unit,
     onClear: () -> Unit,
     onMove: (LocalDate) -> Unit,
-    onOpenRecipe: (String) -> Unit,
+    onChangeDay: (LocalDate) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val key = "${state.date}-${state.slot}"
     val entry = state.entry
+    // Another empty day keeps what was typed; a planned day shows its own meal.
+    val key = "${state.slot}-${entry?.key}"
     var title by rememberSaveable(key) { mutableStateOf(entry?.title.orEmpty()) }
     var recipeId by rememberSaveable(key) { mutableStateOf(entry?.recipeId) }
     var cookDouble by rememberSaveable(key) { mutableStateOf(entry?.cookDouble ?: false) }
     var note by rememberSaveable(key) { mutableStateOf(entry?.note.orEmpty()) }
+    var moreOpen by rememberSaveable(key) { mutableStateOf(false) }
     val selected = recipeId?.let { id -> state.recipes.firstOrNull { it.id == id } }
 
-    fun pick(recipe: Recipe) {
-        recipeId = recipe.id
-        title = recipe.title
-    }
-
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Spacing.screenHorizontal)
-                .padding(bottom = Spacing.xl)
-                .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            Text(
-                stringResource(Res.string.meals_sheet_title, stringResource(Labels.mealSlot(state.slot)), formatDateLong(state.date)),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.semantics { heading() },
-            )
-            DayContext(state)
-            OutlinedTextField(
-                value = title,
-                onValueChange = {
-                    title = it
-                    // Typing something else than the chosen recipe makes it free text again.
-                    if (selected != null && it != selected.title) recipeId = null
-                },
-                label = { Text(stringResource(Res.string.meals_what_hint)) },
-                singleLine = true,
-                enabled = canEdit,
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
-                modifier = Modifier.fillMaxWidth(),
-                trailingIcon = if (selected != null) {
-                    { Icon(Icons.Filled.Check, contentDescription = stringResource(Res.string.meals_recipe_chosen)) }
-                } else {
-                    null
-                },
-            )
-            if (selected != null) {
-                TextButton(onClick = { onOpenRecipe(selected.id) }) { Text(stringResource(Res.string.meals_open_recipe)) }
-            }
-            if (canEdit) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
+            Column(
+                Modifier
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = Spacing.screenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                SheetTitle(
+                    stringResource(Res.string.meals_sheet_title, stringResource(Labels.mealSlot(state.slot)), formatDateLong(state.date)),
+                )
+                WeekStripPicker(days = state.weekDays, selected = state.date, onSelect = onChangeDay, today = state.today)
+                DayContext(state)
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        // Typing something else than the chosen recipe makes it free text again.
+                        if (selected != null && it != selected.title) recipeId = null
+                    },
+                    label = { Text(stringResource(Res.string.meals_what_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = if (selected != null) {
+                        { Icon(Icons.Filled.Check, contentDescription = stringResource(Res.string.meals_recipe_chosen)) }
+                    } else {
+                        null
+                    },
+                )
                 val query = title.trim().lowercase()
                 if (query.isEmpty() || selected != null) {
-                    Suggestions(state.suggestions, chosen = recipeId, onPick = ::pick)
+                    Suggestions(state.suggestions, chosen = recipeId, onPick = { onPick(it, cookDouble, note) })
                 } else {
-                    Matches(state.recipes.filter { query in it.title.lowercase() }.take(MAX_MATCHES), onPick = ::pick)
-                }
-                if (state.slot == MealSlot.Dinner) {
-                    SwitchRow(
-                        title = stringResource(Res.string.meals_cook_double),
-                        supporting = stringResource(Res.string.meals_cook_double_hint),
-                        checked = cookDouble,
-                        onCheckedChange = { cookDouble = it },
+                    Matches(
+                        state.recipes.filter {
+                            query in it.title.lowercase()
+                        }.take(MAX_MATCHES),
+                        onPick = { onPick(it, cookDouble, note) },
                     )
                 }
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text(stringResource(Res.string.meals_note)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Actions(
+                MoreChoices(
+                    open = moreOpen,
+                    onToggle = { moreOpen = !moreOpen },
                     state = state,
-                    canSave = title.isNotBlank(),
-                    onSave = { onSave(title, recipeId, cookDouble, entry?.servings, note) },
-                    onCancel = onDismiss,
-                    onClear = onClear,
+                    cookDouble = cookDouble,
+                    onCookDouble = { cookDouble = it },
+                    note = note,
+                    onNote = { note = it },
                     onMove = onMove,
+                    onClear = onClear,
                 )
             }
+            SheetActions(canSave = title.isNotBlank(), onCancel = onDismiss, onSave = { onSave(title, recipeId, cookDouble, note) })
         }
     }
 }
@@ -163,18 +148,15 @@ private fun DayContext(state: DayEditorState) {
         Text(
             stringResource(Res.string.meals_busy_evening, busy.event.title, formatTime(busy.start.time)),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.tertiary,
-        )
-    }
-    groupLunches(state.lunches, wholeMenu = true).forEach { lunch ->
-        Text(
-            stringResource(Res.string.today_lunch, lunch.children.joinToString(", ") { it.firstName }, lunch.dishes.joinToString(", ")),
-            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+    lunchLine(groupLunches(state.lunches, wholeMenu = true), wholeMenu = true)?.let { lunch ->
+        Text(lunch, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }
 
+/** Three suggestions, then "Visa fler". Each says at most two reasons on one line; the whole row plans it. */
 @Composable
 private fun Suggestions(suggestions: List<MealSuggestion>, chosen: String?, onPick: (Recipe) -> Unit) {
     if (suggestions.isEmpty()) {
@@ -185,36 +167,58 @@ private fun Suggestions(suggestions: List<MealSuggestion>, chosen: String?, onPi
         )
         return
     }
+    var showAll by remember(suggestions.map { it.recipe.id }) { mutableStateOf(false) }
     Text(
         stringResource(Res.string.meals_suggestions),
         style = MaterialTheme.typography.titleSmall,
-        modifier = Modifier.semantics { heading() },
+        modifier = Modifier.padding(top = Spacing.xs).semantics { heading() },
     )
-    suggestions.forEach { s ->
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = Spacing.touchTarget)
-                .clickable(role = Role.Button) { onPick(s.recipe) }
-                .padding(vertical = Spacing.xs),
-            verticalArrangement = Arrangement.spacedBy(Spacing.xxs),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                if (s.recipe.favorite) {
-                    Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                }
-                Text(s.recipe.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                if (s.recipe.id == chosen) Icon(Icons.Filled.Check, contentDescription = stringResource(Res.string.meals_recipe_chosen))
-            }
-            if (s.reasons.isNotEmpty()) {
-                // At most two reasons, on one line (they inform; the whole row picks).
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    s.reasons.sortedBy { REASON_PRIORITY.indexOf(it) }.take(MAX_REASONS).forEach { reason ->
-                        InfoPill(stringResource(reasonLabel(reason)))
-                    }
-                }
+    Column {
+        val shown = if (showAll) suggestions else suggestions.take(FIRST_SUGGESTIONS)
+        shown.forEach { s -> SuggestionRow(s, chosen = s.recipe.id == chosen, onPick = { onPick(s.recipe) }) }
+        if (!showAll && suggestions.size > FIRST_SUGGESTIONS) {
+            TextButton(onClick = { showAll = true }) { Text(stringResource(Res.string.meals_show_more)) }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionRow(suggestion: MealSuggestion, chosen: Boolean, onPick: () -> Unit) {
+    // The star already says "Favorit".
+    val reasons = suggestion.reasons
+        .filterNot { it == SuggestionReason.Favorite && suggestion.recipe.favorite }
+        .sortedBy { REASON_PRIORITY.indexOf(it) }
+        .take(MAX_REASONS)
+        .map { stringResource(reasonLabel(it)) }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = Spacing.primaryTouchTarget)
+            .clickable(role = Role.Button, onClick = onPick)
+            .padding(vertical = Spacing.xs),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+    ) {
+        if (suggestion.recipe.favorite) {
+            Icon(
+                Icons.Filled.Star,
+                contentDescription = stringResource(Res.string.recipe_favorite),
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Column(Modifier.weight(1f)) {
+            Text(suggestion.recipe.title, style = MaterialTheme.typography.bodyLarge)
+            if (reasons.isNotEmpty()) {
+                Text(
+                    reasons.joinToString(" · "),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
+        if (chosen) Icon(Icons.Filled.Check, contentDescription = stringResource(Res.string.meals_recipe_chosen))
     }
 }
 
@@ -241,24 +245,60 @@ private fun Matches(recipes: List<Recipe>, onPick: (Recipe) -> Unit) {
     }
 }
 
+/** "Fler val ⌄": "Gör dubbelt", "Anteckning" and, for a planned meal, "Flytta till…" and "Ta bort". Folded at first. */
 @Composable
-private fun Actions(
+private fun MoreChoices(
+    open: Boolean,
+    onToggle: () -> Unit,
     state: DayEditorState,
-    canSave: Boolean,
-    onSave: () -> Unit,
-    onCancel: () -> Unit,
-    onClear: () -> Unit,
+    cookDouble: Boolean,
+    onCookDouble: (Boolean) -> Unit,
+    note: String,
+    onNote: (String) -> Unit,
     onMove: (LocalDate) -> Unit,
+    onClear: () -> Unit,
 ) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = Spacing.touchTarget)
+            .clickable(role = Role.Button, onClick = onToggle),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(Res.string.meals_more_choices),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    if (!open) return
+    if (state.slot == MealSlot.Dinner) {
+        SwitchRow(
+            title = stringResource(Res.string.meals_cook_double),
+            supporting = stringResource(Res.string.meals_cook_double_hint),
+            checked = cookDouble,
+            onCheckedChange = onCookDouble,
+        )
+    }
+    OutlinedTextField(
+        value = note,
+        onValueChange = onNote,
+        label = { Text(stringResource(Res.string.meals_note)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        modifier = Modifier.fillMaxWidth(),
+    )
     if (state.entry != null) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             MoveButton(state, onMove)
             TextButton(onClick = onClear) { Text(stringResource(Res.string.action_delete)) }
         }
-    }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-        OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text(stringResource(Res.string.action_cancel)) }
-        Button(onClick = onSave, enabled = canSave, modifier = Modifier.weight(1f)) { Text(stringResource(Res.string.action_save)) }
     }
 }
 
@@ -292,8 +332,9 @@ internal fun reasonLabel(reason: SuggestionReason): StringResource = when (reaso
 
 private const val MAX_MATCHES = 8
 private const val MAX_REASONS = 2
+private const val FIRST_SUGGESTIONS = 3
 
-/** The reasons about this very day first; "Favorit" last, since the star already says it. */
+/** The reasons about this very day first; "Favorit" last. */
 private val REASON_PRIORITY = listOf(
     SuggestionReason.QuickForBusyEvening,
     SuggestionReason.DiffersFromSchoolLunch,

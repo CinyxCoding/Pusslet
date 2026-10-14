@@ -32,12 +32,14 @@ import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
-/** Mat › Recept: search, tag filters and the family's recipes. New recipes come from the round + (UX plan 1.2). */
+/**
+ * Mat › Recept: tag filters and the family's recipes ("45 min · ICA" and a star). The search field sits in the tab's header
+ * ([RecipeSearchField]) and new recipes come from the round + (UX plan 1.2), the one way to add here.
+ */
 @Composable
 fun RecipeLibraryScreen(
     state: RecipeLibraryState,
     bottomPadding: PaddingValues = PaddingValues(),
-    onQuery: (String) -> Unit = {},
     onToggleTag: (RecipeTag) -> Unit = {},
     onOpen: (String) -> Unit = {},
 ) {
@@ -56,16 +58,6 @@ fun RecipeLibraryScreen(
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         if (state.total > 0) {
-            item(key = "search") {
-                OutlinedTextField(
-                    value = state.query,
-                    onValueChange = onQuery,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(Res.string.recipe_search)) },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                    singleLine = true,
-                )
-            }
             item(key = "tags") {
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -92,6 +84,19 @@ fun RecipeLibraryScreen(
             RecipeRow(recipe, onClick = { onOpen(recipe.id) })
         }
     }
+}
+
+/** "Sök recept" (titles and ingredients), in the place where Matsedel has the week. */
+@Composable
+internal fun RecipeSearchField(query: String, onQuery: (String) -> Unit, modifier: Modifier = Modifier) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQuery,
+        modifier = modifier.fillMaxWidth(),
+        placeholder = { Text(stringResource(Res.string.recipe_search)) },
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        singleLine = true,
+    )
 }
 
 @Composable

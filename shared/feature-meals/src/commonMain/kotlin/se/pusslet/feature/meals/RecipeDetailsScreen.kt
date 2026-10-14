@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,16 +27,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -45,15 +45,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.isoDayNumber
 import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.Ingredient
@@ -62,12 +67,19 @@ import se.pusslet.core.nutrition.NutritionSummary
 import se.pusslet.core.recipes.RecipeText
 import se.pusslet.ui.components.DatePickerSheet
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
-import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.Section
+import se.pusslet.ui.components.showUndo
 import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
+import kotlin.math.roundToInt
 
+/**
+ * One recipe (UX plan, Mat 7): portions in the ingredients' heading, "Lägg på inköpslistan" and "Lägg i matsedeln" fixed at
+ * the bottom, nutrition as one row that opens the details, and the source as a link ("ica.se").
+ */
 @Composable
 fun RecipeDetailsRoute(
     recipeId: String,
@@ -80,33 +92,14 @@ fun RecipeDetailsRoute(
     val match by viewModel.match.collectAsStateWithLifecycle()
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     var menu by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var pickDate by remember { mutableStateOf(false) }
     var showMatching by remember { mutableStateOf(false) }
+    var showNutrition by remember { mutableStateOf(false) }
 
     LaunchedEffect(deleted) { if (deleted) onBack() }
-    LaunchedEffect(viewModel) {
-        viewModel.messages.collect { message ->
-            snackbar.currentSnackbarData?.dismiss()
-            scope.launch {
-                when (message) {
-                    is RecipeMessage.AddedToList -> {
-                        val text = if (message.outcome.isEmpty) {
-                            getString(Res.string.recipe_already_on_list)
-                        } else {
-                            getString(Res.string.shopping_added, message.outcome.names.joinToString(", "))
-                        }
-                        val undo = if (message.outcome.isEmpty) null else getString(Res.string.action_undo)
-                        val result = snackbar.showSnackbar(text, undo, duration = SnackbarDuration.Short)
-                        if (result == SnackbarResult.ActionPerformed) viewModel.undoAdd(message.outcome)
-                    }
-                    is RecipeMessage.Planned -> snackbar.showSnackbar(getString(Res.string.recipe_planned))
-                }
-            }
-        }
-    }
+    RecipeReceipts(viewModel, snackbar)
 
     val recipe = state.recipe
     Scaffold(
@@ -133,10 +126,6 @@ fun RecipeDetailsRoute(
                                     menu = false
                                     onEdit(recipe.id)
                                 })
-                                DropdownMenuItem(text = { Text(stringResource(Res.string.recipe_match_foods)) }, onClick = {
-                                    menu = false
-                                    showMatching = true
-                                })
                                 DropdownMenuItem(text = { Text(stringResource(Res.string.action_delete)) }, onClick = {
                                     menu = false
                                     confirmDelete = true
@@ -146,6 +135,11 @@ fun RecipeDetailsRoute(
                     }
                 },
             )
+        },
+        bottomBar = {
+            if (recipe != null && !state.loading) {
+                RecipeActionBar(canPlan = state.canEdit, onPlan = { pickDate = true }, onAddToList = viewModel::addToShoppingList)
+            }
         },
         snackbarHost = { SnackbarHost(snackbar) },
     ) { padding ->
@@ -157,10 +151,7 @@ fun RecipeDetailsRoute(
             state = state,
             padding = padding,
             onServings = viewModel::setServings,
-            onAddToList = viewModel::addToShoppingList,
-            onPlan = { pickDate = true },
-            onMatch = { showMatching = true },
-            onRetryNutrition = viewModel::retryNutrition,
+            onOpenNutrition = { showNutrition = true },
         )
     }
 
@@ -182,6 +173,19 @@ fun RecipeDetailsRoute(
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
+    if (showNutrition && recipe != null) {
+        NutritionSheet(
+            state = state.nutrition,
+            servings = state.servings,
+            canMatch = state.canEdit,
+            onMatch = {
+                showNutrition = false
+                showMatching = true
+            },
+            onRetry = viewModel::retryNutrition,
+            onDismiss = { showNutrition = false },
+        )
+    }
     if (showMatching && recipe != null) {
         FoodMatchingSheet(
             ingredients = recipe.ingredients.filter { !it.optional },
@@ -198,18 +202,55 @@ fun RecipeDetailsRoute(
     }
 }
 
+/** "2 varor på listan · Ångra", "I matsedeln tor 15 okt · Ångra". */
+@Composable
+private fun RecipeReceipts(viewModel: RecipeDetailsViewModel, snackbar: SnackbarHostState) {
+    val scope = rememberCoroutineScope()
+    val weekdays by rememberUpdatedState(stringArrayResource(Res.array.weekdays_short))
+    val months by rememberUpdatedState(stringArrayResource(Res.array.months_short))
+    LaunchedEffect(viewModel) {
+        viewModel.messages.collect { message ->
+            scope.launch {
+                val undoLabel = getString(Res.string.action_undo)
+                when (message) {
+                    is RecipeMessage.AddedToList -> {
+                        val outcome = message.outcome
+                        if (outcome.isEmpty) {
+                            snackbar.currentSnackbarData?.dismiss()
+                            snackbar.showSnackbar(getString(Res.string.recipe_already_on_list))
+                        } else if (snackbar.showUndo(getString(Res.string.shopping_added, outcome.names.joinToString(", ")), undoLabel)) {
+                            viewModel.undoAdd(outcome)
+                        }
+                    }
+                    is RecipeMessage.Planned -> {
+                        val day = shortDate(message.date, weekdays, months)
+                        val text = getString(Res.string.recipe_planned_on, day)
+                        val undo = message.undo
+                        if (undo == null) {
+                            snackbar.currentSnackbarData?.dismiss()
+                            snackbar.showSnackbar(text)
+                        } else if (snackbar.showUndo(text, undoLabel)) {
+                            viewModel.undoPlan(undo)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** "tor 15 okt". */
+private suspend fun shortDate(date: LocalDate, weekdays: List<String>, months: List<String>): String =
+    weekdays[date.dayOfWeek.isoDayNumber - 1] + " " + getString(Res.string.date_short, date.day, months[date.month.ordinal])
+
 @Composable
 fun RecipeDetailsScreen(
     state: RecipeDetailsState,
     padding: PaddingValues = PaddingValues(),
     onServings: (Int) -> Unit = {},
-    onAddToList: () -> Unit = {},
-    onPlan: () -> Unit = {},
-    onMatch: () -> Unit = {},
-    onRetryNutrition: () -> Unit = {},
+    onOpenNutrition: () -> Unit = {},
 ) {
     val recipe = state.recipe ?: return
-    val platform = LocalPlatformActions.current
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -218,46 +259,18 @@ fun RecipeDetailsScreen(
             top = padding.calculateTopPadding(),
             bottom = padding.calculateBottomPadding() + Spacing.xl,
         ),
-        verticalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalArrangement = Arrangement.spacedBy(Spacing.xl),
     ) {
-        item(key = "meta") {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                val meta = buildList {
-                    recipe.totalMinutes?.let { add(stringResource(Res.string.recipe_minutes, it)) }
-                    recipe.tags.sortedBy { it.ordinal }.forEach { add(stringResource(tagLabel(it))) }
-                }
-                if (meta.isNotEmpty()) {
-                    Text(
-                        meta.joinToString(" · "),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                val source = recipe.sourceUrl
-                if (source != null) {
-                    Text(
-                        stringResource(Res.string.recipe_source, recipe.sourceName ?: source),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .heightIn(min = Spacing.touchTarget)
-                            .clickable(role = Role.Button) { platform.openUrl(source) }
-                            .padding(vertical = Spacing.sm),
-                    )
-                }
-            }
+        item(key = "meta") { RecipeMeta(state) }
+        item(key = "ingredients") {
+            Section(
+                title = stringResource(Res.string.recipe_ingredients),
+                action = { ServingsStepper(state.servings, onServings) },
+            ) { Ingredients(state.ingredients) }
         }
-        item(key = "servings") { ServingsRow(state.servings, onServings) }
-        item(key = "actions") {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Button(onClick = onPlan) { Text(stringResource(Res.string.recipe_plan)) }
-                OutlinedButton(onClick = onAddToList) { Text(stringResource(Res.string.recipe_add_to_list)) }
-            }
-        }
-        item(key = "ingredients") { IngredientsCard(state.ingredients) }
         if (recipe.steps.isNotEmpty()) {
             item(key = "steps") {
-                SectionCard(title = stringResource(Res.string.recipe_steps)) {
+                Section(title = stringResource(Res.string.recipe_steps)) {
                     recipe.steps.forEachIndexed { i, step ->
                         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                             Text("${i + 1}.", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
@@ -269,61 +282,145 @@ fun RecipeDetailsScreen(
         }
         if (recipe.notes.isNotBlank()) {
             item(key = "notes") {
-                SectionCard(title = stringResource(Res.string.recipe_notes)) {
+                Section(title = stringResource(Res.string.recipe_notes)) {
                     Text(recipe.notes, style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }
-        item(key = "nutrition") {
-            NutritionCard(state.nutrition, state.servings, onMatch = onMatch, canMatch = state.canEdit, onRetry = onRetryNutrition)
+        item(key = "nutrition") { NutritionRow(state.nutrition, onOpenNutrition) }
+    }
+}
+
+/** "45 min · Snabbt · Barnvänligt" and the source as a link: "🔗 ica.se". */
+@Composable
+private fun RecipeMeta(state: RecipeDetailsState) {
+    val recipe = state.recipe ?: return
+    val platform = LocalPlatformActions.current
+    val meta = buildList {
+        recipe.totalMinutes?.let { add(stringResource(Res.string.recipe_minutes, it)) }
+        recipe.tags.sortedBy { it.ordinal }.forEach { add(stringResource(tagLabel(it))) }
+    }
+    val source = recipe.sourceUrl
+    if (meta.isEmpty() && source == null) return
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        if (meta.isNotEmpty()) {
+            Text(meta.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (source != null) {
+            val openLabel = stringResource(Res.string.recipe_open_source)
+            Row(
+                Modifier
+                    .heightIn(min = Spacing.touchTarget)
+                    .clickable(onClickLabel = openLabel, role = Role.Button) { platform.openUrl(source) },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                Icon(MealsIcons.Link, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Text(
+                    sourceHost(source) ?: recipe.sourceName ?: source,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }
 
+/** − "4 portioner" + in the ingredients' heading. */
 @Composable
-private fun ServingsRow(servings: Int, onServings: (Int) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+private fun ServingsStepper(servings: Int, onServings: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = { onServings(servings - 1) }, enabled = servings > 1) {
+            Icon(MealsIcons.Remove, contentDescription = stringResource(Res.string.recipe_fewer_servings))
+        }
         Text(
-            stringResource(Res.string.recipe_servings),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.weight(1f),
+            if (servings ==
+                1
+            ) {
+                stringResource(Res.string.recipe_servings_one)
+            } else {
+                stringResource(Res.string.recipe_servings_count, servings)
+            },
+            style = MaterialTheme.typography.bodyLarge,
         )
-        OutlinedButton(onClick = { onServings(servings - 1) }, enabled = servings > 1) { Text("−") }
-        Text(servings.toString(), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = Spacing.sm))
-        OutlinedButton(onClick = { onServings(servings + 1) }) {
+        IconButton(onClick = { onServings(servings + 1) }) {
             Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.recipe_more_servings))
         }
     }
 }
 
 @Composable
-private fun IngredientsCard(ingredients: List<Ingredient>) {
-    SectionCard(title = stringResource(Res.string.recipe_ingredients)) {
-        var group: String? = null
-        ingredients.forEach { ing ->
-            if (ing.group != group) {
-                group = ing.group
-                ing.group?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(top = Spacing.sm).semantics { heading() },
-                    )
-                }
+private fun Ingredients(ingredients: List<Ingredient>) {
+    var group: String? = null
+    ingredients.forEach { ing ->
+        if (ing.group != group) {
+            group = ing.group
+            ing.group?.let {
+                Text(it, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = Spacing.sm).semantics { heading() })
             }
-            Text(
-                RecipeText.line(ing),
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (ing.optional) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-            )
+        }
+        Text(
+            RecipeText.line(ing),
+            style = MaterialTheme.typography.bodyLarge,
+            color = if (ing.optional) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+/** "Näring · ca 520 kcal per portion ›"; the details, how complete the estimate is and the source open in a sheet. */
+@Composable
+private fun NutritionRow(state: NutritionState, onOpen: () -> Unit) {
+    val kcal = (state as? NutritionState.Ready)?.summary?.perPortion?.energyKcal
+    val supporting = when (state) {
+        NutritionState.Loading -> stringResource(Res.string.nutrition_loading)
+        NutritionState.Unavailable -> stringResource(Res.string.nutrition_unavailable)
+        is NutritionState.Ready -> null
+    }
+    NavRow(
+        text = if (kcal !=
+            null
+        ) {
+            stringResource(Res.string.recipe_nutrition_kcal, kcal.roundToInt())
+        } else {
+            stringResource(Res.string.recipe_nutrition)
+        },
+        supporting = supporting,
+        onClick = onOpen,
+    )
+}
+
+/** The two things to do with a recipe, always in reach: put it on the plan (tonal) and buy what it needs (filled). */
+@Composable
+private fun RecipeActionBar(canPlan: Boolean, onPlan: () -> Unit, onAddToList: () -> Unit) {
+    Surface(tonalElevation = 3.dp) {
+        FlowRow(
+            Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = Spacing.screenHorizontal, vertical = Spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            if (canPlan) {
+                FilledTonalButton(onClick = onPlan, modifier = Modifier.weight(1f)) { Text(stringResource(Res.string.recipe_plan)) }
+            }
+            Button(onClick = onAddToList, modifier = Modifier.weight(1f)) { Text(stringResource(Res.string.recipe_add_to_list)) }
         }
     }
 }
 
 /** Neutral and informative (no targets, no judging words); always says how complete the estimate is and its source. */
 @Composable
-private fun NutritionCard(state: NutritionState, servings: Int, onMatch: () -> Unit, canMatch: Boolean, onRetry: () -> Unit) {
-    SectionCard(title = stringResource(Res.string.nutrition_title)) {
+private fun NutritionSheet(
+    state: NutritionState,
+    servings: Int,
+    canMatch: Boolean,
+    onMatch: () -> Unit,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    MealSheet(onDismiss) {
+        SheetTitle(stringResource(Res.string.nutrition_title))
         when (state) {
             NutritionState.Loading -> Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -424,3 +521,8 @@ private fun FoodMatchingSheet(
         }
     }
 }
+
+/** "ica.se" from "https://www.ica.se/recept/…". */
+internal fun sourceHost(
+    url: String,
+): String? = Regex("""^[a-zA-Z][a-zA-Z0-9+.-]*://(?:www\.)?([^/:?#]+)""").find(url.trim())?.groupValues?.get(1)

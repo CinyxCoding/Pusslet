@@ -1,22 +1,29 @@
 package se.pusslet.feature.meals
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -30,7 +37,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,9 +59,11 @@ import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
 /**
- * New or edited recipe. Ingredients and steps are plain text, one per line, so a recipe can be typed or pasted fast;
- * "Klistra in recept" splits pasted text into the fields (rule based, the user checks the result). [startPasting] opens
- * the paste dialog right away ("Klistra in text" under the round + on Recept).
+ * New or edited recipe (UX plan, Mat 7). Name, portions, ingredients and steps come first; time, tags, main ingredient,
+ * notes, the source and "Klistra in recept" wait under "Mer (valfritt)". Ingredients and steps are plain text, one per
+ * line, so a recipe can be typed or pasted fast; "Klistra in recept" splits pasted text into the fields (rule based, the
+ * user checks the result). [startPasting] opens the paste dialog right away ("Klistra in text" under the round + on
+ * Recept). Back with unsaved changes asks "Släng ändringarna?".
  */
 @Composable
 fun RecipeEditorRoute(
@@ -64,13 +76,22 @@ fun RecipeEditorRoute(
     LaunchedEffect(recipeId, sourceUrl) { viewModel.load(recipeId, sourceUrl) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     var pasting by rememberSaveable { mutableStateOf(recipeId == null && (startPasting || sourceUrl != null)) }
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(state.savedId) { state.savedId?.let { onDone(it) } }
+    val back: () -> Unit = {
+        if (state.hasChanges) {
+            confirmDiscard = true
+        } else {
+            onDone(null)
+        }
+    }
+    UnsavedChangesBackHandler(enabled = state.hasChanges && !confirmDiscard) { confirmDiscard = true }
 
     Scaffold(
         topBar = {
             PussletTopBar(
                 title = stringResource(if (state.isNew) Res.string.recipe_new else Res.string.recipe_edit),
-                onBack = { onDone(null) },
+                onBack = back,
                 actions = {
                     TextButton(onClick = viewModel::save, enabled = state.form.valid) { Text(stringResource(Res.string.action_save)) }
                 },
@@ -89,6 +110,31 @@ fun RecipeEditorRoute(
             pasting = false
         })
     }
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            text = { Text(stringResource(Res.string.recipe_discard_title)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDiscard = false
+                    onDone(null)
+                }) { Text(stringResource(Res.string.recipe_discard)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(Res.string.action_cancel)) } },
+        )
+    }
+}
+
+/**
+ * The system Back (and the predictive back gesture) asks before unsaved changes are lost. The non-deprecated
+ * `NavigationBackHandler` lives in navigationevent-compose, which the feature modules do not depend on directly; this
+ * handler is built on the same dispatcher, so it takes precedence over NavDisplay's own back while [enabled].
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Suppress("DEPRECATION")
+@Composable
+private fun UnsavedChangesBackHandler(enabled: Boolean, onBack: () -> Unit) {
+    BackHandler(enabled = enabled, onBack = onBack)
 }
 
 @Composable
@@ -98,6 +144,7 @@ private fun RecipeEditorForm(
     onChange: ((RecipeForm) -> RecipeForm) -> Unit,
     onPaste: () -> Unit,
 ) {
+    var more by rememberSaveable { mutableStateOf(false) }
     Column(
         Modifier
             .fillMaxSize()
@@ -106,14 +153,6 @@ private fun RecipeEditorForm(
             .padding(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding() + Spacing.xl),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        form.sourceUrl?.let { url ->
-            Text(
-                stringResource(Res.string.recipe_source, form.sourceName ?: url),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        OutlinedButton(onClick = onPaste) { Text(stringResource(Res.string.recipe_paste)) }
         OutlinedTextField(
             value = form.title,
             onValueChange = { v -> onChange { it.copy(title = v) } },
@@ -129,9 +168,7 @@ private fun RecipeEditorForm(
                 isError = form.servingsValue == null,
                 modifier = Modifier.weight(1f),
             ) { v -> onChange { it.copy(servings = v) } }
-            NumberField(Res.string.recipe_total_minutes, form.totalMinutes, isError = false, modifier = Modifier.weight(1f)) { v ->
-                onChange { it.copy(totalMinutes = v) }
-            }
+            Spacer(Modifier.weight(1f))
         }
         OutlinedTextField(
             value = form.ingredients,
@@ -151,42 +188,83 @@ private fun RecipeEditorForm(
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(Res.string.recipe_tags), style = MaterialTheme.typography.titleSmall)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            RecipeTag.entries.forEach { tag ->
-                FilterChip(
-                    selected = tag in form.tags,
-                    onClick = { onChange { f -> f.copy(tags = if (tag in f.tags) f.tags - tag else f.tags + tag) } },
-                    label = { Text(stringResource(tagLabel(tag))) },
-                    colors = SelectionColors.filterChip(),
-                )
-            }
-        }
-        Text(stringResource(Res.string.recipe_main_component), style = MaterialTheme.typography.titleSmall)
+        MoreToggle(open = more, onToggle = { more = !more })
+        if (more) OptionalFields(form, onChange, onPaste)
+    }
+}
+
+/** "Mer (valfritt) ⌄". */
+@Composable
+private fun MoreToggle(open: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = Spacing.touchTarget)
+            .clickable(role = Role.Button, onClick = onToggle),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
-            stringResource(Res.string.recipe_main_component_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            stringResource(Res.string.recipe_more_optional),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
         )
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            MainComponent.entries.forEach { c ->
-                FilterChip(
-                    selected = form.mainComponent == c,
-                    onClick = { onChange { f -> f.copy(mainComponent = if (f.mainComponent == c) null else c) } },
-                    label = { Text(stringResource(componentLabel(c))) },
-                    colors = SelectionColors.filterChip(),
-                )
-            }
-        }
-        OutlinedTextField(
-            value = form.notes,
-            onValueChange = { v -> onChange { it.copy(notes = v) } },
-            label = { Text(stringResource(Res.string.recipe_notes)) },
-            minLines = 2,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            modifier = Modifier.fillMaxWidth(),
+        Icon(
+            if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+@Composable
+private fun OptionalFields(form: RecipeForm, onChange: ((RecipeForm) -> RecipeForm) -> Unit, onPaste: () -> Unit) {
+    NumberField(Res.string.recipe_total_minutes, form.totalMinutes, isError = false, modifier = Modifier.fillMaxWidth(0.5f)) { v ->
+        onChange { it.copy(totalMinutes = v) }
+    }
+    Text(stringResource(Res.string.recipe_tags), style = MaterialTheme.typography.titleSmall)
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        RecipeTag.entries.forEach { tag ->
+            FilterChip(
+                selected = tag in form.tags,
+                onClick = { onChange { f -> f.copy(tags = if (tag in f.tags) f.tags - tag else f.tags + tag) } },
+                label = { Text(stringResource(tagLabel(tag))) },
+                colors = SelectionColors.filterChip(),
+            )
+        }
+    }
+    Text(stringResource(Res.string.recipe_main_component), style = MaterialTheme.typography.titleSmall)
+    Text(
+        stringResource(Res.string.recipe_main_component_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        MainComponent.entries.forEach { c ->
+            FilterChip(
+                selected = form.mainComponent == c,
+                onClick = { onChange { f -> f.copy(mainComponent = if (f.mainComponent == c) null else c) } },
+                label = { Text(stringResource(componentLabel(c))) },
+                colors = SelectionColors.filterChip(),
+            )
+        }
+    }
+    OutlinedTextField(
+        value = form.notes,
+        onValueChange = { v -> onChange { it.copy(notes = v) } },
+        label = { Text(stringResource(Res.string.recipe_notes)) },
+        minLines = 2,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    form.sourceUrl?.let { url ->
+        Text(
+            stringResource(Res.string.recipe_source, form.sourceName ?: url),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    OutlinedButton(onClick = onPaste) { Text(stringResource(Res.string.recipe_paste)) }
 }
 
 @Composable

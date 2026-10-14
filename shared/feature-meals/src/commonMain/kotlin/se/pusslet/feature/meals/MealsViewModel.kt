@@ -3,12 +3,14 @@ package se.pusslet.feature.meals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -26,6 +28,7 @@ import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilySettings
 import se.pusslet.core.model.FavoriteWeek
+import se.pusslet.core.model.LunchProviderType
 import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.MealSlot
@@ -84,11 +87,26 @@ data class MealsUiState(
     val previousWeekPlanned: Boolean = false,
     /** Helpers (caregivers) can look but not plan (Firestore rules). */
     val canEdit: Boolean = true,
+    val today: LocalDate? = null,
 ) {
     val plannedCount: Int get() = days.count { it.dinner != null }
 
     /** The meal the round + plans: dinner, unless the family only plans other meals. */
     val mainSlot: MealSlot get() = if (MealSlot.Dinner in slots) MealSlot.Dinner else slots.firstOrNull() ?: MealSlot.Dinner
+
+    /** Nothing at all is planned this week. */
+    val weekIsEmpty: Boolean get() = days.all { it.entries.isEmpty() }
+
+    /** Children whose school lunch is typed in (their school has no feed); only parents fill it in. */
+    val manualLunchChildren: List<Child>
+        get() = if (canEdit) children.filter { it.lunch?.provider == LunchProviderType.Manual } else emptyList()
+
+    /** The one "Fyll i skollunch ›" row of the week: someone types in lunches and has school at least one day. */
+    val showFillLunch: Boolean
+        get() = manualLunchChildren.let { kids -> kids.isNotEmpty() && days.any { d -> kids.any { it.id !in d.noSchool } } }
+
+    /** "Kopiera förra veckan" belongs to an empty week, and only when last week has something to copy. */
+    val offerCopyPrevious: Boolean get() = canEdit && weekIsEmpty && previousWeekPlanned
 }
 
 sealed interface WeekNutritionState {
@@ -115,7 +133,40 @@ data class DayEditorState(
     val lunches: List<ChildLunch>,
     val busy: List<EventOccurrence>,
     val weekDays: List<LocalDate>,
+    val today: LocalDate? = null,
 )
+
+/**
+ * The read view of a planned meal (UX plan, Mat 2): the dish, "Visa recept" when it has one, the day's school lunch and,
+ * for parents, "Ändra", which opens the planning sheet.
+ */
+data class DayViewState(
+    val date: LocalDate,
+    val slot: MealSlot,
+    val entry: MealEntry,
+    val recipe: Recipe?,
+    val lunches: List<ChildLunch>,
+    val canEdit: Boolean,
+) {
+    val title: String get() = recipe?.title ?: entry.title
+}
+
+/** Receipts for changes to the meal plan; each one can be undone with [MealsViewModel.undo]. */
+sealed interface MealsMessage {
+    val undo: PlanUndo
+
+    /** "Tis: Ugnspannkaka · Ångra": [title] planned (or moved) to [date]. */
+    data class Planned(val date: LocalDate, val title: String, override val undo: PlanUndo) : MealsMessage
+
+    /** "Ugnspannkaka borttagen · Ångra". */
+    data class Removed(val title: String, override val undo: PlanUndo) : MealsMessage
+
+    /** "Höstvecka inlagd · Ångra". */
+    data class FavoriteApplied(val name: String, override val undo: PlanUndo) : MealsMessage
+
+    /** "Förra veckan kopierad · Ångra". */
+    data class CopiedPreviousWeek(override val undo: PlanUndo) : MealsMessage
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MealsViewModel(
@@ -134,10 +185,16 @@ class MealsViewModel(
     private val today: LocalDate get() = clock.now().toLocalDateTime(zone).date
     private val week = MutableStateFlow(today.isoWeek)
     private val editing = MutableStateFlow<Pair<LocalDate, MealSlot>?>(null)
+    private val viewing = MutableStateFlow<Pair<LocalDate, MealSlot>?>(null)
     private val weekNutritionState = MutableStateFlow<WeekNutritionState>(WeekNutritionState.Idle)
+    private val history = MealPlanHistory(meals)
+    private val messageChannel = Channel<MealsMessage>(Channel.BUFFERED)
 
     /** Calculated on request (the first time downloads Livsmedelsverket's food list); reset when the week changes. */
     val weekNutrition: StateFlow<WeekNutritionState> = weekNutritionState
+
+    /** One receipt per change to the plan, with what Ångra needs ([undo]). */
+    val messages: Flow<MealsMessage> = messageChannel.receiveAsFlow()
 
     private data class Household(
         val children: List<Child>,
@@ -176,6 +233,11 @@ class MealsViewModel(
         target?.let { (date, slot) -> editorFor(date, slot, p, h) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
 
+    /** The read view of a planned meal; null when closed, or when the meal is no longer planned. */
+    val dayView: StateFlow<DayViewState?> = combine(viewing, plans, household) { target, p, h ->
+        target?.let { (date, slot) -> viewFor(date, slot, p, h) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), null)
+
     private fun build(p: Plans, h: Household): MealsUiState {
         val plan = p.weeks.firstOrNull { it.week == p.week } ?: MealPlanWeek(p.week)
         val now = today
@@ -190,6 +252,7 @@ class MealsViewModel(
             children = h.children,
             previousWeekPlanned = p.weeks.any { it.week == p.week.previous() && it.entries.isNotEmpty() },
             canEdit = h.session.role == Role.Parent,
+            today = now,
         )
     }
 
@@ -217,7 +280,8 @@ class MealsViewModel(
 
     private fun editorFor(date: LocalDate, slot: MealSlot, p: Plans, h: Household): DayEditorState {
         val plan = p.weeks.firstOrNull { it.week == date.isoWeek } ?: MealPlanWeek(date.isoWeek)
-        val day = dayPlan(date, plan, p, h, today)
+        val now = today
+        val day = dayPlan(date, plan, p, h, now)
         val history = p.weeks.flatMap { it.entries.values }
         val suggestions = if (slot == MealSlot.Dinner) {
             MealSuggester.suggest(
@@ -227,6 +291,7 @@ class MealsViewModel(
                 schoolLunchDishes = day.lunches.mapNotNull { it.dishes.firstOrNull() },
                 busyEvening = day.busy.isNotEmpty(),
                 pantryNames = if (h.settings.usePantry) h.pantry.map { it.name }.toSet() else emptySet(),
+                limit = MAX_SUGGESTIONS,
             )
         } else {
             emptyList()
@@ -240,6 +305,21 @@ class MealsViewModel(
             lunches = day.lunches,
             busy = day.busy,
             weekDays = date.isoWeek.days,
+            today = now,
+        )
+    }
+
+    private fun viewFor(date: LocalDate, slot: MealSlot, p: Plans, h: Household): DayViewState? {
+        val plan = p.weeks.firstOrNull { it.week == date.isoWeek } ?: return null
+        val entry = plan.entry(date, slot) ?: return null
+        val day = dayPlan(date, plan, p, h, today)
+        return DayViewState(
+            date = date,
+            slot = slot,
+            entry = entry,
+            recipe = entry.recipeId?.let { id -> p.recipes.firstOrNull { it.id == id } },
+            lunches = day.lunches,
+            canEdit = h.session.role == Role.Parent,
         )
     }
 
@@ -278,7 +358,9 @@ class MealsViewModel(
         }
     }
 
+    /** Opens the planning sheet for [date]. A planned meal is normally shown in the read view first ([viewDay]). */
     fun openDay(date: LocalDate, slot: MealSlot = MealSlot.Dinner) {
+        viewing.value = null
         editing.value = date to slot
     }
 
@@ -292,37 +374,95 @@ class MealsViewModel(
         editing.value = null
     }
 
+    /** A tap on a planned meal: the read view with the dish, its recipe and the day's lunch. */
+    fun viewDay(date: LocalDate, slot: MealSlot = MealSlot.Dinner) {
+        editing.value = null
+        viewing.value = date to slot
+    }
+
+    fun closeView() {
+        viewing.value = null
+    }
+
+    /** "Ändra" in the read view: the planning sheet for the same meal. */
+    fun editViewed() {
+        val target = viewing.value ?: return
+        viewing.value = null
+        editing.value = target
+    }
+
+    /**
+     * "Spara" in the planning sheet: plans [title] (a recipe when [recipeId] is set) for the day being planned and closes the
+     * sheet. Portions chosen earlier are kept while the recipe stays the same.
+     */
+    fun saveDay(title: String, recipeId: String?, cookDouble: Boolean, note: String) {
+        val (date, slot) = editing.value ?: return
+        if (title.isBlank() && recipeId == null) return
+        val current = dayEditor.value?.entry?.takeIf { it.date == date && it.slot == slot }
+        val servings = current?.servings?.takeIf { current.recipeId == recipeId }
+        editing.value = null
+        plan(date, slot, title, recipeId, cookDouble, servings, note)
+    }
+
+    /** One tap on a suggestion plans it and closes the sheet ("Tis: Ugnspannkaka · Ångra"). */
+    fun pickSuggestion(recipe: Recipe, cookDouble: Boolean = false, note: String = "") = saveDay(recipe.title, recipe.id, cookDouble, note)
+
+    /** "Ta bort" in the planning sheet. */
+    fun clearDay() {
+        val (date, slot) = editing.value ?: return
+        editing.value = null
+        clear(date, slot)
+    }
+
+    /** "Flytta till…" in the planning sheet. */
+    fun moveDay(to: LocalDate) {
+        val (date, slot) = editing.value ?: return
+        editing.value = null
+        move(date, to, slot)
+    }
+
     /** Plans a recipe or free text ("tacos"). "Gör dubbelt" adds leftovers the next free day (see MealRepository). */
     fun plan(date: LocalDate, slot: MealSlot, title: String, recipeId: String?, cookDouble: Boolean, servings: Int?, note: String) {
         if (title.isBlank() && recipeId == null) return
+        val entry = MealEntry(
+            date = date,
+            slot = slot,
+            recipeId = recipeId,
+            title = title.trim(),
+            servings = servings,
+            cookDouble = cookDouble,
+            note = note.trim(),
+        )
         viewModelScope.launch {
-            meals.setEntry(
-                MealEntry(
-                    date = date,
-                    slot = slot,
-                    recipeId = recipeId,
-                    title = title.trim(),
-                    servings = servings,
-                    cookDouble = cookDouble,
-                    note = note.trim(),
-                ),
-            )
+            val undo = history.record(listOf(date)) { meals.setEntry(entry) } ?: return@launch
+            changed(MealsMessage.Planned(date, titleOf(entry), undo))
         }
     }
 
     fun clear(date: LocalDate, slot: MealSlot) {
-        viewModelScope.launch { meals.clearEntry(date, slot) }
+        viewModelScope.launch {
+            val removed = meals.getWeek(date.isoWeek).entry(date, slot) ?: return@launch
+            val undo = history.record(listOf(date)) { meals.clearEntry(date, slot) } ?: return@launch
+            changed(MealsMessage.Removed(titleOf(removed), undo))
+        }
     }
 
     /** "Flytta" (the accessible alternative to drag and drop): swaps with the target day if it is planned. */
     fun move(from: LocalDate, to: LocalDate, slot: MealSlot = MealSlot.Dinner) {
         if (from == to) return
-        viewModelScope.launch { meals.move(from, to, slot) }
+        viewModelScope.launch {
+            val moved = meals.getWeek(from.isoWeek).entry(from, slot) ?: return@launch
+            val undo = history.record(listOf(from, to)) { meals.move(from, to, slot) } ?: return@launch
+            changed(MealsMessage.Planned(to, titleOf(moved), undo))
+        }
     }
 
     fun copyPreviousWeek() {
         val target = week.value
-        viewModelScope.launch { meals.copyWeek(target.previous(), target) }
+        viewModelScope.launch {
+            val undo = history.record(target.days) { meals.copyWeek(target.previous(), target) } ?: return@launch
+            changed(MealsMessage.CopiedPreviousWeek(undo))
+        }
     }
 
     fun saveFavorite(name: String) {
@@ -335,11 +475,22 @@ class MealsViewModel(
 
     fun applyFavorite(favorite: FavoriteWeek) {
         val target = week.value
-        viewModelScope.launch { meals.applyFavorite(favorite, target) }
+        viewModelScope.launch {
+            val undo = history.record(target.days) { meals.applyFavorite(favorite, target) } ?: return@launch
+            changed(MealsMessage.FavoriteApplied(favorite.name, undo))
+        }
     }
 
     fun deleteFavorite(favorite: FavoriteWeek) {
         viewModelScope.launch { meals.deleteFavorite(favorite.id) }
+    }
+
+    /** "Ångra" on a receipt: puts back the meals [undo] replaced, unless someone has changed them again since. */
+    fun undo(undo: PlanUndo) {
+        viewModelScope.launch {
+            history.undo(undo)
+            weekNutritionState.value = WeekNutritionState.Idle
+        }
     }
 
     /** Typed-in school lunch (when the school has no feed). Blank removes it. */
@@ -347,8 +498,36 @@ class MealsViewModel(
         viewModelScope.launch { lunches.setManual(childId, date, dishes) }
     }
 
+    /**
+     * "Fyll i skollunch": the same typed-in lunches for [childIds], one text per day (dishes one per line, blank removes).
+     * Written one after the other, since every day of a child's week is one document; days that did not change are skipped.
+     */
+    fun setWeekLunches(childIds: List<String>, dishes: Map<LocalDate, String>) {
+        val current = state.value.days.associate { day -> day.date to day.lunches.associate { it.child.id to it.dishes } }
+        viewModelScope.launch {
+            for ((date, text) in dishes) {
+                val typed = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
+                for (childId in childIds) {
+                    if (current[date]?.get(childId).orEmpty() != typed) lunches.setManual(childId, date, typed.joinToString("\n"))
+                }
+            }
+        }
+    }
+
+    /** The receipt for a change; the week's nutrition is then out of date and is calculated again when opened. */
+    private suspend fun changed(message: MealsMessage) {
+        weekNutritionState.value = WeekNutritionState.Idle
+        messageChannel.send(message)
+    }
+
+    private fun titleOf(entry: MealEntry): String =
+        entry.title.ifBlank { entry.recipeId?.let { id -> state.value.recipes.firstOrNull { it.id == id }?.title }.orEmpty() }
+
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L
+
+        /** Three show at first; "Visa fler" shows the rest. */
+        const val MAX_SUGGESTIONS = 8
     }
 }
 

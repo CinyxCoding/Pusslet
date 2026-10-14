@@ -26,6 +26,7 @@ import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.RecipeTag
 import se.pusslet.core.model.Role
 import se.pusslet.core.recipes.IngredientParser
+import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -70,8 +71,20 @@ class MealsViewModelTest {
         val eager = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))
         eager.launch { vm.state.collect {} }
         eager.launch { vm.dayEditor.collect {} }
+        eager.launch { vm.dayView.collect {} }
         return vm
     }
+
+    /** Receipts as the screen would get them. */
+    private fun TestScope.receipts(vm: MealsViewModel): List<MealsMessage> {
+        val messages = mutableListOf<MealsMessage>()
+        CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler)).launch {
+            vm.messages.collect { messages += it }
+        }
+        return messages
+    }
+
+    private fun MealsViewModel.dinner(date: LocalDate) = state.value.days.firstOrNull { it.date == date }?.dinner
 
     private suspend fun TestWorld.seed() {
         family.saveMember(Member("m-sara", "Sara"))
@@ -332,5 +345,222 @@ class MealsViewModelTest {
 
         vm.nextWeek()
         assertEquals(WeekNutritionState.Idle, vm.weekNutrition.value)
+    }
+
+    @Test
+    fun planningCanBeUndone() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        vm.plan(monday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+        val planned = assertIs<MealsMessage.Planned>(messages.single())
+        assertEquals(monday, planned.date)
+        assertEquals("tacos", planned.title)
+
+        vm.plan(monday, MealSlot.Dinner, "Ugnsbakad lax", "r-lax", cookDouble = false, servings = null, note = "")
+        assertEquals("Ugnsbakad lax", assertIs<MealsMessage.Planned>(messages.last()).title)
+        vm.undo(messages.last().undo)
+        assertEquals("tacos", vm.dinner(monday)?.title, "Ångra brings back what the day had")
+        vm.undo(messages.first().undo)
+        assertNull(vm.dinner(monday))
+
+        vm.plan(monday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+        val before = messages.size
+        vm.plan(monday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+        assertEquals(before, messages.size, "nothing changed, so no receipt")
+    }
+
+    @Test
+    fun undoingCookDoubleTakesTheLeftoversToo() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        vm.plan(monday, MealSlot.Dinner, "Köttbullar och makaroner", "r-kb", cookDouble = true, servings = null, note = "")
+        assertEquals(monday, vm.dinner(tuesday)?.leftoversFrom)
+        vm.undo(messages.single().undo)
+        assertNull(vm.dinner(monday))
+        assertNull(vm.dinner(tuesday), "the leftovers go with it")
+
+        // Sunday's double batch puts leftovers on next Monday, in the next week.
+        val sunday = monday.plusDays(6)
+        vm.plan(sunday, MealSlot.Dinner, "Köttbullar och makaroner", "r-kb", cookDouble = true, servings = null, note = "")
+        assertNotNull(world.meals.getWeek(sunday.plusDays(1).isoWeek).entry(sunday.plusDays(1)))
+        vm.undo(messages.last().undo)
+        assertNull(world.meals.getWeek(sunday.plusDays(1).isoWeek).entry(sunday.plusDays(1)))
+    }
+
+    @Test
+    fun clearCanBeUndoneWithoutPlanningLeftoversAgain() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        vm.plan(monday, MealSlot.Dinner, "Köttbullar och makaroner", "r-kb", cookDouble = true, servings = null, note = "")
+        vm.clear(tuesday, MealSlot.Dinner)
+        assertEquals("Köttbullar och makaroner", assertIs<MealsMessage.Removed>(messages.last()).title)
+        vm.clear(monday, MealSlot.Dinner)
+        assertNull(vm.dinner(monday))
+
+        vm.undo(messages.last().undo)
+        assertTrue(vm.dinner(monday)?.cookDouble == true, "Monday is back as it was")
+        assertNull(vm.dinner(tuesday), "the leftovers were removed before, and stay removed")
+    }
+
+    @Test
+    fun moveCanBeUndone() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        val wednesday = monday.plusDays(2)
+        vm.plan(monday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+        vm.plan(wednesday, MealSlot.Dinner, "soppa", null, cookDouble = false, servings = null, note = "")
+        vm.move(monday, wednesday)
+        val moved = assertIs<MealsMessage.Planned>(messages.last())
+        assertEquals(wednesday, moved.date)
+        assertEquals("tacos", moved.title)
+
+        vm.undo(moved.undo)
+        assertEquals("tacos", vm.dinner(monday)?.title)
+        assertEquals("soppa", vm.dinner(wednesday)?.title)
+    }
+
+    @Test
+    fun favoriteWeekAndCopyingCanBeUndone() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        vm.plan(monday, MealSlot.Dinner, "fisk", null, cookDouble = false, servings = null, note = "")
+        vm.plan(monday.plusDays(2), MealSlot.Dinner, "Snabb pasta", "r-pasta", cookDouble = false, servings = null, note = "")
+        vm.saveFavorite("Vanlig vecka")
+
+        vm.nextWeek()
+        val nextMonday = monday.plusDays(7)
+        assertTrue(vm.state.value.offerCopyPrevious, "an empty week with last week planned")
+        vm.copyPreviousWeek()
+        val copied = assertIs<MealsMessage.CopiedPreviousWeek>(messages.last())
+        assertEquals("fisk", vm.dinner(nextMonday)?.title)
+        assertFalse(vm.state.value.offerCopyPrevious)
+        vm.undo(copied.undo)
+        assertTrue(vm.state.value.weekIsEmpty)
+
+        vm.plan(nextMonday, MealSlot.Dinner, "pizza", null, cookDouble = false, servings = null, note = "")
+        vm.applyFavorite(vm.state.value.favorites.single())
+        val applied = assertIs<MealsMessage.FavoriteApplied>(messages.last())
+        assertEquals("Vanlig vecka", applied.name)
+        assertEquals("fisk", vm.dinner(nextMonday)?.title, "the favourite replaces the day")
+        vm.undo(applied.undo)
+        assertEquals("pizza", vm.dinner(nextMonday)?.title)
+        assertEquals(1, vm.state.value.plannedCount)
+    }
+
+    @Test
+    fun undoLeavesWhatWasChangedAgainSince() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        vm.plan(monday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+        vm.plan(monday, MealSlot.Dinner, "soppa", null, cookDouble = false, servings = null, note = "")
+        vm.undo(messages.first().undo)
+        assertEquals("soppa", vm.dinner(monday)?.title)
+    }
+
+    @Test
+    fun aTapOnASuggestionPlansItAndClosesTheSheet() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        vm.openNextToPlan()
+        val editor = assertNotNull(vm.dayEditor.value)
+        assertEquals(tuesday, editor.date)
+        assertEquals(tuesday, editor.today)
+        val suggestion = editor.suggestions.first()
+
+        vm.pickSuggestion(suggestion.recipe)
+        assertNull(vm.dayEditor.value, "the sheet closes")
+        assertEquals(suggestion.recipe.id, vm.dinner(tuesday)?.recipeId)
+        val receipt = assertIs<MealsMessage.Planned>(messages.single())
+        assertEquals(tuesday, receipt.date)
+        assertEquals(suggestion.recipe.title, receipt.title)
+    }
+
+    @Test
+    fun theSheetKeepsPortionsOnlyForTheSameRecipe() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        vm.plan(tuesday, MealSlot.Dinner, "Ugnsbakad lax", "r-lax", cookDouble = false, servings = 6, note = "")
+        vm.openDay(tuesday)
+        vm.saveDay("Ugnsbakad lax", "r-lax", cookDouble = false, note = "med potatis")
+        assertEquals(6, vm.dinner(tuesday)?.servings)
+        assertEquals("med potatis", vm.dinner(tuesday)?.note)
+
+        vm.openDay(tuesday)
+        vm.saveDay("tacos", null, cookDouble = false, note = "")
+        assertNull(vm.dinner(tuesday)?.servings, "another dish starts from its own portions")
+
+        vm.openDay(tuesday)
+        vm.moveDay(tuesday.plusDays(1))
+        assertNull(vm.dayEditor.value)
+        assertEquals("tacos", vm.dinner(tuesday.plusDays(1))?.title)
+        vm.openDay(tuesday.plusDays(1))
+        vm.clearDay()
+        assertNull(vm.dinner(tuesday.plusDays(1)))
+    }
+
+    @Test
+    fun aPlannedMealOpensTheReadView() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        vm.setLunch("c-ella", tuesday, "Köttbullar med potatis")
+        vm.plan(tuesday, MealSlot.Dinner, "Köttbullar och makaroner", "r-kb", cookDouble = false, servings = null, note = "")
+
+        vm.viewDay(tuesday)
+        val view = assertNotNull(vm.dayView.value)
+        assertEquals("Köttbullar och makaroner", view.title)
+        assertEquals("r-kb", view.recipe?.id)
+        assertEquals(setOf("köttbullar"), view.lunches.single().clash)
+        assertTrue(view.canEdit)
+        assertNull(vm.dayEditor.value)
+
+        vm.editViewed()
+        assertNull(vm.dayView.value)
+        assertEquals(tuesday, vm.dayEditor.value?.date, "Ändra opens the planning sheet for the same day")
+        vm.closeDay()
+
+        vm.viewDay(tuesday)
+        vm.clear(tuesday, MealSlot.Dinner)
+        assertNull(vm.dayView.value, "nothing left to show")
+        vm.viewDay(monday)
+        assertNull(vm.dayView.value, "an empty day has no read view")
+    }
+
+    @Test
+    fun helpersGetTheReadViewWithoutChanging() = runTest {
+        val helper = TestWorld(role = Role.Caregiver)
+        helper.meals.setEntry(MealEntry(tuesday, title = "tacos"))
+        helper.family.saveChild(Child("c-ella", "Ella", lunch = LunchSource(LunchProviderType.Manual)))
+        val vm = viewModel(helper)
+        vm.viewDay(tuesday)
+        assertFalse(assertNotNull(vm.dayView.value).canEdit)
+        assertTrue(vm.state.value.manualLunchChildren.isEmpty(), "helpers do not fill in lunches")
+        assertFalse(vm.state.value.showFillLunch)
+        assertFalse(vm.state.value.offerCopyPrevious)
+    }
+
+    @Test
+    fun schoolLunchesAreFilledInForTheWeek() = runTest {
+        val world = TestWorld().apply { seed() }
+        world.family.saveChild(Child("c-simon", "Simon", lunch = LunchSource(LunchProviderType.Manual)))
+        world.family.saveChild(Child("c-ida", "Ida"))
+        val vm = viewModel(world)
+        assertEquals(listOf("Ella", "Simon"), vm.state.value.manualLunchChildren.map { it.firstName })
+        assertTrue(vm.state.value.showFillLunch, "one row for the week")
+
+        vm.setWeekLunches(listOf("c-ella", "c-simon"), mapOf(monday to "Fiskgratäng\n Potatis ", tuesday to "Pannkakor"))
+        val days = vm.state.value.days
+        assertEquals(listOf("Ella", "Simon"), days[0].lunches.map { it.child.firstName })
+        assertEquals(listOf("Fiskgratäng", "Potatis"), days[0].lunches.first().dishes)
+        assertEquals(1, groupLunches(days[1].lunches).size, "the same lunch is one row")
+
+        vm.setWeekLunches(listOf("c-simon"), mapOf(tuesday to ""))
+        assertEquals(listOf("Ella"), vm.state.value.days[1].lunches.map { it.child.firstName }, "blank removes Simon's")
     }
 }

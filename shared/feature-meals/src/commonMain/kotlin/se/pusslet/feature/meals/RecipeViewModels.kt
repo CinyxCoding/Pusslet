@@ -122,7 +122,8 @@ data class RecipeDetailsState(
 sealed interface RecipeMessage {
     data class AddedToList(val outcome: AddOutcome) : RecipeMessage
 
-    data class Planned(val date: LocalDate) : RecipeMessage
+    /** "I matsedeln tor 15 okt · Ångra"; [undo] puts back what the day had before (null = nothing changed). */
+    data class Planned(val date: LocalDate, val undo: PlanUndo? = null) : RecipeMessage
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -141,6 +142,7 @@ class RecipeDetailsViewModel(
     private val matching = MutableStateFlow<MatchingState?>(null)
     private val messageChannel = Channel<RecipeMessage>(Channel.BUFFERED)
     private val removed = MutableStateFlow(false)
+    private val history = MealPlanHistory(meals)
 
     val messages: Flow<RecipeMessage> = messageChannel.receiveAsFlow()
     val match: StateFlow<MatchingState?> = matching
@@ -237,10 +239,16 @@ class RecipeDetailsViewModel(
     fun planOn(date: LocalDate) {
         val r = state.value.recipe ?: return
         val count = state.value.servings
+        val entry = MealEntry(date, recipeId = r.id, title = r.title, servings = count.takeIf { it != r.servings })
         viewModelScope.launch {
-            meals.setEntry(MealEntry(date, recipeId = r.id, title = r.title, servings = count.takeIf { it != r.servings }))
-            messageChannel.send(RecipeMessage.Planned(date))
+            val undo = history.record(listOf(date)) { meals.setEntry(entry) }
+            messageChannel.send(RecipeMessage.Planned(date, undo))
         }
+    }
+
+    /** "Ångra" after [planOn]. */
+    fun undoPlan(undo: PlanUndo) {
+        viewModelScope.launch { history.undo(undo) }
     }
 
     fun startMatching(ingredient: Ingredient) {
@@ -318,7 +326,12 @@ data class RecipeEditorState(
     val form: RecipeForm = RecipeForm(),
     /** Set after saving; the screen then opens or returns to the recipe. */
     val savedId: String? = null,
-)
+    /** The form as it was loaded, to tell whether Back would lose anything. */
+    val loadedForm: RecipeForm = form,
+) {
+    /** Something was typed or pasted that is not saved yet: Back asks "Släng ändringarna?". */
+    val hasChanges: Boolean get() = !loading && savedId == null && form != loadedForm
+}
 
 class RecipeEditorViewModel(private val recipes: RecipeRepository, private val ids: IdGenerator) : ViewModel() {
     private val mutable = MutableStateFlow(RecipeEditorState())
@@ -335,7 +348,7 @@ class RecipeEditorViewModel(private val recipes: RecipeRepository, private val i
             val r = recipeId?.let { recipes.get(it) }
             original = r
             val form = r?.let { RecipeForm.of(it) } ?: RecipeForm(sourceUrl = sourceUrl, sourceName = sourceUrl?.let(::hostOf))
-            mutable.value = RecipeEditorState(loading = false, isNew = r == null, form = form)
+            mutable.value = RecipeEditorState(loading = false, isNew = r == null, form = form, loadedForm = form)
         }
     }
 

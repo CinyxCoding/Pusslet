@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
+import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.RecipeTag
@@ -22,6 +23,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -206,5 +208,53 @@ class RecipeViewModelsTest {
         vm.delete()
         assertTrue(vm.deleted.value)
         assertEquals(null, world.recipes.get("r1"))
+    }
+
+    @Test
+    fun planningFromTheRecipeCanBeUndone() = runTest {
+        val world = TestWorld()
+        world.recipes.save(recipe("r1", "Köttfärssås", "500 g nötfärs"))
+        val friday = LocalDate(2026, 10, 16)
+        world.meals.setEntry(MealEntry(friday, title = "Pizza"))
+        val vm = details(world)
+        val messages = mutableListOf<RecipeMessage>()
+        eager().launch { vm.messages.collect { messages += it } }
+        vm.load("r1")
+
+        vm.planOn(friday)
+        val planned = assertIs<RecipeMessage.Planned>(messages.last())
+        assertEquals("r1", world.meals.getWeek(friday.isoWeek).entry(friday)?.recipeId)
+        vm.undoPlan(assertNotNull(planned.undo))
+        assertEquals("Pizza", world.meals.getWeek(friday.isoWeek).entry(friday)?.title, "Ångra brings back Friday's pizza")
+    }
+
+    @Test
+    fun theEditorKnowsWhatIsNotSaved() = runTest {
+        val world = TestWorld()
+        world.recipes.save(recipe("r1", "Köttfärssås", "500 g nötfärs"))
+        val vm = RecipeEditorViewModel(world.recipes, world.ids)
+        vm.load("r1")
+        assertFalse(vm.state.value.hasChanges, "just opened")
+        vm.update { it.copy(title = "Köttfärssås med pasta") }
+        assertTrue(vm.state.value.hasChanges, "Back asks first")
+        vm.update { it.copy(title = "Köttfärssås") }
+        assertFalse(vm.state.value.hasChanges, "back to what was saved")
+
+        vm.update { it.copy(steps = "Stek färsen.") }
+        vm.save()
+        assertFalse(vm.state.value.hasChanges, "saved")
+
+        val new = RecipeEditorViewModel(world.recipes, world.ids)
+        new.load(null, "https://www.ica.se/recept/pannkakor")
+        assertFalse(new.state.value.hasChanges, "a link alone is not a change")
+        new.paste("Pannkakor\n3 ägg")
+        assertTrue(new.state.value.hasChanges)
+    }
+
+    @Test
+    fun theSourceIsShownAsItsHost() {
+        assertEquals("ica.se", sourceHost("https://www.ica.se/recept/pannkakor-123/"))
+        assertEquals("koket.se", sourceHost("http://koket.se/x?y=1"))
+        assertEquals(null, sourceHost("ica.se/recept"))
     }
 }

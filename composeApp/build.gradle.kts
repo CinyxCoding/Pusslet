@@ -1,6 +1,7 @@
 import com.android.build.api.dsl.ApplicationProductFlavor
 import groovy.json.JsonSlurper
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.time.Duration
 import java.util.Properties
 
 plugins {
@@ -163,7 +164,7 @@ android {
                 it.maxHeapSize = "2g"
                 // Name each test in the log and fail instead of hanging the CI job when a screen never settles.
                 it.testLogging { events("started", "passed", "skipped", "failed") }
-                it.timeout.set(java.time.Duration.ofMinutes(15))
+                it.timeout.set(Duration.ofMinutes(15))
             }
         }
     }

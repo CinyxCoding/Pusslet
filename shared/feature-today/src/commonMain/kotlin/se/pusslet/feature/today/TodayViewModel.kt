@@ -22,6 +22,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import se.pusslet.core.calendar.EffectiveHandoffs
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.Completion
 import se.pusslet.core.model.CustodySchedule
@@ -156,8 +157,11 @@ class TodayViewModel(
         Household(p, c, f?.name.orEmpty(), cu, s)
     }
 
+    // A caregiver's accepted answer counts at once, before a parent's phone has written it into the event (ADR-030).
     private val occurrences: Flow<List<EventOccurrence>> = today.flatMapLatest { d ->
-        calendar.occurrences(d, d.plusDays(HORIZON_DAYS), zone)
+        combine(calendar.occurrences(d, d.plusDays(HORIZON_DAYS), zone), calendar.handoffRequests) { occ, requests ->
+            EffectiveHandoffs.apply(occ, requests)
+        }
     }
 
     private data class Extras(

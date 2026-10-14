@@ -17,6 +17,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
+import se.pusslet.core.calendar.EffectiveHandoffs
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
@@ -121,7 +122,12 @@ class CalendarViewModel(
         Window(view, a, from, to)
     }
 
-    private val occurrences = window.flatMapLatest { w -> calendar.occurrences(w.from, w.to, zone) }
+    // A caregiver's accepted answer counts at once, before a parent's phone has written it into the event (ADR-030).
+    private val occurrences = window.flatMapLatest { w ->
+        combine(calendar.occurrences(w.from, w.to, zone), calendar.handoffRequests) { occ, requests ->
+            EffectiveHandoffs.apply(occ, requests)
+        }
+    }
 
     private val settings = combine(
         prefs.observe(Prefs.CalendarPersonFilter),
@@ -257,5 +263,9 @@ internal suspend fun takeHandoff(
             it.eventId == occurrence.event.id && it.occurrenceDate == occurrence.occurrenceDate && it.kind == kind &&
                 it.status == RequestStatus.Pending
         }
-        .forEach { calendar.saveHandoffRequest(it.copy(status = RequestStatus.Accepted, respondedBy = me, respondedAt = clock.now())) }
+        .forEach {
+            // A parent wrote it into the event directly, so the answer is applied already.
+            val now = clock.now()
+            calendar.saveHandoffRequest(it.copy(status = RequestStatus.Accepted, respondedBy = me, respondedAt = now, appliedAt = now))
+        }
 }

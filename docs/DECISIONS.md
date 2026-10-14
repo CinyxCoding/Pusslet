@@ -231,3 +231,22 @@ problem idag, fyllt och alltid med en åtgärd. Medlemsfärger betyder aldrig st
 ## ADR-033 – Kalendervyer: Vecka och Månad
 **Kontext:** Fyra vyer (Dag, Vecka, Månad, Agenda) gjorde kalendern svår att förstå, och Dag-vyn fastnade som standard.
 **Beslut:** Segmentet visar ”Vecka | Månad”. Agenda går upp i veckolistan och Dag öppnas från dagrubriken som egen skärm.
+
+## ADR-030 – Hjälparens svar på förfrågningar
+**Kontext:** Morfar Bengt ska kunna svara Ja eller Nej på "Kan du hämta Ella?", men hjälpare får inte skriva händelser
+(ADR-015). I dag nekade reglerna inte ens felaktiga ändringar i `handoffRequests`.
+**Beslut:** Ett Ja sätter `Accepted`, `respondedBy` och `respondedAt`. `EffectiveHandoffs` (core) låter svaret gälla
+direkt i Idag och Kalender på alla telefoner. Den första föräldertelefonen som ser svaret skriver in det i händelsen
+(`AcceptedRequestApplier`, som en override för tillfället) och sätter `appliedAt`; det ger samma resultat om det körs
+flera gånger. Ett Nej på en förfrågan till hjälparen ger `Declined`; på en förfrågan till alla sparas bara hjälparens nyckel
+i `declines` (map-fält, sammanslaget per nyckel). "Ändra svar" går tills `appliedAt` är satt. "Jag kan inte" skapar en öppen
+förfrågan till alla från hjälparen. Reglerna tillåter hjälpare just detta och inget mer (regeltester i `functions/test`).
+**Konsekvens:** Svaret syns direkt och händelsen blir rätt även i ICS-flödet och enhetskalendern, utan att hjälpare får
+skrivrätt till händelser.
+
+## ADR-031 – CaregiverVisibility speglar reglerna
+**Kontext:** Hjälparvyn och förälderns förhandsvisning ("Så ser Bengt appen") måste visa exakt det reglerna släpper igenom.
+**Beslut:** `CaregiverVisibility` i core: familjens egna händelser med `sharedWithCaregivers`, röda dagar och delade
+uppgifter – aldrig prenumerationer eller enhetskalendrar. Förfrågningar om privata händelser filtreras bort. Allergier och
+kost (`dietProfiles`) läses inte längre av hjälpare (regler och synk, UX-plan §10.6).
+**Konsekvens:** Samma filter används som extra skydd på hjälparens telefon (t.ex. gammal data efter rollbyte).

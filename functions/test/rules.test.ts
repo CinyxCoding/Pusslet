@@ -9,6 +9,7 @@ import {
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import {
+  FieldPath,
   Timestamp,
   collection,
   deleteDoc,
@@ -47,6 +48,21 @@ async function seed() {
     await setDoc(doc(f, `families/${FID}/tasks/t1`), { title: "Hämta paket", sharedWithCaregivers: true, done: false });
     await setDoc(doc(f, `families/${FID}/shoppingLists/l1`), { name: "Veckohandling" });
     await setDoc(doc(f, `families/${FID}/icsSubscriptions/s1`), { name: "Skolan", url: "https://example.com/a.ics" });
+    await setDoc(doc(f, `families/${FID}/dietProfiles/ella`), { childId: "ella", allergies: ["nuts"] });
+    const request = { eventId: "shared", occurrenceDate: "2026-10-08", kind: "pickup", fromMemberId: "m-sara" };
+    await setDoc(doc(f, `families/${FID}/handoffRequests/to-bengt`), { ...request, toMemberId: "m-bengt", status: "pending" });
+    await setDoc(doc(f, `families/${FID}/handoffRequests/to-anyone`), { ...request, status: "pending" });
+    await setDoc(doc(f, `families/${FID}/handoffRequests/to-johan`), { ...request, toMemberId: "m-johan", status: "pending" });
+    await setDoc(doc(f, `families/${FID}/handoffRequests/answered`), {
+      ...request, status: "accepted", respondedBy: "m-johan", respondedAt: "2026-10-07T18:00:00Z",
+    });
+    await setDoc(doc(f, `families/${FID}/handoffRequests/bengt-said-yes`), {
+      ...request, toMemberId: "m-bengt", status: "accepted", respondedBy: "m-bengt", respondedAt: "2026-10-07T18:00:00Z",
+    });
+    await setDoc(doc(f, `families/${FID}/handoffRequests/bengt-applied`), {
+      ...request, toMemberId: "m-bengt", status: "accepted", respondedBy: "m-bengt", respondedAt: "2026-10-07T18:00:00Z",
+      appliedAt: "2026-10-07T18:05:00Z",
+    });
     await setDoc(doc(f, "invites/ABCDEFGHJK"), { familyId: FID, role: "parent", createdBy: "sara", expiresAt: future(7) });
     await setDoc(doc(f, "invites/CAREGIVER2"), { familyId: FID, role: "caregiver", createdBy: "sara", expiresAt: future(7) });
     await setDoc(doc(f, "invites/EXPIREDXXX"), { familyId: FID, role: "parent", createdBy: "sara", expiresAt: future(-1) });
@@ -247,6 +263,63 @@ describe("caregivers (morfar)", () => {
     );
     await assertFails(
       setDoc(doc(f, `families/${FID}/events/e9`), { title: "x", start: "s", end: "e", ...stamp("bengt") }),
+    );
+  });
+
+  it("cannot read allergies and diets", async () => {
+    await assertFails(getDoc(doc(db("bengt"), `families/${FID}/dietProfiles/ella`)));
+    await assertSucceeds(getDoc(doc(db("sara"), `families/${FID}/dietProfiles/ella`)));
+  });
+
+  const yes = (by: string) => ({ status: "accepted", respondedBy: by, respondedAt: "2026-10-08T07:00:00Z", ...stamp("bengt") });
+
+  it("can answer hand-off requests to him or to anyone", async () => {
+    const f = db("bengt");
+    await assertSucceeds(updateDoc(doc(f, `families/${FID}/handoffRequests/to-bengt`), yes("m-bengt")));
+    await assertSucceeds(updateDoc(doc(f, `families/${FID}/handoffRequests/to-anyone`), yes("m-bengt")));
+  });
+
+  it("can say no to a request to anyone with his own key only", async () => {
+    const f = db("bengt");
+    const ref = doc(f, `families/${FID}/handoffRequests/to-anyone`);
+    await assertSucceeds(
+      updateDoc(ref, new FieldPath("declines", "m-bengt"), "2026-10-08T07:00:00Z", "updatedAt", serverTimestamp(), "updatedBy", "bengt"),
+    );
+    await assertFails(
+      updateDoc(ref, new FieldPath("declines", "m-johan"), "2026-10-08T07:00:00Z", "updatedAt", serverTimestamp(), "updatedBy", "bengt"),
+    );
+  });
+
+  it("cannot answer for someone else, someone else's request or an answered one", async () => {
+    const f = db("bengt");
+    await assertFails(updateDoc(doc(f, `families/${FID}/handoffRequests/to-bengt`), yes("m-johan")));
+    await assertFails(updateDoc(doc(f, `families/${FID}/handoffRequests/to-johan`), yes("m-bengt")));
+    await assertFails(updateDoc(doc(f, `families/${FID}/handoffRequests/answered`), yes("m-bengt")));
+  });
+
+  it("cannot change what a request is about", async () => {
+    const f = db("bengt");
+    const ref = doc(f, `families/${FID}/handoffRequests/to-bengt`);
+    await assertFails(updateDoc(ref, { ...yes("m-bengt"), kind: "dropoff" }));
+    await assertFails(updateDoc(ref, { ...yes("m-bengt"), eventId: "private" }));
+    await assertFails(updateDoc(ref, { ...yes("m-bengt"), toMemberId: null }));
+    await assertFails(updateDoc(ref, { ...yes("m-bengt"), fromMemberId: "m-bengt" }));
+  });
+
+  it("can change his answer until a parent has written it in", async () => {
+    const f = db("bengt");
+    const reopen = { status: "pending", respondedBy: null, respondedAt: null, ...stamp("bengt") };
+    await assertSucceeds(updateDoc(doc(f, `families/${FID}/handoffRequests/bengt-said-yes`), reopen));
+    await assertFails(updateDoc(doc(f, `families/${FID}/handoffRequests/bengt-applied`), reopen));
+  });
+
+  it("can ask the family to take over, but only for himself", async () => {
+    const f = db("bengt");
+    const ask = { eventId: "shared", occurrenceDate: "2026-10-08", kind: "pickup", status: "pending", ...stamp("bengt") };
+    await assertSucceeds(setDoc(doc(f, `families/${FID}/handoffRequests/cannot`), { ...ask, fromMemberId: "m-bengt" }));
+    await assertFails(setDoc(doc(f, `families/${FID}/handoffRequests/cannot2`), { ...ask, fromMemberId: "m-sara" }));
+    await assertFails(
+      setDoc(doc(f, `families/${FID}/handoffRequests/cannot3`), { ...ask, fromMemberId: "m-bengt", toMemberId: "m-sara" }),
     );
   });
 

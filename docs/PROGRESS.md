@@ -70,9 +70,10 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   Mat visar idag först, Mer utan undertexter
 - [x] 1.13 Hjälpare ser bara knappar som fungerar (Idag, Kalender, Inställningar)
 - [x] 1.14–1.15 ”Visa första start igen” i demo/dev, ”Exempelfamilj” på Idag, första barnet blir aldrig terrakotta
-- [ ] 2.0 Gemensamma komponenter
-- [ ] Idag A: block och Morgonkollen · Idag B: Anpassa Idag
-- [ ] Steg 2 per flik: Handla, Mat, Kalender, Mer
+- [x] 2.0 Gemensamma komponenter (TabHeader, WeekSwitcher, Section, HeroCard, SentenceRow, NavRow, QuietLine,
+  OutlinedValueField, WeekStripPicker, ReorderButtons, showUndo)
+- [x] Idag A: block och Morgonkollen · Idag B: Anpassa Idag (från Idag och Inställningar)
+- [ ] Steg 2 per flik: Kalender ✅ (Vecka | Månad, tysta rutiner, filterark), Mer ✅, Mat, Handla
 - [ ] Steg 3: hjälparvy (H1 data och regler, H2 vy, H3 förhandsvisning och svar)
 - [ ] Steg 4: första användningen
 
@@ -115,6 +116,9 @@ Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestor
 Nästa steg: kör fas 2 på emulator (`installDemoDebug`), spela in skärmdumpar för Mat och Handla. Sedan fas 3.
 
 ## Kända begränsningar / buggar
+- CI hängde en timme 2026-10-14: Idags ViewModel startade en evig `while (true) { delay(1 h) }` i `init`, som fick
+  Robolectric-testerna att aldrig bli klara. Vädret laddas nu inuti state-flödet (stannar med skärmen). Regel: inga eviga
+  loopar i ViewModel-init; periodiskt arbete hör hemma i ett flöde under `stateIn(WhileSubscribed)`.
 - Emulatorn på utvecklingsmaskinen (4 kärnor, mjukvaru-GPU) är långsam och visar ibland ANR-dialoger för System UI – inte appens fel.
 - iOS kan inte kompileras på Windows; verifieras i CI (macOS-runner).
 - Hjälpare (t.ex. morfar) kan inte ändra lämning/hämtning direkt, bara svara på förfrågningar (ADR-015).

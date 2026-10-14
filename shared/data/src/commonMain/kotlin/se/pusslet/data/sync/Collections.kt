@@ -66,10 +66,12 @@ object Collections {
             caregiverFilterField = "sharedWithCaregivers",
         )
     val Subscriptions = CollectionSpec("icsSubscriptions", RemoteLocation.Flat("icsSubscriptions"), parentsOnly = true)
-    val HandoffRequests = CollectionSpec("handoffRequests", RemoteLocation.Flat("handoffRequests"))
+    val HandoffRequests = CollectionSpec("handoffRequests", RemoteLocation.Flat("handoffRequests"), mapFields = setOf("declines"))
     val Presence = CollectionSpec("presence", RemoteLocation.Flat("presence"))
     val Settings = CollectionSpec("settings", RemoteLocation.Flat("settings"))
-    val Diets = CollectionSpec("dietProfiles", RemoteLocation.Flat("dietProfiles"))
+
+    /** Allergies and diets are sensitive: parents only (firestore.rules). */
+    val Diets = CollectionSpec("dietProfiles", RemoteLocation.Flat("dietProfiles"), parentsOnly = true)
     val AisleOverrides = CollectionSpec("aisleOverrides", RemoteLocation.Flat("aisleOverrides"))
     val IngredientMappings = CollectionSpec("ingredientMappings", RemoteLocation.Flat("ingredientMappings"))
     val SchoolLunches = CollectionSpec("schoolLunches", RemoteLocation.Flat("schoolLunches"), mapFields = setOf("days"))

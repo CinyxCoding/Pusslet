@@ -64,10 +64,11 @@ service cloud.firestore {
         : true;
     }
 
-    // Collections caregivers can read without restriction / not at all.
+    // Collections caregivers can read without restriction / not at all. Allergies and diets (dietProfiles) are sensitive
+    // and stay with the parents (UX plan §10.6).
     function caregiverReadable(collection) {
       return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
-        'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings', 'dietProfiles',
+        'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings',
         'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches'];
     }
     function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
@@ -158,10 +159,37 @@ service cloud.firestore {
       }
 
       match /{collection}/{docId} {
+        // A caregiver's own key in a request's declines, and nothing else in it.
+        function onlyMyDecline() {
+          return onlyChanges(['declines'])
+            && data().declines.diff(resource.data.get('declines', {})).affectedKeys().hasOnly([myMemberId(fid)]);
+        }
+        // Answers (ADR-030): yes or no to an open request to me or to anyone (not my own), only the answer fields.
+        function caregiverAnswer() {
+          return resource != null && resource.data.status == 'pending'
+            && resource.data.fromMemberId != myMemberId(fid)
+            && (resource.data.get('toMemberId', null) == null || resource.data.toMemberId == myMemberId(fid))
+            && ((onlyChanges(['status', 'respondedBy', 'respondedAt']) && data().status in ['accepted', 'declined']
+                  && data().respondedBy == myMemberId(fid))
+                || onlyMyDecline());
+        }
+        // "Ändra svar": until a parent's phone has written the answer into the event (appliedAt).
+        function caregiverChangeAnswer() {
+          return resource != null && resource.data.get('appliedAt', null) == null
+            && ((resource.data.get('respondedBy', null) == myMemberId(fid) && data().status == 'pending'
+                  && onlyChanges(['status', 'respondedBy', 'respondedAt']))
+                || onlyMyDecline());
+        }
+        // "Jag kan inte idag": a new open request from me to the whole family.
+        function caregiverAsk() {
+          return resource == null && data().fromMemberId == myMemberId(fid)
+            && data().get('toMemberId', null) == null && data().status == 'pending';
+        }
+
         // What a caregiver may change: tick off packing, answer hand-off requests, mark shared tasks done, show presence.
         function caregiverWrite(collection) {
           return collection == 'packingChecks'
-            || collection == 'handoffRequests'
+            || (collection == 'handoffRequests' && (caregiverAnswer() || caregiverChangeAnswer() || caregiverAsk()))
             || (collection == 'presence' && docId == myMemberId(fid))
             || (collection == 'tasks' && resource != null && sharedWithCaregivers()
                 && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']));

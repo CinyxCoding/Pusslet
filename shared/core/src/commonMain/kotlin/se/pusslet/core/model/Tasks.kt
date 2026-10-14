@@ -120,6 +120,13 @@ data class HandoffRequest(
     val createdAt: Instant? = null,
     val respondedBy: String? = null,
     val respondedAt: Instant? = null,
+    /**
+     * Who said no to a request to anyone, and when (member id -> time). Merged per key, so two caregivers answering at the
+     * same time do not overwrite each other (ADR-030).
+     */
+    val declines: Map<String, Instant> = emptyMap(),
+    /** When a parent's phone wrote an accepted answer into the event. Until then the answer can still be changed. */
+    val appliedAt: Instant? = null,
 )
 
 /** A read-only calendar the family subscribes to (school, sports club, TimeEdit …). */

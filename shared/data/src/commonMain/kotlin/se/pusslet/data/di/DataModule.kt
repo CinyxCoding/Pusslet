@@ -43,8 +43,10 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.RoomSyncLocalStore
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.data.usecase.AcceptedRequestApplier
 import se.pusslet.data.usecase.DataPrivacy
 import se.pusslet.data.usecase.HandoffAssigner
+import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
@@ -84,6 +86,8 @@ val dataModule: Module = module {
     single { TaskRepository(get()) }
     single { LunchRepository(get(), get(), get()) }
     single { HandoffAssigner(get()) }
+    single { HandoffRequests(get(), get(), get(), get()) }
+    single { AcceptedRequestApplier(get(), get(), get(), get(), get()) }
     single { DataPrivacy(get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }

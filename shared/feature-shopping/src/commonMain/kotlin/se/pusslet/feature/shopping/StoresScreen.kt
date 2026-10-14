@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +36,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,9 +60,11 @@ import se.pusslet.ui.components.EmptyState
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.ReorderButtons
 import se.pusslet.ui.components.SwitchRow
+import se.pusslet.ui.components.UnsavedChangesBackHandler
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 import se.pusslet.core.model.Role as FamilyRole
@@ -120,8 +123,14 @@ class StoresViewModel(
     }
 }
 
+/** "Butiker och det vi har hemma": the stores (with "Vår vanliga butik" starred) and, last, the way to the pantry. */
 @Composable
-fun StoresRoute(onBack: () -> Unit, onEdit: (String?) -> Unit, viewModel: StoresViewModel = koinViewModel()) {
+fun StoresRoute(
+    onBack: () -> Unit,
+    onEdit: (String?) -> Unit,
+    onOpenPantry: () -> Unit = {},
+    viewModel: StoresViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     Scaffold(
         topBar = { PussletTopBar(stringResource(Res.string.stores_title), onBack = onBack) },
@@ -163,11 +172,18 @@ fun StoresRoute(onBack: () -> Unit, onEdit: (String?) -> Unit, viewModel: Stores
                     },
                 )
             }
+            item(key = "pantry") {
+                NavRow(stringResource(Res.string.pantry_title), onOpenPantry, modifier = Modifier.padding(top = Spacing.lg))
+            }
         }
     }
 }
 
-/** Name, "standardbutik" and the walking order, reordered with up/down buttons (works with TalkBack, unlike drag). */
+/**
+ * Name, "Vår vanliga butik" and the walking order, reordered with up/down buttons (works with TalkBack, unlike drag).
+ * "Spara" sits in the top bar; ← with unsaved changes asks "Släng ändringarna?" first. (System back is not caught yet:
+ * shared modules have no back-handler API on their classpath.)
+ */
 @Composable
 fun StoreEditorRoute(storeId: String?, onDone: () -> Unit, viewModel: StoresViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -179,13 +195,31 @@ fun StoreEditorRoute(storeId: String?, onDone: () -> Unit, viewModel: StoresView
     }
     val existing = storeId?.let { id -> state.stores.firstOrNull { it.id == id } }
     val id = rememberSaveable { storeId ?: viewModel.newStoreId() }
-    var name by rememberSaveable { mutableStateOf(existing?.name.orEmpty()) }
-    var isDefault by rememberSaveable { mutableStateOf(state.defaultStoreId == id || (existing == null && state.stores.isEmpty())) }
-    val order = remember { mutableStateListOf<Aisle>().apply { addAll(fullOrder(existing?.aisleOrder ?: Aisle.defaultOrder)) } }
+    val initialName = existing?.name.orEmpty()
+    val initialDefault = state.defaultStoreId == id || (existing == null && state.stores.isEmpty())
+    val initialOrder = remember { fullOrder(existing?.aisleOrder ?: Aisle.defaultOrder) }
+    var name by rememberSaveable { mutableStateOf(initialName) }
+    var isDefault by rememberSaveable { mutableStateOf(initialDefault) }
+    val order = remember { mutableStateListOf<Aisle>().apply { addAll(initialOrder) } }
     var confirmDelete by remember { mutableStateOf(false) }
+    var confirmDiscard by remember { mutableStateOf(false) }
     val title = stringResource(if (existing == null) Res.string.stores_add else Res.string.store_edit)
+    val unsaved = name.trim() != initialName.trim() || isDefault != initialDefault || order.toList() != initialOrder
 
-    Scaffold(topBar = { PussletTopBar(title, onBack = onDone) }) { padding ->
+    fun leave() {
+        if (unsaved) confirmDiscard = true else onDone()
+    }
+    UnsavedChangesBackHandler(enabled = unsaved && !confirmDiscard) { confirmDiscard = true }
+
+    Scaffold(
+        topBar = {
+            PussletTopBar(title, onBack = ::leave, actions = {
+                TextButton(onClick = { viewModel.save(Store(id, name, order.toList()), isDefault) }, enabled = name.isNotBlank()) {
+                    Text(stringResource(Res.string.action_save))
+                }
+            })
+        },
+    ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
@@ -207,16 +241,15 @@ fun StoreEditorRoute(storeId: String?, onDone: () -> Unit, viewModel: StoresView
                 )
             }
             item(key = "default") {
-                SwitchRow(
-                    title = stringResource(Res.string.store_default),
-                    supporting = stringResource(Res.string.store_default_body),
-                    checked = isDefault,
-                    onCheckedChange = { isDefault = it },
-                )
+                SwitchRow(title = stringResource(Res.string.store_default), checked = isDefault, onCheckedChange = { isDefault = it })
             }
             item(key = "order-title") {
                 Column(Modifier.padding(top = Spacing.md)) {
-                    Text(stringResource(Res.string.store_order_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(Res.string.store_order_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { heading() },
+                    )
                     Text(
                         stringResource(Res.string.store_order_hint),
                         style = MaterialTheme.typography.bodyMedium,
@@ -240,18 +273,11 @@ fun StoreEditorRoute(storeId: String?, onDone: () -> Unit, viewModel: StoresView
                     order.addAll(Aisle.defaultOrder)
                 }) { Text(stringResource(Res.string.store_reset_order)) }
             }
-            item(key = "actions") {
-                Row(Modifier.fillMaxWidth().padding(top = Spacing.md), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                    if (existing != null) {
-                        OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(Res.string.action_delete))
-                        }
+            if (existing != null) {
+                item(key = "delete") {
+                    OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.fillMaxWidth().padding(top = Spacing.md)) {
+                        Text(stringResource(Res.string.action_delete))
                     }
-                    Button(
-                        onClick = { viewModel.save(Store(id, name, order.toList()), isDefault) },
-                        enabled = name.isNotBlank(),
-                        modifier = Modifier.weight(1f),
-                    ) { Text(stringResource(Res.string.action_save)) }
                 }
             }
         }
@@ -267,6 +293,19 @@ fun StoreEditorRoute(storeId: String?, onDone: () -> Unit, viewModel: StoresView
                 }) { Text(stringResource(Res.string.action_delete)) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_cancel)) } },
+        )
+    }
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text(stringResource(Res.string.discard_changes_title)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDiscard = false
+                    onDone()
+                }) { Text(stringResource(Res.string.action_discard)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
 }

@@ -602,7 +602,6 @@
     <string name="shopping_scan">Scan barcode</string>
     <string name="shopping_store_mode">I'm shopping now</string>
     <string name="shopping_from_meals">Shop for the week</string>
-    <string name="shopping_suggestions_title">You usually buy</string>
     <string name="shopping_suggestions_dismiss">Not now</string>
     <string name="shopping_suggestion_add">Add %1$s</string>
     <string name="shopping_shopper_now">%1$s is shopping now</string>
@@ -615,7 +614,6 @@
     <string name="shopping_already_on_list">%1$s was already there</string>
     <string name="shopping_removed">%1$s removed</string>
     <string name="shopping_in_cart_toast">%1$s in the cart</string>
-    <string name="shopping_all_done">Everything's in the cart! Nice work 🎉</string>
     <string name="shopping_generated">List updated</string>
     <string name="shopping_generated_nothing">Nothing new to add</string>
     <string name="shopping_unknown_title">Unknown product</string>
@@ -623,7 +621,6 @@
     <string name="shopping_item_name">Item</string>
     <string name="shopping_off_attribution">Product data from Open Food Facts (ODbL).</string>
     <string name="shopping_share">Share as text</string>
-    <string name="shopping_menu_store">Store: %1$s</string>
     <string name="shopping_menu_choose_store">Choose store</string>
     <string name="shopping_stores">Stores and aisle order</string>
     <string name="shopping_rename_list">Rename list</string>
@@ -632,11 +629,11 @@
     <string name="shopping_more">More options</string>
     <string name="shopping_new_list">New list</string>
     <string name="shopping_list_name">List name</string>
-    <string name="shopping_store_none">No particular store (default order)</string>
+    <string name="shopping_store_none">No particular store (usual order)</string>
     <string name="shopping_edit_item">Edit item</string>
     <string name="shopping_amount">Amount</string>
     <string name="shopping_unit">Unit</string>
-    <string name="shopping_unit_none">–</string>
+    <string name="shopping_unit_none">No unit</string>
     <string name="shopping_aisle">Aisle</string>
     <string name="shopping_note">Note</string>
     <string name="shopping_price">Own price, SEK (optional)</string>
@@ -653,7 +650,6 @@
     <string name="meals_to_list_title">Shop for the week</string>
     <string name="meals_to_list_this_week">This week</string>
     <string name="meals_to_list_next_week">Next week</string>
-    <string name="meals_to_list_summary">%1$s – new: %2$d · changed: %3$d · removed: %4$d</string>
     <string name="meals_to_list_empty">Nothing to add for %1$s. Plan dinners with recipes in the meal plan – or everything is already on the list.</string>
     <string name="meals_to_list_confirm">Update the list</string>
     <string name="meals_to_list_pantry_on">What you have at home is deducted. Salt, pepper and water are skipped.</string>
@@ -674,14 +670,12 @@
     <string name="stores_empty">Add your store and the list follows its aisles</string>
     <string name="store_edit">Edit store</string>
     <string name="store_name">Store name</string>
-    <string name="store_default">Default store</string>
-    <string name="store_default_body">Used for lists without a store of their own.</string>
+    <string name="store_default">Our usual store</string>
     <string name="store_order_title">Aisle order</string>
     <string name="store_order_hint">Move the aisles into the order you pass them in the store.</string>
-    <string name="store_reset_order">Reset to default order</string>
+    <string name="store_reset_order">Reset to usual order</string>
     <string name="store_delete_confirm">Delete the store %1$s?</string>
     <string name="store_mode_all_done_title">Everything's in the cart!</string>
-    <string name="store_mode_all_done_body">Lovely. Only the checkout left.</string>
     <string name="store_mode_finish">Done</string>
 
     <!-- Meals: week plan -->

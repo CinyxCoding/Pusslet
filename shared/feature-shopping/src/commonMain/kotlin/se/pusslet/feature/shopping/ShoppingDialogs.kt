@@ -1,5 +1,6 @@
 package se.pusslet.feature.shopping
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +15,8 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -41,6 +43,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -49,13 +53,14 @@ import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.ListKind
 import se.pusslet.core.model.ShoppingItem
+import se.pusslet.core.shopping.ShoppingText
 import se.pusslet.core.units.MeasureUnit
 import se.pusslet.core.units.QuantityParser
 import se.pusslet.core.units.Units
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.OutlinedValueField
 import se.pusslet.ui.components.SelectionColors
-import se.pusslet.ui.components.ValueField
 import se.pusslet.ui.format.weekLong
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
@@ -244,7 +249,11 @@ internal fun UnknownProductDialog(barcode: String, onDismiss: () -> Unit, onAdd:
     )
 }
 
-/** Edit one item: name, amount and unit, aisle (remembered for the family), note and an optional own price. */
+/**
+ * Edit one item (UX plan, Handla 6): name, amount with a unit picker ("Ingen enhet"), the aisle picker ("Sparas till
+ * nästa gång": a corrected aisle is remembered for the family) and a note. The own price and who added it sit under
+ * "Fler detaljer".
+ */
 @Composable
 internal fun ItemEditorSheet(
     item: ShoppingItem,
@@ -260,6 +269,7 @@ internal fun ItemEditorSheet(
     var aisle by remember(item.id) { mutableStateOf(item.aisle) }
     var note by rememberSaveable(item.id) { mutableStateOf(item.note) }
     var price by rememberSaveable(item.id) { mutableStateOf(item.price?.let(::formatPrice).orEmpty()) }
+    var moreDetails by rememberSaveable(item.id) { mutableStateOf(item.price != null) }
     val parsedAmount = amount.trim().takeIf { it.isNotEmpty() }?.let { QuantityParser.parsePrefix(it).quantity?.value }
     val amountInvalid = amount.isNotBlank() && parsedAmount == null
     val parsedPrice = price.trim().replace(',', '.').takeIf { it.isNotEmpty() }?.toDoubleOrNull()
@@ -284,7 +294,7 @@ internal fun ItemEditorSheet(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.Bottom) {
                 OutlinedTextField(
                     value = amount,
                     onValueChange = { amount = it },
@@ -296,7 +306,15 @@ internal fun ItemEditorSheet(
                 )
                 UnitPicker(unit, onPick = { unit = it }, modifier = Modifier.weight(1f))
             }
-            AislePicker(aisle, onPick = { aisle = it })
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                AislePicker(aisle, onPick = { aisle = it })
+                Text(
+                    stringResource(Res.string.shopping_aisle_remembered),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = Spacing.lg),
+                )
+            }
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
@@ -305,21 +323,26 @@ internal fun ItemEditorSheet(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
-                value = price,
-                onValueChange = { price = it },
-                label = { Text(stringResource(Res.string.shopping_price)) },
-                singleLine = true,
-                isError = priceInvalid,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            item.addedBy?.let(people::get)?.let { person ->
-                Text(
-                    stringResource(Res.string.shopping_added_by, person.name),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // An invalid price keeps "Fler detaljer" open, so the reason Spara is off stays in sight.
+            val showMore = moreDetails || priceInvalid
+            MoreDetailsToggle(expanded = showMore, onToggle = { moreDetails = !showMore })
+            if (showMore) {
+                OutlinedTextField(
+                    value = price,
+                    onValueChange = { price = it },
+                    label = { Text(stringResource(Res.string.shopping_price)) },
+                    singleLine = true,
+                    isError = priceInvalid,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                    modifier = Modifier.fillMaxWidth(),
                 )
+                item.addedBy?.let(people::get)?.let { person ->
+                    Text(
+                        stringResource(Res.string.shopping_added_by, person.name),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 OutlinedButton(onClick = onDelete, modifier = Modifier.weight(1f)) { Text(stringResource(Res.string.action_delete)) }
@@ -344,6 +367,21 @@ internal fun ItemEditorSheet(
     }
 }
 
+/** "Fler detaljer ⌄": shows or hides the rarely used fields. */
+@Composable
+private fun MoreDetailsToggle(expanded: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = Spacing.touchTarget)
+            .clickable(role = Role.Button, onClick = onToggle),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(Res.string.shopping_more_details), style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+        Icon(if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null)
+    }
+}
+
 /** The units people actually shop in, most common first. */
 private val shoppingUnits = listOf(
     MeasureUnit.St,
@@ -361,12 +399,13 @@ private val shoppingUnits = listOf(
     MeasureUnit.Kruka,
 )
 
+/** "Enhet ▾": "Ingen enhet" instead of an empty or "–" value. */
 @Composable
 private fun UnitPicker(unit: MeasureUnit?, onPick: (MeasureUnit?) -> Unit, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
     val none = stringResource(Res.string.shopping_unit_none)
     Box(modifier) {
-        DropdownField(stringResource(Res.string.shopping_unit), unit?.symbol ?: none, onClick = { open = true })
+        OutlinedValueField(stringResource(Res.string.shopping_unit), unit?.symbol, onClick = { open = true }, placeholder = none)
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             DropdownMenuItem(text = { Text(none) }, onClick = {
                 onPick(null)
@@ -382,11 +421,12 @@ private fun UnitPicker(unit: MeasureUnit?, onPick: (MeasureUnit?) -> Unit, modif
     }
 }
 
+/** "Avdelning ▾" with every aisle in the usual walking order. */
 @Composable
 private fun AislePicker(aisle: Aisle, onPick: (Aisle) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxWidth()) {
-        DropdownField(stringResource(Res.string.shopping_aisle), stringResource(Labels.aisle(aisle)), onClick = { open = true })
+        OutlinedValueField(stringResource(Res.string.shopping_aisle), stringResource(Labels.aisle(aisle)), onClick = { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             Aisle.defaultOrder.forEach { a ->
                 DropdownMenuItem(text = { Text(stringResource(Labels.aisle(a))) }, onClick = {
@@ -398,15 +438,10 @@ private fun AislePicker(aisle: Aisle, onPick: (Aisle) -> Unit) {
     }
 }
 
-@Composable
-private fun DropdownField(label: String, value: String, onClick: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.weight(1f)) { ValueField(label, value, onClick = onClick) }
-        Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
-    }
-}
-
-/** "Handla till matsedeln": pick this or next week, see what changes, confirm. */
+/**
+ * "Handla till veckan": pick this or next week, see what changes, grouped under "Läggs till", "Ändras" and "Tas bort",
+ * and confirm.
+ */
 @Composable
 internal fun MealPlanSheet(
     preview: MealPlanPreview?,
@@ -441,35 +476,25 @@ internal fun MealPlanSheet(
                     )
                 }
             }
-            when {
-                preview == null -> LoadingBox(Modifier.heightIn(max = Spacing.xxl * 3))
-                preview.plan.isEmpty -> Text(stringResource(Res.string.meals_to_list_empty, weekLong(preview.week.week)))
-                else -> {
-                    Text(
-                        stringResource(
-                            Res.string.meals_to_list_summary,
-                            weekLong(preview.week.week),
-                            preview.plan.add.size,
-                            preview.plan.update.size,
-                            preview.plan.remove.size,
-                        ),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                    val names = (preview.plan.add + preview.plan.update).map { it.name }
-                    if (names.isNotEmpty()) {
-                        Text(
-                            names.take(PREVIEW_NAMES).joinToString(", ") + if (names.size > PREVIEW_NAMES) " …" else "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+            Column(
+                Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            ) {
+                when {
+                    preview == null -> LoadingBox(Modifier.heightIn(max = Spacing.xxl * 3))
+                    preview.plan.isEmpty -> Text(stringResource(Res.string.meals_to_list_empty, weekLong(preview.week.week)))
+                    else -> {
+                        PlanGroup(stringResource(Res.string.shopping_plan_add), preview.plan.add.map(ShoppingText::line))
+                        PlanGroup(stringResource(Res.string.shopping_plan_change), preview.plan.update.map(ShoppingText::line))
+                        PlanGroup(stringResource(Res.string.shopping_plan_remove), preview.removed.map(ShoppingText::line))
                     }
                 }
+                Text(
+                    stringResource(if (usePantry) Res.string.meals_to_list_pantry_on else Res.string.meals_to_list_pantry_off),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Text(
-                stringResource(if (usePantry) Res.string.meals_to_list_pantry_on else Res.string.meals_to_list_pantry_off),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(stringResource(Res.string.action_cancel)) }
                 Button(
@@ -482,11 +507,24 @@ internal fun MealPlanSheet(
     }
 }
 
+/** "Läggs till" and its lines ("500 g Nötfärs"); an empty group is not shown. */
+@Composable
+private fun PlanGroup(title: String, lines: List<String>) {
+    if (lines.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.semantics { heading() },
+        )
+        lines.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
+    }
+}
+
 /** "12,5" – plain decimals for prices (no ½ like kitchen amounts). */
 internal fun formatPrice(value: Double): String {
     val rounded = kotlin.math.round(value * 100) / 100
     val text = if (rounded == kotlin.math.floor(rounded)) rounded.toLong().toString() else rounded.toString()
     return text.replace('.', ',')
 }
-
-private const val PREVIEW_NAMES = 8

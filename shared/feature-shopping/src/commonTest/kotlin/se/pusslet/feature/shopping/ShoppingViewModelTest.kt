@@ -13,18 +13,25 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.ListKind
 import se.pusslet.core.model.MealEntry
+import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.Role
+import se.pusslet.core.model.ShoppingItem
 import se.pusslet.core.model.ShoppingList
 import se.pusslet.core.model.ShoppingPresence
 import se.pusslet.core.model.Store
 import se.pusslet.core.recipes.IngredientParser
+import se.pusslet.core.shopping.AisleGroup
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.util.SequentialIdGenerator
 import se.pusslet.data.db.PreferenceDao
@@ -54,6 +61,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
@@ -116,6 +124,7 @@ class ShoppingViewModelTest {
     private val recipes = RecipeRepository(docs)
     private val adder = ShoppingAdder(shopping, NoProducts, prefs, sessions, ids, clock)
     private val mealShopping = MealShopping(meals, recipes, shopping, family, sessions, ids, clock)
+    private val receipts = ShoppingReceipts()
 
     @BeforeTest
     fun setUp() {
@@ -137,7 +146,7 @@ class ShoppingViewModelTest {
     /** The view model plus every message it sends. Collectors run eagerly so `state.value` is always current. */
     private fun TestScope.viewModel(): Pair<ShoppingViewModel, MutableList<ShoppingMessage>> {
         val eager = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))
-        val vm = ShoppingViewModel(shopping, adder, mealShopping, family, prefs, sessions, ids, clock, zone, eager)
+        val vm = ShoppingViewModel(shopping, adder, mealShopping, meals, family, prefs, sessions, ids, clock, zone, eager, receipts)
         val messages = mutableListOf<ShoppingMessage>()
         eager.launch { vm.state.collect {} }
         eager.launch { vm.messages.collect { messages += it } }
@@ -420,5 +429,196 @@ class ShoppingViewModelTest {
         assertNull(vm.mealPlanPreview.value)
         assertIs<ShoppingMessage.Generated>(messages.last())
         assertEquals(3, vm.state.value.openCount)
+    }
+
+    @Test
+    fun storeModeOffersUndoOnlyForTheFirstTickOfAVisit() = runTest {
+        seed()
+        val (vm, messages) = viewModel()
+        vm.add("mjölk, bröd, ost, kaffe")
+        vm.startShopping()
+
+        fun open(name: String) = vm.state.value.groups.flatMap { it.items }.first { it.name == name }
+
+        vm.setChecked(open("Mjölk"), true, inStore = true)
+        vm.setChecked(open("Bröd"), true, inStore = true)
+        assertEquals(1, messages.count { it is ShoppingMessage.InCart }, "only the first tick of the visit offers Ångra")
+        assertEquals("Mjölk", messages.filterIsInstance<ShoppingMessage.InCart>().single().item.name)
+
+        // A tap in "I vagnen" puts an item back without any snackbar.
+        vm.setChecked(vm.state.value.checked.first { it.name == "Bröd" }, false, inStore = true)
+        assertEquals(3, vm.state.value.openCount)
+
+        // The next visit offers it again; the planning list always does.
+        vm.startShopping()
+        vm.setChecked(open("Ost"), true, inStore = true)
+        vm.setChecked(open("Kaffe"), true)
+        assertEquals(listOf("Mjölk", "Ost", "Kaffe"), messages.filterIsInstance<ShoppingMessage.InCart>().map { it.item.name })
+    }
+
+    @Test
+    fun emptyingTheCartHandsTheReceiptToTheList() = runTest {
+        seed()
+        val (list, _) = viewModel()
+        val receiptsSeen = mutableListOf<ShoppingMessage.Cleared>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { list.storeReceipts.collect { receiptsSeen += it } }
+        val (store, storeMessages) = viewModel()
+        store.add("mjölk, bröd")
+        store.startShopping()
+        store.state.value.groups.flatMap { it.items }.forEach { store.setChecked(it, true, inStore = true) }
+        assertIs<ShoppingMessage.AllDone>(storeMessages.last())
+
+        // "Klar – töm vagnen": the cart is emptied and the list underneath gets "2 varor rensade · Ångra".
+        store.finishShopping(clear = true)
+        assertTrue(list.state.value.isEmpty)
+        assertTrue(shopping.presence.first().isEmpty(), "no longer shopping")
+        val cleared = receiptsSeen.single()
+        assertEquals(setOf("Mjölk", "Bröd"), cleared.items.map { it.name }.toSet())
+        assertTrue(storeMessages.none { it is ShoppingMessage.Cleared }, "store mode has closed; the list shows it")
+
+        list.restoreCleared(cleared.items)
+        assertEquals(2, list.state.value.checked.size)
+    }
+
+    @Test
+    fun keepingTheTickedItemsLeavesThemOnTheList() = runTest {
+        seed()
+        val (list, _) = viewModel()
+        val receiptsSeen = mutableListOf<ShoppingMessage.Cleared>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { list.storeReceipts.collect { receiptsSeen += it } }
+        val (store, _) = viewModel()
+        store.add("mjölk")
+        store.startShopping()
+        store.setChecked(store.state.value.groups.single().items.single(), true, inStore = true)
+
+        store.finishShopping(clear = false)
+        assertEquals(listOf("Mjölk"), list.state.value.checked.map { it.name }, "\"Behåll avbockade\"")
+        assertTrue(receiptsSeen.isEmpty())
+        assertTrue(shopping.presence.first().isEmpty())
+    }
+
+    @Test
+    fun severalShoppersMergeIntoOneRow() = runTest {
+        seed()
+        family.saveMember(Member("m-bengt", "Bengt", role = Role.Caregiver))
+        docs.put(
+            Collections.Presence,
+            "m-bengt",
+            ShoppingPresence("m-bengt", "l-apotek", now - 5.minutes, now + 55.minutes),
+            ShoppingPresence.serializer(),
+        )
+        docs.put(
+            Collections.Presence,
+            "m-johan",
+            ShoppingPresence("m-johan", "l-vecka", now - 10.minutes, now + 50.minutes),
+            ShoppingPresence.serializer(),
+        )
+        val (vm, _) = viewModel()
+        val row = assertNotNull(vm.state.value.shoppersRow)
+        assertEquals(listOf("Johan", "Bengt"), row.names, "one row, first to start first")
+        assertEquals(listOf("Apoteket"), row.elsewhere.map { it.name }, "\"(Apoteket) · Byt\"")
+
+        // "Byt" shows Apoteket; from there Veckohandling is the other list.
+        vm.selectList(row.elsewhere.single().id)
+        assertEquals(listOf("Veckohandling"), vm.state.value.shoppersRow?.elsewhere?.map { it.name })
+
+        // Nobody shopping: no row at all.
+        docs.delete(Collections.Presence, "m-bengt")
+        docs.delete(Collections.Presence, "m-johan")
+        assertNull(vm.state.value.shoppersRow)
+    }
+
+    @Test
+    fun mealPlanPreviewGroupsWhatIsRemoved() = runTest {
+        seed()
+        recipes.save(Recipe("r1", "Tacos", 4, listOf("500 g nötfärs", "1 gurka", "1 påse tacokrydda").map { IngredientParser.parse(it) }))
+        val today = now.toLocalDateTime(zone).date
+        meals.setEntry(MealEntry(today, recipeId = "r1", title = "Tacos"))
+        val (vm, _) = viewModel()
+        vm.previewMealPlan(0)
+        vm.generateFromMealPlan()
+        assertEquals(3, vm.state.value.openCount)
+
+        // Tacos is taken off the plan: what goes is listed under "Tas bort" by name, in name order.
+        meals.clearEntry(today, MealSlot.Dinner)
+        vm.previewMealPlan(0)
+        val preview = assertNotNull(vm.mealPlanPreview.value)
+        assertTrue(preview.plan.add.isEmpty())
+        assertTrue(preview.plan.remove.isNotEmpty())
+        assertEquals(preview.plan.remove.toSet(), preview.removed.map { it.id }.toSet())
+        assertEquals(preview.removed.sortedBy { it.name.lowercase() }, preview.removed)
+        val generated = vm.state.value.groups.flatMap { it.items }.map { it.name }.toSet()
+        assertTrue(preview.removed.all { it.name in generated }, "${preview.removed.map { it.name }} / $generated")
+    }
+
+    @Test
+    fun recipesMissingThisWeekShowACardUntilShoppedOrDismissed() = runTest {
+        seed()
+        recipes.save(Recipe("r1", "Tacos", 4, listOf("500 g nötfärs").map { IngredientParser.parse(it) }))
+        recipes.save(Recipe("r2", "Lasagne", 4, listOf("1 paket lasagneplattor").map { IngredientParser.parse(it) }))
+        val today = now.toLocalDateTime(zone).date
+        val yesterday = today.minus(DatePeriod(days = 1))
+        val thursday = today.plus(DatePeriod(days = 2))
+        meals.setEntry(MealEntry(yesterday, recipeId = "r2", title = "Lasagne"))
+        meals.setEntry(MealEntry(today, recipeId = "r1", title = "Tacos"))
+        val (vm, _) = viewModel()
+        assertEquals(listOf("Tacos"), vm.state.value.weekMissing?.titles, "only from today on")
+
+        vm.dismissWeekMissing()
+        assertNull(vm.state.value.weekMissing, "\"Inte nu\"")
+
+        meals.setEntry(MealEntry(thursday, recipeId = "r2", title = "Lasagne"))
+        assertEquals(listOf("Lasagne"), vm.state.value.weekMissing?.titles, "a newly planned recipe asks again")
+
+        vm.previewMealPlan(0)
+        vm.generateFromMealPlan()
+        assertNull(vm.state.value.weekMissing, "on the list now")
+
+        // Bought and cleared: the meals are dealt with and do not come back.
+        vm.state.value.groups.flatMap { it.items }.forEach { vm.setChecked(it, true) }
+        vm.clearChecked()
+        assertTrue(vm.state.value.isEmpty)
+        assertNull(vm.state.value.weekMissing)
+
+        // Other lists never ask.
+        vm.selectList("l-apotek")
+        meals.setEntry(MealEntry(thursday, recipeId = "r1", title = "Tacos"))
+        assertNull(vm.state.value.weekMissing)
+    }
+
+    @Test
+    fun oneSuggestionCanBeWavedAway() = runTest {
+        seed()
+        listOf(16, 12, 8, 4).forEach { daysAgo ->
+            val at = (now - daysAgo.days).toEpochMilliseconds()
+            purchases.insert(PurchaseLogEntity(familyId = "f", normalizedName = "mjölk", displayName = "Mjölk", boughtAt = at))
+            purchases.insert(PurchaseLogEntity(familyId = "f", normalizedName = "bröd", displayName = "Bröd", boughtAt = at))
+        }
+        val (vm, _) = viewModel()
+        assertEquals(setOf("Mjölk", "Bröd"), vm.state.value.suggestions.map { it.name }.toSet())
+
+        vm.dismissSuggestion(vm.state.value.suggestions.first { it.name == "Mjölk" })
+        assertEquals(listOf("Bröd"), vm.state.value.suggestions.map { it.name })
+    }
+
+    @Test
+    fun handledMealsArePrunedAfterAWeek() {
+        val today = LocalDate(2026, 10, 13)
+        val keys = setOf("2026-10-01/r1", "2026-10-06/r2", "2026-10-15/r3", "broken")
+        assertEquals(setOf("2026-10-06/r2", "2026-10-15/r3"), pruneHandled(keys, today))
+    }
+
+    @Test
+    fun aTickedRowLingersInItsAisle() {
+        val milk = ShoppingItem("i1", "l", "Mjölk", aisle = Aisle.Dairy)
+        val bread = ShoppingItem("i2", "l", "Bröd", aisle = Aisle.Bakery, checked = true)
+        val apples = ShoppingItem("i3", "l", "Äpplen", aisle = Aisle.Dairy, checked = true)
+        val groups = listOf(AisleGroup(Aisle.Dairy, listOf(milk)))
+
+        val shown = withLingering(groups, listOf(bread, apples, milk.copy(checked = true)), Aisle.defaultOrder)
+        assertEquals(listOf(Aisle.Bakery, Aisle.Dairy), shown.map { it.aisle }, "store order")
+        assertEquals(listOf("Mjölk", "Äpplen"), shown.last().items.map { it.name }, "name order, as before the tick")
+        assertFalse(shown.last().items.first().checked, "an item that is open again shows as open")
+        assertEquals(groups, withLingering(groups, emptyList(), Aisle.defaultOrder))
     }
 }

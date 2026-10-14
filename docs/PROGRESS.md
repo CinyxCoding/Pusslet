@@ -73,8 +73,10 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] 2.0 Gemensamma komponenter (TabHeader, WeekSwitcher, Section, HeroCard, SentenceRow, NavRow, QuietLine,
   OutlinedValueField, WeekStripPicker, ReorderButtons, showUndo)
 - [x] Idag A: block och Morgonkollen · Idag B: Anpassa Idag (från Idag och Inställningar)
-- [ ] Steg 2 per flik: Kalender ✅ (Vecka | Månad, tysta rutiner, filterark), Mer ✅, Mat, Handla
-- [ ] Steg 3: hjälparvy (H1 data och regler, H2 vy, H3 förhandsvisning och svar)
+- [x] Steg 2 per flik: Kalender (Vecka | Månad, tysta rutiner, filterark), Mer (två grupper, inbjudan med ett tryck),
+  Mat (veckan först, recepteditor som frågar innan ändringar slängs), Handla (listmeny i rubriken, rader som en papperslista,
+  lugnare butiksläge, butiker och skafferi under ”Butiker och det vi har hemma”)
+- [ ] Steg 3: hjälparvy (H1 data och regler ✅, H2 vy, H3 förhandsvisning och svar)
 - [ ] Steg 4: första användningen
 
 ## Fas 3 – Integrationer & notiser

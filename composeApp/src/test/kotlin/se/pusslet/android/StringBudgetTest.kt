@@ -76,7 +76,7 @@ private val whitespace = Regex("""\s+""")
 private val addWithPlus = Regex("""\b(med|with)\s+\+""", RegexOption.IGNORE_CASE)
 
 /** Done states may cheer; receipts, errors and everything else may not. */
-private val exclamationAllowed = setOf("shopping_all_done", "store_mode_all_done_title", "onboarding_done_title")
+private val exclamationAllowed = setOf("store_mode_all_done_title", "onboarding_done_title")
 
 /** The done screen of the onboarding is the only place where no + is visible yet. */
 private val addWithPlusAllowed = setOf("onboarding_done_body")
@@ -167,7 +167,6 @@ private val mainScreen = setOf(
     "shopping_store_mode",
     "shopping_in_cart_count",
     "shopping_clear_checked",
-    "shopping_suggestions_title",
     "shopping_nothing_left",
     "store_mode_finish",
     "store_mode_all_done_title",

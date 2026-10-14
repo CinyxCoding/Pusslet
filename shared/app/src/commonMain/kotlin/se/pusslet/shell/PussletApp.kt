@@ -302,12 +302,17 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues, onQui
                 ShoppingRoute(
                     onOpenStoreMode = { navigator.navigate(Route.StoreMode) },
                     onOpenStores = { navigator.navigate(Route.Stores) },
-                    onOpenPantry = { navigator.navigate(Route.Pantry) },
                     contentPadding = padding,
                 )
             }
             entry<Route.StoreMode> { StoreModeRoute(onBack = navigator::goBack) }
-            entry<Route.Stores> { StoresRoute(onBack = navigator::goBack, onEdit = { navigator.navigate(Route.StoreEditor(it)) }) }
+            entry<Route.Stores> {
+                StoresRoute(
+                    onBack = navigator::goBack,
+                    onEdit = { navigator.navigate(Route.StoreEditor(it)) },
+                    onOpenPantry = { navigator.navigate(Route.Pantry) },
+                )
+            }
             entry<Route.StoreEditor> { r -> StoreEditorRoute(r.storeId, onDone = navigator::goBack) }
             entry<Route.Pantry> { PantryRoute(onBack = navigator::goBack) }
             entry<Route.More> { MoreScreen(onOpen = { navigator.navigate(it.route()) }, contentPadding = padding) }

@@ -37,9 +37,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -55,6 +53,7 @@ import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.UnsavedChangesBackHandler
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
@@ -123,18 +122,6 @@ fun RecipeEditorRoute(
             dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
-}
-
-/**
- * The system Back (and the predictive back gesture) asks before unsaved changes are lost. The non-deprecated
- * `NavigationBackHandler` lives in navigationevent-compose, which the feature modules do not depend on directly; this
- * handler is built on the same dispatcher, so it takes precedence over NavDisplay's own back while [enabled].
- */
-@OptIn(ExperimentalComposeUiApi::class)
-@Suppress("DEPRECATION")
-@Composable
-private fun UnsavedChangesBackHandler(enabled: Boolean, onBack: () -> Unit) {
-    BackHandler(enabled = enabled, onBack = onBack)
 }
 
 @Composable

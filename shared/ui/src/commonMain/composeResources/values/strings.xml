@@ -603,7 +603,6 @@
     <string name="shopping_scan">Skanna streckkod</string>
     <string name="shopping_store_mode">Jag handlar nu</string>
     <string name="shopping_from_meals">Handla till veckan</string>
-    <string name="shopping_suggestions_title">Brukar ni köpa</string>
     <string name="shopping_suggestions_dismiss">Inte nu</string>
     <string name="shopping_suggestion_add">Lägg till %1$s</string>
     <string name="shopping_shopper_now">%1$s handlar nu</string>
@@ -616,7 +615,6 @@
     <string name="shopping_already_on_list">%1$s fanns redan</string>
     <string name="shopping_removed">%1$s borttagen</string>
     <string name="shopping_in_cart_toast">%1$s i vagnen</string>
-    <string name="shopping_all_done">Allt i vagnen! Bra jobbat 🎉</string>
     <string name="shopping_generated">Listan uppdaterad</string>
     <string name="shopping_generated_nothing">Inget nytt att lägga till</string>
     <string name="shopping_unknown_title">Okänd vara</string>
@@ -624,7 +622,6 @@
     <string name="shopping_item_name">Vara</string>
     <string name="shopping_off_attribution">Produktdata från Open Food Facts (ODbL).</string>
     <string name="shopping_share">Dela som text</string>
-    <string name="shopping_menu_store">Butik: %1$s</string>
     <string name="shopping_menu_choose_store">Välj butik</string>
     <string name="shopping_stores">Butiker och gångordning</string>
     <string name="shopping_rename_list">Byt namn på listan</string>
@@ -633,11 +630,11 @@
     <string name="shopping_more">Fler val</string>
     <string name="shopping_new_list">Ny lista</string>
     <string name="shopping_list_name">Namn på listan</string>
-    <string name="shopping_store_none">Ingen särskild butik (standardordning)</string>
+    <string name="shopping_store_none">Ingen särskild butik (vanlig ordning)</string>
     <string name="shopping_edit_item">Ändra vara</string>
     <string name="shopping_amount">Mängd</string>
     <string name="shopping_unit">Enhet</string>
-    <string name="shopping_unit_none">–</string>
+    <string name="shopping_unit_none">Ingen enhet</string>
     <string name="shopping_aisle">Avdelning</string>
     <string name="shopping_note">Anteckning</string>
     <string name="shopping_price">Eget pris, kr (valfritt)</string>
@@ -654,7 +651,6 @@
     <string name="meals_to_list_title">Handla till veckan</string>
     <string name="meals_to_list_this_week">Den här veckan</string>
     <string name="meals_to_list_next_week">Nästa vecka</string>
-    <string name="meals_to_list_summary">%1$s – nya: %2$d · ändrade: %3$d · borttagna: %4$d</string>
     <string name="meals_to_list_empty">Inget att lägga till för %1$s. Planera middagar med recept i matsedeln – eller så finns allt redan på listan.</string>
     <string name="meals_to_list_confirm">Uppdatera listan</string>
     <string name="meals_to_list_pantry_on">Det ni har hemma räknas bort. Salt, peppar och vatten hoppas över.</string>
@@ -675,14 +671,12 @@
     <string name="stores_empty">Lägg till er butik, så följer listan gångarna</string>
     <string name="store_edit">Ändra butik</string>
     <string name="store_name">Butikens namn</string>
-    <string name="store_default">Standardbutik</string>
-    <string name="store_default_body">Används för listor som inte har en egen butik.</string>
+    <string name="store_default">Vår vanliga butik</string>
     <string name="store_order_title">Gångordning</string>
     <string name="store_order_hint">Flytta avdelningarna i den ordning ni passerar dem i butiken.</string>
-    <string name="store_reset_order">Återställ standardordning</string>
+    <string name="store_reset_order">Återställ vanlig ordning</string>
     <string name="store_delete_confirm">Ta bort butiken %1$s?</string>
     <string name="store_mode_all_done_title">Allt i vagnen!</string>
-    <string name="store_mode_all_done_body">Skönt. Nu är det bara kassan kvar.</string>
     <string name="store_mode_finish">Klar</string>
 
     <!-- Meals: week plan -->

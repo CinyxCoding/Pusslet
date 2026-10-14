@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -13,17 +14,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilySettings
 import se.pusslet.core.model.ListKind
+import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.ShoppingItem
 import se.pusslet.core.model.ShoppingList
@@ -40,6 +44,7 @@ import se.pusslet.core.time.IsoWeek
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.util.IdGenerator
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.MealRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.ShoppingRepository
@@ -54,6 +59,23 @@ import kotlin.time.Instant
 
 /** Someone else in the family is in the store right now ("Sara är i affären"). */
 data class Shopper(val memberId: String, val person: FamilyPerson?, val listName: String?)
+
+/**
+ * Everyone else shopping right now, merged into one row (UX plan, Handla 5): "Sara och Johan handlar nu", or with the
+ * lists they shop from when another list is showing: "Sara handlar (Apoteket) · Byt".
+ */
+data class ShoppersRow(
+    /** Known names, first to start first. Empty when no name is known ("Någon handlar nu"). */
+    val names: List<String>,
+    /** Lists other than the shown one that they are shopping from; "Byt" shows the first of them. */
+    val elsewhere: List<ShoppingList>,
+)
+
+/**
+ * "Tacos och Lasagne saknas på listan" (UX plan, Handla 4): recipes planned from today to Sunday that nothing on the list
+ * was made for. [meals] are their "date/recipeId" keys; dismissing the card remembers them as handled.
+ */
+data class WeekMissing(val week: IsoWeek, val titles: List<String>, val meals: Set<String>)
 
 data class ShoppingUiState(
     val loading: Boolean = true,
@@ -72,6 +94,10 @@ data class ShoppingUiState(
     val canManage: Boolean = true,
     val people: Map<String, FamilyPerson> = emptyMap(),
     val usePantry: Boolean = false,
+    /** [shoppers] as one row ("Sara och Johan handlar nu"); null when nobody else is shopping. */
+    val shoppersRow: ShoppersRow? = null,
+    /** This week's recipes that are not on the list yet; null when there are none or the card was dismissed. */
+    val weekMissing: WeekMissing? = null,
 ) {
     val openCount: Int get() = groups.sumOf { it.items.size }
 
@@ -83,10 +109,16 @@ data class ShoppingUiState(
 
     /** "Jag handlar nu" only makes sense while something is left to buy. */
     val canStartShopping: Boolean get() = list != null && openCount > 0
+
+    /** "Handla till veckan" fills grocery lists from the meal plan. */
+    val canShopForWeek: Boolean get() = list?.kind != ListKind.Other
 }
 
-/** Preview of "Handla till matsedeln" for one week. */
-data class MealPlanPreview(val week: IsoWeek, val plan: ShoppingPlan)
+/**
+ * Preview of "Handla till veckan" for one week, grouped in the sheet as "Läggs till" ([ShoppingPlan.add]), "Ändras"
+ * ([ShoppingPlan.update]) and "Tas bort" ([removed], the items behind [ShoppingPlan.remove]).
+ */
+data class MealPlanPreview(val week: IsoWeek, val plan: ShoppingPlan, val removed: List<ShoppingItem> = emptyList())
 
 /** One-off feedback the screen shows as a snackbar or dialog. */
 sealed interface ShoppingMessage {
@@ -97,15 +129,15 @@ sealed interface ShoppingMessage {
     data class Removed(val item: ShoppingItem) : ShoppingMessage
 
     /**
-     * Ticked off, offering "Ångra": "Mjölk i vagnen" in store mode, "Mjölk bockad" on the planning list. [item] is the
-     * item as it was before, so restoring it puts it back in the same aisle.
+     * Ticked off, offering "Ångra": "Mjölk i vagnen" in store mode (only for the first tick of a visit), "Mjölk bockad" on
+     * the planning list. [item] is the item as it was before, so restoring it puts it back in the same aisle.
      */
     data class InCart(val item: ShoppingItem, val inStore: Boolean) : ShoppingMessage
 
     /** "Rensa avbockade" removed [items] ("6 varor rensade · Ångra"); restoring puts them back exactly as they were. */
     data class Cleared(val items: List<ShoppingItem>) : ShoppingMessage
 
-    /** The last item went into the cart in store mode. */
+    /** The last item went into the cart in store mode ("Allt i vagnen!"). */
     data object AllDone : ShoppingMessage
 
     /** Open Food Facts does not know the code (or we are offline): ask for a name. */
@@ -120,6 +152,7 @@ class ShoppingViewModel(
     private val shopping: ShoppingRepository,
     private val adder: ShoppingAdder,
     private val mealShopping: MealShopping,
+    private val meals: MealRepository,
     private val family: FamilyRepository,
     private val prefs: PreferencesRepository,
     private val sessions: SessionProvider,
@@ -128,17 +161,27 @@ class ShoppingViewModel(
     private val zone: TimeZone,
     /** Outlives this view model, so "slutat handla" is written even while the screen is closing. */
     private val appScope: CoroutineScope,
+    private val receipts: ShoppingReceipts,
 ) : ViewModel() {
     private val log = Logger.withTag("Shopping")
     private val messageChannel = Channel<ShoppingMessage>(Channel.BUFFERED)
     val messages: Flow<ShoppingMessage> = messageChannel.receiveAsFlow()
 
+    /** "Klar – töm vagnen" in store mode, for the list screen to show with "Ångra" ([restoreCleared]). */
+    val storeReceipts: Flow<ShoppingMessage.Cleared> = receipts.receipts.map { ShoppingMessage.Cleared(it) }
+
     private val history = MutableStateFlow<List<PurchaseRecord>>(emptyList())
     private var startedShopping = false
+
+    /** Store mode offers "Ångra" for the first tick of a visit only; after that the cart itself is the way back. */
+    private var undoOfferedThisVisit = false
     private val preview = MutableStateFlow<MealPlanPreview?>(null)
     val mealPlanPreview: StateFlow<MealPlanPreview?> = preview
 
-    /** Presence expires by itself ("until"), so re-evaluate every minute. */
+    /**
+     * Presence expires by itself ("until") and the week turns, so re-evaluate every minute. The loop only runs while
+     * [state] is collected (it is upstream of `stateIn(WhileSubscribed)`).
+     */
     private val ticker: Flow<Instant> = flow {
         while (true) {
             emit(clock.now())
@@ -161,6 +204,13 @@ class ShoppingViewModel(
         val now: Instant,
     )
 
+    private data class Extras(
+        val history: List<PurchaseRecord>,
+        val dismissedStaples: Map<String, Long>,
+        val weekPlan: MealPlanWeek,
+        val handledMeals: Set<String>,
+    )
+
     private val base: Flow<Base> = combine(
         shopping.lists,
         shopping.items,
@@ -173,12 +223,21 @@ class ShoppingViewModel(
         Social(p, pr, s, n)
     }
 
-    val state: StateFlow<ShoppingUiState> = combine(
-        base,
-        social,
+    /** This week's meal plan, for "Tacos saknas på listan"; follows the week when it turns. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val weekPlan: Flow<MealPlanWeek> = ticker
+        .map { today(it).isoWeek }
+        .distinctUntilChanged()
+        .flatMapLatest { meals.week(it) }
+
+    private val extras: Flow<Extras> = combine(
         history,
         prefs.observe(Prefs.DismissedStaples),
-    ) { b, s, h, dismissed -> build(b, s, h, dismissed) }
+        weekPlan,
+        prefs.observe(ShoppingPrefs.HandledMeals),
+    ) { h, dismissed, plan, handled -> Extras(h, dismissed, plan, handled) }
+
+    val state: StateFlow<ShoppingUiState> = combine(base, social, extras) { b, s, e -> build(b, s, e) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ShoppingUiState())
 
     init {
@@ -188,21 +247,25 @@ class ShoppingViewModel(
         }
     }
 
-    private fun build(b: Base, s: Social, h: List<PurchaseRecord>, dismissed: Map<String, Long>): ShoppingUiState {
+    private fun today(now: Instant = clock.now()): LocalDate = now.toLocalDateTime(zone).date
+
+    private fun build(b: Base, s: Social, e: Extras): ShoppingUiState {
         val list = activeList(b.lists, b.selected)
         val store = (list?.storeId ?: b.settings.defaultStoreId)?.let { id -> b.stores.firstOrNull { it.id == id } }
         val inList = b.items.filter { it.listId == list?.id }
         val open = inList.filter { !it.checked }
         val me = s.session.memberId
         val live = s.presence.filter { it.until > s.now }
+        val others = live.filter { it.memberId != me }
         val people = s.people.associateBy { it.id }
+        val today = today(s.now)
         val suggestions = if (list?.kind == ListKind.Grocery) {
             StapleSuggester.suggest(
-                history = h,
+                history = e.history,
                 onList = open.map { it.name },
-                today = s.now.toLocalDateTime(zone).date,
+                today = today,
                 zone = zone,
-                dismissed = dismissed.mapValues { Instant.fromEpochMilliseconds(it.value) },
+                dismissed = e.dismissedStaples.mapValues { Instant.fromEpochMilliseconds(it.value) },
             )
         } else {
             emptyList()
@@ -216,13 +279,13 @@ class ShoppingViewModel(
             groups = ShoppingListGenerator.groupForStore(open, store?.aisleOrder ?: Aisle.defaultOrder),
             checked = inList.filter { it.checked }.sortedByDescending { it.checkedAt },
             suggestions = suggestions,
-            shoppers = live.filter { it.memberId != me }.map { p ->
-                Shopper(p.memberId, people[p.memberId], b.lists.firstOrNull { it.id == p.listId }?.name)
-            },
+            shoppers = others.map { p -> Shopper(p.memberId, people[p.memberId], b.lists.firstOrNull { it.id == p.listId }?.name) },
             iAmShopping = live.any { it.memberId == me },
             canManage = s.session.role == Role.Parent,
             people = people,
             usePantry = b.settings.usePantry,
+            shoppersRow = shoppersRow(others, people, b.lists, list?.id),
+            weekMissing = weekMissing(list, inList, e.weekPlan, today, e.handledMeals),
         )
     }
 
@@ -268,15 +331,20 @@ class ShoppingViewModel(
     fun undoAdd(outcome: AddOutcome) = launchSafely { adder.undo(outcome) }
 
     /**
-     * Ticks [item] off (or puts it back). Ticking off always offers "Ångra"; only the last item in store mode celebrates
-     * ("Allt i vagnen!") instead.
+     * Ticks [item] off (or puts it back). On the planning list ticking off always offers "Ångra". In store mode only the
+     * first tick of the visit does, and the last item celebrates ("Allt i vagnen!") instead.
      */
     fun setChecked(item: ShoppingItem, checked: Boolean, inStore: Boolean = false) = launchSafely {
         val wasLast = checked && state.value.openCount == 1 && state.value.groups.any { g -> g.items.any { it.id == item.id } }
         shopping.setChecked(item, checked)
         when {
+            !checked -> Unit
             wasLast && inStore -> messageChannel.send(ShoppingMessage.AllDone)
-            checked -> messageChannel.send(ShoppingMessage.InCart(item, inStore))
+            !inStore -> messageChannel.send(ShoppingMessage.InCart(item, inStore = false))
+            !undoOfferedThisVisit -> {
+                undoOfferedThisVisit = true
+                messageChannel.send(ShoppingMessage.InCart(item, inStore = true))
+            }
         }
     }
 
@@ -298,10 +366,16 @@ class ShoppingViewModel(
     /** "Rensa avbockade": removes the ticked-off items and remembers them for "Ångra" ([restoreCleared]). */
     fun clearChecked() = launchSafely {
         val list = state.value.list ?: return@launchSafely
-        val cleared = shopping.getItems(list.id).filter { it.checked }
-        if (cleared.isEmpty()) return@launchSafely
+        val cleared = removeChecked(list.id)
+        if (cleared.isNotEmpty()) messageChannel.send(ShoppingMessage.Cleared(cleared))
+    }
+
+    /** Deletes what is ticked off on [listId]; the meals it was bought for no longer count as missing this week. */
+    private suspend fun removeChecked(listId: String): List<ShoppingItem> {
+        val cleared = shopping.getItems(listId).filter { it.checked }
         cleared.forEach { shopping.deleteItem(it.id) }
-        messageChannel.send(ShoppingMessage.Cleared(cleared))
+        markHandled(mealKeys(cleared))
+        return cleared
     }
 
     /** Undo for "Rensa avbockade": the cleared items come back ticked off, as they were. */
@@ -316,6 +390,23 @@ class ShoppingViewModel(
         val now = clock.now().toEpochMilliseconds()
         val keys = state.value.suggestions.map { it.key }
         prefs.update(Prefs.DismissedStaples) { current -> current + keys.associateWith { now } }
+    }
+
+    /** × on one suggestion chip: hides [suggestion] until it is bought again, like [dismissSuggestions]. */
+    fun dismissSuggestion(suggestion: StapleSuggestion) = launchSafely {
+        val now = clock.now().toEpochMilliseconds()
+        prefs.update(Prefs.DismissedStaples) { current -> current + (suggestion.key to now) }
+    }
+
+    /** "Inte nu" on "Tacos saknas på listan": the card stays away until other recipes are planned. */
+    fun dismissWeekMissing() = launchSafely {
+        markHandled(state.value.weekMissing?.meals.orEmpty())
+    }
+
+    private suspend fun markHandled(keys: Set<String>) {
+        if (keys.isEmpty()) return
+        val today = today()
+        prefs.update(ShoppingPrefs.HandledMeals) { current -> pruneHandled(current + keys, today) }
     }
 
     fun createList(name: String, kind: ListKind) = launchSafely {
@@ -343,9 +434,13 @@ class ShoppingViewModel(
         shopping.saveList(list.copy(storeId = storeId))
     }
 
-    /** "Jag handlar nu": the family sees it while store mode is open (max an hour, then it expires by itself). */
+    /**
+     * "Jag handlar nu": the family sees it while store mode is open (max an hour, then it expires by itself). Starts a
+     * new visit, so the first tick offers "Ångra" again.
+     */
     fun startShopping() = launchSafely {
         val list = state.value.list ?: return@launchSafely
+        undoOfferedThisVisit = false
         shopping.startShopping(list.id)
         startedShopping = true
     }
@@ -353,6 +448,24 @@ class ShoppingViewModel(
     fun stopShopping() {
         startedShopping = false
         appScope.launch { shopping.stopShopping() }
+    }
+
+    /**
+     * Leaves store mode. With [clear] ("Klar – töm vagnen") the ticked-off items are removed and the list underneath shows
+     * "6 varor rensade · Ångra" ([storeReceipts]); without it they stay ("Behåll avbockade"). Runs in [appScope] because
+     * the screen closes right away.
+     */
+    fun finishShopping(clear: Boolean) {
+        val listId = state.value.list?.id
+        stopShopping()
+        if (!clear || listId == null) return
+        appScope.launch {
+            try {
+                receipts.post(removeChecked(listId))
+            } catch (e: IllegalStateException) {
+                log.w { "Emptying the cart failed: ${e::class.simpleName}" }
+            }
+        }
     }
 
     override fun onCleared() {
@@ -375,21 +488,30 @@ class ShoppingViewModel(
         report(adder.addNamed(listIdForAdding(), barcode, name))
     }
 
-    /** Shows what "Handla till matsedeln" would change; [weeksAhead] 0 = this week, 1 = next week. */
+    /** Shows what "Handla till veckan" would change; [weeksAhead] 0 = this week, 1 = next week. */
     fun previewMealPlan(weeksAhead: Int) = launchSafely {
-        val today = clock.now().toLocalDateTime(zone).date
-        val week = today.isoWeek.plusWeeks(weeksAhead)
-        preview.value = MealPlanPreview(week, mealShopping.preview(listIdForAdding(), week))
+        val week = today().isoWeek.plusWeeks(weeksAhead)
+        val listId = listIdForAdding()
+        val plan = mealShopping.preview(listId, week)
+        val removing = plan.remove.toSet()
+        val removed = if (removing.isEmpty()) emptyList() else shopping.getItems(listId).filter { it.id in removing }
+        preview.value = MealPlanPreview(week, plan, removed.sortedBy { it.name.lowercase() })
     }
 
     fun dismissMealPlanPreview() {
         preview.value = null
     }
 
+    /**
+     * "Uppdatera listan" in the sheet. For this week, whatever was still missing counts as handled afterwards: the card
+     * must not come back for recipes that need nothing from the store.
+     */
     fun generateFromMealPlan() = launchSafely {
         val p = preview.value ?: return@launchSafely
         preview.value = null
+        val missing = state.value.weekMissing?.takeIf { it.week == p.week }?.meals.orEmpty()
         val result = mealShopping.generate(listIdForAdding(), p.week)
+        markHandled(missing)
         messageChannel.send(ShoppingMessage.Generated(result))
     }
 

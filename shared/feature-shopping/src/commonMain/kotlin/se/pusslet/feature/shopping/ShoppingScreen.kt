@@ -1,59 +1,42 @@
 package se.pusslet.feature.shopping
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,54 +48,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.Aisle
-import se.pusslet.core.model.ListKind
 import se.pusslet.core.model.ShoppingItem
-import se.pusslet.core.shopping.AisleGroup
-import se.pusslet.core.shopping.ShoppingText
 import se.pusslet.core.shopping.StapleSuggestion
-import se.pusslet.core.units.Units
-import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.EmptyState
-import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.LoadingBox
+import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.components.RegisterAddButton
-import se.pusslet.ui.components.SelectionColors
-import se.pusslet.ui.components.SmallAction
+import se.pusslet.ui.components.showUndo
 import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
-import se.pusslet.ui.theme.StoreModeItemStyle
 
+/**
+ * Handla (UX plan, Handla): the list first. The header holds the list menu, sharing, the store and "Jag handlar nu"; the
+ * round + opens the add field above the keyboard; "Butiker och det vi har hemma" is the last row ([onOpenStores]).
+ */
 @Composable
 fun ShoppingRoute(
     onOpenStoreMode: () -> Unit,
     onOpenStores: () -> Unit,
-    onOpenPantry: () -> Unit,
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: ShoppingViewModel = koinViewModel(),
 ) {
@@ -146,7 +117,8 @@ fun ShoppingRoute(
     }
     // Back closes the keyboard first; an empty field then goes away with it.
     OnKeyboardHidden(enabled = showAdd) { if (addText.isBlank()) closeAdd() }
-    ShoppingMessages(viewModel, snackbar, onUnknownProduct = { unknownBarcode = it })
+    // "Klar – töm vagnen" in store mode ends here, as "6 varor rensade · Ångra".
+    ShoppingMessages(viewModel, snackbar, onUnknownProduct = { unknownBarcode = it }, showStoreReceipts = true)
 
     Box(Modifier.fillMaxSize()) {
         ShoppingScreen(
@@ -156,18 +128,19 @@ fun ShoppingRoute(
                 onSelectList = viewModel::selectList,
                 onToggle = { item, checked -> viewModel.setChecked(item, checked) },
                 onEdit = { editing = it },
+                onRemove = viewModel::remove,
                 onAddSuggestion = viewModel::addSuggestion,
-                onDismissSuggestions = viewModel::dismissSuggestions,
+                onDismissSuggestion = viewModel::dismissSuggestion,
                 onClearChecked = viewModel::clearChecked,
                 onStoreMode = onOpenStoreMode,
                 onFromMealPlan = {
                     showMealPlan = true
                     viewModel.previewMealPlan(0)
                 },
+                onDismissWeekMissing = viewModel::dismissWeekMissing,
                 onShare = { text, subject -> platform.shareText(text, subject) },
                 onDialog = { dialog = it },
                 onOpenStores = onOpenStores,
-                onOpenPantry = onOpenPantry,
             ),
         )
         val bottom = contentPadding.calculateBottomPadding()
@@ -342,66 +315,67 @@ private fun AddItemBar(
     }
 }
 
-/** Turns one-off messages from the view model into snackbars (with "Ångra" where it makes sense). */
+/**
+ * Turns one-off messages from the view model into snackbars (with "Ångra" where it makes sense). [showStoreReceipts] is
+ * for the list screen: it also shows "Klar – töm vagnen" from store mode once it is back on screen.
+ */
 @Composable
 internal fun ShoppingMessages(
     viewModel: ShoppingViewModel,
     snackbar: SnackbarHostState,
     onUnknownProduct: (String) -> Unit,
     onAllDone: () -> Unit = {},
+    showStoreReceipts: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
-    LaunchedEffect(viewModel) {
-        viewModel.messages.collect { message ->
+    LaunchedEffect(viewModel, showStoreReceipts) {
+        merge(viewModel.messages, if (showStoreReceipts) viewModel.storeReceipts else emptyFlow()).collect { message ->
             // A new message replaces the one on screen; launched so collecting never waits for the user.
             snackbar.currentSnackbarData?.dismiss()
-            scope.launch {
-                when (message) {
-                    is ShoppingMessage.Added -> {
-                        val text = getString(Res.string.shopping_added, message.outcome.names.joinToString(", "))
-                        val result = snackbar.showSnackbar(text, getString(Res.string.action_undo), duration = SnackbarDuration.Short)
-                        if (result == SnackbarResult.ActionPerformed) viewModel.undoAdd(message.outcome)
-                    }
-                    is ShoppingMessage.AlreadyOnList ->
-                        snackbar.showSnackbar(getString(Res.string.shopping_already_on_list, message.names.joinToString(", ")))
-                    is ShoppingMessage.Removed -> {
-                        val text = getString(Res.string.shopping_removed, message.item.name)
-                        val result = snackbar.showSnackbar(text, getString(Res.string.action_undo), duration = SnackbarDuration.Long)
-                        if (result == SnackbarResult.ActionPerformed) viewModel.restore(message.item)
-                    }
-                    is ShoppingMessage.InCart -> {
-                        // "Mjölk i vagnen" in the store, "Mjölk bockad" on the planning list.
-                        val label = if (message.inStore) Res.string.shopping_in_cart_toast else Res.string.shopping_ticked
-                        val text = getString(label, message.item.name)
-                        val result = snackbar.showSnackbar(text, getString(Res.string.action_undo), duration = SnackbarDuration.Short)
-                        if (result == SnackbarResult.ActionPerformed) viewModel.restore(message.item)
-                    }
-                    is ShoppingMessage.Cleared -> {
-                        val items = message.items
-                        val text = if (items.size == 1) {
-                            getString(Res.string.shopping_removed, items.single().name)
-                        } else {
-                            getString(Res.string.shopping_cleared, items.size)
-                        }
-                        val result = snackbar.showSnackbar(text, getString(Res.string.action_undo), duration = SnackbarDuration.Long)
-                        if (result == SnackbarResult.ActionPerformed) viewModel.restoreCleared(items)
-                    }
-                    ShoppingMessage.AllDone -> {
-                        onAllDone()
-                        snackbar.showSnackbar(getString(Res.string.shopping_all_done))
-                    }
-                    is ShoppingMessage.UnknownProduct -> onUnknownProduct(message.barcode)
-                    is ShoppingMessage.Generated -> snackbar.showSnackbar(
-                        if (message.plan.isEmpty) {
-                            getString(Res.string.shopping_generated_nothing)
-                        } else {
-                            getString(Res.string.shopping_generated)
-                        },
-                    )
-                    ShoppingMessage.Failed -> snackbar.showSnackbar(getString(Res.string.error_generic))
-                }
-            }
+            scope.launch { show(message, viewModel, snackbar, onUnknownProduct, onAllDone) }
         }
+    }
+}
+
+private suspend fun show(
+    message: ShoppingMessage,
+    viewModel: ShoppingViewModel,
+    snackbar: SnackbarHostState,
+    onUnknownProduct: (String) -> Unit,
+    onAllDone: () -> Unit,
+) {
+    val undo = getString(Res.string.action_undo)
+    when (message) {
+        is ShoppingMessage.Added -> {
+            val text = getString(Res.string.shopping_added, message.outcome.names.joinToString(", "))
+            if (snackbar.showUndo(text, undo, SnackbarDuration.Short)) viewModel.undoAdd(message.outcome)
+        }
+        is ShoppingMessage.AlreadyOnList ->
+            snackbar.showSnackbar(getString(Res.string.shopping_already_on_list, message.names.joinToString(", ")))
+        is ShoppingMessage.Removed -> {
+            if (snackbar.showUndo(getString(Res.string.shopping_removed, message.item.name), undo)) viewModel.restore(message.item)
+        }
+        is ShoppingMessage.InCart -> {
+            // "Mjölk i vagnen" in the store, "Mjölk bockad" on the planning list.
+            val label = if (message.inStore) Res.string.shopping_in_cart_toast else Res.string.shopping_ticked
+            if (snackbar.showUndo(getString(label, message.item.name), undo, SnackbarDuration.Short)) viewModel.restore(message.item)
+        }
+        is ShoppingMessage.Cleared -> {
+            val items = message.items
+            val text = if (items.size == 1) {
+                getString(Res.string.shopping_removed, items.single().name)
+            } else {
+                getString(Res.string.shopping_cleared, items.size)
+            }
+            if (snackbar.showUndo(text, undo)) viewModel.restoreCleared(items)
+        }
+        // Store mode shows "Allt i vagnen!" as a card at the bottom, so no snackbar repeats it.
+        ShoppingMessage.AllDone -> onAllDone()
+        is ShoppingMessage.UnknownProduct -> onUnknownProduct(message.barcode)
+        is ShoppingMessage.Generated -> snackbar.showSnackbar(
+            if (message.plan.isEmpty) getString(Res.string.shopping_generated_nothing) else getString(Res.string.shopping_generated),
+        )
+        ShoppingMessage.Failed -> snackbar.showSnackbar(getString(Res.string.error_generic))
     }
 }
 
@@ -410,17 +384,28 @@ data class ShoppingActions(
     val onSelectList: (String) -> Unit = {},
     val onToggle: (ShoppingItem, Boolean) -> Unit = { _, _ -> },
     val onEdit: (ShoppingItem) -> Unit = {},
+    /** TalkBack's "Ta bort" on a row (with "Ångra"). */
+    val onRemove: (ShoppingItem) -> Unit = {},
     val onAddSuggestion: (StapleSuggestion) -> Unit = {},
-    val onDismissSuggestions: () -> Unit = {},
+    /** × on one suggestion chip. */
+    val onDismissSuggestion: (StapleSuggestion) -> Unit = {},
     val onClearChecked: () -> Unit = {},
     val onStoreMode: () -> Unit = {},
+    /** "Handla till veckan" (empty state, the "saknas på listan" card and the list menu). */
     val onFromMealPlan: () -> Unit = {},
+    /** "Inte nu" on the "saknas på listan" card. */
+    val onDismissWeekMissing: () -> Unit = {},
     val onShare: (text: String, subject: String) -> Unit = { _, _ -> },
     val onDialog: (ListDialog) -> Unit = {},
+    /** "Butiker och det vi har hemma". */
     val onOpenStores: () -> Unit = {},
-    val onOpenPantry: () -> Unit = {},
 )
 
+/**
+ * The planning list (UX plan, Handla 1–4): header, who is shopping, "saknas på listan", the items per aisle, "Brukar ni
+ * köpa", "Avbockat (n)" and "Butiker och det vi har hemma". A ticked row stays struck through for [LINGER_MS] before it
+ * moves to "Avbockat" (a short-lived set in this screen, one delay per item).
+ */
 @Composable
 fun ShoppingScreen(
     state: ShoppingUiState,
@@ -432,370 +417,123 @@ fun ShoppingScreen(
         return
     }
     var showChecked by rememberSaveable { mutableStateOf(false) }
+    var showSuggestions by rememberSaveable { mutableStateOf(false) }
+    val lingering = remember { mutableStateMapOf<String, ShoppingItem>() }
+    lingering.keys.toList().forEach { id ->
+        key(id) {
+            LaunchedEffect(id) {
+                delay(LINGER_MS)
+                lingering.remove(id)
+            }
+        }
+    }
+    val toggle: (ShoppingItem, Boolean) -> Unit = { item, checked ->
+        if (checked) lingering[item.id] = item.copy(checked = true) else lingering.remove(item.id)
+        actions.onToggle(item, checked)
+    }
+    val groups = withLingering(state.groups, lingering.values, state.store?.aisleOrder ?: Aisle.defaultOrder)
+    val checked = state.checked.filter { it.id !in lingering }
     val bottom = contentPadding.calculateBottomPadding()
-    val showStoreMode = state.canStartShopping
-    val showFromMeals = state.list?.kind != ListKind.Other
     LazyColumn(
         // With the keyboard up, the list ends above it (and the add field), so every row can still be scrolled to.
         modifier = Modifier.fillMaxSize().consumeWindowInsets(PaddingValues(bottom = bottom)).imePadding(),
         contentPadding = PaddingValues(
             start = Spacing.screenHorizontal,
             end = Spacing.screenHorizontal,
-            top = Spacing.lg + contentPadding.calculateTopPadding(),
+            top = Spacing.sm + contentPadding.calculateTopPadding(),
             bottom = Spacing.listBottomInset + bottom,
         ),
-        verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
-        item(key = "header") { Header(state, actions) }
-        if (state.lists.size > 1 || state.canManage) item(key = "lists") { ListChips(state, actions) }
-        items(state.shoppers, key = { "shopper-${it.memberId}" }) { ShopperBanner(it) }
-        if (showStoreMode || showFromMeals) {
-            item(key = "primary") { PrimaryActions(actions, showStoreMode = showStoreMode, showFromMeals = showFromMeals) }
-        }
-        if (state.suggestions.isNotEmpty()) item(key = "suggestions") { Suggestions(state, actions) }
-        if (state.isEmpty) {
-            item(key = "empty") {
-                EmptyState(
-                    title = stringResource(Res.string.shopping_empty_title),
-                    message = stringResource(Res.string.shopping_empty_body),
+        item(key = "header") { ListHeader(state, actions) }
+        state.shoppersRow?.let { row -> item(key = "shoppers") { ShoppersLine(row, onSwitch = actions.onSelectList) } }
+        val missing = state.weekMissing
+        if (missing != null && !state.isEmpty) {
+            item(key = "week-missing") {
+                WeekMissingCard(
+                    missing,
+                    onShop = actions.onFromMealPlan,
+                    onDismiss = actions.onDismissWeekMissing,
+                    modifier = Modifier.padding(vertical = Spacing.sm),
                 )
             }
         }
-        state.groups.forEach { group ->
+        if (state.isEmpty) item(key = "empty") { EmptyList(showShopForWeek = state.canShopForWeek, onShopForWeek = actions.onFromMealPlan) }
+        groups.forEach { group ->
             item(key = "aisle-${group.aisle}") { AisleHeader(group) }
             items(group.items, key = { it.id }) { item ->
                 ItemRow(
                     item = item,
-                    onToggle = { actions.onToggle(item, it) },
+                    onToggle = { toggle(item, it) },
                     onEdit = { actions.onEdit(item) },
+                    onRemove = { actions.onRemove(item) },
                 )
             }
         }
-        if (state.checked.isNotEmpty()) {
+        if (state.suggestions.isNotEmpty()) {
+            item(key = "suggestions") {
+                SuggestionsRow(
+                    suggestions = state.suggestions,
+                    expanded = showSuggestions,
+                    onExpand = { showSuggestions = it },
+                    onAdd = actions.onAddSuggestion,
+                    onDismiss = actions.onDismissSuggestion,
+                    modifier = Modifier.padding(top = Spacing.md),
+                )
+            }
+        }
+        if (checked.isNotEmpty()) {
             item(key = "checked-header") {
                 CheckedHeader(
-                    count = state.checked.size,
+                    count = checked.size,
                     expanded = showChecked,
                     onToggle = { showChecked = !showChecked },
                     onClear = actions.onClearChecked,
                 )
             }
             if (showChecked) {
-                items(state.checked, key = { it.id }) { item ->
+                items(checked, key = { it.id }) { item ->
                     ItemRow(
                         item = item,
-                        onToggle = { actions.onToggle(item, it) },
+                        onToggle = { toggle(item, it) },
                         onEdit = { actions.onEdit(item) },
+                        onRemove = { actions.onRemove(item) },
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun Header(state: ShoppingUiState, actions: ShoppingActions) {
-    var menu by remember { mutableStateOf(false) }
-    val list = state.list
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                list?.name ?: stringResource(Res.string.nav_shopping),
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.semantics { heading() },
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            // "5 kvar · ICA Nära". A list with nothing on it says so once, in the empty state below.
-            val count = when {
-                list == null || state.isEmpty -> null
-                state.allBought -> stringResource(Res.string.shopping_nothing_left)
-                else -> stringResource(Res.string.shopping_left_count, state.openCount)
-            }
-            val store = state.store?.name?.takeIf { list != null }
-            val subtitle = if (count != null && store != null) {
-                stringResource(Res.string.shopping_subtitle_store, count, store)
-            } else {
-                count ?: store
-            }
-            if (subtitle != null) {
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        if (state.canManage) {
+            item(key = "stores") {
+                NavRow(
+                    stringResource(Res.string.shopping_stores_and_pantry),
+                    actions.onOpenStores,
+                    modifier = Modifier.padding(top = Spacing.lg),
                 )
             }
         }
-        if (list != null) {
-            Box {
-                IconButton(onClick = { menu = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = stringResource(Res.string.shopping_more))
+    }
+}
+
+/** "Listan är tom" with the example and "Handla till veckan" (grocery lists only). */
+@Composable
+private fun EmptyList(showShopForWeek: Boolean, onShopForWeek: () -> Unit) {
+    EmptyState(
+        title = stringResource(Res.string.shopping_empty_title),
+        message = stringResource(Res.string.shopping_empty_body),
+        action = if (showShopForWeek) {
+            {
+                FilledTonalButton(onClick = onShopForWeek, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
+                    Icon(PussletIcons.Restaurant, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(stringResource(Res.string.shopping_from_meals))
                 }
-                OverflowMenu(state, actions, expanded = menu, onDismiss = { menu = false })
             }
-        }
-    }
-}
-
-@Composable
-private fun OverflowMenu(state: ShoppingUiState, actions: ShoppingActions, expanded: Boolean, onDismiss: () -> Unit) {
-    val list = state.list ?: return
-    val shareTitle = list.name
-    val labels = Aisle.entries.associateWith { stringResource(Labels.aisle(it)) }
-    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
-        DropdownMenuItem(
-            text = { Text(stringResource(Res.string.shopping_share)) },
-            enabled = state.openCount > 0,
-            onClick = {
-                onDismiss()
-                actions.onShare(ShoppingText.share(shareTitle, state.groups) { labels.getValue(it) }, shareTitle)
-            },
-        )
-        if (state.checked.isNotEmpty()) {
-            DropdownMenuItem(text = { Text(stringResource(Res.string.shopping_clear_checked)) }, onClick = {
-                onDismiss()
-                actions.onClearChecked()
-            })
-        }
-        if (state.canManage) {
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        state.store?.let { stringResource(Res.string.shopping_menu_store, it.name) }
-                            ?: stringResource(Res.string.shopping_menu_choose_store),
-                    )
-                },
-                onClick = {
-                    onDismiss()
-                    actions.onDialog(ListDialog.PickStore)
-                },
-            )
-            DropdownMenuItem(text = { Text(stringResource(Res.string.shopping_stores)) }, onClick = {
-                onDismiss()
-                actions.onOpenStores()
-            })
-            DropdownMenuItem(text = { Text(stringResource(Res.string.pantry_title)) }, onClick = {
-                onDismiss()
-                actions.onOpenPantry()
-            })
-            HorizontalDivider()
-            DropdownMenuItem(text = { Text(stringResource(Res.string.shopping_rename_list)) }, onClick = {
-                onDismiss()
-                actions.onDialog(ListDialog.Rename)
-            })
-            DropdownMenuItem(text = { Text(stringResource(Res.string.shopping_delete_list)) }, onClick = {
-                onDismiss()
-                actions.onDialog(ListDialog.Delete)
-            })
-        }
-    }
-}
-
-@Composable
-private fun ListChips(state: ShoppingUiState, actions: ShoppingActions) {
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        state.lists.forEach { list ->
-            FilterChip(
-                selected = list.id == state.list?.id,
-                onClick = { actions.onSelectList(list.id) },
-                label = { Text(list.name, maxLines = 1) },
-                colors = SelectionColors.filterChip(),
-            )
-        }
-        if (state.canManage) {
-            AssistChip(
-                onClick = { actions.onDialog(ListDialog.Create) },
-                label = { Text(stringResource(Res.string.shopping_new_list)) },
-                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun ShopperBanner(shopper: Shopper) {
-    val name = shopper.person?.name
-    Banner(
-        text = if (name != null) {
-            stringResource(Res.string.shopping_shopper_now, name)
         } else {
-            stringResource(Res.string.shopping_someone_shopping)
+            null
         },
     )
 }
 
-/** "Jag handlar nu" (only while something is left to buy) and "Handla till veckan". */
-@Composable
-private fun PrimaryActions(actions: ShoppingActions, showStoreMode: Boolean, showFromMeals: Boolean) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        if (showStoreMode) {
-            Button(onClick = actions.onStoreMode, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
-                Icon(Icons.Filled.ShoppingCart, contentDescription = null, modifier = Modifier.padding(end = Spacing.sm))
-                Text(stringResource(Res.string.shopping_store_mode))
-            }
-        }
-        if (showFromMeals) {
-            OutlinedButton(onClick = actions.onFromMealPlan, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
-                Icon(PussletIcons.Restaurant, contentDescription = null, modifier = Modifier.padding(end = Spacing.sm))
-                Text(stringResource(Res.string.shopping_from_meals))
-            }
-        }
-    }
-}
-
-@Composable
-private fun Suggestions(state: ShoppingUiState, actions: ShoppingActions) {
-    Column(Modifier.padding(top = Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(Res.string.shopping_suggestions_title),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f).semantics { heading() },
-            )
-            SmallAction(stringResource(Res.string.shopping_suggestions_dismiss), actions.onDismissSuggestions)
-        }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            state.suggestions.forEach { s ->
-                val description = stringResource(Res.string.shopping_suggestion_add, s.name)
-                SuggestionChip(
-                    onClick = { actions.onAddSuggestion(s) },
-                    label = { Text(s.name) },
-                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    modifier = Modifier.semantics { contentDescription = description },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AisleHeader(group: AisleGroup) {
-    Text(
-        stringResource(Labels.aisle(group.aisle)),
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = Spacing.md).semantics { heading() },
-    )
-}
-
-/** "Avbockat (3)" with "Rensa avbockade" and a chevron that shows or hides the ticked-off items. */
-@Composable
-private fun CheckedHeader(count: Int, expanded: Boolean, onToggle: () -> Unit, onClear: () -> Unit) {
-    Row(Modifier.padding(top = Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(Res.string.shopping_checked_count, count),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        SmallAction(stringResource(Res.string.shopping_clear_checked), onClear)
-        IconButton(onClick = onToggle) {
-            Icon(
-                if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-                contentDescription = stringResource(
-                    if (expanded) Res.string.shopping_hide_checked_a11y else Res.string.shopping_show_checked_a11y,
-                ),
-            )
-        }
-    }
-}
-
-/** "2 l · laktosfri" */
-internal fun itemDetails(item: ShoppingItem): String? =
-    listOfNotNull(item.amount?.let { Units.format(it) }, item.note.takeIf { it.isNotBlank() }).joinToString(" · ").ifEmpty { null }
-
-/**
- * One line on the list, like on paper: the checkbox ticks off (with a subtle haptic tick) and the text opens editing.
- * [large] is store mode ("stor text"): there the whole row ticks off and a long press edits.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-internal fun ItemRow(
-    item: ShoppingItem,
-    onToggle: (Boolean) -> Unit,
-    onEdit: () -> Unit,
-    modifier: Modifier = Modifier,
-    large: Boolean = false,
-) {
-    val haptics = LocalHapticFeedback.current
-    val checkedLabel = stringResource(if (item.checked) Res.string.shopping_state_in_cart else Res.string.shopping_state_to_buy)
-    val toggleLabel = stringResource(if (item.checked) Res.string.shopping_put_back else Res.string.shopping_tick_off)
-    val editLabel = stringResource(Res.string.action_edit)
-    val toggle = {
-        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        onToggle(!item.checked)
-    }
-    if (large) {
-        Row(
-            modifier
-                .fillMaxWidth()
-                .heightIn(min = LARGE_ROW)
-                .combinedClickable(
-                    role = Role.Checkbox,
-                    onClickLabel = toggleLabel,
-                    onLongClickLabel = editLabel,
-                    onLongClick = onEdit,
-                    onClick = toggle,
-                )
-                .semantics { stateDescription = checkedLabel },
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            Checkbox(checked = item.checked, onCheckedChange = null)
-            ItemText(item, large = true, modifier = Modifier.weight(1f).padding(vertical = Spacing.xs))
-        }
-    } else {
-        Row(modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(
-                checked = item.checked,
-                onCheckedChange = { toggle() },
-                modifier = Modifier.semantics {
-                    contentDescription = item.name
-                    stateDescription = checkedLabel
-                    onClick(label = toggleLabel) {
-                        toggle()
-                        true
-                    }
-                },
-            )
-            ItemText(
-                item,
-                large = false,
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = Spacing.primaryTouchTarget)
-                    .clickable(onClickLabel = editLabel, role = Role.Button, onClick = onEdit)
-                    .padding(Spacing.xs),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ItemText(item: ShoppingItem, large: Boolean, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.Center) {
-        val style = if (large) StoreModeItemStyle else MaterialTheme.typography.bodyLarge
-        Text(
-            item.name,
-            style = style.dimIf(item.checked),
-            textDecoration = if (item.checked) TextDecoration.LineThrough else null,
-        )
-        itemDetails(item)?.let { details ->
-            Text(
-                details,
-                style = if (large) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun TextStyle.dimIf(dim: Boolean): TextStyle = if (dim) copy(color = MaterialTheme.colorScheme.onSurfaceVariant) else this
-
+/** How long a ticked row stays struck through in its aisle before it moves to "Avbockat". */
+private const val LINGER_MS = 2_000L
 private val SNACKBAR_ABOVE_FAB: Dp = 80.dp
 private val BAR_ELEVATION: Dp = 3.dp
-private val LARGE_ROW: Dp = 72.dp

@@ -194,7 +194,7 @@ class HelperViewModel(
         shoppingSnapshot,
         forecast,
         syncStatus.map { it.waitsForNetwork() }.distinctUntilChanged().onStart { emit(false) },
-        hints.shouldShow(HintIds.HelperHome),
+        hints.shouldShow(HintIds.HELPER_HOME),
         ::View,
     )
 
@@ -238,7 +238,7 @@ class HelperViewModel(
 
     /** "Jag förstår" on the first-time hint: it does not come back on this phone. */
     fun dismissHint() {
-        viewModelScope.launch { hints.dismiss(HintIds.HelperHome) }
+        viewModelScope.launch { hints.dismiss(HintIds.HELPER_HOME) }
     }
 
     /** "Ja, jag hämtar Ella". Answers the latest copy of the request, so a change from another phone is not overwritten. */

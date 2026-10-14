@@ -9,15 +9,15 @@ import se.pusslet.data.repository.Prefs
 /** Stable ids of the first-time hints (UX plan 4.7). At most one per screen; never rename a shipped id. */
 object HintIds {
     /** Idag: "Lägg till med +. Skriv som du pratar." */
-    val TodayAdd = "today.add"
+    const val TODAY_ADD = "today.add"
 
     /** Handla, demo family: "Tips: mjölk två gånger blir en rad". */
-    val ShoppingMerge = "shopping.merge"
+    const val SHOPPING_MERGE = "shopping.merge"
 
     /** The helper view's first start: "Här ser du när du hämtar och lämnar." */
-    val HelperHome = "helper.home"
+    const val HELPER_HOME = "helper.home"
 
-    val all = setOf(TodayAdd, ShoppingMerge, HelperHome)
+    val all = setOf(TODAY_ADD, SHOPPING_MERGE, HELPER_HOME)
 }
 
 /** A hint shows once per phone: it stays until "Jag förstår" and does not come back after a restart. */

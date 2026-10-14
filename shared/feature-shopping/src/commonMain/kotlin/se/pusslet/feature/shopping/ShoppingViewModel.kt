@@ -244,7 +244,7 @@ class ShoppingViewModel(
         prefs.observe(Prefs.DismissedStaples),
         weekPlan,
         prefs.observe(ShoppingPrefs.HandledMeals),
-        hints.shouldShow(HintIds.ShoppingMerge),
+        hints.shouldShow(HintIds.SHOPPING_MERGE),
     ) { h, dismissed, plan, handled, hint -> Extras(h, dismissed, plan, handled, hint) }
 
     val state: StateFlow<ShoppingUiState> = combine(base, social, extras) { b, s, e -> build(b, s, e) }
@@ -411,7 +411,7 @@ class ShoppingViewModel(
     }
 
     /** "Jag förstår" on "Tips: mjölk två gånger blir en rad": the hint never comes back on this phone. */
-    fun dismissMergeHint() = launchSafely { hints.dismiss(HintIds.ShoppingMerge) }
+    fun dismissMergeHint() = launchSafely { hints.dismiss(HintIds.SHOPPING_MERGE) }
 
     /** "Inte nu" on "Tacos saknas på listan": the card stays away until other recipes are planned. */
     fun dismissWeekMissing() = launchSafely {

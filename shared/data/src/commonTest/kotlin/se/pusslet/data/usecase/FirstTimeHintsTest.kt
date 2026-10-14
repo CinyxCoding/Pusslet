@@ -14,14 +14,14 @@ class FirstTimeHintsTest {
     @Test
     fun aDismissedHintStaysGoneAfterARestart() = runTest {
         val hints = FirstTimeHints(PreferencesRepository(dao))
-        assertTrue(hints.shouldShow(HintIds.TodayAdd).first())
-        hints.dismiss(HintIds.TodayAdd)
-        assertFalse(hints.shouldShow(HintIds.TodayAdd).first())
-        assertTrue(hints.shouldShow(HintIds.ShoppingMerge).first())
+        assertTrue(hints.shouldShow(HintIds.TODAY_ADD).first())
+        hints.dismiss(HintIds.TODAY_ADD)
+        assertFalse(hints.shouldShow(HintIds.TODAY_ADD).first())
+        assertTrue(hints.shouldShow(HintIds.SHOPPING_MERGE).first())
 
         // A new repository on the same storage is what the next start of the app sees.
         val restarted = FirstTimeHints(PreferencesRepository(dao))
-        assertFalse(restarted.shouldShow(HintIds.TodayAdd).first())
+        assertFalse(restarted.shouldShow(HintIds.TODAY_ADD).first())
     }
 
     @Test

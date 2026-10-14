@@ -58,7 +58,7 @@ import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
-import se.pusslet.ui.components.SectionCard
+import se.pusslet.ui.components.Section
 import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.components.TimeField
@@ -205,9 +205,10 @@ fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewMod
     Scaffold(topBar = { PussletTopBar(stringResource(Res.string.settings_title), onBack = onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(Spacing.screenHorizontal),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
+            // Flat groups with room between them instead of cards (UX plan Steg 2, Mer 3).
+            verticalArrangement = Arrangement.spacedBy(Spacing.sectionGap),
         ) {
-            SectionCard(stringResource(Res.string.settings_appearance)) {
+            Section(stringResource(Res.string.settings_appearance)) {
                 Text(stringResource(Res.string.settings_theme), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     listOf(
@@ -245,7 +246,7 @@ fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewMod
                 }
             }
             if (state.canEditFamily) {
-                SectionCard(stringResource(Res.string.settings_weather_place)) {
+                Section(stringResource(Res.string.settings_weather_place)) {
                     ValueField(
                         stringResource(Res.string.settings_weather_place),
                         state.place?.name?.ifBlank { null } ?: stringResource(Res.string.settings_weather_place_none),
@@ -253,7 +254,7 @@ fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewMod
                     )
                 }
             }
-            SectionCard(stringResource(Res.string.settings_notifications)) {
+            Section(stringResource(Res.string.settings_notifications)) {
                 SwitchRow(
                     stringResource(Res.string.settings_morning),
                     state.morning.enabled,
@@ -290,7 +291,7 @@ fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewMod
                     TimeField(stringResource(Res.string.field_end), state.quiet.end, { viewModel.setQuiet(state.quiet.copy(end = it)) })
                 }
             }
-            SectionCard(stringResource(Res.string.settings_calendars)) {
+            Section(stringResource(Res.string.settings_calendars)) {
                 val hasPermission = platform.hasPermission(AppPermission.Calendar)
                 SwitchRow(
                     stringResource(Res.string.settings_device_calendars),
@@ -331,7 +332,7 @@ fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewMod
                     }
                 }
             }
-            SectionCard(null) {
+            Section(null) {
                 SwitchRow(
                     stringResource(Res.string.settings_crash_reports),
                     state.crashReports,
@@ -340,7 +341,7 @@ fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewMod
                 )
             }
             if (state.developerTools) {
-                SectionCard(stringResource(Res.string.settings_dev_title)) {
+                Section(stringResource(Res.string.settings_dev_title)) {
                     OutlinedButton(
                         onClick = viewModel::replayOnboarding,
                         modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),

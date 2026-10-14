@@ -481,7 +481,7 @@
     <string name="more_recipes">Recept</string>
     <string name="more_settings">Inställningar</string>
     <string name="more_account">Konto och delning</string>
-    <string name="more_about_data">Om data</string>
+    <string name="more_about_data">Om Pusslet</string>
     <string name="more_privacy">Integritet</string>
 
     <!-- Settings -->
@@ -538,7 +538,7 @@
     <string name="sync_rejected">%1$d ändringar nekades av servern och finns bara här</string>
 
     <!-- About data -->
-    <string name="about_title">Om data</string>
+    <string name="about_title">Om Pusslet</string>
     <string name="about_intro">Pusslet hämtar öppna data från de här källorna. Stort tack till dem.</string>
     <string name="about_no_ai">Pusslet använder ingen AI-tjänst. All tolkning sker med regler direkt i telefonen.</string>
     <string name="source_livsmedel">Livsmedelsverkets livsmedelsdatabas</string>
@@ -915,6 +915,14 @@
     <string name="today_layout_move_up">Flytta upp</string>
     <string name="today_layout_move_down">Flytta ner</string>
     <string name="today_layout_position">%1$s, plats %2$d av %3$d</string>
+
+    <string name="more_group_family">Familjen och vardagen</string>
+    <string name="more_group_app">Appen</string>
+    <string name="child_school_optional">Skola (valfritt)</string>
+    <string name="child_school_none">Ingen vald</string>
+    <string name="family_invite_named">Bjud in %1$s</string>
+    <string name="family_local_only">Bara på den här telefonen</string>
+    <string name="family_sign_in">Logga in</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>

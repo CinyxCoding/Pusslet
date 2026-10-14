@@ -329,6 +329,7 @@ private fun AppNavDisplay(navigator: AppNavigator, padding: PaddingValues, onQui
                     onInvite = { navigator.navigate(Route.Invite(it)) },
                     onCustody = { navigator.navigate(Route.Custody(it)) },
                     onHandover = { navigator.navigate(Route.Handover(it)) },
+                    onSignIn = { navigator.navigate(Route.Account) },
                 )
             }
             entry<Route.ChildEditor> { r -> ChildEditorRoute(r.childId, onDone = navigator::goBack) }

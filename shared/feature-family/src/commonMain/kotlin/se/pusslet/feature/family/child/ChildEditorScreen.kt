@@ -13,7 +13,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -65,6 +64,7 @@ import se.pusslet.feature.family.school.SchoolPickerDialog
 import se.pusslet.ui.components.ColorBadge
 import se.pusslet.ui.components.DatePickerSheet
 import se.pusslet.ui.components.Labels
+import se.pusslet.ui.components.OutlinedValueField
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SelectionColors
@@ -222,7 +222,13 @@ fun ChildEditorRoute(childId: String?, onDone: () -> Unit, viewModel: ChildEdito
                 child.birthDate?.let { formatDateLong(it, referenceYear = -1) } ?: "–",
                 onClick = { pickBirth = true },
             )
-            ValueField(stringResource(Res.string.child_school), child.school?.name ?: "–", onClick = { pickSchool = true })
+            OutlinedValueField(
+                label = stringResource(Res.string.child_school_optional),
+                value = child.school?.name,
+                onClick = { pickSchool = true },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = stringResource(Res.string.child_school_none),
+            )
             OutlinedTextField(
                 value = child.className.orEmpty(),
                 onValueChange = { v -> viewModel.edit { it.copy(className = v.ifBlank { null }) } },
@@ -262,17 +268,11 @@ fun ChildEditorRoute(childId: String?, onDone: () -> Unit, viewModel: ChildEdito
                 minLines = 2,
             )
             DietSection(state, child, viewModel)
+            // One "Spara" (in the top bar); "Ta bort" last (UX plan Steg 2, Mer 3).
             if (!state.isNew) {
                 OutlinedButton(onClick = {
                     confirmDelete = true
                 }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(Res.string.action_delete)) }
-            }
-            Button(
-                onClick = viewModel::save,
-                enabled = child.firstName.isNotBlank(),
-                modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
-            ) {
-                Text(stringResource(Res.string.action_save))
             }
         }
     }

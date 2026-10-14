@@ -24,6 +24,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.PussletIcons
+import se.pusslet.ui.components.SectionHeader
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
@@ -31,16 +32,23 @@ enum class MoreDestination { Family, Tasks, Settings, Account, AboutData, Privac
 
 private data class MoreItem(val dest: MoreDestination, val title: StringResource, val icon: ImageVector)
 
-/** The Mer tab: one full-width row with a chevron per destination, no subtitles and no + (UX plan 1.12). */
+/**
+ * The Mer tab (UX plan 1.12 and Steg 2): two groups – the family and everyday life, then the app with "Om Pusslet" last –
+ * of full-width rows with a chevron, no subtitles and no +.
+ */
 @Composable
 fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues = PaddingValues()) {
     // "Uppgifter och sysslor" (MoreDestination.Tasks) stays hidden until the tasks phase is done; its route is kept.
-    val rows = listOf(
-        MoreItem(MoreDestination.Family, Res.string.more_family, PussletIcons.Family),
-        MoreItem(MoreDestination.Settings, Res.string.more_settings, Icons.Filled.Settings),
-        MoreItem(MoreDestination.Account, Res.string.more_account, Icons.Filled.AccountCircle),
-        MoreItem(MoreDestination.AboutData, Res.string.more_about_data, Icons.Filled.Info),
-        MoreItem(MoreDestination.Privacy, Res.string.more_privacy, Icons.Filled.Lock),
+    val groups = listOf(
+        Res.string.more_group_family to listOf(
+            MoreItem(MoreDestination.Family, Res.string.more_family, PussletIcons.Family),
+            MoreItem(MoreDestination.Account, Res.string.more_account, Icons.Filled.AccountCircle),
+        ),
+        Res.string.more_group_app to listOf(
+            MoreItem(MoreDestination.Settings, Res.string.more_settings, Icons.Filled.Settings),
+            MoreItem(MoreDestination.Privacy, Res.string.more_privacy, Icons.Filled.Lock),
+            MoreItem(MoreDestination.AboutData, Res.string.more_about_data, Icons.Filled.Info),
+        ),
     )
     LazyColumn(
         Modifier.fillMaxSize(),
@@ -58,18 +66,29 @@ fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues 
                     .semantics { heading() },
             )
         }
-        items(rows, key = { it.dest.name }) { row ->
-            ListRow(
-                title = stringResource(row.title),
-                leading = { Icon(row.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                trailing = {
-                    Icon(PussletIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                },
-                // Full width: the whole row is the touch target, the screen margin sits inside it.
-                modifier = Modifier
-                    .clickable(role = Role.Button) { onOpen(row.dest) }
-                    .padding(horizontal = Spacing.screenHorizontal),
-            )
+        groups.forEach { (title, rows) ->
+            item(key = "group-${rows.first().dest.name}") {
+                SectionHeader(
+                    stringResource(title),
+                    Modifier.padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = Spacing.lg),
+                )
+            }
+            items(rows, key = { it.dest.name }) { row -> MoreRow(row, onOpen) }
         }
     }
+}
+
+@Composable
+private fun MoreRow(row: MoreItem, onOpen: (MoreDestination) -> Unit) {
+    ListRow(
+        title = stringResource(row.title),
+        leading = { Icon(row.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        trailing = {
+            Icon(PussletIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        },
+        // Full width: the whole row is the touch target, the screen margin sits inside it.
+        modifier = Modifier
+            .clickable(role = Role.Button) { onOpen(row.dest) }
+            .padding(horizontal = Spacing.screenHorizontal),
+    )
 }

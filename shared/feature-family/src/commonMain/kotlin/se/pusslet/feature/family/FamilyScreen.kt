@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -35,6 +37,7 @@ import se.pusslet.core.model.Role
 import se.pusslet.core.weather.ClothingAdvisor
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.session.SessionProvider
+import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.PersonAvatar
@@ -54,6 +57,8 @@ data class FamilyUiState(
     val me: String? = null,
     val myRole: Role = Role.Parent,
     val today: LocalDate? = null,
+    /** Not signed in: everything lives only on this phone ("Bara på den här telefonen · Logga in"). */
+    val signedIn: Boolean = true,
 )
 
 class FamilyViewModel(family: FamilyRepository, sessions: SessionProvider, clock: Clock, zone: TimeZone) : ViewModel() {
@@ -64,7 +69,7 @@ class FamilyViewModel(family: FamilyRepository, sessions: SessionProvider, clock
         cu,
         s,
         ->
-        FamilyUiState(f?.name.orEmpty(), m, c, cu, s.memberId, s.role, clock.todayIn(zone))
+        FamilyUiState(f?.name.orEmpty(), m, c, cu, s.memberId, s.role, clock.todayIn(zone), signedIn = s.uid != null)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FamilyUiState())
 }
 
@@ -76,6 +81,7 @@ fun FamilyRoute(
     onInvite: (String?) -> Unit,
     onCustody: (String?) -> Unit,
     onHandover: (String) -> Unit,
+    onSignIn: () -> Unit = {},
     viewModel: FamilyViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -86,6 +92,14 @@ fun FamilyRoute(
             contentPadding = PaddingValues(Spacing.screenHorizontal),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
+            if (!state.signedIn) {
+                item(key = "local") {
+                    Banner(
+                        stringResource(Res.string.family_local_only),
+                        actions = { TextButton(onClick = onSignIn) { Text(stringResource(Res.string.family_sign_in)) } },
+                    )
+                }
+            }
             item {
                 SectionCard(
                     stringResource(Res.string.family_adults),
@@ -108,6 +122,12 @@ fun FamilyRoute(
                             leading = { PersonAvatar(person, size = 40.dp) },
                             modifier = Modifier.clickable(enabled = parent || m.id == state.me) { onEditMember(m.id) },
                         )
+                        // An adult who has not joined yet can be invited with one tap (UX plan Steg 2, Mer 2).
+                        if (parent && m.uid == null && m.id != state.me) {
+                            FilledTonalButton(onClick = { onInvite(m.id) }) {
+                                Text(stringResource(Res.string.family_invite_named, m.displayName))
+                            }
+                        }
                     }
                     if (parent) OutlinedButton(onClick = { onEditMember(null) }) { Text(stringResource(Res.string.family_add_adult)) }
                 }

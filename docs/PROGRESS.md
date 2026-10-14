@@ -77,7 +77,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   Mat (veckan först, recepteditor som frågar innan ändringar slängs), Handla (listmeny i rubriken, rader som en papperslista,
   lugnare butiksläge, butiker och skafferi under ”Butiker och det vi har hemma”)
 - [ ] Steg 3: hjälparvy (H1 data och regler ✅, H2 enkel vy ✅ (ADR-029), H3 förhandsvisning och svar)
-- [ ] Steg 4: första användningen
+- [ ] Steg 4: första användningen (4.5 tomlägen på Mat, Recept och Handla ✅, 4.7 tips som visas en gång ✅ för Handla och hjälparvyn)
 
 ## Fas 3 – Integrationer & notiser
 - [ ] ICS-prenumerationer

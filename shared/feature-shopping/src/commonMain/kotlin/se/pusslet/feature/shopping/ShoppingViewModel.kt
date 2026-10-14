@@ -51,6 +51,8 @@ import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.usecase.AddOutcome
+import se.pusslet.data.usecase.FirstTimeHints
+import se.pusslet.data.usecase.HintIds
 import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.ShoppingAdder
 import kotlin.time.Clock
@@ -98,6 +100,11 @@ data class ShoppingUiState(
     val shoppersRow: ShoppersRow? = null,
     /** This week's recipes that are not on the list yet; null when there are none or the card was dismissed. */
     val weekMissing: WeekMissing? = null,
+    /**
+     * "Tips: mjölk två gånger blir en rad" (UX plan 4.7): the screen's one first-time hint, only in the demo family, only
+     * with something on the list and never while shopping. Gone for good after "Jag förstår" ([ShoppingViewModel.dismissMergeHint]).
+     */
+    val showMergeHint: Boolean = false,
 ) {
     val openCount: Int get() = groups.sumOf { it.items.size }
 
@@ -162,6 +169,7 @@ class ShoppingViewModel(
     /** Outlives this view model, so "slutat handla" is written even while the screen is closing. */
     private val appScope: CoroutineScope,
     private val receipts: ShoppingReceipts,
+    private val hints: FirstTimeHints,
 ) : ViewModel() {
     private val log = Logger.withTag("Shopping")
     private val messageChannel = Channel<ShoppingMessage>(Channel.BUFFERED)
@@ -209,6 +217,7 @@ class ShoppingViewModel(
         val dismissedStaples: Map<String, Long>,
         val weekPlan: MealPlanWeek,
         val handledMeals: Set<String>,
+        val mergeHintUnseen: Boolean,
     )
 
     private val base: Flow<Base> = combine(
@@ -235,7 +244,8 @@ class ShoppingViewModel(
         prefs.observe(Prefs.DismissedStaples),
         weekPlan,
         prefs.observe(ShoppingPrefs.HandledMeals),
-    ) { h, dismissed, plan, handled -> Extras(h, dismissed, plan, handled) }
+        hints.shouldShow(HintIds.ShoppingMerge),
+    ) { h, dismissed, plan, handled, hint -> Extras(h, dismissed, plan, handled, hint) }
 
     val state: StateFlow<ShoppingUiState> = combine(base, social, extras) { b, s, e -> build(b, s, e) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ShoppingUiState())
@@ -256,6 +266,7 @@ class ShoppingViewModel(
         val open = inList.filter { !it.checked }
         val me = s.session.memberId
         val live = s.presence.filter { it.until > s.now }
+        val iAmShopping = live.any { it.memberId == me }
         val others = live.filter { it.memberId != me }
         val people = s.people.associateBy { it.id }
         val today = today(s.now)
@@ -280,12 +291,13 @@ class ShoppingViewModel(
             checked = inList.filter { it.checked }.sortedByDescending { it.checkedAt },
             suggestions = suggestions,
             shoppers = others.map { p -> Shopper(p.memberId, people[p.memberId], b.lists.firstOrNull { it.id == p.listId }?.name) },
-            iAmShopping = live.any { it.memberId == me },
+            iAmShopping = iAmShopping,
             canManage = s.session.role == Role.Parent,
             people = people,
             usePantry = b.settings.usePantry,
             shoppersRow = shoppersRow(others, people, b.lists, list?.id),
             weekMissing = weekMissing(list, inList, e.weekPlan, today, e.handledMeals),
+            showMergeHint = s.session.demo && e.mergeHintUnseen && inList.isNotEmpty() && !iAmShopping,
         )
     }
 
@@ -397,6 +409,9 @@ class ShoppingViewModel(
         val now = clock.now().toEpochMilliseconds()
         prefs.update(Prefs.DismissedStaples) { current -> current + (suggestion.key to now) }
     }
+
+    /** "Jag förstår" on "Tips: mjölk två gånger blir en rad": the hint never comes back on this phone. */
+    fun dismissMergeHint() = launchSafely { hints.dismiss(HintIds.ShoppingMerge) }
 
     /** "Inte nu" on "Tacos saknas på listan": the card stays away until other recipes are planned. */
     fun dismissWeekMissing() = launchSafely {

@@ -8,7 +8,9 @@ import se.pusslet.data.di.AppScope
 val shoppingModule: Module = module {
     // One per app: store mode hands "Klar – töm vagnen" to the list underneath.
     single { ShoppingReceipts() }
-    viewModel { ShoppingViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(AppScope), get()) }
+    viewModel {
+        ShoppingViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(AppScope), get(), get())
+    }
     viewModel { StoresViewModel(get(), get(), get(), get()) }
     viewModel { PantryViewModel(get(), get(), get(), get()) }
 }

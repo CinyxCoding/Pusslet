@@ -60,8 +60,9 @@ private enum class WeekDialog { None, SaveFavorite, Favorites }
 /**
  * The Mat tab: the week's meal plan (with school lunches, clash warnings and busy evenings) and the recipe library, under the
  * same header as Kalender (UX plan, Mat 1). The round + plans the next dinner on Matsedel and adds a recipe on Recept (UX
- * plan 1.2). Every change to the plan gets a receipt with Ångra. [onPasteRecipe] opens the recipe editor with the paste
- * dialog; until the shell wires it, "Klistra in text" opens the plain editor. [onShopForWeek] leads to "Handla till veckan".
+ * plan 1.2); their empty states ("Planera veckan", "Nytt recept") open the same (UX plan 4.5). Every change to the plan
+ * gets a receipt with Ångra. [onPasteRecipe] opens the recipe editor with the paste dialog; until the shell wires it,
+ * "Klistra in text" opens the plain editor. [onShopForWeek] leads to "Handla till veckan".
  */
 @Composable
 fun MealsRoute(
@@ -121,6 +122,7 @@ fun MealsRoute(
                     actions = WeekActions(
                         onPlanDay = viewModel::openDay,
                         onViewDay = viewModel::viewDay,
+                        onPlanWeek = viewModel::openNextToPlan,
                         onCopyPrevious = viewModel::copyPreviousWeek,
                         onFillLunch = { fillingLunch = true },
                         onShopForWeek = onShopForWeek,
@@ -136,6 +138,7 @@ fun MealsRoute(
                     bottomPadding = bottom,
                     onToggleTag = library::toggleTag,
                     onOpen = onOpenRecipe,
+                    onAdd = { choosingRecipe = true },
                 )
             }
         }

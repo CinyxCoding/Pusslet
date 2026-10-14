@@ -53,6 +53,7 @@ import se.pusslet.data.sources.ProductLookup
 import se.pusslet.data.sync.Collections
 import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.InMemorySyncLocalStore
+import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.MealShopping
 import se.pusslet.data.usecase.ShoppingAdder
 import kotlin.test.AfterTest
@@ -125,6 +126,7 @@ class ShoppingViewModelTest {
     private val adder = ShoppingAdder(shopping, NoProducts, prefs, sessions, ids, clock)
     private val mealShopping = MealShopping(meals, recipes, shopping, family, sessions, ids, clock)
     private val receipts = ShoppingReceipts()
+    private val hints = FirstTimeHints(prefs)
 
     @BeforeTest
     fun setUp() {
@@ -146,7 +148,7 @@ class ShoppingViewModelTest {
     /** The view model plus every message it sends. Collectors run eagerly so `state.value` is always current. */
     private fun TestScope.viewModel(): Pair<ShoppingViewModel, MutableList<ShoppingMessage>> {
         val eager = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))
-        val vm = ShoppingViewModel(shopping, adder, mealShopping, meals, family, prefs, sessions, ids, clock, zone, eager, receipts)
+        val vm = ShoppingViewModel(shopping, adder, mealShopping, meals, family, prefs, sessions, ids, clock, zone, eager, receipts, hints)
         val messages = mutableListOf<ShoppingMessage>()
         eager.launch { vm.state.collect {} }
         eager.launch { vm.messages.collect { messages += it } }
@@ -599,6 +601,64 @@ class ShoppingViewModelTest {
 
         vm.dismissSuggestion(vm.state.value.suggestions.first { it.name == "Mjölk" })
         assertEquals(listOf("Bröd"), vm.state.value.suggestions.map { it.name })
+    }
+
+    @Test
+    fun theMergeHintShowsInTheDemoFamilyOnlyAndStaysGoneAfterDismiss() = runTest {
+        seed()
+        val (vm, _) = viewModel()
+        vm.add("mjölk")
+        assertFalse(vm.state.value.showMergeHint, "a real family never sees the demo hint")
+
+        sessions.update { it.copy(demo = true) }
+        assertTrue(vm.state.value.showMergeHint, "\"Tips: mjölk två gånger blir en rad\"")
+
+        vm.dismissMergeHint()
+        assertFalse(vm.state.value.showMergeHint)
+        // A new view model on the same phone (the next start of the app) does not bring it back.
+        val (again, _) = viewModel()
+        assertFalse(again.state.value.showMergeHint)
+    }
+
+    @Test
+    fun theMergeHintNeverShowsOnAnEmptyListOrWhileShopping() = runTest {
+        sessions.update { it.copy(demo = true) }
+        seed()
+        val (vm, _) = viewModel()
+        assertTrue(vm.state.value.isEmpty)
+        assertFalse(vm.state.value.showMergeHint, "the empty state explains how to type instead")
+
+        vm.add("mjölk")
+        assertTrue(vm.state.value.showMergeHint)
+        vm.startShopping()
+        assertFalse(vm.state.value.showMergeHint, "never in store mode")
+        vm.stopShopping()
+        assertTrue(vm.state.value.showMergeHint)
+    }
+
+    @Test
+    fun theEmptyListOffersHandlaTillVeckanOnGroceryListsAndScanningEverywhere() = runTest {
+        seed()
+        val (vm, messages) = viewModel()
+        with(vm.state.value) {
+            assertTrue(isEmpty)
+            assertTrue(canShopForWeek, "\"Handla till veckan\" on Veckohandling")
+        }
+        // "Handla till veckan" from the empty state previews the week like everywhere else.
+        vm.previewMealPlan(0)
+        assertEquals(clock.now().toLocalDateTime(zone).date.isoWeek, assertNotNull(vm.mealPlanPreview.value).week)
+        vm.dismissMealPlanPreview()
+
+        vm.selectList("l-apotek")
+        with(vm.state.value) {
+            assertTrue(isEmpty)
+            assertFalse(canShopForWeek, "no meals on Apoteket")
+        }
+        // "Skanna streckkod": a cancelled scan does nothing, an unknown code asks for a name.
+        vm.scanned(null)
+        assertTrue(messages.isEmpty())
+        vm.scanned("7310865004703")
+        assertEquals("7310865004703", assertIs<ShoppingMessage.UnknownProduct>(messages.last()).barcode)
     }
 
     @Test

@@ -609,7 +609,7 @@
     <string name="shopping_in_cart_count">In the cart (%1$d)</string>
     <string name="shopping_clear_checked">Clear ticked items</string>
     <string name="shopping_empty_title">The list is empty</string>
-    <string name="shopping_empty_body">E.g. “2 l milk, bread”</string>
+    <string name="shopping_empty_body">Type as usual: 2 l milk, bread</string>
     <string name="shopping_added">Added: %1$s</string>
     <string name="shopping_already_on_list">%1$s was already there</string>
     <string name="shopping_removed">%1$s removed</string>
@@ -717,7 +717,6 @@
     <string name="recipe_edit">Edit recipe</string>
     <string name="recipe_search">Search recipes</string>
     <string name="recipe_empty_title">No recipes yet</string>
-    <string name="recipe_empty_body">Import from a recipe site or add your own</string>
     <string name="recipe_no_match">No recipes match.</string>
     <string name="recipe_minutes">%1$d min</string>
     <string name="recipe_favorite">Favourite</string>
@@ -1012,6 +1011,12 @@
     <string name="hint_got_it">Got it</string>
 
     <string name="helper_hint_home">This is where you see when you pick up and drop off.</string>
+
+    <!-- Steg 4: empty states on Mat and Recept, the Handla hint (UX plan 4.5, 4.7) -->
+    <string name="meals_empty_week">Nothing planned this week</string>
+    <string name="meals_plan_week">Plan the week</string>
+    <string name="recipe_empty_share">Share recipes from your browser: Share → Pusslet</string>
+    <string name="shopping_hint_merge">Tip: milk twice becomes one row</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>

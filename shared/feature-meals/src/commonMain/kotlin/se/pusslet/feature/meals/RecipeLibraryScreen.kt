@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -34,7 +35,8 @@ import se.pusslet.ui.theme.Spacing
 
 /**
  * Mat › Recept: tag filters and the family's recipes ("45 min · ICA" and a star). The search field sits in the tab's header
- * ([RecipeSearchField]) and new recipes come from the round + (UX plan 1.2), the one way to add here.
+ * ([RecipeSearchField]) and new recipes come from the round + (UX plan 1.2), the one way to add here. An empty library
+ * tells how to share a recipe from the browser, and its "Nytt recept" ([onAdd]) opens the same choice as the + (UX plan 4.5).
  */
 @Composable
 fun RecipeLibraryScreen(
@@ -42,6 +44,7 @@ fun RecipeLibraryScreen(
     bottomPadding: PaddingValues = PaddingValues(),
     onToggleTag: (RecipeTag) -> Unit = {},
     onOpen: (String) -> Unit = {},
+    onAdd: () -> Unit = {},
 ) {
     if (state.loading) {
         LoadingBox()
@@ -75,15 +78,27 @@ fun RecipeLibraryScreen(
             }
         }
         when {
-            state.total == 0 -> item(key = "empty") {
-                EmptyState(title = stringResource(Res.string.recipe_empty_title), message = stringResource(Res.string.recipe_empty_body))
-            }
+            state.total == 0 -> item(key = "empty") { EmptyLibrary(canAdd = state.canEdit, onAdd = onAdd) }
             state.recipes.isEmpty() -> item(key = "none") { EmptyState(message = stringResource(Res.string.recipe_no_match)) }
         }
         items(state.recipes, key = { it.id }) { recipe ->
             RecipeRow(recipe, onClick = { onOpen(recipe.id) })
         }
     }
+}
+
+/** "Inga recept än", the tip "Dela recept från webbläsaren: Dela → Pusslet" and, for parents, "Nytt recept". */
+@Composable
+private fun EmptyLibrary(canAdd: Boolean, onAdd: () -> Unit) {
+    EmptyState(
+        title = stringResource(Res.string.recipe_empty_title),
+        message = stringResource(Res.string.recipe_empty_share),
+        action = if (canAdd) {
+            { Button(onClick = onAdd) { Text(stringResource(Res.string.recipe_new)) } }
+        } else {
+            null
+        },
+    )
 }
 
 /** "Sök recept" (titles and ingredients), in the place where Matsedel has the week. */

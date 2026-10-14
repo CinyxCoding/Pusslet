@@ -105,8 +105,14 @@ data class MealsUiState(
     val showFillLunch: Boolean
         get() = manualLunchChildren.let { kids -> kids.isNotEmpty() && days.any { d -> kids.any { it.id !in d.noSchool } } }
 
+    /**
+     * The empty week's one action, "Planera veckan" (UX plan 4.5): the same planning sheet as the round +. Helpers, who
+     * cannot plan, only get the sentence.
+     */
+    val offerPlanWeek: Boolean get() = canEdit && weekIsEmpty
+
     /** "Kopiera förra veckan" belongs to an empty week, and only when last week has something to copy. */
-    val offerCopyPrevious: Boolean get() = canEdit && weekIsEmpty && previousWeekPlanned
+    val offerCopyPrevious: Boolean get() = offerPlanWeek && previousWeekPlanned
 }
 
 sealed interface WeekNutritionState {
@@ -457,6 +463,10 @@ class MealsViewModel(
         }
     }
 
+    /**
+     * "Kopiera förra veckan": last week's meals on the same weekdays of the shown week. Days already planned keep their meal
+     * (see [MealRepository.copyWeek]); the receipt's "Ångra" empties the copied days again.
+     */
     fun copyPreviousWeek() {
         val target = week.value
         viewModelScope.launch {

@@ -610,7 +610,7 @@
     <string name="shopping_in_cart_count">I vagnen (%1$d)</string>
     <string name="shopping_clear_checked">Rensa avbockade</string>
     <string name="shopping_empty_title">Listan är tom</string>
-    <string name="shopping_empty_body">T.ex. ”2 l mjölk, bröd”</string>
+    <string name="shopping_empty_body">Skriv som vanligt: 2 l mjölk, bröd</string>
     <string name="shopping_added">Tillagt: %1$s</string>
     <string name="shopping_already_on_list">%1$s fanns redan</string>
     <string name="shopping_removed">%1$s borttagen</string>
@@ -718,7 +718,6 @@
     <string name="recipe_edit">Ändra recept</string>
     <string name="recipe_search">Sök recept</string>
     <string name="recipe_empty_title">Inga recept än</string>
-    <string name="recipe_empty_body">Hämta från en receptsida eller skriv in era egna</string>
     <string name="recipe_no_match">Inga recept matchar.</string>
     <string name="recipe_minutes">%1$d min</string>
     <string name="recipe_favorite">Favorit</string>
@@ -1013,6 +1012,12 @@
     <string name="hint_got_it">Jag förstår</string>
 
     <string name="helper_hint_home">Här ser du när du hämtar och lämnar.</string>
+
+    <!-- Steg 4: empty states on Mat and Recept, the Handla hint (UX plan 4.5, 4.7) -->
+    <string name="meals_empty_week">Inget planerat den här veckan</string>
+    <string name="meals_plan_week">Planera veckan</string>
+    <string name="recipe_empty_share">Dela recept från webbläsaren: Dela → Pusslet</string>
+    <string name="shopping_hint_merge">Tips: mjölk två gånger blir en rad</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>

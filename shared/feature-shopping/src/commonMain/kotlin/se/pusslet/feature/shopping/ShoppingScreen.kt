@@ -1,5 +1,6 @@
 package se.pusslet.feature.shopping
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,8 +21,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +32,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -67,6 +69,7 @@ import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.ShoppingItem
 import se.pusslet.core.shopping.StapleSuggestion
 import se.pusslet.ui.components.EmptyState
+import se.pusslet.ui.components.FirstTimeHint
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletIcons
@@ -141,6 +144,8 @@ fun ShoppingRoute(
                 onShare = { text, subject -> platform.shareText(text, subject) },
                 onDialog = { dialog = it },
                 onOpenStores = onOpenStores,
+                onScan = { platform.scanCode(viewModel::scanned) },
+                onDismissHint = viewModel::dismissMergeHint,
             ),
         )
         val bottom = contentPadding.calculateBottomPadding()
@@ -399,6 +404,10 @@ data class ShoppingActions(
     val onDialog: (ListDialog) -> Unit = {},
     /** "Butiker och det vi har hemma". */
     val onOpenStores: () -> Unit = {},
+    /** "Skanna streckkod" in the empty state: the camera scanner, like the add field's barcode icon. */
+    val onScan: () -> Unit = {},
+    /** "Jag förstår" on the first-time hint. */
+    val onDismissHint: () -> Unit = {},
 )
 
 /**
@@ -457,7 +466,20 @@ fun ShoppingScreen(
                 )
             }
         }
-        if (state.isEmpty) item(key = "empty") { EmptyList(showShopForWeek = state.canShopForWeek, onShopForWeek = actions.onFromMealPlan) }
+        if (state.showMergeHint) {
+            item(key = "hint") {
+                FirstTimeHint(
+                    stringResource(Res.string.shopping_hint_merge),
+                    onDismiss = actions.onDismissHint,
+                    modifier = Modifier.padding(vertical = Spacing.sm),
+                )
+            }
+        }
+        if (state.isEmpty) {
+            item(key = "empty") {
+                EmptyList(showShopForWeek = state.canShopForWeek, onShopForWeek = actions.onFromMealPlan, onScan = actions.onScan)
+            }
+        }
         groups.forEach { group ->
             item(key = "aisle-${group.aisle}") { AisleHeader(group) }
             items(group.items, key = { it.id }) { item ->
@@ -513,22 +535,30 @@ fun ShoppingScreen(
     }
 }
 
-/** "Listan är tom" with the example and "Handla till veckan" (grocery lists only). */
+/**
+ * "Listan är tom" with how to type ("Skriv som vanligt: 2 l mjölk, bröd"), the one filled button "Handla till veckan"
+ * (grocery lists only) and "Skanna streckkod" as a text button (UX plan 4.5).
+ */
 @Composable
-private fun EmptyList(showShopForWeek: Boolean, onShopForWeek: () -> Unit) {
+private fun EmptyList(showShopForWeek: Boolean, onShopForWeek: () -> Unit, onScan: () -> Unit) {
     EmptyState(
         title = stringResource(Res.string.shopping_empty_title),
         message = stringResource(Res.string.shopping_empty_body),
-        action = if (showShopForWeek) {
-            {
-                FilledTonalButton(onClick = onShopForWeek, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
-                    Icon(PussletIcons.Restaurant, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+        action = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                if (showShopForWeek) {
+                    Button(onClick = onShopForWeek, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
+                        Icon(PussletIcons.Restaurant, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text(stringResource(Res.string.shopping_from_meals))
+                    }
+                }
+                TextButton(onClick = onScan, contentPadding = ButtonDefaults.TextButtonWithIconContentPadding) {
+                    Icon(PussletIcons.Barcode, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text(stringResource(Res.string.shopping_from_meals))
+                    Text(stringResource(Res.string.shopping_scan))
                 }
             }
-        } else {
-            null
         },
     )
 }

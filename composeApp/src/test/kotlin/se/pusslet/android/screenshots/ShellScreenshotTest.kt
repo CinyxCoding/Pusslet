@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
@@ -16,11 +17,15 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.koin.core.context.GlobalContext
 import org.robolectric.annotation.Config
+import se.pusslet.data.repository.RecipeRepository
+import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.shell.PussletApp
 
 /**
@@ -132,6 +137,47 @@ class ShellScreenshotTest {
         openTab("Handla")
         compose.waitUntilAtLeastOneExists(hasText("Veckohandling"), timeoutMillis = 10_000)
         snap("shopping_list")
+    }
+
+    /** An empty week offers "Planera veckan" and, with last week planned, "Kopiera förra veckan" (UX plan 4.5). */
+    @Test
+    fun mealsEmptyWeek() {
+        launch()
+        openTab("Mat")
+        compose.waitUntilAtLeastOneExists(hasText("Matsedel"), timeoutMillis = 10_000)
+        repeat(2) {
+            compose.onAllNodesWithContentDescription("Nästa").onFirst().performClick()
+            compose.waitForIdle()
+        }
+        compose.waitUntilAtLeastOneExists(hasText("Planera veckan"), timeoutMillis = 10_000)
+        snap("meals_empty_week")
+    }
+
+    @Test
+    fun shoppingEmpty() {
+        launch()
+        runBlocking {
+            val shopping = GlobalContext.get().get<ShoppingRepository>()
+            shopping.getItems("l-vecka").forEach { shopping.deleteItem(it.id) }
+        }
+        openTab("Handla")
+        compose.waitUntilAtLeastOneExists(hasText("Listan är tom"), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("shopping_empty")
+    }
+
+    @Test
+    fun recipesEmpty() {
+        launch()
+        runBlocking {
+            val recipes = GlobalContext.get().get<RecipeRepository>()
+            recipes.all().forEach { recipes.delete(it.id) }
+        }
+        openTab("Mat")
+        compose.waitUntilAtLeastOneExists(hasText("Matsedel"), timeoutMillis = 10_000)
+        compose.onAllNodesWithText("Recept").onFirst().performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Inga recept än"), timeoutMillis = 10_000)
+        snap("recipes_empty")
     }
 
     @Test

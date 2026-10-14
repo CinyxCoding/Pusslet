@@ -453,6 +453,88 @@ class MealsViewModelTest {
     }
 
     @Test
+    fun anEmptyWeekOffersPlanningAndCopyingOnlyWithHistory() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        with(vm.state.value) {
+            assertTrue(weekIsEmpty)
+            assertTrue(offerPlanWeek, "\"Planera veckan\"")
+            assertFalse(offerCopyPrevious, "nothing planned before: no \"Kopiera förra veckan\"")
+        }
+
+        // "Planera veckan" is the round +: tonight's sheet.
+        vm.openNextToPlan()
+        assertEquals(tuesday, vm.dayEditor.value?.date)
+        vm.closeDay()
+
+        vm.plan(monday.plusDays(-7), MealSlot.Dinner, "fisk", null, cookDouble = false, servings = null, note = "")
+        with(vm.state.value) {
+            assertTrue(weekIsEmpty)
+            assertTrue(offerCopyPrevious, "last week has something to copy")
+        }
+        // Two weeks ahead, the week before is empty again.
+        vm.nextWeek()
+        vm.nextWeek()
+        assertTrue(vm.state.value.offerPlanWeek)
+        assertFalse(vm.state.value.offerCopyPrevious)
+
+        vm.thisWeek()
+        vm.plan(monday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+        with(vm.state.value) {
+            assertFalse(weekIsEmpty)
+            assertFalse(offerPlanWeek, "a planned week has no empty state")
+            assertFalse(offerCopyPrevious)
+        }
+
+        // Helpers see the sentence only.
+        val helper = TestWorld(role = Role.Caregiver)
+        helper.meals.setEntry(MealEntry(monday.plusDays(-7), title = "fisk"))
+        val helperVm = viewModel(helper)
+        with(helperVm.state.value) {
+            assertTrue(weekIsEmpty)
+            assertFalse(offerPlanWeek)
+            assertFalse(offerCopyPrevious)
+        }
+    }
+
+    @Test
+    fun copyingLastWeekNeverOverwritesAndUndoRestores() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        val lastMonday = monday.plusDays(-7)
+        vm.plan(lastMonday, MealSlot.Dinner, "fisk", null, cookDouble = false, servings = null, note = "")
+        vm.plan(lastMonday.plusDays(2), MealSlot.Dinner, "Snabb pasta", "r-pasta", cookDouble = false, servings = null, note = "")
+        vm.plan(lastMonday.plusDays(3), MealSlot.Dinner, "soppa", null, cookDouble = false, servings = null, note = "")
+        val wednesday = monday.plusDays(2)
+        val thursday = monday.plusDays(3)
+        vm.plan(wednesday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+
+        vm.copyPreviousWeek()
+        val copied = assertIs<MealsMessage.CopiedPreviousWeek>(messages.last())
+        assertEquals("fisk", vm.dinner(monday)?.title, "the same weekday")
+        assertEquals("tacos", vm.dinner(wednesday)?.title, "a planned day keeps its meal")
+        assertEquals("soppa", vm.dinner(thursday)?.title)
+        assertEquals(3, vm.state.value.plannedCount)
+        assertEquals(setOf(monday, thursday), copied.undo.meals.map { it.date }.toSet(), "only the copied days change")
+
+        vm.undo(copied.undo)
+        assertNull(vm.dinner(monday))
+        assertNull(vm.dinner(thursday))
+        assertEquals("tacos", vm.dinner(wednesday)?.title, "Ångra leaves the day that was planned before")
+        assertEquals("fisk", world.meals.getWeek(lastMonday.isoWeek).entry(lastMonday, MealSlot.Dinner)?.title, "last week untouched")
+
+        // Copying again and changing a copied day: Ångra takes back only what is still as copied.
+        vm.copyPreviousWeek()
+        val again = assertIs<MealsMessage.CopiedPreviousWeek>(messages.last())
+        vm.plan(thursday, MealSlot.Dinner, "pizza", null, cookDouble = false, servings = null, note = "")
+        vm.undo(again.undo)
+        assertNull(vm.dinner(monday))
+        assertEquals("pizza", vm.dinner(thursday)?.title)
+        assertEquals("tacos", vm.dinner(wednesday)?.title)
+    }
+
+    @Test
     fun undoLeavesWhatWasChangedAgainSince() = runTest {
         val world = TestWorld().apply { seed() }
         val vm = viewModel(world)

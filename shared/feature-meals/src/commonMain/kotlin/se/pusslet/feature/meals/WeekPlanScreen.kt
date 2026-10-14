@@ -14,11 +14,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +37,7 @@ import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.MealSlot
+import se.pusslet.ui.components.EmptyState
 import se.pusslet.ui.components.HeroCard
 import se.pusslet.ui.components.InfoPill
 import se.pusslet.ui.components.Labels
@@ -48,10 +50,14 @@ import se.pusslet.ui.format.weekdayName
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
-/** What Matsedel can do. A planned meal opens its read view ([onViewDay]); an empty day the planning sheet ([onPlanDay]). */
+/**
+ * What Matsedel can do. A planned meal opens its read view ([onViewDay]); an empty day the planning sheet ([onPlanDay]).
+ * [onPlanWeek] is "Planera veckan" in an empty week, the same as the round +.
+ */
 data class WeekActions(
     val onPlanDay: (LocalDate, MealSlot) -> Unit = { _, _ -> },
     val onViewDay: (LocalDate, MealSlot) -> Unit = { _, _ -> },
+    val onPlanWeek: () -> Unit = {},
     val onCopyPrevious: () -> Unit = {},
     val onFillLunch: () -> Unit = {},
     val onShopForWeek: () -> Unit = {},
@@ -61,7 +67,8 @@ data class WeekActions(
 /**
  * Matsedel: seven calm day cards that open at today's (the screen's one focus surface, UX plan 1.11), then the bridge to
  * Handla ("Handla till veckan"), one "Fyll i skollunch ›" for the week and "Näring för veckan ›" (UX plan, Mat 2, 3 and 6).
- * An empty week offers "Kopiera förra veckan" first when last week has something to copy (UX plan 4.5).
+ * An empty week starts with one sentence, "Planera veckan" and, when last week has something to copy, "Kopiera förra
+ * veckan" (UX plan 4.5).
  */
 @Composable
 fun WeekPlanScreen(state: MealsUiState, bottomPadding: PaddingValues = PaddingValues(), actions: WeekActions = WeekActions()) {
@@ -71,13 +78,13 @@ fun WeekPlanScreen(state: MealsUiState, bottomPadding: PaddingValues = PaddingVa
     }
     val listState = rememberLazyListState()
     // This week opens at today's card (not Monday); other weeks open at Monday. Only once per week shown, so coming back
-    // from a recipe keeps the place in the list. An empty week starts at the top, where "Kopiera förra veckan" is.
+    // from a recipe keeps the place in the list. An empty week starts at the top, where "Planera veckan" is.
     var scrolledTo by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(state.week) {
         val week = state.week?.key
         if (week != scrolledTo) {
             scrolledTo = week
-            val todayIndex = if (state.offerCopyPrevious) -1 else state.days.indexOfFirst { it.isToday }
+            val todayIndex = if (state.weekIsEmpty) -1 else state.days.indexOfFirst { it.isToday }
             listState.scrollToItem(todayIndex.coerceAtLeast(0))
         }
     }
@@ -92,11 +99,7 @@ fun WeekPlanScreen(state: MealsUiState, bottomPadding: PaddingValues = PaddingVa
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        if (state.offerCopyPrevious) {
-            item(key = "copy") {
-                OutlinedButton(onClick = actions.onCopyPrevious) { Text(stringResource(Res.string.meals_copy_previous)) }
-            }
-        }
+        if (state.weekIsEmpty) item(key = "empty") { EmptyWeek(state, actions) }
         items(state.days, key = { it.date.toString() }) { day -> DayCard(day, state, actions) }
         if (!state.weekIsEmpty) {
             item(key = "shop") {
@@ -112,6 +115,29 @@ fun WeekPlanScreen(state: MealsUiState, bottomPadding: PaddingValues = PaddingVa
             item(key = "nutrition") { NavRow(stringResource(Res.string.week_nutrition_title), onClick = actions.onOpenNutrition) }
         }
     }
+}
+
+/**
+ * "Inget planerat den här veckan" with "Planera veckan" (the screen's one filled button) and, when last week has something
+ * to copy, "Kopiera förra veckan" as a text button. Helpers see the sentence only.
+ */
+@Composable
+private fun EmptyWeek(state: MealsUiState, actions: WeekActions) {
+    EmptyState(
+        message = stringResource(Res.string.meals_empty_week),
+        action = if (state.offerPlanWeek) {
+            {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+                    Button(onClick = actions.onPlanWeek) { Text(stringResource(Res.string.meals_plan_week)) }
+                    if (state.offerCopyPrevious) {
+                        TextButton(onClick = actions.onCopyPrevious) { Text(stringResource(Res.string.meals_copy_previous)) }
+                    }
+                }
+            }
+        } else {
+            null
+        },
+    )
 }
 
 /**

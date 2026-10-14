@@ -15,6 +15,7 @@ import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.RecipeTag
+import se.pusslet.core.model.Role
 import se.pusslet.core.nutrition.Food
 import se.pusslet.core.recipes.IngredientParser
 import se.pusslet.core.time.isoWeek
@@ -63,6 +64,25 @@ class RecipeViewModelsTest {
         vm.toggleTag(RecipeTag.Quick)
         vm.toggleTag(RecipeTag.Vegetarian)
         assertEquals(listOf("r2"), vm.state.value.recipes.map { it.id })
+    }
+
+    @Test
+    fun anEmptyLibraryOffersANewRecipeToParentsOnly() = runTest {
+        val world = TestWorld()
+        val vm = RecipeLibraryViewModel(world.recipes, world.sessions)
+        eager().launch { vm.state.collect {} }
+        with(vm.state.value) {
+            assertEquals(0, total, "\"Inga recept än\" with the share tip")
+            assertTrue(canEdit, "\"Nytt recept\" for parents")
+        }
+        world.recipes.save(recipe("r1", "Pannkakor", "3 ägg"))
+        assertEquals(1, vm.state.value.total, "the empty state goes away with the first recipe")
+
+        val helper = TestWorld(role = Role.Caregiver)
+        val helperVm = RecipeLibraryViewModel(helper.recipes, helper.sessions)
+        eager().launch { helperVm.state.collect {} }
+        assertEquals(0, helperVm.state.value.total)
+        assertFalse(helperVm.state.value.canEdit, "helpers get the sentence only")
     }
 
     @Test

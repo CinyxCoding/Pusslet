@@ -39,13 +39,13 @@ class FakePreferenceDao : PreferenceDao {
     }
 }
 
-/** Real repositories over the in-memory document store, before any family exists (first start). */
-class TestWorld(now: Instant = Instant.parse("2026-10-13T16:00:00Z")) {
+/** Real repositories over the in-memory document store, by default before any family exists (first start). */
+class TestWorld(now: Instant = Instant.parse("2026-10-13T16:00:00Z"), session: Session = Session()) {
     val clock = object : Clock {
         override fun now() = now
     }
     val zone = TimeZone.of("Europe/Stockholm")
-    val sessions = FixedSessionProvider(Session())
+    val sessions = FixedSessionProvider(session)
     val docs = DocumentStore(InMemorySyncLocalStore(), sessions, clock)
     val ids = SequentialIdGenerator()
     val prefs = PreferencesRepository(FakePreferenceDao())

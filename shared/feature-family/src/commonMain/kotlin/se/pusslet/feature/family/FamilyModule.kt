@@ -13,7 +13,7 @@ import se.pusslet.feature.family.onboarding.OnboardingViewModel
 import se.pusslet.feature.family.school.SchoolPickerViewModel
 
 val familyModule: Module = module {
-    viewModel { OnboardingViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { OnboardingViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SchoolPickerViewModel(get()) }
     viewModel { JoinViewModel(get(), get(), get(), get()) }
     viewModel { FamilyViewModel(get(), get(), get(), get()) }

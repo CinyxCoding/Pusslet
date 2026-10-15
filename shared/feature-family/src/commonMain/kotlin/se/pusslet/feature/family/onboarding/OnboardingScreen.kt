@@ -1,6 +1,5 @@
 package se.pusslet.feature.family.onboarding
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,14 +14,17 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -33,15 +35,19 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -50,8 +56,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.AppConfig
-import se.pusslet.core.model.SwedishPlaces
 import se.pusslet.feature.family.school.SchoolPickerDialog
+import se.pusslet.ui.components.OutlinedValueField
 import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.platform.AppPermission
 import se.pusslet.ui.platform.LocalPlatformActions
@@ -78,7 +84,7 @@ fun OnboardingRoute(
                 onDemo = { viewModel.startDemo(onFinished) },
                 busy = state.saving,
             )
-            OnboardingStep.Done -> Done(onFinished)
+            OnboardingStep.Done -> Done(state.doneMessage, busy = state.saving, onShowMyDay = { viewModel.showMyDay(onFinished) })
             else -> StepScaffold(
                 step = state.step.ordinal,
                 total = 3,
@@ -168,14 +174,18 @@ private fun StepScaffold(
 }
 
 @Composable
+private fun StepTitle(text: String) {
+    Text(text, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.semantics { heading() })
+}
+
+@Composable
+private fun StepBody(text: String) {
+    Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+@Composable
 private fun FamilyStep(state: OnboardingUiState, vm: OnboardingViewModel) {
-    Text(
-        stringResource(Res.string.onboarding_family_title),
-        style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.semantics {
-            heading()
-        },
-    )
+    StepTitle(stringResource(Res.string.onboarding_family_title))
     OutlinedTextField(
         value = state.myName,
         onValueChange = vm::setMyName,
@@ -193,54 +203,62 @@ private fun FamilyStep(state: OnboardingUiState, vm: OnboardingViewModel) {
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
     )
+    OtherAdults(state, vm)
+}
+
+/** Optional (UX plan 4.1): names only. Each one can be chosen as the one who drops off or picks up. */
+@Composable
+private fun OtherAdults(state: OnboardingUiState, vm: OnboardingViewModel) {
+    Text(
+        stringResource(Res.string.onboarding_adults_title),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(top = Spacing.md).semantics { heading() },
+    )
+    state.adults.forEach { adult ->
+        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(Spacing.md))
+            Text(adult.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            IconButton(onClick = { vm.removeAdult(adult.id) }) {
+                Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.onboarding_remove_person, adult.name))
+            }
+        }
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        OutlinedTextField(
+            value = state.adultName,
+            onValueChange = vm::setAdultName,
+            label = { Text(stringResource(Res.string.contact_name)) },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { vm.addAdult() }),
+        )
+        OutlinedButton(
+            onClick = vm::addAdult,
+            enabled = state.adultName.isNotBlank(),
+            modifier = Modifier.heightIn(min = Spacing.primaryTouchTarget),
+        ) { Text(stringResource(Res.string.action_add)) }
+    }
 }
 
 @Composable
 private fun ChildrenStep(state: OnboardingUiState, vm: OnboardingViewModel) {
     var pickingSchoolFor by remember { mutableStateOf<String?>(null) }
-    Text(
-        stringResource(Res.string.onboarding_children_title),
-        style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.semantics {
-            heading()
-        },
-    )
-    Text(
-        stringResource(Res.string.onboarding_children_body),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    state.children.forEach { child ->
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
-            Column(Modifier.padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedTextField(
-                        value = child.name,
-                        onValueChange = { v -> vm.updateChild(child.id) { it.copy(name = v) } },
-                        label = { Text(stringResource(Res.string.onboarding_child_name)) },
-                        singleLine = true,
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                    )
-                    IconButton(onClick = {
-                        vm.removeChild(child.id)
-                    }) { Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.action_delete)) }
-                }
-                OutlinedTextField(
-                    value = child.birthYear,
-                    onValueChange = { v -> vm.updateChild(child.id) { it.copy(birthYear = v.filter(Char::isDigit).take(4)) } },
-                    label = {
-                        Text(stringResource(Res.string.onboarding_child_birth_year) + " (" + stringResource(Res.string.optional) + ")")
-                    },
-                    singleLine = true,
-                    modifier = Modifier.width(220.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                )
-                TextButton(onClick = { pickingSchoolFor = child.id }) {
-                    Text(child.school?.name ?: (stringResource(Res.string.child_school) + " (" + stringResource(Res.string.optional) + ")"))
-                }
-            }
-        }
+    // The empty row the step starts with (or the one just added) has the focus, so typing the name comes first.
+    val focus = remember { FocusRequester() }
+    val focusId = state.children.lastOrNull()?.takeIf { it.name.isEmpty() }?.id
+    LaunchedEffect(focusId) { if (focusId != null) focus.requestFocus() }
+    StepTitle(stringResource(Res.string.onboarding_children_title))
+    StepBody(stringResource(Res.string.onboarding_children_body))
+    state.children.forEachIndexed { index, child ->
+        if (index > 0) HorizontalDivider(Modifier.padding(vertical = Spacing.sm))
+        ChildRow(
+            child = child,
+            vm = vm,
+            nameModifier = if (child.id == focusId) Modifier.focusRequester(focus) else Modifier,
+            onPickSchool = { pickingSchoolFor = child.id },
+        )
     }
     OutlinedButton(onClick = vm::addChild, modifier = Modifier.fillMaxWidth()) { Text(stringResource(Res.string.onboarding_add_child)) }
     pickingSchoolFor?.let { id ->
@@ -252,45 +270,78 @@ private fun ChildrenStep(state: OnboardingUiState, vm: OnboardingViewModel) {
 }
 
 @Composable
-private fun PlaceStep(state: OnboardingUiState, vm: OnboardingViewModel, onUseLocation: () -> Unit) {
-    Text(
-        stringResource(Res.string.onboarding_place_title),
-        style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.semantics {
-            heading()
-        },
-    )
-    Text(
-        stringResource(Res.string.onboarding_place_body),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
-    OutlinedButton(onClick = onUseLocation, modifier = Modifier.fillMaxWidth()) {
-        Icon(Icons.Filled.LocationOn, contentDescription = null)
-        Spacer(Modifier.width(Spacing.sm))
-        Text(state.place?.name?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.settings_weather_place))
+private fun ChildRow(child: ChildDraft, vm: OnboardingViewModel, nameModifier: Modifier, onPickSchool: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = child.name,
+                onValueChange = { v -> vm.updateChild(child.id) { it.copy(name = v) } },
+                label = { Text(stringResource(Res.string.onboarding_child_name)) },
+                singleLine = true,
+                modifier = Modifier.weight(1f).then(nameModifier),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next),
+            )
+            IconButton(onClick = { vm.removeChild(child.id) }) {
+                val description = child.name.trim().takeIf { it.isNotEmpty() }
+                    ?.let { stringResource(Res.string.onboarding_remove_person, it) }
+                    ?: stringResource(Res.string.action_delete)
+                Icon(Icons.Filled.Close, contentDescription = description)
+            }
+        }
+        OutlinedTextField(
+            value = child.birthYear,
+            onValueChange = { v -> vm.updateChild(child.id) { it.copy(birthYear = v.filter(Char::isDigit).take(4)) } },
+            label = { Text(stringResource(Res.string.onboarding_child_birth_year_optional)) },
+            singleLine = true,
+            modifier = Modifier.width(220.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+        )
+        OutlinedValueField(
+            label = stringResource(Res.string.child_school_optional),
+            value = child.school?.name,
+            onClick = onPickSchool,
+            placeholder = stringResource(Res.string.child_school_none),
+        )
     }
+}
+
+/** Search first (UX plan 4.2): the list only shows what matches the typed text; the location is the other way. */
+@Composable
+private fun PlaceStep(state: OnboardingUiState, vm: OnboardingViewModel, onUseLocation: () -> Unit) {
+    StepTitle(stringResource(Res.string.onboarding_place_title))
+    StepBody(stringResource(Res.string.onboarding_place_body))
     OutlinedTextField(
         value = state.placeQuery,
         onValueChange = vm::setPlaceQuery,
         label = { Text(stringResource(Res.string.onboarding_place_search)) },
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Search),
     )
-    SwedishPlaces.search(state.placeQuery).take(MAX_PLACES).forEach { place ->
+    state.placeSuggestions.forEach { place ->
+        val selected = state.place?.name == place.name
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(role = Role.RadioButton) { vm.choosePlace(place) },
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .selectable(selected = selected, role = Role.RadioButton, onClick = { vm.choosePlace(place) }),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            RadioButton(selected = state.place?.name == place.name, onClick = null)
+            RadioButton(selected = selected, onClick = null)
             Spacer(Modifier.width(Spacing.sm))
             Text(place.name, style = MaterialTheme.typography.bodyLarge)
         }
     }
+    OutlinedButton(onClick = onUseLocation, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget)) {
+        Icon(Icons.Filled.LocationOn, contentDescription = null)
+        Spacer(Modifier.width(Spacing.sm))
+        Text(stringResource(Res.string.onboarding_use_location))
+    }
 }
 
 @Composable
-private fun Done(onFinished: () -> Unit) {
+private fun Done(message: DoneMessage, busy: Boolean, onShowMyDay: () -> Unit) {
     Column(
         Modifier.fillMaxSize().padding(Spacing.xl),
         verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
@@ -300,15 +351,15 @@ private fun Done(onFinished: () -> Unit) {
         Text(
             stringResource(Res.string.onboarding_done_title),
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.semantics {
-                heading()
-            },
+            modifier = Modifier.semantics { heading() },
         )
-        Text(stringResource(Res.string.onboarding_done_body), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
-        Button(onClick = onFinished, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget)) {
+        val body = when (message) {
+            DoneMessage.AddWithPlus -> Res.string.onboarding_done_body
+            DoneMessage.SeeHandoffs -> Res.string.onboarding_done_body_caregiver
+        }
+        Text(stringResource(body), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center)
+        Button(onClick = onShowMyDay, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget)) {
             Text(stringResource(Res.string.onboarding_start))
         }
     }
 }
-
-private const val MAX_PLACES = 12

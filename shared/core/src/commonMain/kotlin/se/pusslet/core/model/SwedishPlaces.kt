@@ -95,10 +95,20 @@ object SwedishPlaces {
         Place("Sälen", 61.16, 13.27),
     ).sortedBy { it.name }
 
+    /** Matches for a picker that shows a list without searching: names that start with [query] first. Blank shows [all]. */
     fun search(query: String): List<Place> {
         val q = query.trim().lowercase()
         if (q.isEmpty()) return all
         return all.filter { it.name.lowercase().startsWith(q) } +
             all.filter { !it.name.lowercase().startsWith(q) && q in it.name.lowercase() }
     }
+
+    /**
+     * What a search field lists while typing (search first, UX plan 4.2): nothing until something is typed, then at most
+     * [limit] matches, best first.
+     */
+    fun suggestions(query: String, limit: Int = MAX_SUGGESTIONS): List<Place> =
+        if (query.isBlank()) emptyList() else search(query).take(limit)
+
+    const val MAX_SUGGESTIONS = 12
 }

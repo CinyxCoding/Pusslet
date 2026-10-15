@@ -320,16 +320,15 @@
     <string name="onboarding_your_name">Your name</string>
     <string name="onboarding_default_family_name">The %1$s family</string>
     <string name="onboarding_children_title">Which children are in the family?</string>
-    <string name="onboarding_children_body">A first name is enough. Year of birth improves clothing tips but is optional.</string>
+    <string name="onboarding_children_body">A first name is enough. Year of birth gives better clothing tips.</string>
     <string name="onboarding_add_child">Add child</string>
     <string name="onboarding_child_name">Child's first name</string>
-    <string name="onboarding_child_birth_year">Year of birth</string>
     <string name="onboarding_place_title">Where do you live?</string>
-    <string name="onboarding_place_body">Only used for the weather forecast. Choose the nearest town.</string>
+    <string name="onboarding_place_body">Only used for the weather.</string>
     <string name="onboarding_place_search">Search town</string>
     <string name="onboarding_done_title">All set!</string>
-    <string name="onboarding_done_body">Start with this week's events using +. Fill in the rest whenever it suits you.</string>
-    <string name="onboarding_start">Get started</string>
+    <string name="onboarding_done_body">Add with +. The rest can wait.</string>
+    <string name="onboarding_start">Show my day</string>
 
     <!-- Join -->
     <string name="join_title">Join a family</string>
@@ -1017,6 +1016,13 @@
     <string name="meals_plan_week">Plan the week</string>
     <string name="recipe_empty_share">Share recipes from your browser: Share → Pusslet</string>
     <string name="shopping_hint_merge">Tip: milk twice becomes one row</string>
+
+    <!-- Onboarding (UX plan 4.1-4.3) -->
+    <string name="onboarding_adults_title">Which other adults pick up and drop off?</string>
+    <string name="onboarding_remove_person">Remove %1$s</string>
+    <string name="onboarding_child_birth_year_optional">Year of birth (optional)</string>
+    <string name="onboarding_use_location">Use my location</string>
+    <string name="onboarding_done_body_caregiver">Now you can see when you pick up and drop off.</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>

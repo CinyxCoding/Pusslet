@@ -321,16 +321,15 @@
     <string name="onboarding_your_name">Ditt namn</string>
     <string name="onboarding_default_family_name">Familjen %1$s</string>
     <string name="onboarding_children_title">Vilka barn finns i familjen?</string>
-    <string name="onboarding_children_body">Förnamn räcker. Födelseår gör klädråden bättre men är frivilligt.</string>
+    <string name="onboarding_children_body">Förnamn räcker. Födelseår ger bättre klädråd.</string>
     <string name="onboarding_add_child">Lägg till barn</string>
     <string name="onboarding_child_name">Barnets förnamn</string>
-    <string name="onboarding_child_birth_year">Födelseår</string>
     <string name="onboarding_place_title">Var bor ni?</string>
-    <string name="onboarding_place_body">Används bara för väderprognosen. Välj närmaste ort.</string>
+    <string name="onboarding_place_body">Används bara för vädret.</string>
     <string name="onboarding_place_search">Sök ort</string>
     <string name="onboarding_done_title">Klart!</string>
-    <string name="onboarding_done_body">Börja med veckans händelser via +. Resten kan du fylla i när det passar.</string>
-    <string name="onboarding_start">Kom igång</string>
+    <string name="onboarding_done_body">Lägg till med +. Resten kan vänta.</string>
+    <string name="onboarding_start">Visa min dag</string>
 
     <!-- Join -->
     <string name="join_title">Gå med i en familj</string>
@@ -1018,6 +1017,13 @@
     <string name="meals_plan_week">Planera veckan</string>
     <string name="recipe_empty_share">Dela recept från webbläsaren: Dela → Pusslet</string>
     <string name="shopping_hint_merge">Tips: mjölk två gånger blir en rad</string>
+
+    <!-- Onboarding (UX plan 4.1-4.3) -->
+    <string name="onboarding_adults_title">Vilka fler vuxna hämtar och lämnar?</string>
+    <string name="onboarding_remove_person">Ta bort %1$s</string>
+    <string name="onboarding_child_birth_year_optional">Födelseår (valfritt)</string>
+    <string name="onboarding_use_location">Använd min position</string>
+    <string name="onboarding_done_body_caregiver">Nu ser du när du hämtar och lämnar.</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>

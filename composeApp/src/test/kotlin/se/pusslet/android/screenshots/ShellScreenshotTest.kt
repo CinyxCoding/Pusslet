@@ -5,7 +5,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -226,5 +229,73 @@ class ShellScreenshotTest {
     fun onboarding() {
         launch(seed = false, waitFor = "Pusslet")
         snap("onboarding_welcome")
+    }
+
+    /** First start up to step 1 with the name typed in ("Skapa vår familj", "Ditt namn"). */
+    private fun startOnboarding(create: String = "Skapa vår familj", yourName: String = "Ditt namn") {
+        launch(seed = false, waitFor = "Pusslet")
+        compose.onNodeWithText(create).performClick()
+        compose.waitUntilAtLeastOneExists(hasText(yourName) and hasSetTextAction(), timeoutMillis = 10_000)
+        compose.onNode(hasText(yourName) and hasSetTextAction()).performTextInput("Sara")
+    }
+
+    private fun tap(label: String) = compose.onNode(hasText(label) and hasClickAction()).performClick()
+
+    /** Step 1 asks who else drops off and picks up; names only (UX plan 4.1). */
+    @Test
+    fun onboardingFamily() {
+        startOnboarding()
+        compose.onNode(hasText("Namn") and hasSetTextAction()).performTextInput("Johan")
+        tap("Lägg till")
+        compose.waitUntilAtLeastOneExists(hasContentDescription("Ta bort Johan"), timeoutMillis = 10_000)
+        snap("onboarding_family")
+    }
+
+    /** Step 2 starts with one empty child row (UX plan 4.2). */
+    @Test
+    fun onboardingChildren() {
+        startOnboarding()
+        tap("Nästa")
+        compose.waitUntilAtLeastOneExists(hasText("Vilka barn finns i familjen?"), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("onboarding_children")
+    }
+
+    /** Step 3: the search comes first and an empty field lists no places (UX plan 4.2). */
+    @Test
+    fun onboardingPlaceEmpty() {
+        startOnboarding()
+        tap("Nästa")
+        compose.waitUntilAtLeastOneExists(hasText("Vilka barn finns i familjen?"), timeoutMillis = 10_000)
+        tap("Hoppa över")
+        compose.waitUntilAtLeastOneExists(hasText("Använd min position"), timeoutMillis = 10_000)
+        compose.onAllNodesWithText("Stockholm").assertCountEquals(0)
+        snap("onboarding_place_empty")
+    }
+
+    /** "Klart!" with one sentence and "Visa min dag" (UX plan 4.3). */
+    @Test
+    fun onboardingDone() {
+        startOnboarding()
+        tap("Nästa")
+        compose.waitUntilAtLeastOneExists(hasText("Vilka barn finns i familjen?"), timeoutMillis = 10_000)
+        tap("Hoppa över")
+        compose.waitUntilAtLeastOneExists(hasText("Använd min position"), timeoutMillis = 10_000)
+        tap("Hoppa över")
+        compose.waitUntilAtLeastOneExists(hasText("Klart!"), timeoutMillis = 10_000)
+        snap("onboarding_done")
+    }
+
+    @Test
+    @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
+    fun onboardingDoneEnglish() {
+        startOnboarding(create = "Create our family", yourName = "Your name")
+        tap("Next")
+        compose.waitUntilAtLeastOneExists(hasText("Skip"), timeoutMillis = 10_000)
+        tap("Skip")
+        compose.waitUntilAtLeastOneExists(hasText("Use my location"), timeoutMillis = 10_000)
+        tap("Skip")
+        compose.waitUntilAtLeastOneExists(hasText("All set!"), timeoutMillis = 10_000)
+        snap("onboarding_done_en")
     }
 }

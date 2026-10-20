@@ -99,6 +99,8 @@ class ShellScreenshotTest {
     fun calendarMonth() {
         launch()
         compose.onNodeWithText("Kalender").performClick()
+        // The calendar draws nothing until its state has loaded from Room, which Compose's idling does not wait for.
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41 · oktober"), timeoutMillis = 10_000)
         compose.onNodeWithText("Månad").performClick()
         // The year only shows when it is not this year (UX plan 1.1).
         compose.waitUntilAtLeastOneExists(hasText("Oktober"), timeoutMillis = 10_000)

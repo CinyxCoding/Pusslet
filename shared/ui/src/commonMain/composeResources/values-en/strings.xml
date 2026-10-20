@@ -220,9 +220,8 @@
 
     <!-- Quick add -->
     <string name="quickadd_title">Add</string>
-    <string name="quickadd_hint">E.g. “Simon football Tue 17:30 every week”</string>
-    <string name="quickadd_interpreted">I understood this as…</string>
-    <string name="quickadd_uncertain">Check the highlighted parts – tap to change.</string>
+    <string name="quickadd_hint">E.g. %1$s football Tue 17:30</string>
+    <string name="quickadd_uncertain">Check what's highlighted</string>
     <string name="quickadd_kind_event">Event</string>
     <string name="quickadd_kind_task">To-do</string>
     <string name="quickadd_kind_shopping">To the shopping list</string>
@@ -231,17 +230,12 @@
     <string name="quickadd_save">Save</string>
     <string name="quickadd_save_all">Save %1$d things</string>
     <string name="quickadd_saved">Saved</string>
-    <string name="quickadd_examples">Try for example</string>
-    <string name="quickadd_example_1">Ella kalas lör 14-16 hos Vera, köp present</string>
-    <string name="quickadd_example_2">mjölk, 2 gurka, pasta</string>
-    <string name="quickadd_example_3">Johan hämtar imorgon</string>
-    <string name="quickadd_example_4">tacos fredag</string>
+    <string name="quickadd_examples">Try</string>
     <string name="quickadd_handoff_pickup">%1$s picks up %2$s</string>
     <string name="quickadd_handoff_dropoff">%1$s drops off %2$s</string>
     <string name="quickadd_handoff_all_children">the children</string>
     <string name="quickadd_no_handoff_found">New pick-up at %1$s (there was none)</string>
     <string name="quickadd_linked_task">Linked to the event</string>
-    <string name="quickadd_meal_slot">%1$s, %2$s</string>
     <string name="field_title">Title</string>
     <string name="field_date">Date</string>
     <string name="field_time">Time</string>
@@ -1047,6 +1041,18 @@
     <string name="today_demo_leave_title">Start for real?</string>
     <string name="today_demo_leave_body">The sample data is removed and you start from the beginning.</string>
     <string name="today_demo_leave_confirm">Start</string>
+
+    <!-- Quick add learns (UX plan 4.6) -->
+    <string name="quickadd_hint_generic">E.g. football Tue 17:30</string>
+    <string name="quickadd_example_event">%1$s dance Tue 17:00</string>
+    <string name="quickadd_example_event_generic">Haircut Thu 9:30</string>
+    <string name="quickadd_example_shopping">Milk</string>
+    <string name="quickadd_example_handoff">Pick up %1$s Fri 15:30</string>
+    <string name="quickadd_example_meal">Tacos Fri</string>
+    <string name="quickadd_preview_who">%1$s has %2$s</string>
+    <string name="quickadd_preview_labeled">%1$s: %2$s</string>
+    <string name="quickadd_preview_due">by %1$s</string>
+    <string name="quickadd_fill_in">Fill in manually</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>

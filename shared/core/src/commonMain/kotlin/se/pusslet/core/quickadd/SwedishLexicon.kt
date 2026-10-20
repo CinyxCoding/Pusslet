@@ -435,6 +435,8 @@ internal object SwedishLexicon {
         "oatly",
         "bröd",
         "frukt",
+        // The English example chip ("Milk", UX plan 4.6) must land on the list too.
+        "milk",
     )
 
     /** Leading words that mark a meal entry explicitly. */

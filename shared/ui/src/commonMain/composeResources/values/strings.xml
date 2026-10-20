@@ -221,9 +221,8 @@
 
     <!-- Quick add -->
     <string name="quickadd_title">Lägg till</string>
-    <string name="quickadd_hint">T.ex. ”Simon fotboll tis 17:30 varje vecka”</string>
-    <string name="quickadd_interpreted">Jag tolkade detta som…</string>
-    <string name="quickadd_uncertain">Kolla det som är markerat – tryck för att ändra.</string>
+    <string name="quickadd_hint">T.ex. %1$s fotboll tis 17:30</string>
+    <string name="quickadd_uncertain">Kolla det markerade</string>
     <string name="quickadd_kind_event">Händelse</string>
     <string name="quickadd_kind_task">Att göra</string>
     <string name="quickadd_kind_shopping">Till inköpslistan</string>
@@ -232,17 +231,12 @@
     <string name="quickadd_save">Spara</string>
     <string name="quickadd_save_all">Spara %1$d saker</string>
     <string name="quickadd_saved">Sparat</string>
-    <string name="quickadd_examples">Prova till exempel</string>
-    <string name="quickadd_example_1">Ella kalas lör 14-16 hos Vera, köp present</string>
-    <string name="quickadd_example_2">mjölk, 2 gurka, pasta</string>
-    <string name="quickadd_example_3">Johan hämtar imorgon</string>
-    <string name="quickadd_example_4">tacos fredag</string>
+    <string name="quickadd_examples">Prova</string>
     <string name="quickadd_handoff_pickup">%1$s hämtar %2$s</string>
     <string name="quickadd_handoff_dropoff">%1$s lämnar %2$s</string>
     <string name="quickadd_handoff_all_children">barnen</string>
     <string name="quickadd_no_handoff_found">Ny hämtning kl %1$s (fanns ingen)</string>
     <string name="quickadd_linked_task">Kopplad till händelsen</string>
-    <string name="quickadd_meal_slot">%1$s, %2$s</string>
     <string name="field_title">Titel</string>
     <string name="field_date">Datum</string>
     <string name="field_time">Tid</string>
@@ -1048,6 +1042,18 @@
     <string name="today_demo_leave_title">Börja på riktigt?</string>
     <string name="today_demo_leave_body">Exempeldatan tas bort och du kommer till första start.</string>
     <string name="today_demo_leave_confirm">Börja</string>
+
+    <!-- Quick add learns (UX plan 4.6) -->
+    <string name="quickadd_hint_generic">T.ex. fotboll tis 17:30</string>
+    <string name="quickadd_example_event">%1$s dans tis 17:00</string>
+    <string name="quickadd_example_event_generic">Frisör tor 9:30</string>
+    <string name="quickadd_example_shopping">Mjölk</string>
+    <string name="quickadd_example_handoff">Hämta %1$s fre 15:30</string>
+    <string name="quickadd_example_meal">Tacos fre</string>
+    <string name="quickadd_preview_who">%1$s har %2$s</string>
+    <string name="quickadd_preview_labeled">%1$s: %2$s</string>
+    <string name="quickadd_preview_due">senast %1$s</string>
+    <string name="quickadd_fill_in">Fyll i själv</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>

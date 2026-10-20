@@ -57,6 +57,9 @@ object Prefs {
     /** Staple suggestions waved away: normalized name -> epoch millis. Shown again after the next purchase. */
     val DismissedStaples = PrefKey("shopping.dismissedStaples", MapSerializer(String.serializer(), Long.serializer()), emptyMap())
     val RecentQuickAdds = PrefKey("quickadd.recent", ListSerializer(String.serializer()), emptyList())
+
+    /** How many times quick add saved on this phone; its example chips go away after 3 (UX plan 4.6). Device-local. */
+    val QuickAddSaves = PrefKey("quickadd.saves", Int.serializer(), 0)
     val DeviceId = PrefKey("device.id", String.serializer(), "")
 
     /** Set by "Visa första start igen" (developer tools): the demo family is not seeded again at start-up. */

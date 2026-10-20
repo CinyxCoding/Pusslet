@@ -54,6 +54,15 @@ class StringBudgetTest {
         }
     }
 
+    /** Quick add speaks with the family's own names: no names from the example family in its texts (UX plan 4.6). */
+    @Test
+    fun quickAddNeverNamesTheExampleFamily() {
+        for (folder in folders) {
+            val bad = load(folder).filter { (key, value) -> key.startsWith("quickadd_") && demoNames.containsMatchIn(value) }
+            assertEquals(emptyMap(), bad, "$folder has quick add strings with names from the example family")
+        }
+    }
+
     @Test
     fun mainScreenStringsAreShort() {
         for (folder in folders) {
@@ -74,6 +83,7 @@ private val folders = listOf("values", "values-en")
 private val placeholder = Regex("""%(\d+\$)?[sd]""")
 private val whitespace = Regex("""\s+""")
 private val addWithPlus = Regex("""\b(med|with)\s+\+""", RegexOption.IGNORE_CASE)
+private val demoNames = Regex("""\b(Sara|Johan|Bengt|Morfar|Ella|Simon|Vera|Ahmed|Karin|Lind)\b""", RegexOption.IGNORE_CASE)
 
 /** Done states may cheer; receipts, errors and everything else may not. */
 private val exclamationAllowed = setOf("store_mode_all_done_title", "onboarding_done_title")

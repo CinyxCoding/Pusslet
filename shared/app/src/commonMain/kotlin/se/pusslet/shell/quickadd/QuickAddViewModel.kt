@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -15,6 +16,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.quickadd.ActionKind
+import se.pusslet.core.quickadd.EventPrefill
 import se.pusslet.core.quickadd.QuickAddAction
 import se.pusslet.core.quickadd.QuickAddContext
 import se.pusslet.core.quickadd.QuickAddEdits
@@ -35,7 +37,12 @@ data class QuickAddUiState(
     val actions: List<QuickAddAction> = emptyList(),
     val uncertain: Set<UncertainField> = emptySet(),
     val people: List<FamilyPerson> = emptyList(),
-    val recent: List<String> = emptyList(),
+    /** Example chips built from the family's own names, until this phone has saved 3 entries (UX plan 4.6). */
+    val examples: List<QuickAddExample> = emptyList(),
+    /** The child named in the placeholder ("T.ex. Noah fotboll tis 17:30"); null when the family has no children. */
+    val hintName: String? = null,
+    /** Actions whose fields are open after "Ändra"; the others show only their sentence. */
+    val editing: Set<Int> = emptySet(),
     val today: LocalDate? = null,
     val saving: Boolean = false,
 ) {
@@ -51,8 +58,9 @@ data class QuickAddUiState(
 }
 
 /**
- * The global "+" field: parse while typing (rule based, ADR-001), let the user correct any field with one tap,
- * then save everything at once. Corrections are thrown away if the text changes (they belong to the old text).
+ * The global "+" field: parse while typing (rule based, ADR-001), show each action as one sentence whose fields open with
+ * "Ändra", then save everything at once. Corrections are thrown away if the text changes (they belong to the old text).
+ * Until this phone has saved 3 entries, example chips with the family's own names show how to write (UX plan 4.6).
  */
 class QuickAddViewModel(
     private val parser: SwedishQuickAddParser,
@@ -71,8 +79,11 @@ class QuickAddViewModel(
     private var presetDate: LocalDate? = null
 
     init {
-        viewModelScope.launch { family.people.collect { p -> _state.update { it.copy(people = p) } } }
-        viewModelScope.launch { prefs.observe(Prefs.RecentQuickAdds).collect { r -> _state.update { it.copy(recent = r) } } }
+        viewModelScope.launch {
+            combine(family.people, prefs.observe(Prefs.QuickAddSaves), prefs.observe(Prefs.RecentQuickAdds)) { people, saves, recent ->
+                Triple(people, QuickAddExamples.visible(people, saves, recent.size), QuickAddExamples.hintName(people))
+            }.collect { (people, examples, hint) -> _state.update { it.copy(people = people, examples = examples, hintName = hint) } }
+        }
     }
 
     /**
@@ -82,7 +93,7 @@ class QuickAddViewModel(
     fun start(initialText: String? = null, date: LocalDate? = null) {
         val prefill = initialText.orEmpty()
         presetDate = date
-        _state.update { it.copy(text = prefill, actions = emptyList(), uncertain = emptySet(), saving = false) }
+        _state.update { it.copy(text = prefill, actions = emptyList(), uncertain = emptySet(), editing = emptySet(), saving = false) }
         if (prefill.isNotBlank()) parseNow(prefill)
     }
 
@@ -104,7 +115,36 @@ class QuickAddViewModel(
         val parsed = parser.parse(text, ctx)
         val preset = presetDate
         val result = if (preset != null) QuickAddPresetDate.apply(parser, parsed, ctx, preset) else parsed
-        _state.update { it.copy(actions = result.actions, uncertain = result.uncertain, today = now.date) }
+        _state.update {
+            it.copy(
+                actions = result.actions,
+                uncertain = result.uncertain,
+                // An open "Ändra" stays open while the user keeps typing, as long as that action is still there.
+                editing = it.editing.filterTo(mutableSetOf()) { i -> i < result.actions.size },
+                today = now.date,
+            )
+        }
+    }
+
+    /** "Ändra" opens the fields of one action; tapping it again ("Klar") closes them. */
+    fun toggleEditing(index: Int) {
+        _state.update { s ->
+            if (index !in s.actions.indices) return@update s
+            s.copy(editing = if (index in s.editing) s.editing - index else s.editing + index)
+        }
+    }
+
+    /**
+     * "Fyll i själv": what the full event editor starts from. The text is parsed again first if typing is still waiting
+     * for the debounce, so the editor never gets an older reading than the field shows.
+     */
+    fun prefill(): EventPrefill {
+        if (parseJob?.isActive == true) {
+            parseJob?.cancel()
+            parseNow(_state.value.text)
+        }
+        val s = _state.value
+        return EventPrefill.from(s.actions, s.text, presetDate ?: s.today ?: today())
     }
 
     private fun edit(index: Int, clearField: UncertainField? = null, transform: (QuickAddAction) -> QuickAddAction) {
@@ -135,7 +175,12 @@ class QuickAddViewModel(
     fun togglePerson(index: Int, personId: String) = edit(index, UncertainField.Person) { QuickAddEdits.togglePerson(it, personId) }
 
     fun removeAction(index: Int) {
-        _state.update { s -> s.copy(actions = s.actions.filterIndexed { i, _ -> i != index }) }
+        _state.update { s ->
+            s.copy(
+                actions = s.actions.filterIndexed { i, _ -> i != index },
+                editing = s.editing.filter { it != index }.mapTo(mutableSetOf()) { if (it > index) it - 1 else it },
+            )
+        }
     }
 
     fun save(onSaved: (QuickAddOutcome) -> Unit) {
@@ -144,7 +189,9 @@ class QuickAddViewModel(
         _state.update { it.copy(saving = true) }
         viewModelScope.launch {
             val outcome = executor.execute(QuickAddResult(s.text, s.actions, s.uncertain))
-            _state.update { QuickAddUiState(people = it.people, recent = it.recent) }
+            // Counted per save on this phone; the example chips go away after 3 (UX plan 4.6).
+            prefs.update(Prefs.QuickAddSaves) { it + 1 }
+            _state.update { QuickAddUiState(people = it.people, examples = it.examples, hintName = it.hintName) }
             onSaved(outcome)
         }
     }

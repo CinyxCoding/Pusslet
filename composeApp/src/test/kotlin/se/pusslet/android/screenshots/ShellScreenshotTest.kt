@@ -303,6 +303,26 @@ class ShellScreenshotTest {
         snap("today_new_family")
     }
 
+    /** Quick add in a real family: example chips with the family's own child, never the example family (UX plan 4.6). */
+    @Test
+    fun quickAddNewFamily() {
+        startOnboarding()
+        tap("Nästa")
+        compose.waitUntilAtLeastOneExists(hasText("Vilka barn finns i familjen?"), timeoutMillis = 10_000)
+        compose.onNode(hasText("Barnets förnamn") and hasSetTextAction()).performTextInput("Noah")
+        tap("Nästa")
+        compose.waitUntilAtLeastOneExists(hasText("Använd min position"), timeoutMillis = 10_000)
+        tap("Hoppa över")
+        compose.waitUntilAtLeastOneExists(hasText("Klart!"), timeoutMillis = 10_000)
+        tap("Visa min dag")
+        compose.waitUntilAtLeastOneExists(hasText("Kom igång"), timeoutMillis = 15_000)
+        compose.onNode(hasContentDescription("Lägg till") and hasClickAction()).performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Noah dans tis 17:00"), timeoutMillis = 10_000)
+        compose.onAllNodesWithText("Ella", substring = true).assertCountEquals(0)
+        compose.waitForIdle()
+        snap("quickadd_new_family")
+    }
+
     /** The example family can be left from Idag, after a confirmation (UX plan 4.8). */
     @Test
     fun todayLeaveDemo() {

@@ -66,18 +66,20 @@ class FakeCacheDao : CacheDao {
 
 /**
  * Real repositories over the in-memory document store, the way the app wires them, for view model tests. "Today" is
- * Tuesday 13 October 2026, 08:00 in Stockholm. [prefs] can be shared between two worlds to simulate a restart.
+ * Tuesday 13 October 2026, 08:00 in Stockholm. [prefs] can be shared between two worlds to simulate a restart. The viewer
+ * is Sara unless [memberId] says otherwise (morfar Bengt is "m-bengt" with [Role.Caregiver]).
  */
 class TestWorld(
     role: Role = Role.Parent,
     now: Instant = Instant.parse("2026-10-13T06:00:00Z"),
     val prefs: PreferencesRepository = PreferencesRepository(FakePreferenceDao()),
+    memberId: String = "m-sara",
 ) {
     val clock = object : Clock {
         override fun now() = now
     }
     val zone = TimeZone.of("Europe/Stockholm")
-    val sessions = FixedSessionProvider(Session(familyId = "f", memberId = "m-sara", uid = "u", role = role))
+    val sessions = FixedSessionProvider(Session(familyId = "f", memberId = memberId, uid = "u", role = role))
     val docs = DocumentStore(InMemorySyncLocalStore(), sessions, clock)
     val ids = SequentialIdGenerator()
     val family = FamilyRepository(docs, sessions, LocalOnlyFamilyRemote, LocalOnlyAuthRepository(), ids, clock)

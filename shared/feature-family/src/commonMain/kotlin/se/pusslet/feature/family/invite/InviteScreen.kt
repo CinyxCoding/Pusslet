@@ -51,8 +51,10 @@ import se.pusslet.data.BackendConfig
 import se.pusslet.data.remote.AuthRepository
 import se.pusslet.data.remote.InviteInfo
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.session.SessionProvider
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
+import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.format.formatDateLong
 import se.pusslet.ui.platform.LocalPlatformActions
@@ -68,12 +70,21 @@ data class InviteUiState(
     val busy: Boolean = false,
     val needsAccount: Boolean = false,
     val failed: Boolean = false,
-)
+    val iAmParent: Boolean = false,
+    val me: String? = null,
+) {
+    /**
+     * "Så ser Bengt appen": parents only, when the invite is for someone already in the family (another adult) and the
+     * caregiver role is chosen (UX plan Steg 3). It works before he has joined.
+     */
+    val canPreviewHelper: Boolean get() = iAmParent && role == Role.Caregiver && claim != null && claim.id != me
+}
 
 class InviteViewModel(
     private val family: FamilyRepository,
     private val auth: AuthRepository,
     private val config: BackendConfig,
+    private val sessions: SessionProvider,
 ) : ViewModel() {
     private val log = Logger.withTag("Invite")
     private val _state = MutableStateFlow(InviteUiState())
@@ -82,9 +93,12 @@ class InviteViewModel(
     fun load(claimMemberId: String?) {
         viewModelScope.launch {
             val claim = claimMemberId?.let { id -> family.members.first().firstOrNull { it.id == id } }
+            val session = sessions.session.value
             _state.update {
                 it.copy(
                     claim = claim,
+                    iAmParent = session.role == Role.Parent,
+                    me = session.memberId,
                     role = claim?.role ?: it.role,
                     familyName = family.family.first()?.name.orEmpty(),
                     needsAccount = !auth.available || auth.currentUser.value == null,
@@ -114,7 +128,13 @@ class InviteViewModel(
 }
 
 @Composable
-fun InviteRoute(claimMemberId: String?, onBack: () -> Unit, onSignIn: () -> Unit, viewModel: InviteViewModel = koinViewModel()) {
+fun InviteRoute(
+    claimMemberId: String?,
+    onBack: () -> Unit,
+    onSignIn: () -> Unit,
+    onPreviewHelper: (memberId: String) -> Unit = {},
+    viewModel: InviteViewModel = koinViewModel(),
+) {
     androidx.compose.runtime.LaunchedEffect(claimMemberId) { viewModel.load(claimMemberId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val platform = LocalPlatformActions.current
@@ -147,6 +167,10 @@ fun InviteRoute(claimMemberId: String?, onBack: () -> Unit, onSignIn: () -> Unit
                         RadioButton(selected = state.role == role, onClick = null)
                         Text(stringResource(label), modifier = Modifier.padding(start = Spacing.sm))
                     }
+                }
+                val claim = state.claim
+                if (state.canPreviewHelper && claim != null) {
+                    NavRow(stringResource(Res.string.helper_preview_title, claim.displayName), onClick = { onPreviewHelper(claim.id) })
                 }
                 if (state.failed) Banner(stringResource(Res.string.join_needs_network), kind = BannerKind.Problem)
                 Button(

@@ -57,6 +57,9 @@ sealed interface Route {
     /** "Inställningar och hjälp" in the helper view. */
     @Serializable data object HelperSettings : Route
 
+    /** "Så ser Bengt appen": a parent's read-only preview of [memberId]'s helper view (UX plan Steg 3). */
+    @Serializable data class HelperPreview(val memberId: String) : Route
+
     @Serializable data object AboutData : Route
 
     @Serializable data object Privacy : Route

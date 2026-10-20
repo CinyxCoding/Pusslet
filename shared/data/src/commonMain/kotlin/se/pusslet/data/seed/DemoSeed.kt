@@ -18,6 +18,8 @@ import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilySettings
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.Handoff
+import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.Household
 import se.pusslet.core.model.Ingredient
 import se.pusslet.core.model.ListKind
@@ -55,7 +57,8 @@ import kotlin.time.Clock
  * "Familjen Lind" – a made-up family with a realistic week, relative to [today]: Sara and Johan, Ella (9),
  * Simon (4) and morfar Bengt who picks up on Thursdays. Used by the demo flavor, screenshots and portfolio.
  * Contains deliberate situations the app should handle: a pick-up conflict, lunch/dinner clashes, a study day,
- * a party without a present and Ella's every-other-week custody with her dad Ahmed (at home this week).
+ * a party without a present, Ella's every-other-week custody with her dad Ahmed (at home this week) and an unanswered
+ * question from Sara to morfar Bengt about Ella's Friday pick-up (what his helper view opens with).
  */
 class DemoSeed(private val family: FamilyRepository, private val docs: DocumentStore, private val clock: Clock = Clock.System) {
     // A linear script of one demo week; splitting it up would only scatter the story across functions.
@@ -329,6 +332,23 @@ class DemoSeed(private val family: FamilyRepository, private val docs: DocumentS
             Event.serializer(),
         )
 
+        // Sara asks morfar Bengt to pick up Ella from school on Friday at 16:30 (Sara's own pick-up that day). Nobody has
+        // answered yet: his helper view opens with "Sara undrar", the event says "Frågat Bengt · inget svar än".
+        put(
+            Collections.HandoffRequests,
+            REQUEST_ELLA_FRIDAY,
+            HandoffRequest(
+                REQUEST_ELLA_FRIDAY,
+                eventId = "e-skola",
+                occurrenceDate = d(4),
+                kind = HandoffKind.PickUp,
+                fromMemberId = sara,
+                toMemberId = BENGT,
+                createdAt = clock.now(),
+            ),
+            HandoffRequest.serializer(),
+        )
+
         // Packing rules
         put(
             Collections.PackingRules,
@@ -504,6 +524,7 @@ class DemoSeed(private val family: FamilyRepository, private val docs: DocumentS
         const val ELLA = "c-ella"
         const val SIMON = "c-simon"
         const val CUSTODY_ELLA = "cs-ella"
+        const val REQUEST_ELLA_FRIDAY = "r-ella-fredag"
     }
 }
 

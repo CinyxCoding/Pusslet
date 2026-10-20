@@ -297,7 +297,6 @@
     <string name="event_end_before_start">Sluttiden är före starten</string>
     <string name="event_editing_occurrence">Du ändrar bara tillfället %1$s. Resten av serien påverkas inte.</string>
     <string name="event_edit_scope">Vill du ändra bara den här gången eller hela serien?</string>
-    <string name="event_request_from">%1$s frågar om någon kan ta det.</string>
     <string name="event_private_hint">Bara föräldrar ser den här händelsen.</string>
     <string name="calendar_week_abbr">v.</string>
     <string name="empty_generic">Hittade inget här.</string>
@@ -1042,6 +1041,18 @@
     <string name="today_demo_leave_title">Börja på riktigt?</string>
     <string name="today_demo_leave_body">Exempeldatan tas bort och du kommer till första start.</string>
     <string name="today_demo_leave_confirm">Börja</string>
+
+    <!-- Hjälparvy H3 (UX plan Steg 3): förälderns förhandsvisning och svaren i Händelsedetaljer -->
+    <string name="helper_preview_title">Så ser %1$s appen</string>
+    <string name="helper_preview_note">Förhandsvisning. Det du trycker på här sparas inte.</string>
+    <string name="helper_preview_hidden_one">%1$s ser inte 1 händelse den här veckan.</string>
+    <string name="helper_preview_hidden">%1$s ser inte %2$d händelser den här veckan.</string>
+    <string name="request_asked_member">Frågat %1$s · inget svar än</string>
+    <string name="request_asked_all">Frågat alla · inget svar än</string>
+    <string name="request_answer_yes">%1$s svarade ja</string>
+    <string name="request_answer_no">%1$s kan inte</string>
+    <string name="card_helper_cannot_pickup">%1$s kan inte hämta %2$s %3$s</string>
+    <string name="card_helper_cannot_dropoff">%1$s kan inte lämna %2$s %3$s</string>
 
     <!-- Quick add learns (UX plan 4.6) -->
     <string name="quickadd_hint_generic">T.ex. fotboll tis 17:30</string>

@@ -10,5 +10,5 @@ val calendarModule: Module = module {
     viewModel { CalendarViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { CalendarDayViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { EventEditorViewModel(get(), get(), get(), get(), get()) }
-    viewModel { EventDetailsViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { EventDetailsViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }

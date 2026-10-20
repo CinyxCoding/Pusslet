@@ -43,6 +43,7 @@ import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.feature.family.child.ColorPicker
 import se.pusslet.ui.components.Labels
+import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
@@ -54,7 +55,10 @@ data class MemberEditorState(
     val isMe: Boolean = false,
     val iAmParent: Boolean = true,
     val done: Boolean = false,
-)
+) {
+    /** "Så ser Bengt appen": parents only, for another adult with the caregiver role ("Annan vuxen", UX plan Steg 3). */
+    val canPreviewHelper: Boolean get() = iAmParent && !isMe && !isNew && member?.role == Role.Caregiver
+}
 
 /** Adults: a parent adds e.g. "Morfar Bengt" before he has the app, and can invite him to claim the profile later. */
 class MemberEditorViewModel(private val family: FamilyRepository, private val sessions: SessionProvider) : ViewModel() {
@@ -102,6 +106,7 @@ fun MemberEditorRoute(
     memberId: String?,
     onDone: () -> Unit,
     onInvite: (String) -> Unit,
+    onPreviewHelper: (memberId: String) -> Unit = {},
     viewModel: MemberEditorViewModel = koinViewModel(),
 ) {
     LaunchedEffect(memberId) { viewModel.load(memberId) }
@@ -153,6 +158,9 @@ fun MemberEditorRoute(
                 OutlinedButton(onClick = { onInvite(m.id) }, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(Res.string.invite_person, m.displayName))
                 }
+            }
+            if (state.canPreviewHelper) {
+                NavRow(stringResource(Res.string.helper_preview_title, m.displayName), onClick = { onPreviewHelper(m.id) })
             }
             if (!state.isNew && !state.isMe && state.iAmParent) {
                 OutlinedButton(onClick = viewModel::delete, modifier = Modifier.fillMaxWidth()) {

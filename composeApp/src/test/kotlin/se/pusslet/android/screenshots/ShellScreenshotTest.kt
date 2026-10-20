@@ -208,7 +208,23 @@ class ShellScreenshotTest {
     fun helperHome() {
         launch(waitFor = "Du hämtar", asBengt = true)
         compose.onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).assertCountEquals(0)
+        // The demo's request from Sara comes first, with Ja/Nej (UX plan Steg 3, H3).
+        compose.waitUntilAtLeastOneExists(hasText("Ja, jag hämtar Ella"), timeoutMillis = 10_000)
         snap("helper_home")
+    }
+
+    /** "Så ser Bengt appen": a parent previews the helper view; nothing tapped there is saved (UX plan Steg 3, H3). */
+    @Test
+    fun helperPreview() {
+        launch()
+        compose.onNodeWithText("Mer").performClick()
+        compose.onNodeWithText("Familjen").performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Så ser", substring = true) and hasClickAction(), timeoutMillis = 10_000)
+        compose.onNode(hasText("Så ser", substring = true) and hasClickAction()).performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Förhandsvisning. Det du trycker på här sparas inte."), timeoutMillis = 10_000)
+        compose.waitUntilAtLeastOneExists(hasText("Du hämtar", substring = true), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("helper_preview")
     }
 
     @Test

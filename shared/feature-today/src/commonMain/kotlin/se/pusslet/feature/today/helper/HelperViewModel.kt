@@ -21,26 +21,16 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import se.pusslet.core.helper.HelperInput
 import se.pusslet.core.helper.HelperMission
 import se.pusslet.core.helper.HelperPlan
-import se.pusslet.core.helper.HelperPlanner
 import se.pusslet.core.helper.HelperRequest
-import se.pusslet.core.model.Child
 import se.pusslet.core.model.Completion
-import se.pusslet.core.model.CustodySchedule
-import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.FamilyPerson
-import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffRequest
-import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingItem
-import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.Place
 import se.pusslet.core.model.Role
 import se.pusslet.core.tasks.TaskOccurrence
-import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.TodayBlock
 import se.pusslet.core.today.TodayLayout
 import se.pusslet.core.today.TodayLayouts
@@ -113,36 +103,11 @@ class HelperViewModel(
 ) : ViewModel() {
     private val log = Logger.withTag("Helper")
 
-    /** Ticks every minute so "Snart", "Klart för idag" and the date roll over by themselves (only while observed). */
-    private val now: Flow<LocalDateTime> = flow {
-        while (true) {
-            emit(clock.now().toLocalDateTime(zone))
-            delay(TICK_MS)
-        }
-    }
+    private val now: Flow<LocalDateTime> = HelperPlans.minutes(clock, zone)
     private val today = now.map { it.date }.distinctUntilChanged()
 
-    private data class Household(
-        val people: List<FamilyPerson>,
-        val children: List<Child>,
-        val custody: List<CustodySchedule>,
-        val session: Session,
-    )
-
-    private val household: Flow<Household> = combine(family.people, family.children, family.custody, sessions.session) { p, c, cu, s ->
-        Household(p, c, cu, s)
-    }
-
-    private data class Calendar(val occurrences: List<EventOccurrence>, val requests: List<HandoffRequest>)
-
-    // The planner applies CaregiverVisibility and EffectiveHandoffs itself, so the raw requests go in.
-    private val calendarData: Flow<Calendar> = today.flatMapLatest { d ->
-        combine(calendar.occurrences(d, d.plusDays(HelperPlanner.WEEK_DAYS), zone), calendar.handoffRequests, ::Calendar)
-    }
-
-    private data class Extras(val rules: List<PackingRule>, val checks: Map<String, PackingChecks>, val tasks: List<FamilyTask>)
-
-    private val extras: Flow<Extras> = combine(packing.rules, packing.checks, tasks.tasks, ::Extras)
+    // The same reading as the parents' preview (HelperPreviewViewModel), so both show the same plan.
+    private val data: Flow<HelperFamilyData> = HelperPlans.familyData(family, calendar, packing, tasks, today, zone)
 
     /** The viewer's choices; another member or a role change falls back to the role's default. */
     private val layout: Flow<TodayLayout> = combine(sessions.session, prefs.observe(Prefs.TodayLayout)) { s, stored ->
@@ -198,34 +163,18 @@ class HelperViewModel(
         ::View,
     )
 
-    val state: StateFlow<HelperUiState> = combine(now, household, calendarData, extras, view, ::build)
+    val state: StateFlow<HelperUiState> = combine(now, sessions.session, data, view, ::build)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), HelperUiState())
 
-    private fun build(n: LocalDateTime, h: Household, cal: Calendar, ex: Extras, v: View): HelperUiState {
-        val me = h.session.memberId ?: return HelperUiState(loading = false, layout = v.layout, now = n)
-        val people = h.people.associateBy { it.id }
-        val plan = HelperPlanner.build(
-            HelperInput(
-                today = n.date,
-                now = n.time,
-                zone = zone,
-                me = me,
-                people = h.people,
-                children = h.children,
-                occurrences = cal.occurrences,
-                requests = cal.requests,
-                packingRules = ex.rules,
-                packingChecks = ex.checks,
-                custody = h.custody,
-                tasks = ex.tasks,
-                forecast = v.forecast,
-            ),
-        )
+    private fun build(n: LocalDateTime, session: Session, data: HelperFamilyData, v: View): HelperUiState {
+        val me = session.memberId ?: return HelperUiState(loading = false, layout = v.layout, now = n)
+        val people = data.people.associateBy { it.id }
+        val plan = HelperPlans.plan(me, n, zone, data, v.forecast)
         return HelperUiState(
             loading = false,
             plan = plan,
             me = people[me],
-            parents = h.people.filter { !it.isChild && it.role == Role.Parent },
+            parents = data.people.filter { !it.isChild && it.role == Role.Parent },
             layout = v.layout,
             sections = sections(v.layout, plan),
             showWeather = v.layout.isOn(TodayBlock.Weather),
@@ -286,7 +235,6 @@ class HelperViewModel(
     }
 
     internal companion object {
-        const val TICK_MS = 60_000L
         const val WEATHER_REFRESH_MS = 60 * 60_000L
         const val STOP_TIMEOUT_MS = 5_000L
 

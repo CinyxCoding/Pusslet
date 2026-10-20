@@ -18,6 +18,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import se.pusslet.core.calendar.EffectiveHandoffs
+import se.pusslet.core.calendar.EffectiveHandoffs.matches
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
@@ -259,13 +260,21 @@ internal suspend fun takeHandoff(
     if (occurrence.source != EventSource.Family) return
     assigner.assign(occurrence, kind, me)
     calendar.handoffRequests.first()
-        .filter {
-            it.eventId == occurrence.event.id && it.occurrenceDate == occurrence.occurrenceDate && it.kind == kind &&
-                it.status == RequestStatus.Pending
-        }
+        .filter { it.kind == kind && it.status == RequestStatus.Pending && it.matches(occurrence) }
         .forEach {
             // A parent wrote it into the event directly, so the answer is applied already.
             val now = clock.now()
             calendar.saveHandoffRequest(it.copy(status = RequestStatus.Accepted, respondedBy = me, respondedAt = now, appliedAt = now))
         }
+    settleAnswers(calendar, clock, occurrence, kind)
+}
+
+/**
+ * After a parent wrote a hand-off into the event by hand, an accepted answer for it that no parent's phone has written in
+ * yet is marked as written, so EffectiveHandoffs and AcceptedRequestApplier no longer put it back over the new choice.
+ */
+internal suspend fun settleAnswers(calendar: CalendarRepository, clock: Clock, occurrence: EventOccurrence, kind: HandoffKind) {
+    EffectiveHandoffs.pending(calendar.handoffRequests.first())
+        .filter { it.kind == kind && it.matches(occurrence) }
+        .forEach { calendar.saveHandoffRequest(it.copy(appliedAt = clock.now())) }
 }

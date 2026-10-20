@@ -40,6 +40,7 @@ import se.pusslet.data.session.SessionProvider
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.ListRow
+import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PersonAvatar
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
@@ -59,7 +60,10 @@ data class FamilyUiState(
     val today: LocalDate? = null,
     /** Not signed in: everything lives only on this phone ("Bara på den här telefonen · Logga in"). */
     val signedIn: Boolean = true,
-)
+) {
+    /** "Så ser Bengt appen": parents only, on the rows of other adults with the caregiver role (UX plan Steg 3). */
+    fun canPreviewHelper(member: Member): Boolean = myRole == Role.Parent && member.id != me && member.role == Role.Caregiver
+}
 
 class FamilyViewModel(family: FamilyRepository, sessions: SessionProvider, clock: Clock, zone: TimeZone) : ViewModel() {
     val state: StateFlow<FamilyUiState> = combine(family.family, family.members, family.children, family.custody, sessions.session) {
@@ -82,6 +86,7 @@ fun FamilyRoute(
     onCustody: (String?) -> Unit,
     onHandover: (String) -> Unit,
     onSignIn: () -> Unit = {},
+    onPreviewHelper: (memberId: String) -> Unit = {},
     viewModel: FamilyViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -127,6 +132,9 @@ fun FamilyRoute(
                             FilledTonalButton(onClick = { onInvite(m.id) }) {
                                 Text(stringResource(Res.string.family_invite_named, m.displayName))
                             }
+                        }
+                        if (state.canPreviewHelper(m)) {
+                            NavRow(stringResource(Res.string.helper_preview_title, m.displayName), onClick = { onPreviewHelper(m.id) })
                         }
                     }
                     if (parent) OutlinedButton(onClick = { onEditMember(null) }) { Text(stringResource(Res.string.family_add_adult)) }

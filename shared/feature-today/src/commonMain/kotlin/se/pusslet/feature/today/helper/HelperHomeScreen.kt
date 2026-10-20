@@ -141,7 +141,11 @@ fun HelperHomeRoute(
     )
 }
 
-/** What a tap on the helper's home screen can do. The defaults do nothing, for previews and screenshot tests. */
+/**
+ * What a tap on the helper's home screen can do. The defaults do nothing, for previews and screenshot tests. A null
+ * navigation action is not offered at all (the parents' preview stays on its page): the rows are then neither tappable
+ * nor shown with a chevron, and the rows at the bottom are left out.
+ */
 data class HelperActions(
     val onAccept: (HelperRequest) -> Unit = {},
     val onDecline: (HelperRequest) -> Unit = {},
@@ -150,10 +154,10 @@ data class HelperActions(
     val onCannotMake: (List<HelperMission>) -> Unit = {},
     val onTogglePacking: (LocalDate, PackingItem, Boolean) -> Unit = { _, _, _ -> },
     val onToggleTask: (TaskOccurrence, Boolean) -> Unit = { _, _ -> },
-    val onOpenOccurrence: (EventOccurrence) -> Unit = {},
-    val onOpenWeek: () -> Unit = {},
-    val onOpenShopping: () -> Unit = {},
-    val onOpenSettings: () -> Unit = {},
+    val onOpenOccurrence: ((EventOccurrence) -> Unit)? = {},
+    val onOpenWeek: (() -> Unit)? = {},
+    val onOpenShopping: (() -> Unit)? = {},
+    val onOpenSettings: (() -> Unit)? = {},
     /**
      * "Jag förstår" on the first-time hint. Without it the hint never shows, so a preview ("Så ser Bengt appen") neither
      * shows nor dismisses Bengt's hint.
@@ -161,8 +165,14 @@ data class HelperActions(
     val onDismissHint: (() -> Unit)? = null,
 )
 
+/** [footer] is a last row below everything, e.g. the preview's "Bengt ser inte 2 händelser den här veckan." */
 @Composable
-fun HelperHomeScreen(state: HelperUiState, contentPadding: PaddingValues = PaddingValues(), actions: HelperActions = HelperActions()) {
+fun HelperHomeScreen(
+    state: HelperUiState,
+    contentPadding: PaddingValues = PaddingValues(),
+    actions: HelperActions = HelperActions(),
+    footer: (@Composable () -> Unit)? = null,
+) {
     val plan = state.plan
     if (state.loading || plan == null) {
         LoadingBox()
@@ -218,6 +228,7 @@ fun HelperHomeScreen(state: HelperUiState, contentPadding: PaddingValues = Paddi
             }
         }
         item(key = "rows") { BottomRows(state, actions) }
+        if (footer != null) item(key = "footer") { footer() }
     }
     if (cannotMake) {
         CannotMakeSheet(
@@ -324,13 +335,14 @@ private fun TodayCard(state: HelperUiState, plan: HelperPlan, actions: HelperAct
             modifier = Modifier.semantics { heading() }.padding(top = Spacing.xs),
         )
         val active = plan.activeMissions
+        val open = actions.onOpenOccurrence
         active.forEachIndexed { index, m ->
             MissionRow(
                 m = m,
                 // "Ska med" has the check boxes for a drop-off; the line would say the same thing twice.
                 showBring = m.kind == HandoffKind.PickUp || !packingShown,
                 weather = if (index == 0 && state.showWeather) plan.weather?.let { weatherText(it) } else null,
-                onOpen = { actions.onOpenOccurrence(m.occurrence) },
+                onOpen = open?.let { { it(m.occurrence) } },
             )
         }
         plan.takenOver.forEach { TakenOverLine(it) }
@@ -342,15 +354,18 @@ private fun TodayCard(state: HelperUiState, plan: HelperPlan, actions: HelperAct
     }
 }
 
-/** "Du hämtar Simon 15:30" with "Snart" from an hour before, the place and at most a few short lines. One TalkBack node. */
+/**
+ * "Du hämtar Simon 15:30" with "Snart" from an hour before, the place and at most a few short lines. One TalkBack node;
+ * without [onOpen] (the parents' preview) it is not tappable and has no chevron.
+ */
 @Composable
-private fun MissionRow(m: HelperMission, showBring: Boolean, weather: String?, onOpen: () -> Unit) {
+private fun MissionRow(m: HelperMission, showBring: Boolean, weather: String?, onOpen: (() -> Unit)?) {
     val colors = MaterialTheme.colorScheme
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = HelperDimens.row)
-            .clickable(role = Role.Button, onClick = onOpen)
+            .then(openable(onOpen))
             .padding(vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
@@ -366,9 +381,13 @@ private fun MissionRow(m: HelperMission, showBring: Boolean, weather: String?, o
             if (m.waitingForTakeover) Text(stringResource(Res.string.helper_cannot_waiting), style = MaterialTheme.typography.bodyLarge)
         }
         if (m.state == MissionState.Soon) InfoPill(stringResource(Res.string.helper_soon), selected = true)
-        Icon(PussletIcons.ChevronRight, contentDescription = null, tint = colors.onSurfaceVariant)
+        if (onOpen != null) Icon(PussletIcons.ChevronRight, contentDescription = null, tint = colors.onSurfaceVariant)
     }
 }
+
+/** Tappable with [onClick]; otherwise one TalkBack node that does nothing, so nothing looks tappable that is not. */
+private fun openable(onClick: (() -> Unit)?): Modifier =
+    if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier.semantics(mergeDescendants = true) {}
 
 /** "Johan hämtar Simon i stället". */
 @Composable
@@ -445,16 +464,16 @@ private fun TasksSection(plan: HelperPlan, actions: HelperActions) {
     }
 }
 
-/** "Kommande": his missions the next days, one row per day; a tap opens "Hela veckan". */
+/** "Kommande": his missions the next days, one row per day; a tap opens "Hela veckan" (when [onOpenWeek] is given). */
 @Composable
-internal fun UpcomingSection(days: List<HelperDay>, onOpenWeek: () -> Unit) {
+internal fun UpcomingSection(days: List<HelperDay>, onOpenWeek: (() -> Unit)?) {
     Section(stringResource(Res.string.today_block_upcoming)) {
         days.forEach { day ->
             Row(
                 Modifier
                     .fillMaxWidth()
                     .heightIn(min = HelperDimens.row)
-                    .clickable(role = Role.Button, onClick = onOpenWeek)
+                    .then(openable(onOpenWeek))
                     .padding(vertical = Spacing.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -462,26 +481,35 @@ internal fun UpcomingSection(days: List<HelperDay>, onOpenWeek: () -> Unit) {
                     Text(dayTitle(day.date, day.week), style = MaterialTheme.typography.titleSmall)
                     Text(dayText(day.missions), style = MaterialTheme.typography.bodyLarge)
                 }
-                Icon(PussletIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (onOpenWeek != null) {
+                    Icon(PussletIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }
 }
 
-/** "Hela veckan ›", "Inköpslistan · 5 kvar ›" (only when switched on) and "Inställningar och hjälp ›". */
+/**
+ * "Hela veckan ›", "Inköpslistan · 5 kvar ›" (only when switched on) and "Inställningar och hjälp ›". A row whose action is
+ * not offered is left out.
+ */
 @Composable
 private fun BottomRows(state: HelperUiState, actions: HelperActions) {
     val row = Modifier.heightIn(min = HelperDimens.row)
+    val openWeek = actions.onOpenWeek
+    val openShopping = actions.onOpenShopping
+    val openSettings = actions.onOpenSettings
     Column(Modifier.padding(top = Spacing.lg)) {
-        NavRow(stringResource(Res.string.helper_week), actions.onOpenWeek, modifier = row)
-        state.shopping?.let { shopping ->
+        if (openWeek != null) NavRow(stringResource(Res.string.helper_week), openWeek, modifier = row)
+        val shopping = state.shopping
+        if (shopping != null && openShopping != null) {
             val text = if (shopping.remaining > 0) {
                 stringResource(Res.string.helper_shopping, shopping.remaining)
             } else {
                 stringResource(Res.string.today_block_shopping)
             }
-            NavRow(text, actions.onOpenShopping, modifier = row)
+            NavRow(text, openShopping, modifier = row)
         }
-        NavRow(stringResource(Res.string.helper_settings), actions.onOpenSettings, modifier = row)
+        if (openSettings != null) NavRow(stringResource(Res.string.helper_settings), openSettings, modifier = row)
     }
 }

@@ -257,6 +257,12 @@ i `declines` (map-fält, sammanslaget per nyckel). "Ändra svar" går tills `app
 förfrågan till alla från hjälparen. Reglerna tillåter hjälpare just detta och inget mer (regeltester i `functions/test`).
 **Konsekvens:** Svaret syns direkt och händelsen blir rätt även i ICS-flödet och enhetskalendern, utan att hjälpare får
 skrivrätt till händelser.
+**Tillägg (H3):** När en förälder själv väljer eller tar en lämning/hämtning får ett accepterat svar som inte är inskrivet
+`appliedAt`, så att förälderns val vinner och inte skrivs över av `EffectiveHandoffs` eller inskrivningen. Ett ”Jag kan
+inte” är löst när uppdraget har flyttats till någon annan, och ”Jag tar det” besvarar öppna förfrågningar för samma
+tillfälle. Föräldrar ser svaren i Händelsedetaljer (”Frågat Bengt · inget svar än”, ”Bengt svarade ja”, ”Bengt kan inte”)
+och ett ”Jag kan inte” som Problem på Idag. ”Så ser Bengt appen” bygger hjälparens startsida med samma planerare på all
+data (filtrerad genom `CaregiverVisibility`) och skriver ingenting; den hämtar inget väder.
 
 ## ADR-031 – CaregiverVisibility speglar reglerna
 **Kontext:** Hjälparvyn och förälderns förhandsvisning ("Så ser Bengt appen") måste visa exakt det reglerna släpper igenom.

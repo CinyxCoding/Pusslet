@@ -34,6 +34,7 @@ import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.tasks.TaskOccurrence
+import se.pusslet.core.today.CaregiverCannot
 import se.pusslet.core.today.CustodyNote
 import se.pusslet.core.today.TodayBlock
 import se.pusslet.core.today.TodayPlan
@@ -63,6 +64,8 @@ import se.pusslet.ui.resources.card_action_take
 import se.pusslet.ui.resources.card_busy_dropoff
 import se.pusslet.ui.resources.card_busy_pickup
 import se.pusslet.ui.resources.card_double_booked
+import se.pusslet.ui.resources.card_helper_cannot_dropoff
+import se.pusslet.ui.resources.card_helper_cannot_pickup
 import se.pusslet.ui.resources.card_nobody_dropoff
 import se.pusslet.ui.resources.card_nobody_pickup
 import se.pusslet.ui.resources.card_unassigned_dropoff
@@ -196,6 +199,7 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
                 NavRow(stringResource(Res.string.today_more_problems, problems.size - TodayModel.MAX_PROBLEMS), actions.onOpenCalendar)
             }
         }
+        items(plan.cannotMake, key = { "cannot-${it.request.id}" }) { CannotMakeBanner(it, state, actions) }
         items(state.requests, key = { "request-${it.request.id}" }) { RequestBanner(it, plan.date, actions.onOpenOccurrence) }
         // "Kom igång" is what a new family has to sort out; it is the focus surface while it shows (UX plan 4.4).
         val setup = state.setup
@@ -358,6 +362,24 @@ private fun ProblemBanner(c: Conflict, state: TodayUiState, actions: TodayAction
         if (canTake && kind != null) {
             SmallAction(stringResource(Res.string.card_action_take)) { actions.onTakeHandoff(c.occurrence, kind) }
         }
+        SmallAction(stringResource(Res.string.card_action_open)) { actions.onOpenOccurrence(c.occurrence) }
+    })
+}
+
+/**
+ * "Bengt kan inte hämta Simon 15:30 · Jag tar det": a caregiver's "Jag kan inte" (UX plan Steg 3). A real problem, like the
+ * conflicts; "Jag tar det" answers it, so it goes away and he sees who took over.
+ */
+@Composable
+private fun CannotMakeBanner(c: CaregiverCannot, state: TodayUiState, actions: TodayActions) {
+    val plan = state.plan ?: return
+    val from = c.from?.name ?: stringResource(Res.string.today_request_someone)
+    val children = joinNames(c.childIds.mapNotNull { state.people[it]?.name })
+    val resource = if (c.kind == HandoffKind.PickUp) Res.string.card_helper_cannot_pickup else Res.string.card_helper_cannot_dropoff
+    val prefix = if (c.date == plan.date) "" else relativeDay(c.date, plan.date) + ": "
+    Banner(prefix + stringResource(resource, from, children, formatTime(c.time)), kind = BannerKind.Problem, actions = {
+        // "Jag tar det" only where the write reaches the family: never for a caregiver (UX plan 1.13).
+        if (state.canEdit) SmallAction(stringResource(Res.string.card_action_take)) { actions.onTakeHandoff(c.occurrence, c.kind) }
         SmallAction(stringResource(Res.string.card_action_open)) { actions.onOpenOccurrence(c.occurrence) }
     })
 }

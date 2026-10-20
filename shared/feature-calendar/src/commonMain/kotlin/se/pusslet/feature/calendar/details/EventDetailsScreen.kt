@@ -16,12 +16,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,39 +35,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
+import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.helper.HelperAnswer
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
-import se.pusslet.core.model.HandoffRequest
-import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
-import se.pusslet.core.time.plusDays
-import se.pusslet.data.repository.CalendarRepository
-import se.pusslet.data.repository.FamilyRepository
-import se.pusslet.data.session.SessionProvider
-import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.feature.calendar.annotate
 import se.pusslet.feature.calendar.editor.reminderLabel
 import se.pusslet.feature.calendar.handoffSegment
-import se.pusslet.feature.calendar.takeHandoff
 import se.pusslet.ui.components.AvatarStack
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
@@ -77,102 +63,22 @@ import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.Section
 import se.pusslet.ui.format.describe
 import se.pusslet.ui.format.formatDateLong
+import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.formatTimeRange
 import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.resources.*
+import se.pusslet.ui.theme.HelperDimens
 import se.pusslet.ui.theme.Spacing
-import kotlin.time.Clock
 
-data class EventDetailsState(
-    val loading: Boolean = true,
-    val occurrence: EventOccurrence? = null,
-    val people: List<FamilyPerson> = emptyList(),
-    val myMemberId: String? = null,
-    val role: Role = Role.Parent,
-    val requests: List<HandoffRequest> = emptyList(),
-) {
-    val editable: Boolean get() = occurrence?.source == EventSource.Family && role == Role.Parent
-    val adults: List<FamilyPerson> get() = people.filter { !it.isChild }
-}
-
-@OptIn(ExperimentalCoroutinesApi::class)
-class EventDetailsViewModel(
-    private val calendar: CalendarRepository,
-    family: FamilyRepository,
-    private val assigner: HandoffAssigner,
-    private val sessions: SessionProvider,
-    private val clock: Clock,
-    private val zone: TimeZone,
-) : ViewModel() {
-    private val target = MutableStateFlow<Pair<String, LocalDate>?>(null)
-    private val newId: () -> String = family::newId
-
-    private val occurrence = target.filterNotNull().flatMapLatest { (id, date) ->
-        // Overrides may move an occurrence a few days, so look around the original date.
-        calendar.occurrences(date.plusDays(-SEARCH_DAYS), date.plusDays(SEARCH_DAYS), zone).combine(target) { list, _ ->
-            list.firstOrNull { it.event.id == id && it.occurrenceDate == date }
-                ?: list.firstOrNull { it.event.seriesId == id && it.occurrenceDate == date }
-                ?: list.filter { it.event.id == id }.minByOrNull { kotlin.math.abs(it.occurrenceDate.toEpochDays() - date.toEpochDays()) }
-        }
-    }
-
-    val state: StateFlow<EventDetailsState> = combine(occurrence, family.people, sessions.session, calendar.handoffRequests) {
-        o,
-        people,
-        session,
-        requests,
-        ->
-        EventDetailsState(
-            loading = false,
-            occurrence = o,
-            people = people,
-            myMemberId = session.memberId,
-            role = session.role,
-            requests = requests.filter {
-                o != null && it.eventId == o.event.id && it.occurrenceDate == o.occurrenceDate &&
-                    it.status == RequestStatus.Pending
-            },
-        )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EventDetailsState())
-
-    fun load(eventId: String, occurrenceDate: LocalDate) {
-        target.value = eventId to occurrenceDate
-    }
-
-    fun assign(kind: HandoffKind, personId: String?) {
-        val o = state.value.occurrence ?: return
-        viewModelScope.launch { assigner.assign(o, kind, personId) }
-    }
-
-    fun take(kind: HandoffKind) {
-        val me = sessions.session.value.memberId ?: return
-        val o = state.value.occurrence ?: return
-        // Taking it also answers any open request for the same hand-off.
-        viewModelScope.launch { takeHandoff(calendar, assigner, clock, o, kind, me) }
-    }
-
-    fun requestHelp(kind: HandoffKind) {
-        val me = sessions.session.value.memberId ?: return
-        val o = state.value.occurrence ?: return
-        if (state.value.requests.any { it.kind == kind }) return
-        viewModelScope.launch {
-            calendar.saveHandoffRequest(
-                HandoffRequest(
-                    id = newId(),
-                    eventId = o.event.id,
-                    occurrenceDate = o.occurrenceDate,
-                    kind = kind,
-                    fromMemberId = me,
-                    createdAt = clock.now(),
-                ),
-            )
-        }
-    }
-
-    private companion object {
-        const val SEARCH_DAYS = 14
-    }
-}
+/** What the hand-off rows can do: parents change, take and ask; a caregiver only answers (ADR-015, ADR-030). */
+data class HandoffActions(
+    val onTake: (HandoffKind) -> Unit = {},
+    val onAssign: (HandoffKind, String?) -> Unit = { _, _ -> },
+    val onRequest: (HandoffKind) -> Unit = {},
+    val onAccept: (HandoffKind) -> Unit = {},
+    val onDecline: (HandoffKind) -> Unit = {},
+    val onChangeAnswer: (HandoffKind) -> Unit = {},
+)
 
 @Composable
 fun EventDetailsRoute(
@@ -193,7 +99,19 @@ fun EventDetailsRoute(
             onBack()
         }
     }
-    EventDetailsScreen(state, onBack, onEdit, viewModel::take, viewModel::assign, viewModel::requestHelp)
+    EventDetailsScreen(
+        state,
+        onBack,
+        onEdit,
+        HandoffActions(
+            onTake = viewModel::take,
+            onAssign = viewModel::assign,
+            onRequest = viewModel::requestHelp,
+            onAccept = viewModel::accept,
+            onDecline = viewModel::decline,
+            onChangeAnswer = viewModel::changeAnswer,
+        ),
+    )
 }
 
 @Composable
@@ -201,9 +119,7 @@ fun EventDetailsScreen(
     state: EventDetailsState,
     onBack: () -> Unit,
     onEdit: (eventId: String, occurrenceDate: LocalDate?) -> Unit,
-    onTake: (HandoffKind) -> Unit,
-    onAssign: (HandoffKind, String?) -> Unit,
-    onRequest: (HandoffKind) -> Unit,
+    actions: HandoffActions = HandoffActions(),
 ) {
     val o = state.occurrence
     var askScope by remember { mutableStateOf(false) }
@@ -272,7 +188,7 @@ fun EventDetailsScreen(
                 }
             }
             if (o.source == EventSource.Family && !o.allDay && participants.any { it.isChild }) {
-                HandoffSection(state, o, people, onTake, onAssign, onRequest)
+                HandoffSection(state, o, people, actions)
             }
             if (o.event.tags.isNotEmpty()) {
                 // Tags inform; they are not buttons (UX plan 1.6).
@@ -325,17 +241,12 @@ fun EventDetailsScreen(
 
 /**
  * "Lämning och hämtning" (UX plan, Kalender 6): one sentence per hand-off, "Johan lämnar 08:05 · Ändra". "Jag tar det" is a
- * filled button only on the first hand-off nobody has taken, so the screen has at most one filled button.
+ * filled button only on the first hand-off nobody has taken, so the screen has at most one filled button. Under each
+ * hand-off its latest request: a quiet line for parents ("Frågat Bengt · inget svar än", "Bengt svarade ja"), a Problem for
+ * a caregiver's "Jag kan inte", and Ja/Nej for a caregiver it is asked of (UX plan Steg 3).
  */
 @Composable
-private fun HandoffSection(
-    state: EventDetailsState,
-    o: EventOccurrence,
-    people: Map<String, FamilyPerson>,
-    onTake: (HandoffKind) -> Unit,
-    onAssign: (HandoffKind, String?) -> Unit,
-    onRequest: (HandoffKind) -> Unit,
-) {
+private fun HandoffSection(state: EventDetailsState, o: EventOccurrence, people: Map<String, FamilyPerson>, actions: HandoffActions) {
     val kinds = listOf(HandoffKind.DropOff, HandoffKind.PickUp)
 
     fun handoff(kind: HandoffKind) = if (kind == HandoffKind.PickUp) o.event.pickUp else o.event.dropOff
@@ -344,6 +255,7 @@ private fun HandoffSection(
     fun isOpen(kind: HandoffKind) = handoff(kind)?.let { h -> h.personId?.let(people::get) == null } == true
     val firstOpen = kinds.firstOrNull(::isOpen)
     val parent = state.role == Role.Parent
+    val children = joinNames(o.event.participantIds.mapNotNull(people::get).filter { it.isChild }.map { it.name })
     Section(stringResource(Res.string.event_handoffs)) {
         kinds.forEach { kind ->
             val planned = handoff(kind)
@@ -361,28 +273,121 @@ private fun HandoffSection(
                     )
                 }
                 Text(annotate(segment.text, listOf(segment)), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                if (parent) ChangeHandoff(state.adults, who?.id) { onAssign(kind, it) }
+                if (parent) ChangeHandoff(state.adults, who?.id) { actions.onAssign(kind, it) }
             }
-            val pending = state.requests.firstOrNull { it.kind == kind }
-            if (pending != null) {
-                val from = people[pending.fromMemberId]?.name.orEmpty()
-                Banner(stringResource(Res.string.event_request_from, from), kind = BannerKind.Warning)
+            when (val request = state.requestState(kind)) {
+                is RequestState.ForMe -> AnswerCard(request, kind, children, actions)
+                is RequestState.CannotMake -> CannotMakeLine(request, kind, children, time, parent) { actions.onTake(kind) }
+                is RequestState.Asked, is RequestState.Accepted, is RequestState.Declined -> RequestPills(request)
+                null -> Unit
             }
-            val canRequest = parent && pending == null && kind == HandoffKind.PickUp
-            if (parent && (open || canRequest)) {
+            val take = parent && (open || state.answersOpenRequest(kind))
+            val canRequest = state.canRequestHelp(kind)
+            if (take || canRequest) {
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
-                    if (open) {
-                        val take = stringResource(Res.string.card_action_take)
+                    if (take) {
+                        val label = stringResource(Res.string.card_action_take)
+                        val modifier = Modifier.heightIn(min = Spacing.touchTarget)
                         if (kind == firstOpen) {
-                            Button(onClick = { onTake(kind) }, modifier = Modifier.heightIn(min = Spacing.touchTarget)) { Text(take) }
+                            Button(onClick = { actions.onTake(kind) }, modifier = modifier) { Text(label) }
                         } else {
-                            OutlinedButton(onClick = {
-                                onTake(kind)
-                            }, modifier = Modifier.heightIn(min = Spacing.touchTarget)) { Text(take) }
+                            OutlinedButton(onClick = { actions.onTake(kind) }, modifier = modifier) { Text(label) }
                         }
                     }
                     if (canRequest) {
-                        TextButton(onClick = { onRequest(kind) }) { Text(stringResource(Res.string.event_request_pickup)) }
+                        TextButton(onClick = { actions.onRequest(kind) }) { Text(stringResource(Res.string.event_request_pickup)) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Parents: the request's state as quiet pills, "Frågat alla · inget svar än", "Bengt kan inte", "Bengt svarade ja". */
+@Composable
+private fun RequestPills(request: RequestState) {
+    val someone = stringResource(Res.string.today_request_someone)
+    val pills: List<Pair<String, Boolean>> = when (request) {
+        is RequestState.Asked -> {
+            val asked = if (request.toEveryone) {
+                stringResource(Res.string.request_asked_all)
+            } else {
+                stringResource(Res.string.request_asked_member, request.to?.name ?: someone)
+            }
+            listOf(asked to false) + request.declinedBy.map { stringResource(Res.string.request_answer_no, it.name) to false }
+        }
+        is RequestState.Accepted -> listOf(stringResource(Res.string.request_answer_yes, request.by?.name ?: someone) to true)
+        is RequestState.Declined -> listOf(stringResource(Res.string.request_answer_no, request.by?.name ?: someone) to false)
+        is RequestState.CannotMake, is RequestState.ForMe -> emptyList()
+    }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        pills.forEach { (text, yes) -> InfoPill(text, selected = yes) }
+    }
+}
+
+/**
+ * A caregiver's "Jag kan inte": for parents a Problem, "Bengt kan inte hämta Simon 15:30 · Jag tar det"; on his own phone
+ * the quiet "Du har sagt att du inte kan. Väntar på svar."
+ */
+@Composable
+private fun CannotMakeLine(
+    request: RequestState.CannotMake,
+    kind: HandoffKind,
+    children: String,
+    time: LocalTime,
+    parent: Boolean,
+    onTake: () -> Unit,
+) {
+    if (request.mine) {
+        Text(
+            stringResource(Res.string.helper_cannot_waiting),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+    val from = request.from?.name ?: stringResource(Res.string.today_request_someone)
+    val resource = if (kind == HandoffKind.PickUp) Res.string.card_helper_cannot_pickup else Res.string.card_helper_cannot_dropoff
+    Banner(
+        stringResource(resource, from, children, formatTime(time)),
+        kind = BannerKind.Problem,
+        actions = if (parent) ({ TextButton(onClick = onTake) { Text(stringResource(Res.string.card_action_take)) } }) else null,
+    )
+}
+
+/**
+ * A caregiver's answer, read-only otherwise (ADR-015): "Sara undrar" with Ja/Nej stacked at full width and at least 64 dp,
+ * then what he said and "Ändra svar" until a parent's phone has written the answer in.
+ */
+@Composable
+private fun AnswerCard(request: RequestState.ForMe, kind: HandoffKind, children: String, actions: HandoffActions) {
+    val from = request.from?.name ?: stringResource(Res.string.today_request_someone)
+    OutlinedCard(Modifier.fillMaxWidth(), colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+            Text(
+                stringResource(Res.string.helper_request_from, from),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() },
+            )
+            when (request.answer) {
+                null -> {
+                    val yes = if (kind == HandoffKind.PickUp) Res.string.helper_yes_pickup else Res.string.helper_yes_dropoff
+                    Button(
+                        onClick = { actions.onAccept(kind) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = HelperDimens.button),
+                    ) { Text(stringResource(yes, children)) }
+                    OutlinedButton(
+                        onClick = { actions.onDecline(kind) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = HelperDimens.button),
+                    ) { Text(stringResource(Res.string.helper_no)) }
+                }
+                else -> {
+                    val said = if (request.answer == HelperAnswer.Yes) Res.string.helper_answered_yes else Res.string.helper_answered_no
+                    Text(stringResource(said, from), style = MaterialTheme.typography.bodyLarge)
+                    if (request.canChangeAnswer) {
+                        TextButton(onClick = { actions.onChangeAnswer(kind) }, modifier = Modifier.heightIn(min = HelperDimens.button)) {
+                            Text(stringResource(Res.string.helper_change_answer))
+                        }
                     }
                 }
             }

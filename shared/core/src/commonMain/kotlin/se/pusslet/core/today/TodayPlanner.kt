@@ -5,6 +5,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import se.pusslet.core.calendar.EffectiveHandoffs.matches
 import se.pusslet.core.conflicts.Conflict
 import se.pusslet.core.conflicts.ConflictDetector
 import se.pusslet.core.custody.CustodyCalculator
@@ -16,10 +17,12 @@ import se.pusslet.core.model.Child
 import se.pusslet.core.model.CustodySchedule
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventOccurrence
+import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.Household
 import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.MealPlanWeek
@@ -27,6 +30,8 @@ import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.model.PackingRule
+import se.pusslet.core.model.RequestStatus
+import se.pusslet.core.model.Role
 import se.pusslet.core.model.SchoolLunch
 import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.packing.PackingPlanner
@@ -68,6 +73,23 @@ data class TodayInput(
     val hasWeatherPlace: Boolean = forecast != null,
     /** The shopping section's data; only read (and passed) while that block is on. */
     val shopping: TodayShopping? = null,
+    /** Hand-off requests; a caregiver's open "Jag kan inte" becomes a problem ([TodayPlan.cannotMake]). */
+    val requests: List<HandoffRequest> = emptyList(),
+)
+
+/**
+ * "Bengt kan inte hämta Simon 15:30 · Jag tar det": a caregiver said "Jag kan inte" about a hand-off that is still his, and
+ * nobody has taken it over yet (UX plan Steg 3). Today and tomorrow, like the other problems.
+ */
+data class CaregiverCannot(
+    val date: LocalDate,
+    val occurrence: EventOccurrence,
+    val kind: HandoffKind,
+    val time: LocalTime,
+    val request: HandoffRequest,
+    /** Null when that member has left the family. */
+    val from: FamilyPerson?,
+    val childIds: List<String>,
 )
 
 enum class Greeting { Morning, Day, Evening, Night }
@@ -141,6 +163,8 @@ data class TodayPlan(
     val hero: TodayHero = TodayHero(),
     /** "Att lösa": conflicts today and tomorrow, by day and time. Never hidden; a hand-off with a problem is only here. */
     val problems: List<Conflict> = emptyList(),
+    /** Also "Att lösa": a caregiver's "Jag kan inte" today and tomorrow, by day and time. */
+    val cannotMake: List<CaregiverCannot> = emptyList(),
     /** "Kommande": the next [TodayInput.upcomingDays] days that have something, without dinners. */
     val comingUp: List<UpcomingDay> = emptyList(),
     /** The custody part of the header: "Hos Ahmed" or "Byte 15:00 till Ahmed". */
@@ -157,7 +181,7 @@ data class TodayPlan(
      */
     fun timelineFor(layout: TodayLayout): List<TimelineItem> {
         val handoffsInHero = layout.isOn(TodayBlock.Handoffs)
-        val blocked = TodayPlanner.handoffProblemKeys(problems, date)
+        val blocked = TodayPlanner.handoffProblemKeys(problems, date) + TodayPlanner.cannotMakeKeys(cannotMake, date)
         return timeline.filter { item ->
             item !is TimelineItem.HandoffItem || (!handoffsInHero && TodayPlanner.handoffKey(item.occurrence, item.kind) !in blocked)
         }
@@ -217,9 +241,10 @@ object TodayPlanner {
         val myTasks = input.me?.let { TaskScheduler.openFor(it, input.tasks, today, today.plusDays(input.upcomingDays)) }.orEmpty()
 
         val problems = (0..1).flatMap { offset -> ConflictDetector.detect(today.plusDays(offset), input.occurrences, input.people) }
+        val cannotMake = cannotMake(input, byId)
         val handoffsToday = handoffsOn(today, todays, byId)
         val hero = TodayHero(
-            handoffs = heroHandoffs(input, handoffsToday, byId, handoffProblemKeys(problems, today)),
+            handoffs = heroHandoffs(input, handoffsToday, byId, handoffProblemKeys(problems, today) + cannotMakeKeys(cannotMake, today)),
             packing = packingSummary(today, packing, handoffsToday, todays),
             dinner = TodayDinner(dinner, LunchMerge.merge(lunches, clash), dinnerPlannedRecently(input)),
         )
@@ -244,6 +269,7 @@ object TodayPlanner {
             now = input.now,
             hero = hero,
             problems = problems.sortedWith(compareBy({ it.date }, { it.sortTime })),
+            cannotMake = cannotMake,
             comingUp = comingUp(input, childPeople),
             custodyNotes = custodyNotes(custody, input.now),
             hasWeatherPlace = input.hasWeatherPlace,
@@ -271,6 +297,33 @@ object TodayPlanner {
                 is Conflict.DoubleBooked -> null
             }
         }
+
+    /** The hand-offs on [date] a caregiver said he cannot make. */
+    internal fun cannotMakeKeys(cannot: List<CaregiverCannot>, date: LocalDate): Set<String> =
+        cannot.filter { it.date == date }.mapTo(HashSet()) { handoffKey(it.occurrence, it.kind) }
+
+    /**
+     * A caregiver's open "Jag kan inte" (to anyone, from a caregiver) about a family hand-off today or tomorrow that is still
+     * his and has not passed. Once a parent takes it (the request is answered) or gives it to someone else, it is solved.
+     */
+    private fun cannotMake(input: TodayInput, byId: Map<String, FamilyPerson>): List<CaregiverCannot> {
+        val tomorrow = input.today.plusDays(1)
+        return input.requests
+            .filter { it.status == RequestStatus.Pending && it.toMemberId == null && byId[it.fromMemberId]?.role == Role.Caregiver }
+            .mapNotNull { r ->
+                val o = input.occurrences.firstOrNull { it.source == EventSource.Family && r.matches(it) } ?: return@mapNotNull null
+                val pickUp = r.kind == HandoffKind.PickUp
+                val handoff = if (pickUp) o.event.pickUp else o.event.dropOff
+                if (handoff?.personId != r.fromMemberId) return@mapNotNull null
+                val time = (if (pickUp) o.pickUpTime() else o.dropOffTime()) ?: return@mapNotNull null
+                val date = if (pickUp && !o.allDay) o.end.date else o.start.date
+                if (date < input.today || date > tomorrow || (date == input.today && time < input.now)) return@mapNotNull null
+                val children = o.event.participantIds.filter { byId[it]?.isChild == true }
+                CaregiverCannot(date, o, r.kind, time, r, byId[r.fromMemberId], children)
+            }
+            .distinctBy { it.occurrence.key to it.kind }
+            .sortedWith(compareBy({ it.date }, { it.time }))
+    }
 
     /** A drop-off or pick-up on a given day, with a time and at least one child. */
     private class DayHandoff(

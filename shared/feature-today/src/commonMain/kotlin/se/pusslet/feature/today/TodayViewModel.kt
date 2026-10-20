@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -23,6 +24,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.calendar.EffectiveHandoffs
+import se.pusslet.core.calendar.EffectiveHandoffs.matches
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.Completion
 import se.pusslet.core.model.CustodySchedule
@@ -39,6 +41,7 @@ import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.Place
+import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.SchoolLunch
 import se.pusslet.core.model.TaskCategory
@@ -319,6 +322,7 @@ class TodayViewModel(
                 forecast = v.forecast?.value,
                 hasWeatherPlace = v.hasPlace,
                 shopping = TodayModel.shopping(v.shopping, people, me, clock.now()),
+                requests = v.requests,
             ),
         )
         val canEdit = h.session.canEdit
@@ -355,7 +359,9 @@ class TodayViewModel(
             layout = v.layout,
             hero = TodayModel.heroRows(v.layout, plan, canEdit, weatherLoading = v.weather == WeatherState.Loading),
             sections = sections,
-            requests = TodayModel.requests(me, v.requests, occ, people, n.date, n.time),
+            // A caregiver's "Jag kan inte" is a problem above ("Bengt kan inte hämta Simon 15:30"), not a question as well.
+            requests = TodayModel.requests(me, v.requests, occ, people, n.date, n.time)
+                .filter { r -> plan.cannotMake.none { it.request.id == r.request.id } },
             quiet = sections.isEmpty(),
             setup = setup,
             // "Kom igång" already leads to + ("Lägg till en aktivitet"): one thing to learn at a time.
@@ -409,7 +415,17 @@ class TodayViewModel(
         // The rules refuse a caregiver's write; the local copy would show something the family never sees.
         if (!session.canEdit) return
         val me = session.memberId ?: return
-        viewModelScope.launch { handoffs.assign(occurrence, kind, me) }
+        viewModelScope.launch {
+            handoffs.assign(occurrence, kind, me)
+            // Taking it answers an open request for it, e.g. a caregiver's "Jag kan inte" (written in, so applied too).
+            val now = clock.now()
+            calendar.handoffRequests.first()
+                .filter { it.kind == kind && it.status == RequestStatus.Pending && it.matches(occurrence) }
+                .forEach {
+                    val answered = it.copy(status = RequestStatus.Accepted, respondedBy = me, respondedAt = now, appliedAt = now)
+                    calendar.saveHandoffRequest(answered)
+                }
+        }
     }
 
     /** "Dölj" on "Kom igång": it does not come back on this phone for this family. */

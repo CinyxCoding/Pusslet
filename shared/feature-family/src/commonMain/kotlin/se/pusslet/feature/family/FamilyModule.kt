@@ -19,7 +19,7 @@ val familyModule: Module = module {
     viewModel { FamilyViewModel(get(), get(), get(), get()) }
     viewModel { ChildEditorViewModel(get(), get(), get()) }
     viewModel { MemberEditorViewModel(get(), get()) }
-    viewModel { InviteViewModel(get(), get(), get()) }
+    viewModel { InviteViewModel(get(), get(), get(), get()) }
     viewModel { CustodyEditorViewModel(get(), get(), get()) }
     viewModel { HandoverViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }

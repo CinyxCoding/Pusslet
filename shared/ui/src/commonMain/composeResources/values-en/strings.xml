@@ -296,7 +296,6 @@
     <string name="event_end_before_start">The end is before the start</string>
     <string name="event_editing_occurrence">You are only changing %1$s. The rest of the series stays the same.</string>
     <string name="event_edit_scope">Change only this time or the whole series?</string>
-    <string name="event_request_from">%1$s is asking if someone can take it.</string>
     <string name="event_private_hint">Only parents can see this event.</string>
     <string name="calendar_week_abbr">wk</string>
     <string name="empty_generic">Nothing here.</string>
@@ -1041,6 +1040,18 @@
     <string name="today_demo_leave_title">Start for real?</string>
     <string name="today_demo_leave_body">The sample data is removed and you start from the beginning.</string>
     <string name="today_demo_leave_confirm">Start</string>
+
+    <!-- Hjälparvy H3 (UX plan Steg 3): förälderns förhandsvisning och svaren i Händelsedetaljer -->
+    <string name="helper_preview_title">How %1$s sees the app</string>
+    <string name="helper_preview_note">Preview. Nothing you tap here is saved.</string>
+    <string name="helper_preview_hidden_one">%1$s can't see 1 event this week.</string>
+    <string name="helper_preview_hidden">%1$s can't see %2$d events this week.</string>
+    <string name="request_asked_member">Asked %1$s · no answer yet</string>
+    <string name="request_asked_all">Asked everyone · no answer yet</string>
+    <string name="request_answer_yes">%1$s said yes</string>
+    <string name="request_answer_no">%1$s can't</string>
+    <string name="card_helper_cannot_pickup">%1$s can't pick up %2$s at %3$s</string>
+    <string name="card_helper_cannot_dropoff">%1$s can't drop off %2$s at %3$s</string>
 
     <!-- Quick add learns (UX plan 4.6) -->
     <string name="quickadd_hint_generic">E.g. football Tue 17:30</string>

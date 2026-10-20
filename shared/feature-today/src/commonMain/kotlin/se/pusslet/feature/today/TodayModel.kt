@@ -3,6 +3,7 @@ package se.pusslet.feature.today
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import se.pusslet.core.calendar.EffectiveHandoffs.matches
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
@@ -128,8 +129,8 @@ internal object TodayModel {
         return requests
             .filter { it.status == RequestStatus.Pending && it.fromMemberId != me && (it.toMemberId == null || it.toMemberId == me) }
             .mapNotNull { r ->
-                val o = occurrences.firstOrNull { it.event.id == r.eventId && it.occurrenceDate == r.occurrenceDate }
-                    ?: return@mapNotNull null
+                // A request names the series; a changed occurrence is an override that points back to it.
+                val o = occurrences.firstOrNull { r.matches(it) } ?: return@mapNotNull null
                 val pickUp = r.kind == HandoffKind.PickUp
                 val date = if (pickUp && !o.allDay) o.end.date else o.start.date
                 val time = if (pickUp) o.pickUpTime() else o.dropOffTime()

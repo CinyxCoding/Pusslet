@@ -23,6 +23,7 @@ import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.Member
+import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.ShoppingItem
 import se.pusslet.core.model.ShoppingList
@@ -266,6 +267,47 @@ class TodayViewModelTest {
         assertEquals("Johan", request.from?.name)
         assertEquals(listOf("Ella"), request.children.map { it.name })
         assertEquals(LocalTime(15, 0), request.time)
+    }
+
+    @Test
+    fun aRequestNamingTheSeriesStillShowsForAChangedOccurrence() = runTest {
+        val world = TestWorld()
+        world.family()
+        val series = school.copy(id = "e-series", rrule = "FREQ=WEEKLY;BYDAY=TU")
+        world.calendar.saveEvent(series)
+        // Johan gave today's pick-up to himself: an override for this occurrence only.
+        val override = series.copy(id = "e-series@$tuesday", rrule = null, seriesId = series.id, originalDate = tuesday)
+        world.calendar.saveEvent(override)
+        world.calendar.saveHandoffRequest(HandoffRequest("r-1", series.id, tuesday, HandoffKind.PickUp, fromMemberId = "m-johan"))
+
+        val request = viewModel(world).state.value.requests.single()
+
+        assertEquals(override.id, request.occurrence.event.id)
+    }
+
+    /** UX plan Steg 3: "Bengt kan inte hämta Ella 15:00 · Jag tar det", and taking it answers him. */
+    @Test
+    fun aCaregiversCannotMakeIsAProblemThatJagTarDetAnswers() = runTest {
+        val world = TestWorld()
+        world.family()
+        world.family.saveMember(Member("m-bengt", "Bengt", Role.Caregiver))
+        world.calendar.saveEvent(school.copy(pickUp = Handoff("m-bengt", LocalTime(15, 0))))
+        world.calendar.saveHandoffRequest(HandoffRequest("r-kan-inte", school.id, tuesday, HandoffKind.PickUp, fromMemberId = "m-bengt"))
+        val vm = viewModel(world)
+
+        val problem = assertNotNull(vm.state.value.plan).cannotMake.single()
+        assertEquals("Bengt", problem.from?.name)
+        assertEquals(listOf("c-ella"), problem.childIds)
+        assertTrue(vm.state.value.requests.isEmpty(), "A problem, not a question as well")
+
+        vm.takeHandoff(problem.occurrence, problem.kind)
+
+        val answered = world.calendar.handoffRequests.first().single()
+        assertEquals(RequestStatus.Accepted, answered.status)
+        assertEquals("m-sara", answered.respondedBy)
+        assertNotNull(answered.appliedAt)
+        assertEquals("m-sara", world.calendar.events.first().single().pickUp?.personId)
+        assertTrue(assertNotNull(vm.state.value.plan).cannotMake.isEmpty())
     }
 
     @Test

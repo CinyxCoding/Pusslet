@@ -75,6 +75,7 @@ import se.pusslet.feature.shopping.StoresRoute
 import se.pusslet.feature.tasks.TasksScreen
 import se.pusslet.feature.today.TodayLayoutRoute
 import se.pusslet.feature.today.TodayRoute
+import se.pusslet.feature.today.helper.HelperPreviewRoute
 import se.pusslet.shell.navigation.AppNavigator
 import se.pusslet.shell.navigation.Route
 import se.pusslet.shell.navigation.TopLevelTab
@@ -352,15 +353,28 @@ private fun AppNavDisplay(
                     onCustody = { navigator.navigate(Route.Custody(it)) },
                     onHandover = { navigator.navigate(Route.Handover(it)) },
                     onSignIn = { navigator.navigate(Route.Account) },
+                    onPreviewHelper = { navigator.navigate(Route.HelperPreview(it)) },
                 )
             }
             entry<Route.ChildEditor> { r -> ChildEditorRoute(r.childId, onDone = navigator::goBack) }
             entry<Route.MemberEditor> { r ->
-                MemberEditorRoute(r.memberId, onDone = navigator::goBack, onInvite = { navigator.navigate(Route.Invite(it)) })
+                MemberEditorRoute(
+                    r.memberId,
+                    onDone = navigator::goBack,
+                    onInvite = { navigator.navigate(Route.Invite(it)) },
+                    onPreviewHelper = { navigator.navigate(Route.HelperPreview(it)) },
+                )
             }
             entry<Route.Invite> { r ->
-                InviteRoute(r.claimMemberId, onBack = navigator::goBack, onSignIn = { navigator.navigate(Route.Account) })
+                InviteRoute(
+                    r.claimMemberId,
+                    onBack = navigator::goBack,
+                    onSignIn = { navigator.navigate(Route.Account) },
+                    onPreviewHelper = { navigator.navigate(Route.HelperPreview(it)) },
+                )
             }
+            // "Så ser Bengt appen" (parents only: the entries are only offered to parents).
+            entry<Route.HelperPreview> { r -> HelperPreviewRoute(r.memberId, onBack = navigator::goBack) }
             entry<Route.Join> { r -> JoinRoute(initialCode = r.code, onBack = navigator::goBack, onJoined = navigator::reset) }
             entry<Route.Custody> { r -> CustodyEditorRoute(r.scheduleId, onDone = navigator::goBack) }
             entry<Route.Handover> { r -> HandoverRoute(r.scheduleId, onBack = navigator::goBack) }

@@ -257,6 +257,8 @@ private fun AppNavDisplay(
                     onOpenCalendar = { navigator.selectTab(TopLevelTab.Calendar) },
                     onOpenShopping = { navigator.selectTab(TopLevelTab.Shopping) },
                     onCustomize = { navigator.navigate(Route.TodayLayout) },
+                    onOpenChild = { navigator.navigate(Route.ChildEditor(it)) },
+                    onInvite = { navigator.navigate(Route.Invite(claimMemberId = it)) },
                     contentPadding = padding,
                 )
             }

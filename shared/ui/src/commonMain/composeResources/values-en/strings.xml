@@ -1024,6 +1024,30 @@
     <string name="onboarding_use_location">Use my location</string>
     <string name="onboarding_done_body_caregiver">Now you can see when you pick up and drop off.</string>
 
+    <!-- Idag: Kom igång, the + hint and leaving the example family (UX plan 4.4, 4.7, 4.8) -->
+    <string name="today_setup_title">Get started</string>
+    <string name="today_setup_progress">%1$d of %2$d done</string>
+    <string name="today_setup_show_fewer">Show fewer</string>
+    <string name="today_setup_hide">Hide</string>
+    <string name="today_setup_done_a11y">Done</string>
+    <string name="today_setup_school">Add %1$s school</string>
+    <string name="today_setup_preschool">Add %1$s preschool</string>
+    <string name="today_setup_handoffs">Plan drop-offs and pick-ups</string>
+    <string name="today_setup_invite">Invite %1$s</string>
+    <string name="today_setup_activity">Add an activity</string>
+    <string name="today_setup_dinners">Plan this week's dinners</string>
+    <string name="today_setup_shopping">Add a shopping item</string>
+    <!-- A name's possessive: Ellas / Ella's; after these endings: Måns, Felix / James' -->
+    <string name="name_possessive">%1$s's</string>
+    <string name="name_possessive_after_ending">%1$s'</string>
+    <string name="name_possessive_endings">s</string>
+    <string name="today_hint_add">Tap + and write the way you talk: “%1$s dance Tue 17”.</string>
+    <string name="today_hint_add_generic">Tap + and write the way you talk: “Dance Tue 17”.</string>
+    <string name="today_demo_leave">Start for real</string>
+    <string name="today_demo_leave_title">Start for real?</string>
+    <string name="today_demo_leave_body">The sample data is removed and you start from the beginning.</string>
+    <string name="today_demo_leave_confirm">Start</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>
 </resources>

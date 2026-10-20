@@ -14,6 +14,7 @@ import se.pusslet.core.holidays.SwedishHolidays
 import se.pusslet.core.meals.MealClash
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.CustodySchedule
+import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilyPerson
@@ -412,8 +413,11 @@ object TodayPlanner {
     }
 
     /** School/preschool blocks are shown as their drop-off and pick-up, not as a big event. */
-    fun isRoutine(o: EventOccurrence): Boolean =
-        o.event.tags.any { it.equals("skola", true) || it.equals("förskola", true) || it.equals("fritids", true) }
+    fun isRoutine(o: EventOccurrence): Boolean = isRoutineEvent(o.event)
+
+    /** [isRoutine] for an event, whatever occurrence: tagged school, preschool or after-school. */
+    fun isRoutineEvent(event: Event): Boolean =
+        event.tags.any { it.equals("skola", true) || it.equals("förskola", true) || it.equals("fritids", true) }
 
     private fun buildTimeline(todays: List<EventOccurrence>, byId: Map<String, FamilyPerson>): List<TimelineItem> {
         val items = ArrayList<TimelineItem>()

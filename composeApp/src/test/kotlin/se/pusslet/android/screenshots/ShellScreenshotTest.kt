@@ -286,6 +286,32 @@ class ShellScreenshotTest {
         snap("onboarding_done")
     }
 
+    /** A new family right after first start: "Kom igång" ticks itself off as the family fills in (UX plan 4.4). */
+    @Test
+    fun todayNewFamily() {
+        startOnboarding()
+        tap("Nästa")
+        compose.waitUntilAtLeastOneExists(hasText("Vilka barn finns i familjen?"), timeoutMillis = 10_000)
+        compose.onNode(hasText("Barnets förnamn") and hasSetTextAction()).performTextInput("Ella")
+        tap("Nästa")
+        compose.waitUntilAtLeastOneExists(hasText("Använd min position"), timeoutMillis = 10_000)
+        tap("Hoppa över")
+        compose.waitUntilAtLeastOneExists(hasText("Klart!"), timeoutMillis = 10_000)
+        tap("Visa min dag")
+        compose.waitUntilAtLeastOneExists(hasText("Kom igång"), timeoutMillis = 15_000)
+        compose.waitForIdle()
+        snap("today_new_family")
+    }
+
+    /** The example family can be left from Idag, after a confirmation (UX plan 4.8). */
+    @Test
+    fun todayLeaveDemo() {
+        launch()
+        tap("Börja på riktigt")
+        compose.waitUntilAtLeastOneExists(hasText("Börja på riktigt?"), timeoutMillis = 10_000)
+        snap("today_leave_demo")
+    }
+
     @Test
     @Config(qualifiers = "en-w411dp-h891dp-xxhdpi")
     fun onboardingDoneEnglish() {

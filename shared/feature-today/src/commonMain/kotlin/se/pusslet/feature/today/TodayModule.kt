@@ -8,7 +8,28 @@ import se.pusslet.feature.today.helper.HelperViewModel
 
 val todayModule: Module = module {
     viewModel { TodayLayoutViewModel(get(), get(), get()) }
-    viewModel { TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel {
+        TodayViewModel(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+        )
+    }
     viewModel {
         HelperViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get<SyncEngine>().status, get(), get())
     }

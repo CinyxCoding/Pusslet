@@ -92,22 +92,7 @@ class TodayViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun newViewModel(world: TestWorld) = TodayViewModel(
-        world.family,
-        world.calendar,
-        world.packing,
-        world.meals,
-        world.tasks,
-        world.lunches,
-        world.shopping,
-        world.prefs,
-        NoWeather,
-        world.sessions,
-        world.handoffs,
-        world.ids,
-        world.clock,
-        world.zone,
-    )
+    private fun TestScope.newViewModel(world: TestWorld) = TestPhone(world, backgroundScope).todayViewModel()
 
     private fun TestScope.observe(vm: TodayViewModel) {
         val eager = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))

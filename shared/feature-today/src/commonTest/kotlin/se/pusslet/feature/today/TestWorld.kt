@@ -103,13 +103,16 @@ class TestWorld(
     role: Role = Role.Parent,
     now: Instant = Instant.parse("2026-10-13T06:00:00Z"),
     memberId: String = "m-sara",
+    /** The example family ("Familjen Lind"), as after "Utforska med en exempelfamilj". */
+    demo: Boolean = false,
 ) {
     val clock = object : Clock {
         override fun now() = now
     }
     val zone = TimeZone.of("Europe/Stockholm")
-    val sessions = FixedSessionProvider(Session(familyId = "f", memberId = memberId, uid = "u", role = role))
-    val docs = DocumentStore(InMemorySyncLocalStore(), sessions, clock)
+    val sessions = FixedSessionProvider(Session(familyId = "f", memberId = memberId, uid = "u", role = role, demo = demo))
+    val local = InMemorySyncLocalStore()
+    val docs = DocumentStore(local, sessions, clock)
     val ids = SequentialIdGenerator()
     val prefs = PreferencesRepository(FakePreferenceDao())
     val family = FamilyRepository(docs, sessions, LocalOnlyFamilyRemote, LocalOnlyAuthRepository(), ids, clock)

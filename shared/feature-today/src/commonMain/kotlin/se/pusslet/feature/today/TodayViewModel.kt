@@ -26,12 +26,15 @@ import se.pusslet.core.calendar.EffectiveHandoffs
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.Completion
 import se.pusslet.core.model.CustodySchedule
+import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventOccurrence
+import se.pusslet.core.model.Family
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.MealPlanWeek
+import se.pusslet.core.model.Member
 import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.model.PackingRule
@@ -42,6 +45,9 @@ import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
+import se.pusslet.core.today.SetupChecklist
+import se.pusslet.core.today.SetupInput
+import se.pusslet.core.today.SetupProgress
 import se.pusslet.core.today.TodayBlock
 import se.pusslet.core.today.TodayInput
 import se.pusslet.core.today.TodayLayout
@@ -50,6 +56,8 @@ import se.pusslet.core.today.TodayPlan
 import se.pusslet.core.today.TodayPlanner
 import se.pusslet.core.util.IdGenerator
 import se.pusslet.core.weather.Forecast
+import se.pusslet.data.AppCoordinator
+import se.pusslet.data.remote.AuthRepository
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -63,7 +71,10 @@ import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sources.Sourced
 import se.pusslet.data.sources.WeatherSource
+import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffAssigner
+import se.pusslet.data.usecase.HintIds
 import kotlin.time.Clock
 
 sealed interface WeatherState {
@@ -105,6 +116,17 @@ data class TodayUiState(
     val requests: List<TodayRequest> = emptyList(),
     /** No section has anything to show: "Inget mer idag". */
     val quiet: Boolean = false,
+    /**
+     * "Kom igång" (UX plan 4.4): parents of a new real family, until every step is done or "Dölj". While it shows it is the
+     * focus surface and Morgonkollen is drawn flat under it.
+     */
+    val setup: SetupProgress? = null,
+    /** The first-time hint about + (UX plan 4.7): once per phone, parents only, never while "Kom igång" shows. */
+    val showAddHint: Boolean = false,
+    /** "Börja på riktigt" is running (UX plan 4.8). */
+    val leavingDemo: Boolean = false,
+    /** Leaving the example family did not work: a quiet line says so and the button stays. */
+    val leaveDemoFailed: Boolean = false,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -116,10 +138,14 @@ class TodayViewModel(
     private val tasks: TaskRepository,
     lunches: LunchRepository,
     shopping: ShoppingRepository,
-    prefs: PreferencesRepository,
+    private val prefs: PreferencesRepository,
     private val weatherSource: WeatherSource,
     private val sessions: SessionProvider,
     private val handoffs: HandoffAssigner,
+    private val hints: FirstTimeHints,
+    private val coordinator: AppCoordinator,
+    private val local: SyncLocalStore,
+    private val auth: AuthRepository,
     private val ids: IdGenerator,
     private val clock: Clock,
     private val zone: TimeZone,
@@ -215,6 +241,31 @@ class TodayViewModel(
         }
         .onStart { emit(Unit) }
 
+    private enum class DemoExit { Idle, Leaving, Failed }
+
+    private val demoExit = MutableStateFlow(DemoExit.Idle)
+
+    /** What "Kom igång" needs beyond Idag's own data. */
+    private data class SetupData(val family: Family?, val members: List<Member>, val events: List<Event>, val hasShoppingItems: Boolean)
+
+    /** Only read for a parent of a real family that has not hidden "Kom igång" on this phone; everyone else gets null. */
+    private val setupData: Flow<SetupData?> = combine(sessions.session, prefs.observe(Prefs.SetupHidden)) { s, hidden ->
+        s.role == Role.Parent && !s.demo && s.familyId != null && s.familyId !in hidden
+    }.distinctUntilChanged().flatMapLatest { candidate ->
+        if (!candidate) {
+            flowOf(null)
+        } else {
+            val hasItems = shopping.items.map { it.isNotEmpty() }.distinctUntilChanged()
+            combine(family.family, family.members, calendar.events, hasItems) { f, m, e, items -> SetupData(f, m, e, items) }
+        }
+    }
+
+    private data class FirstUse(val setup: SetupData?, val hintUnseen: Boolean, val demoExit: DemoExit)
+
+    private val firstUse: Flow<FirstUse> = combine(setupData, hints.shouldShow(HintIds.TODAY_ADD), demoExit) { s, h, d ->
+        FirstUse(s, h, d)
+    }
+
     private data class View(
         val layout: TodayLayout,
         val shopping: ShoppingSnapshot?,
@@ -222,6 +273,7 @@ class TodayViewModel(
         val hasPlace: Boolean,
         val forecast: Sourced<Forecast>?,
         val weather: WeatherState,
+        val firstUse: FirstUse,
     )
 
     private val view: Flow<View> = combine(
@@ -229,9 +281,9 @@ class TodayViewModel(
         shoppingSnapshot,
         calendar.handoffRequests,
         family.settings.map { it.weatherPlace != null }.distinctUntilChanged(),
-        combine(forecast, weatherState, weatherLoader) { f, w, _ -> f to w },
-    ) { l, s, r, place, fw ->
-        View(l, s, r, place, fw.first, fw.second)
+        combine(forecast, weatherState, weatherLoader, firstUse) { f, w, _, u -> Triple(f, w, u) },
+    ) { l, s, r, place, fwu ->
+        View(l, s, r, place, fwu.first, fwu.second, fwu.third)
     }
 
     val state: StateFlow<TodayUiState> = combine(now, household, occurrences, extras, view) { n, h, occ, ex, v ->
@@ -271,6 +323,25 @@ class TodayViewModel(
         )
         val canEdit = h.session.canEdit
         val sections = TodayModel.sections(v.layout, plan)
+        val setup = v.firstUse.setup?.let { data ->
+            SetupChecklist.forIdag(
+                SetupInput(
+                    today = n.date,
+                    now = clock.now(),
+                    role = h.session.role,
+                    me = me,
+                    family = data.family,
+                    demo = h.session.demo,
+                    members = data.members,
+                    children = h.children,
+                    events = data.events,
+                    occurrences = occ,
+                    mealWeeks = ex.weeks,
+                    hasShoppingItems = data.hasShoppingItems,
+                    canInvite = auth.available,
+                ),
+            )
+        }
         return TodayUiState(
             loading = false,
             plan = plan,
@@ -286,6 +357,11 @@ class TodayViewModel(
             sections = sections,
             requests = TodayModel.requests(me, v.requests, occ, people, n.date, n.time),
             quiet = sections.isEmpty(),
+            setup = setup,
+            // "Kom igång" already leads to + ("Lägg till en aktivitet"): one thing to learn at a time.
+            showAddHint = canEdit && v.firstUse.hintUnseen && setup == null,
+            leavingDemo = v.firstUse.demoExit == DemoExit.Leaving,
+            leaveDemoFailed = v.firstUse.demoExit == DemoExit.Failed,
         )
     }
 
@@ -334,6 +410,32 @@ class TodayViewModel(
         if (!session.canEdit) return
         val me = session.memberId ?: return
         viewModelScope.launch { handoffs.assign(occurrence, kind, me) }
+    }
+
+    /** "Dölj" on "Kom igång": it does not come back on this phone for this family. */
+    fun hideSetup() {
+        val familyId = sessions.session.value.familyId ?: return
+        viewModelScope.launch { prefs.update(Prefs.SetupHidden) { it + familyId } }
+    }
+
+    /** "Jag förstår" on the hint about +: it does not come back on this phone. */
+    fun dismissAddHint() {
+        viewModelScope.launch { hints.dismiss(HintIds.TODAY_ADD) }
+    }
+
+    /**
+     * "Börja på riktigt" (UX plan 4.8), after the dialog: removes the example family from this phone and resets onboarding,
+     * like "Visa första start igen"; the shell then shows the welcome screen. Only for the example family. A failure is kept
+     * in the state ([TodayUiState.leaveDemoFailed]) so the screen can say so; the button stays for another try.
+     */
+    fun leaveDemo() {
+        if (!sessions.session.value.demo || demoExit.value == DemoExit.Leaving) return
+        demoExit.value = DemoExit.Leaving
+        viewModelScope.launch {
+            val left = coordinator.replayOnboarding(local)
+            if (!left) log.w { "Could not leave the example family" }
+            demoExit.value = if (left) DemoExit.Idle else DemoExit.Failed
+        }
     }
 
     /** "Kalas på lördag – present?": "Påminn mig" creates the to-do linked to the party, due the day before. */

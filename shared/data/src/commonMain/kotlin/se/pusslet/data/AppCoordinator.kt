@@ -143,12 +143,14 @@ class AppCoordinator(
     }
 
     /**
-     * Developer tool ([BackendConfig.developerTools] only): removes the family and the example data from this device
-     * and resets onboarding, so the welcome screen shows again. The demo family is not seeded again at the next start.
+     * Removes the family and the example data from this device and resets onboarding, so the welcome screen shows again.
+     * The demo family is not seeded again at the next start. Allowed as a developer tool ([BackendConfig.developerTools])
+     * and, in every build, to leave the example family ("Börja på riktigt" on Idag, UX plan 4.8): any flavor can open it
+     * from the welcome screen. A real family in a production build is never removed this way.
      * Fails soft: returns false (and changes nothing visible) when it is not allowed or something went wrong.
      */
     suspend fun replayOnboarding(local: SyncLocalStore): Boolean {
-        if (!config.developerTools) return false
+        if (!config.developerTools && !sessions.session.value.demo) return false
         // The screen that asked is torn down as soon as the session changes; finish the steps anyway.
         return withContext(NonCancellable) {
             try {

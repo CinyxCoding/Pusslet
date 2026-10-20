@@ -105,4 +105,19 @@ class AppCoordinatorTest {
         assertTrue(app.prefs.get(Prefs.OnboardingDone))
         assertFalse(app.prefs.get(Prefs.SkipDemoSeed))
     }
+
+    /** "Utforska med en exempelfamilj" is on every welcome screen, so "Börja på riktigt" (UX plan 4.8) works in production too. */
+    @Test
+    fun theExampleFamilyCanBeLeftInProduction() = runTest {
+        val app = AppProcess(backgroundScope, prod)
+        app.sessions.load()
+        val familyId = app.family.createFamily("Familjen Lind", "Sara", demo = true).id
+        app.prefs.set(Prefs.OnboardingDone, true)
+
+        assertTrue(app.coordinator.replayOnboarding(local))
+
+        assertFalse(app.sessions.session.value.hasFamily)
+        assertFalse(app.prefs.get(Prefs.OnboardingDone))
+        assertEquals(emptyList(), local.listFamily(familyId))
+    }
 }

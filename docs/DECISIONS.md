@@ -264,3 +264,16 @@ skrivrätt till händelser.
 uppgifter – aldrig prenumerationer eller enhetskalendrar. Förfrågningar om privata händelser filtreras bort. Allergier och
 kost (`dietProfiles`) läses inte längre av hjälpare (regler och synk, UX-plan §10.6).
 **Konsekvens:** Samma filter används som extra skydd på hjälparens telefon (t.ex. gammal data efter rollbyte).
+
+## ADR-034 – Kom igång på Idag och att lämna exempelfamiljen
+**Kontext:** En ny familj ser en tom Idag och vet inte vad som ger mest. Exempelfamiljen går att öppna från välkomstskärmen
+i alla byggen, men gick bara att lämna via utvecklarverktyget ”Visa första start igen”.
+**Beslut:** ”Kom igång” (`SetupChecklist` i core) står under ”Att lösa” och före Morgonkollen, som då ritas platt (en
+fokusyta per skärm). Stegen bockas av av datan själv: skola per barn, vem som lämnar och hämtar, inbjudan per vuxen utan
+konto (bara när en backend finns), en egen aktivitet, en middag och en vara. Högst 3 öppna rader, ”2 av 6 klart”,
+”Visa alla” och ”Dölj”. Bara för föräldrar, aldrig i exempelfamiljen och bara de första 28 dagarna efter
+`Family.createdAt`, så att befintliga familjer inte plötsligt får listan efter en uppdatering. ”Dölj” sparas per familj på
+telefonen (`Prefs.SetupHidden`). Det är inget block i ”Anpassa Idag”: det försvinner av sig självt (ADR-027).
+”Börja på riktigt” på raden Exempelfamilj bekräftas och kör `AppCoordinator.replayOnboarding`, som nu tillåts i alla byggen
+när sessionen är exempelfamiljen; en riktig familj tas aldrig bort den vägen i prod.
+**Konsekvens:** Tipset om + (4.7) väntar tills ”Kom igång” är borta, så att Idag aldrig har två sådana ytor samtidigt.

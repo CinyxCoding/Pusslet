@@ -1025,6 +1025,30 @@
     <string name="onboarding_use_location">Använd min position</string>
     <string name="onboarding_done_body_caregiver">Nu ser du när du hämtar och lämnar.</string>
 
+    <!-- Idag: Kom igång, the + hint and leaving the example family (UX plan 4.4, 4.7, 4.8) -->
+    <string name="today_setup_title">Kom igång</string>
+    <string name="today_setup_progress">%1$d av %2$d klart</string>
+    <string name="today_setup_show_fewer">Visa färre</string>
+    <string name="today_setup_hide">Dölj</string>
+    <string name="today_setup_done_a11y">Klart</string>
+    <string name="today_setup_school">Lägg till %1$s skola</string>
+    <string name="today_setup_preschool">Lägg till %1$s förskola</string>
+    <string name="today_setup_handoffs">Vem lämnar och hämtar?</string>
+    <string name="today_setup_invite">Bjud in %1$s</string>
+    <string name="today_setup_activity">Lägg till en aktivitet</string>
+    <string name="today_setup_dinners">Planera veckans middagar</string>
+    <string name="today_setup_shopping">Lägg till en vara</string>
+    <!-- A name's possessive: Ellas / Ella's; after these endings: Måns, Felix / James' -->
+    <string name="name_possessive">%1$ss</string>
+    <string name="name_possessive_after_ending">%1$s</string>
+    <string name="name_possessive_endings">sxz</string>
+    <string name="today_hint_add">Tryck på + och skriv som du pratar: ”%1$s dans tis 17”.</string>
+    <string name="today_hint_add_generic">Tryck på + och skriv som du pratar: ”Dans tis 17”.</string>
+    <string name="today_demo_leave">Börja på riktigt</string>
+    <string name="today_demo_leave_title">Börja på riktigt?</string>
+    <string name="today_demo_leave_body">Exempeldatan tas bort och du kommer till första start.</string>
+    <string name="today_demo_leave_confirm">Börja</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
 </resources>

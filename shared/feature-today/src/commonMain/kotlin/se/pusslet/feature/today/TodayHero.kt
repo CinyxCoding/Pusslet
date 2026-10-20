@@ -3,6 +3,7 @@ package se.pusslet.feature.today
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -81,11 +82,11 @@ import kotlin.math.roundToInt
 
 /**
  * Morgonkollen: the one focus surface of Idag, without a visible title (UX plan, Idag). The rows are decided by the view
- * model ([TodayUiState.hero]); this only draws them.
+ * model ([TodayUiState.hero]); this only draws them. [flat] while "Kom igång" is the focus surface above it (4.4).
  */
 @Composable
-internal fun MorningCheck(state: TodayUiState, plan: TodayPlan, actions: TodayActions) {
-    HeroCard {
+internal fun MorningCheck(state: TodayUiState, plan: TodayPlan, actions: TodayActions, flat: Boolean = false) {
+    val rows: @Composable ColumnScope.() -> Unit = {
         state.hero.forEach { row ->
             when (row) {
                 is HeroRow.Handoff -> HandoffRow(row.line, plan.now, actions)
@@ -103,6 +104,11 @@ internal fun MorningCheck(state: TodayUiState, plan: TodayPlan, actions: TodayAc
                 )
             }
         }
+    }
+    if (flat) {
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs), content = rows)
+    } else {
+        HeroCard(content = rows)
     }
 }
 

@@ -76,6 +76,9 @@ object Prefs {
 
     /** First-time hints this phone has dismissed with "Jag förstår" (UX plan 4.7). Ids from `HintIds`; device-local. */
     val SeenHints = PrefKey("hints.seen", SetSerializer(String.serializer()), emptySet())
+
+    /** Families whose "Kom igång" on Idag was hidden with "Dölj" on this phone (UX plan 4.4). Device-local, never synced. */
+    val SetupHidden = PrefKey("today.setupHidden", SetSerializer(String.serializer()), emptySet())
 }
 
 class PreferencesRepository(private val dao: PreferenceDao, private val json: Json = Json { ignoreUnknownKeys = true }) {

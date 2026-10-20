@@ -210,8 +210,14 @@ fun EventDetailsScreen(
                 Section(stringResource(Res.string.event_note)) { Text(o.event.note, style = MaterialTheme.typography.bodyLarge) }
             }
             if (o.source == EventSource.Family && !o.event.sharedWithCaregivers) {
+                val caregivers = state.caregivers.map { it.name }
                 Text(
-                    stringResource(Res.string.event_private_hint),
+                    // "Bengt ser inte den här händelsen." when the family has caregivers (UX plan Steg 3, §9).
+                    if (caregivers.isEmpty()) {
+                        stringResource(Res.string.event_private_hint)
+                    } else {
+                        stringResource(Res.string.event_private_hint_named, joinNames(caregivers))
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -276,7 +282,7 @@ private fun HandoffSection(state: EventDetailsState, o: EventOccurrence, people:
                 if (parent) ChangeHandoff(state.adults, who?.id) { actions.onAssign(kind, it) }
             }
             when (val request = state.requestState(kind)) {
-                is RequestState.ForMe -> AnswerCard(request, kind, children, actions)
+                is RequestState.ForMe -> AnswerCard(request, kind, children, state.waitingForNetwork, actions)
                 is RequestState.CannotMake -> CannotMakeLine(request, kind, children, time, parent) { actions.onTake(kind) }
                 is RequestState.Asked, is RequestState.Accepted, is RequestState.Declined -> RequestPills(request)
                 null -> Unit
@@ -360,7 +366,13 @@ private fun CannotMakeLine(
  * then what he said and "Ändra svar" until a parent's phone has written the answer in.
  */
 @Composable
-private fun AnswerCard(request: RequestState.ForMe, kind: HandoffKind, children: String, actions: HandoffActions) {
+private fun AnswerCard(
+    request: RequestState.ForMe,
+    kind: HandoffKind,
+    children: String,
+    waitingForNetwork: Boolean,
+    actions: HandoffActions,
+) {
     val from = request.from?.name ?: stringResource(Res.string.today_request_someone)
     OutlinedCard(Modifier.fillMaxWidth(), colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
@@ -384,6 +396,13 @@ private fun AnswerCard(request: RequestState.ForMe, kind: HandoffKind, children:
                 else -> {
                     val said = if (request.answer == HelperAnswer.Yes) Res.string.helper_answered_yes else Res.string.helper_answered_no
                     Text(stringResource(said, from), style = MaterialTheme.typography.bodyLarge)
+                    if (waitingForNetwork) {
+                        Text(
+                            stringResource(Res.string.helper_offline_pending),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     if (request.canChangeAnswer) {
                         TextButton(onClick = { actions.onChangeAnswer(kind) }, modifier = Modifier.heightIn(min = HelperDimens.button)) {
                             Text(stringResource(Res.string.helper_change_answer))

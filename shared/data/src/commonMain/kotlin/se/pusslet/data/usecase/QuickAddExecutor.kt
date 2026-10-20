@@ -217,7 +217,8 @@ class QuickAddExecutor(
 
     private suspend fun assignHandoff(action: QuickAddAction.AssignHandoff, outcome: QuickAddOutcome): QuickAddOutcome {
         val children = action.childIds.ifEmpty { family.children.first().map { it.id } }
-        val dayOccurrences = calendar.occurrences(action.date, action.date, zone).first().filter { o ->
+        // Whatever the calendar filter shows, so a hidden school day gets the hand-off instead of a new event.
+        val dayOccurrences = calendar.allOccurrences(action.date, action.date, zone).first().filter { o ->
             o.event.participantIds.any { it in children } &&
                 (if (action.kind == HandoffKind.PickUp) o.event.pickUp != null else o.event.dropOff != null)
         }

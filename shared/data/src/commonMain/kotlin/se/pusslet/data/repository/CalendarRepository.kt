@@ -122,9 +122,24 @@ class CalendarRepository(
         entry?.let { runCatching { json.decodeFromString(ListSerializer(Event.serializer()), it.body) }.getOrNull() }.orEmpty()
     }
 
-    /** Every occurrence in [from]..[to] from the enabled layers, in [zone]. */
-    fun occurrences(from: LocalDate, to: LocalDate, zone: TimeZone): Flow<List<EventOccurrence>> {
-        val layers = prefs.observe(Prefs.CalendarLayers)
+    /** Every occurrence in [from]..[to] from the layers Kalender's filter shows (a view choice on this phone), in [zone]. */
+    fun occurrences(from: LocalDate, to: LocalDate, zone: TimeZone): Flow<List<EventOccurrence>> =
+        occurrencesIn(from, to, zone, prefs.observe(Prefs.CalendarLayers))
+
+    /**
+     * Every occurrence in [from]..[to], whatever Kalender's filter shows. For what must not depend on a view choice: the
+     * helper view and its preview, writing in an accepted answer, a quick-add hand-off, or finding the occurrence a screen
+     * was opened for.
+     */
+    fun allOccurrences(from: LocalDate, to: LocalDate, zone: TimeZone): Flow<List<EventOccurrence>> =
+        occurrencesIn(from, to, zone, flowOf(CalendarLayer.entries.toSet()))
+
+    private fun occurrencesIn(
+        from: LocalDate,
+        to: LocalDate,
+        zone: TimeZone,
+        layers: Flow<Set<CalendarLayer>>,
+    ): Flow<List<EventOccurrence>> {
         val family = events.map { EventExpander.expand(it, from, to, zone, EventSource.Family) }
         val subs = subscriptions.flatMapLatest { list ->
             val enabled = list.filter { it.enabled }

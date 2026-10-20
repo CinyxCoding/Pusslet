@@ -270,6 +270,8 @@ data (filtrerad genom `CaregiverVisibility`) och skriver ingenting; den hämtar 
 uppgifter – aldrig prenumerationer eller enhetskalendrar. Förfrågningar om privata händelser filtreras bort. Allergier och
 kost (`dietProfiles`) läses inte längre av hjälpare (regler och synk, UX-plan §10.6).
 **Konsekvens:** Samma filter används som extra skydd på hjälparens telefon (t.ex. gammal data efter rollbyte).
+Kalenderns filter (`Prefs.CalendarLayers`) är bara en vy på den egna telefonen: hjälparvyn, förhandsvisningen, inskrivningen
+av svar, snabbinmatningens lämningar och Händelsedetaljer läser alla tillfällen (`CalendarRepository.allOccurrences`).
 
 ## ADR-034 – Kom igång på Idag och att lämna exempelfamiljen
 **Kontext:** En ny familj ser en tom Idag och vet inte vad som ger mest. Exempelfamiljen går att öppna från välkomstskärmen

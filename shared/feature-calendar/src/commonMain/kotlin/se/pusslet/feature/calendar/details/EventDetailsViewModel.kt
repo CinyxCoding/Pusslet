@@ -4,17 +4,23 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.calendar.EffectiveHandoffs
 import se.pusslet.core.calendar.EffectiveHandoffs.matches
 import se.pusslet.core.helper.HelperAnswer
@@ -29,6 +35,8 @@ import se.pusslet.core.time.plusDays
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.session.SessionProvider
+import se.pusslet.data.sync.SyncStatus
+import se.pusslet.data.sync.waitsForNetwork
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.feature.calendar.settleAnswers
@@ -75,17 +83,32 @@ data class EventDetailsState(
     val role: Role = Role.Parent,
     /** The latest request per hand-off kind for this occurrence, answered or not. */
     val requests: List<HandoffRequest> = emptyList(),
+    /** When the state was built; a question about a hand-off that is over is no longer asked or answered. */
+    val now: LocalDateTime? = null,
+    /** "Skickas när du har nät" under a caregiver's answer. */
+    val waitingForNetwork: Boolean = false,
 ) {
     val editable: Boolean get() = occurrence?.source == EventSource.Family && role == Role.Parent
     val adults: List<FamilyPerson> get() = people.filter { !it.isChild }
+
+    /** "Bengt ser inte den här händelsen." for an event only parents see. */
+    val caregivers: List<FamilyPerson> get() = people.filter { !it.isChild && it.role == Role.Caregiver }
     private val parent: Boolean get() = role == Role.Parent
 
     fun request(kind: HandoffKind): HandoffRequest? = requests.firstOrNull { it.kind == kind }
 
+    /** The hand-off is over: open questions about it, and Ja/Nej, go away; what was answered stays. */
+    fun handoffPassed(kind: HandoffKind): Boolean {
+        val at = now ?: return false
+        return occurrence?.handoffPassed(kind, at) == true
+    }
+
     fun requestState(kind: HandoffKind): RequestState? {
         val r = request(kind) ?: return null
         val byId = people.associateBy { it.id }
-        return if (parent) parentView(r, byId) else caregiverView(r, byId)
+        val state = if (parent) parentView(r, byId) else caregiverView(r, byId)
+        val open = state is RequestState.Asked || state is RequestState.CannotMake || state is RequestState.ForMe
+        return state.takeUnless { open && handoffPassed(kind) }
     }
 
     /**
@@ -93,13 +116,14 @@ data class EventDetailsState(
      * request for it is open.
      */
     fun canRequestHelp(kind: HandoffKind): Boolean = parent && kind == HandoffKind.PickUp &&
-        occurrence?.event?.sharedWithCaregivers == true && request(kind)?.status != RequestStatus.Pending
+        occurrence?.event?.sharedWithCaregivers == true && request(kind)?.status != RequestStatus.Pending && !handoffPassed(kind)
 
     /** "Jag tar det" also answers an open question to me or to anyone (a caregiver's "Jag kan inte" has it on its Problem). */
     fun answersOpenRequest(kind: HandoffKind): Boolean {
         val me = myMemberId ?: return false
         val r = request(kind) ?: return false
-        return parent && r.status == RequestStatus.Pending && r.isFor(me) && requestState(kind) !is RequestState.CannotMake
+        return parent && r.status == RequestStatus.Pending && r.isFor(me) && !handoffPassed(kind) &&
+            requestState(kind) !is RequestState.CannotMake
     }
 
     private fun parentView(r: HandoffRequest, byId: Map<String, FamilyPerson>): RequestState? = when (r.status) {
@@ -158,6 +182,8 @@ class EventDetailsViewModel(
     private val assigner: HandoffAssigner,
     private val handoffRequests: HandoffRequests,
     private val sessions: SessionProvider,
+    /** The sync engine's status, for "Skickas när du har nät". */
+    syncStatus: Flow<SyncStatus>,
     private val clock: Clock,
     private val zone: TimeZone,
 ) : ViewModel() {
@@ -166,20 +192,24 @@ class EventDetailsViewModel(
     private val newId: () -> String = family::newId
 
     private val occurrence = target.filterNotNull().flatMapLatest { (id, date) ->
-        // Overrides may move an occurrence a few days, so look around the original date.
-        calendar.occurrences(date.plusDays(-SEARCH_DAYS), date.plusDays(SEARCH_DAYS), zone).combine(target) { list, _ ->
+        // Overrides may move an occurrence a few days, so look around the original date. Whatever Kalender's filter shows:
+        // the details are opened from Idag and the helper view too.
+        calendar.allOccurrences(date.plusDays(-SEARCH_DAYS), date.plusDays(SEARCH_DAYS), zone).combine(target) { list, _ ->
             list.firstOrNull { it.event.id == id && it.occurrenceDate == date }
                 ?: list.firstOrNull { it.event.seriesId == id && it.occurrenceDate == date }
                 ?: list.filter { it.event.id == id }.minByOrNull { kotlin.math.abs(it.occurrenceDate.toEpochDays() - date.toEpochDays()) }
         }
     }
 
-    val state: StateFlow<EventDetailsState> = combine(occurrence, family.people, sessions.session, calendar.handoffRequests) {
-        o,
-        people,
-        session,
-        requests,
-        ->
+    private val waitingForNetwork = syncStatus.map { it.waitsForNetwork() }.distinctUntilChanged().onStart { emit(false) }
+
+    val state: StateFlow<EventDetailsState> = combine(
+        occurrence,
+        family.people,
+        sessions.session,
+        calendar.handoffRequests,
+        waitingForNetwork,
+    ) { o, people, session, requests, waiting ->
         // A caregiver's accepted answer counts at once, like on Idag and in the calendar (ADR-030).
         val effective = o?.let { EffectiveHandoffs.apply(it, EffectiveHandoffs.pending(requests)) }
         EventDetailsState(
@@ -189,6 +219,8 @@ class EventDetailsViewModel(
             myMemberId = session.memberId,
             role = session.role,
             requests = effective?.let { latestPerKind(requests, it) }.orEmpty(),
+            now = clock.now().toLocalDateTime(zone),
+            waitingForNetwork = waiting,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), EventDetailsState())
 

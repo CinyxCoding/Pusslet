@@ -18,6 +18,7 @@ import se.pusslet.data.FakePreferenceDao
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.NoDeviceCalendars
 import se.pusslet.data.repository.PreferencesRepository
+import se.pusslet.data.repository.Prefs
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
 import se.pusslet.data.sync.DocumentStore
@@ -43,11 +44,12 @@ class HandoffRequestsTest {
     /** One family's data, seen from one member's phone. */
     private inner class Phone(memberId: String, role: Role) {
         val sessions = FixedSessionProvider(Session(familyId = "f", memberId = memberId, uid = "u-$memberId", role = role))
+        val prefs = PreferencesRepository(FakePreferenceDao())
         val calendar =
             CalendarRepository(
                 DocumentStore(store, sessions, clock),
                 FakeCacheDao(),
-                PreferencesRepository(FakePreferenceDao()),
+                prefs,
                 NoDeviceCalendars,
                 sessions,
             )
@@ -98,6 +100,19 @@ class HandoffRequestsTest {
         assertNotNull(stored().appliedAt)
         // Running again changes nothing.
         assertEquals(0, sara.applier.applyPending())
+    }
+
+    @Test
+    fun theAnswerIsWrittenInWhateverSarasCalendarFilterShows() = runTest {
+        sara.calendar.saveEvent(school)
+        sara.calendar.saveHandoffRequest(request())
+        bengt.requests.accept(stored(bengt))
+        // Sara has switched the family's own events off in Kalender's filter on her phone.
+        sara.prefs.set(Prefs.CalendarLayers, emptySet())
+
+        assertEquals(1, sara.applier.applyPending())
+        val friday = sara.calendar.allOccurrences(this@HandoffRequestsTest.friday, this@HandoffRequestsTest.friday, zone).first().single()
+        assertEquals("m-bengt", friday.event.pickUp?.personId)
     }
 
     @Test

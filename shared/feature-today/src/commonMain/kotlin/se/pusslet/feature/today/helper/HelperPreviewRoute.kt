@@ -11,6 +11,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,6 +33,7 @@ import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.empty_generic
 import se.pusslet.ui.resources.helper_preview_hidden
 import se.pusslet.ui.resources.helper_preview_hidden_one
+import se.pusslet.ui.resources.helper_preview_invite
 import se.pusslet.ui.resources.helper_preview_note
 import se.pusslet.ui.resources.helper_preview_title
 import se.pusslet.ui.theme.HelperTheme
@@ -43,14 +45,20 @@ import se.pusslet.ui.theme.Spacing
  * Navigation stays on the page, so the rows that would open something are not tappable.
  */
 @Composable
-fun HelperPreviewRoute(memberId: String, onBack: () -> Unit, viewModel: HelperPreviewViewModel = koinViewModel()) {
+fun HelperPreviewRoute(
+    memberId: String,
+    onBack: () -> Unit,
+    /** "Bjud in Bengt" while he has no account: the invite that claims him. */
+    onInvite: (memberId: String) -> Unit = {},
+    viewModel: HelperPreviewViewModel = koinViewModel(),
+) {
     LaunchedEffect(memberId) { viewModel.load(memberId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    HelperPreviewScreen(state, onBack)
+    HelperPreviewScreen(state, onBack, onInvite = { onInvite(memberId) })
 }
 
 @Composable
-fun HelperPreviewScreen(state: HelperPreviewUiState, onBack: () -> Unit) {
+fun HelperPreviewScreen(state: HelperPreviewUiState, onBack: () -> Unit, onInvite: () -> Unit = {}) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val note = stringResource(Res.string.helper_preview_note)
@@ -87,7 +95,17 @@ fun HelperPreviewScreen(state: HelperPreviewUiState, onBack: () -> Unit) {
                 Modifier.padding(padding).padding(Spacing.screenHorizontal),
             )
             else -> Column(Modifier.fillMaxSize().padding(padding)) {
-                Banner(note, modifier = Modifier.padding(horizontal = Spacing.screenHorizontal), kind = BannerKind.Info)
+                Banner(
+                    note,
+                    modifier = Modifier.padding(horizontal = Spacing.screenHorizontal),
+                    kind = BannerKind.Info,
+                    // Before he has joined, the preview is also where to invite him (UX plan Steg 3, §8).
+                    actions = if (state.canInvite) {
+                        { TextButton(onClick = onInvite) { Text(stringResource(Res.string.helper_preview_invite, name)) } }
+                    } else {
+                        null
+                    },
+                )
                 Box(Modifier.weight(1f)) {
                     HelperTheme {
                         HelperHomeScreen(

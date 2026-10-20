@@ -1065,6 +1065,10 @@
     <string name="quickadd_preview_due">by %1$s</string>
     <string name="quickadd_fill_in">Fill in manually</string>
 
+    <!-- H3 leftovers -->
+    <string name="event_private_hint_named">%1$s can't see this event.</string>
+    <string name="helper_preview_invite">Invite %1$s</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>
 </resources>

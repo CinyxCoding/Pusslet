@@ -3,6 +3,7 @@ package se.pusslet.feature.calendar.details
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -22,6 +23,8 @@ import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
+import se.pusslet.data.sync.SyncState
+import se.pusslet.data.sync.SyncStatus
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.feature.calendar.TestWorld
@@ -46,6 +49,10 @@ class EventDetailsViewModelTest {
     private val friday = LocalDate(2026, 10, 16)
     private val asked = Instant.parse("2026-10-12T18:00:00Z")
     private val answered = Instant.parse("2026-10-12T19:00:00Z")
+
+    /** Friday 16 October 17:00 in Stockholm, after the 16:30 pick-up. */
+    private val fridayEvening = Instant.parse("2026-10-16T15:00:00Z")
+    private val syncStatus = MutableStateFlow(SyncStatus(SyncState.Synced))
 
     private val school = Event(
         SCHOOL,
@@ -100,6 +107,7 @@ class EventDetailsViewModelTest {
             HandoffAssigner(world.calendar),
             HandoffRequests(world.calendar, world.sessions, world.ids, world.clock),
             world.sessions,
+            syncStatus,
             world.clock,
             world.zone,
         )
@@ -352,6 +360,51 @@ class EventDetailsViewModelTest {
         world.seed(school.copy(pickUp = Handoff(BENGT, LocalTime(16, 30))), listOf(ask.copy(fromMemberId = BENGT, toMemberId = null)))
 
         assertTrue(assertIs<RequestState.CannotMake>(open(world).state.value.requestState(HandoffKind.PickUp)).mine)
+    }
+
+    @Test
+    fun aPassedHandoffIsNoLongerAskedOrAnswered() = runTest {
+        val caregiver = TestWorld(Role.Caregiver, now = fridayEvening, memberId = BENGT)
+        caregiver.seed(requests = listOf(ask))
+        val vm = open(caregiver)
+        assertTrue(vm.state.value.handoffPassed(HandoffKind.PickUp))
+        assertNull(vm.state.value.requestState(HandoffKind.PickUp), "No Ja/Nej once the pick-up is over")
+        vm.accept(HandoffKind.PickUp)
+        assertEquals(RequestStatus.Pending, caregiver.request().status)
+
+        val parent = TestWorld(now = fridayEvening)
+        parent.seed(requests = listOf(ask))
+        val details = open(parent).state.value
+        assertNull(details.requestState(HandoffKind.PickUp), "No \"Frågat Bengt\" about a pick-up that is over")
+        assertFalse(details.canRequestHelp(HandoffKind.PickUp))
+    }
+
+    @Test
+    fun whatWasAnsweredStillShowsAfterTheHandoff() = runTest {
+        val parent = TestWorld(now = fridayEvening)
+        parent.seed(requests = listOf(ask.copy(status = RequestStatus.Accepted, respondedBy = BENGT, respondedAt = answered)))
+
+        assertIs<RequestState.Accepted>(open(parent).state.value.requestState(HandoffKind.PickUp))
+    }
+
+    @Test
+    fun anAnswerWithoutNetworkSaysItIsSentLater() = runTest {
+        val world = bengt()
+        world.seed(requests = listOf(ask))
+        val vm = open(world)
+        assertFalse(vm.state.value.waitingForNetwork)
+
+        syncStatus.value = SyncStatus(SyncState.Offline)
+
+        assertTrue(vm.state.value.waitingForNetwork)
+    }
+
+    @Test
+    fun parentsSeeWhichCaregiversDoNotSeeAPrivateEvent() = runTest {
+        val world = parent()
+        world.seed(school.copy(sharedWithCaregivers = false))
+
+        assertEquals(listOf("Bengt"), open(world).state.value.caregivers.map { it.name })
     }
 
     private companion object {

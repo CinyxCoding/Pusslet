@@ -38,7 +38,8 @@ class AcceptedRequestApplier(
         var applied = 0
         for (request in EffectiveHandoffs.pending(calendar.handoffRequests.first())) {
             val answeredBy = request.respondedBy ?: continue
-            val occurrence = calendar.occurrences(request.occurrenceDate, request.occurrenceDate, zone).first()
+            // Whatever this parent's calendar filter shows: the answer belongs in the event either way.
+            val occurrence = calendar.allOccurrences(request.occurrenceDate, request.occurrenceDate, zone).first()
                 .firstOrNull { it.source == EventSource.Family && request.matches(it) }
             if (occurrence == null) {
                 // The occurrence was removed or moved after the answer: nothing to write into, the request just stays.

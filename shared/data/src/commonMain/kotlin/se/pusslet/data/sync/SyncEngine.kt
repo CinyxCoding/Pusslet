@@ -40,6 +40,13 @@ data class SyncStatus(
 )
 
 /**
+ * "Skickas när du har nät": offline, or answers waiting while the phone cannot reach the server. A family without a backend
+ * never waits.
+ */
+fun SyncStatus.waitsForNetwork(): Boolean =
+    state == SyncState.Offline || (pendingWrites > 0 && (state == SyncState.Connecting || state == SyncState.Error))
+
+/**
  * Mirrors the local document store to the backend.
  *
  * - **Incoming:** one listener per collection (and per parent for nested collections such as shopping items),

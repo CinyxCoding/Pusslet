@@ -105,11 +105,20 @@ data class EventOccurrence(
 
     fun dropOffTime(): LocalTime? = dropOffAt ?: event.dropOff?.time ?: if (event.allDay) null else start.time
 
+    /** The last day this occurrence touches (all-day ends are exclusive). */
+    val lastDate: LocalDate get() = maxOf(start.date, if (allDay || end.time == LocalTime(0, 0)) end.date.previousDay() else end.date)
+
     /** Days this occurrence touches (all-day ends are exclusive). */
-    fun overlapsDate(date: LocalDate): Boolean {
-        val startDate = start.date
-        val endDate = if (allDay || end.time == LocalTime(0, 0)) end.date.previousDay() else end.date
-        return date >= startDate && date <= maxOf(startDate, endDate)
+    fun overlapsDate(date: LocalDate): Boolean = date >= start.date && date <= lastDate
+
+    /** The day of a hand-off: the drop-off on the first day, the pick-up on the last. */
+    fun handoffDate(kind: HandoffKind): LocalDate = if (kind == HandoffKind.PickUp) lastDate else start.date
+
+    /** A hand-off that is over at [now]: on an earlier day, or earlier today. One without a time lasts the whole day. */
+    fun handoffPassed(kind: HandoffKind, now: LocalDateTime): Boolean {
+        val date = handoffDate(kind)
+        val time = if (kind == HandoffKind.PickUp) pickUpTime() else dropOffTime()
+        return date < now.date || (date == now.date && time != null && time < now.time)
     }
 }
 

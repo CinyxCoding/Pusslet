@@ -17,11 +17,13 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import se.pusslet.core.helper.CaregiverVisibility
 import se.pusslet.core.model.FamilyPerson
+import se.pusslet.core.model.Member
 import se.pusslet.core.model.Role
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.time.startOfWeek
 import se.pusslet.core.today.TodayBlock
 import se.pusslet.core.today.TodayLayouts
+import se.pusslet.data.remote.AuthRepository
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.PackingRepository
@@ -37,6 +39,8 @@ data class HelperPreviewUiState(
     val home: HelperUiState = HelperUiState(),
     /** "Bengt ser inte 2 händelser den här veckan.": family events Monday to Sunday that are not shared with caregivers. */
     val hiddenThisWeek: Int = 0,
+    /** "Bjud in Bengt" next to the preview: he has no account yet and this family has a backend to invite to. */
+    val canInvite: Boolean = false,
 )
 
 /**
@@ -51,6 +55,7 @@ class HelperPreviewViewModel(
     calendar: CalendarRepository,
     packing: PackingRepository,
     tasks: TaskRepository,
+    private val auth: AuthRepository,
     clock: Clock,
     private val zone: TimeZone,
 ) : ViewModel() {
@@ -62,17 +67,17 @@ class HelperPreviewViewModel(
 
     /** This ISO week, Monday to Sunday. */
     private val hiddenThisWeek: Flow<Int> = today.map { it.startOfWeek() }.distinctUntilChanged().flatMapLatest { monday ->
-        calendar.occurrences(monday, monday.plusDays(DAYS_IN_WEEK - 1), zone).map(CaregiverVisibility::hiddenCount)
+        calendar.allOccurrences(monday, monday.plusDays(DAYS_IN_WEEK - 1), zone).map(CaregiverVisibility::hiddenCount)
     }
 
-    val state: StateFlow<HelperPreviewUiState> = combine(memberId.filterNotNull(), now, data, hiddenThisWeek, ::build)
+    val state: StateFlow<HelperPreviewUiState> = combine(memberId.filterNotNull(), now, data, hiddenThisWeek, family.members, ::build)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), HelperPreviewUiState())
 
     fun load(memberId: String) {
         this.memberId.value = memberId
     }
 
-    private fun build(id: String, n: LocalDateTime, data: HelperFamilyData, hidden: Int): HelperPreviewUiState {
+    private fun build(id: String, n: LocalDateTime, data: HelperFamilyData, hidden: Int, members: List<Member>): HelperPreviewUiState {
         val member = data.people.firstOrNull { it.id == id && !it.isChild }
         val plan = HelperPlans.plan(id, n, zone, data)
         // His own choices live on his phone (Prefs.TodayLayout); the preview shows the caregiver's default.
@@ -88,7 +93,14 @@ class HelperPreviewViewModel(
             showWeather = layout.isOn(TodayBlock.Weather),
             now = n,
         )
-        return HelperPreviewUiState(loading = false, member = member, home = home, hiddenThisWeek = hidden)
+        val joined = members.firstOrNull { it.id == id }?.let { it.uid != null || it.joinedAt != null } ?: true
+        return HelperPreviewUiState(
+            loading = false,
+            member = member,
+            home = home,
+            hiddenThisWeek = hidden,
+            canInvite = member != null && !joined && auth.available,
+        )
     }
 
     private companion object {

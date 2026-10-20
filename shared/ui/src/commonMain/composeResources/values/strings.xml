@@ -1066,6 +1066,10 @@
     <string name="quickadd_preview_due">senast %1$s</string>
     <string name="quickadd_fill_in">Fyll i själv</string>
 
+    <!-- H3 leftovers -->
+    <string name="event_private_hint_named">%1$s ser inte den här händelsen.</string>
+    <string name="helper_preview_invite">Bjud in %1$s</string>
+
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
 </resources>

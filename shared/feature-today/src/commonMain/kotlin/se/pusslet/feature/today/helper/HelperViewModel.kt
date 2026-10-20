@@ -46,8 +46,8 @@ import se.pusslet.data.repository.TaskRepository
 import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sources.WeatherSource
-import se.pusslet.data.sync.SyncState
 import se.pusslet.data.sync.SyncStatus
+import se.pusslet.data.sync.waitsForNetwork
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.HintIds
@@ -250,9 +250,5 @@ class HelperViewModel(
                 }
             }
         }
-
-        /** Offline, or answers waiting while the phone cannot reach the server. A family without a backend never waits. */
-        fun SyncStatus.waitsForNetwork(): Boolean =
-            state == SyncState.Offline || (pendingWrites > 0 && (state == SyncState.Connecting || state == SyncState.Error))
     }
 }

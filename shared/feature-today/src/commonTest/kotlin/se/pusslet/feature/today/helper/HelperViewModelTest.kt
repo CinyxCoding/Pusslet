@@ -31,11 +31,11 @@ import se.pusslet.core.today.TodayBlock
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.sync.SyncState
 import se.pusslet.data.sync.SyncStatus
+import se.pusslet.data.sync.waitsForNetwork
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.feature.today.NoWeather
 import se.pusslet.feature.today.TestWorld
-import se.pusslet.feature.today.helper.HelperViewModel.Companion.waitsForNetwork
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

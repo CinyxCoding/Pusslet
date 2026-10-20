@@ -386,10 +386,9 @@ object HelperPlanner {
                     else -> return@mapNotNull null
                 }
                 val o = visible.firstOrNull { r.matches(it) } ?: return@mapNotNull null
-                val pickUp = r.kind == HandoffKind.PickUp
-                val date = if (pickUp) lastDay(o) else o.start.date
-                val time = if (pickUp) o.pickUpTime() else o.dropOffTime()
-                if (date < input.today || (date == input.today && time != null && time < input.now)) return@mapNotNull null
+                if (o.handoffPassed(r.kind, LocalDateTime(input.today, input.now))) return@mapNotNull null
+                val date = o.handoffDate(r.kind)
+                val time = if (r.kind == HandoffKind.PickUp) o.pickUpTime() else o.dropOffTime()
                 val kids = o.event.participantIds.mapNotNull { byId[it] }.filter { it.isChild }
                 HelperRequest(r, byId[r.fromMemberId], kids, date, time, placeOf(o, kids, input.children), o, answer)
             }
@@ -509,8 +508,7 @@ object HelperPlanner {
         return HelperWeather(mission.kind, condition, kotlin.math.round(point.temperature).toInt())
     }
 
-    private fun lastDay(o: EventOccurrence): LocalDate =
-        if (o.allDay || o.end.time == LocalTime(0, 0)) maxOf(o.start.date, o.end.date.plusDays(-1)) else o.end.date
+    private fun lastDay(o: EventOccurrence): LocalDate = o.lastDate
 
     private const val SECONDS_PER_MINUTE = 60
     private const val YEAR_DAYS = 365

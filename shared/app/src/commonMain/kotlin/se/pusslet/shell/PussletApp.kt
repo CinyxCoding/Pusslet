@@ -385,7 +385,13 @@ private fun AppNavDisplay(
                 )
             }
             // "Så ser Bengt appen" (parents only: the entries are only offered to parents).
-            entry<Route.HelperPreview> { r -> HelperPreviewRoute(r.memberId, onBack = navigator::goBack) }
+            entry<Route.HelperPreview> { r ->
+                HelperPreviewRoute(
+                    r.memberId,
+                    onBack = navigator::goBack,
+                    onInvite = { navigator.navigate(Route.Invite(claimMemberId = it)) },
+                )
+            }
             entry<Route.Join> { r -> JoinRoute(initialCode = r.code, onBack = navigator::goBack, onJoined = navigator::reset) }
             entry<Route.Custody> { r -> CustodyEditorRoute(r.scheduleId, onDone = navigator::goBack) }
             entry<Route.Handover> { r -> HandoverRoute(r.scheduleId, onBack = navigator::goBack) }

@@ -23,8 +23,12 @@ import se.pusslet.core.model.Handoff
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.Role
 import se.pusslet.data.db.CacheEntryEntity
+import se.pusslet.data.remote.AuthRepository
+import se.pusslet.data.remote.LocalOnlyAuthRepository
+import se.pusslet.data.repository.CalendarLayer
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.NoDeviceCalendars
+import se.pusslet.data.repository.Prefs
 import se.pusslet.data.seed.DemoSeed
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
@@ -40,6 +44,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -106,9 +111,15 @@ class HelperPreviewViewModelTest {
         return Phone(world, calendar, assertNotNull(world.sessions.session.value.familyId))
     }
 
+    /** A family with a backend, so there is someone to invite. */
+    private val online: AuthRepository = object : AuthRepository by LocalOnlyAuthRepository() {
+        override val available = true
+    }
+    private var auth: AuthRepository = LocalOnlyAuthRepository()
+
     private fun TestScope.preview(phone: Phone, memberId: String = DemoSeed.BENGT): HelperPreviewViewModel {
         val w = phone.world
-        val vm = HelperPreviewViewModel(w.family, phone.calendar, w.packing, w.tasks, w.clock, w.zone)
+        val vm = HelperPreviewViewModel(w.family, phone.calendar, w.packing, w.tasks, auth, w.clock, w.zone)
         CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler)).launch { vm.state.collect {} }
         vm.load(memberId)
         return vm
@@ -160,6 +171,31 @@ class HelperPreviewViewModelTest {
         // Monday 5 to Sunday 11 October: the demo's Styrelsemöte and Kundmöte, plus the two private ones added here. The
         // subscription is not the family's own, so it is not counted.
         assertEquals(4, state.hiddenThisWeek)
+    }
+
+    @Test
+    fun theCalendarFilterOnThisPhoneDoesNotChangeWhatHeSees() = runTest {
+        val phone = saraWithDemo()
+        // Sara has switched the family's own events off in Kalender's filter.
+        phone.world.prefs.set(Prefs.CalendarLayers, setOf(CalendarLayer.Subscriptions))
+
+        val state = preview(phone).state.value
+
+        assertEquals(2, assertNotNull(state.home.plan).missions.size)
+        assertEquals(4, state.hiddenThisWeek)
+    }
+
+    @Test
+    fun bjudInBengtUntilHeHasJoined() = runTest {
+        val phone = saraWithDemo()
+        assertFalse(preview(phone).state.value.canInvite, "Nothing to invite to without a backend")
+
+        auth = online
+        assertTrue(preview(phone).state.value.canInvite)
+
+        val bengt = phone.world.family.members.first().single { it.id == DemoSeed.BENGT }
+        phone.world.family.saveMember(bengt.copy(uid = "u-bengt"))
+        assertFalse(preview(phone).state.value.canInvite)
     }
 
     @Test

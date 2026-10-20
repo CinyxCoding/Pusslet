@@ -70,7 +70,8 @@ internal object HelperPlans {
     ): Flow<HelperFamilyData> {
         val household = combine(family.people, family.children, family.custody) { p, c, cu -> Triple(p, c, cu) }
         val calendarData = today.flatMapLatest { d ->
-            combine(calendar.occurrences(d, d.plusDays(HelperPlanner.WEEK_DAYS), zone), calendar.handoffRequests) { o, r -> o to r }
+            // What is shared with the caregiver, not what this phone's Kalender filter happens to show.
+            combine(calendar.allOccurrences(d, d.plusDays(HelperPlanner.WEEK_DAYS), zone), calendar.handoffRequests) { o, r -> o to r }
         }
         return combine(household, calendarData, packing.rules, packing.checks, tasks.tasks) { h, cal, rules, checks, t ->
             HelperFamilyData(h.first, h.second, h.third, cal.first, cal.second, rules, checks, t)

@@ -53,6 +53,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilyPerson
+import se.pusslet.core.quickadd.EventPrefill
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.DatePickerSheet
@@ -78,9 +79,11 @@ fun EventEditorRoute(
     date: LocalDate?,
     occurrenceDate: LocalDate?,
     onDone: () -> Unit,
+    /** What quick add understood ("Fyll i själv"); only for a new event. */
+    prefill: EventPrefill? = null,
     viewModel: EventEditorViewModel = koinViewModel(),
 ) {
-    LaunchedEffect(eventId, date, occurrenceDate) { viewModel.load(eventId, date, occurrenceDate) }
+    LaunchedEffect(eventId, date, occurrenceDate) { viewModel.load(eventId, date, occurrenceDate, prefill) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.done) { if (state.done) onDone() }
     EventEditorScreen(

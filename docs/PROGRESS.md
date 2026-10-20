@@ -78,7 +78,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   lugnare butiksläge, butiker och skafferi under ”Butiker och det vi har hemma”)
 - [x] Steg 3: hjälparvy – H1 data och regler, H2 enkel vy (ADR-029), H3 ”Så ser Bengt appen”, svaren i Händelsedetaljer,
   ”Bengt kan inte hämta” som Problem på Idag och Saras fråga i exempelfamiljen (ADR-030 tillägg)
-- [ ] Steg 4: första användningen (4.1–4.3 onboarding ✅: fler vuxna med bara namn, en barnrad med fokus, sökning först, ”Klart!” med ”Visa min dag”; 4.4 ”Kom igång” på Idag ✅ (ADR-034); 4.5 tomlägen på Mat, Recept och Handla ✅; 4.6 snabbinmatningen med familjens egna namn, en mening med ”Ändra” och osäkert i terrakotta ✅ (”Fyll i själv” kopplas in efter H3); 4.7 tips som visas en gång ✅ för Idag, Handla och hjälparvyn; 4.8 ”Börja på riktigt” ✅)
+- [x] Steg 4: första användningen (4.1–4.3 onboarding ✅: fler vuxna med bara namn, en barnrad med fokus, sökning först, ”Klart!” med ”Visa min dag”; 4.4 ”Kom igång” på Idag ✅ (ADR-034); 4.5 tomlägen på Mat, Recept och Handla ✅; 4.6 snabbinmatningen med familjens egna namn, en mening med ”Ändra”, osäkert i terrakotta och ”Fyll i själv” till redigeraren ✅; 4.7 tips som visas en gång ✅ för Idag, Handla och hjälparvyn; 4.8 ”Börja på riktigt” ✅)
 
 ## Fas 3 – Integrationer & notiser
 - [ ] ICS-prenumerationer

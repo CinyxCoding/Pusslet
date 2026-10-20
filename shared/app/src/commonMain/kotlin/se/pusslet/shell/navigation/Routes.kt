@@ -2,6 +2,7 @@ package se.pusslet.shell.navigation
 
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import se.pusslet.core.quickadd.EventPrefill
 
 /** Every destination in the app. Type-safe: arguments are properties, not string templates. */
 @Serializable
@@ -16,11 +17,15 @@ sealed interface Route {
 
     @Serializable data object More : Route
 
-    /** Create (no id) or edit an event. [date] pre-selects the day for new events; [occurrenceDate] edits one occurrence of a series. */
+    /**
+     * Create (no id) or edit an event. [date] pre-selects the day for new events; [occurrenceDate] edits one occurrence of a
+     * series; [prefill] is what quick add understood when "Fyll i själv" opened the editor.
+     */
     @Serializable data class EventEditor(
         val eventId: String? = null,
         val date: LocalDate? = null,
         val occurrenceDate: LocalDate? = null,
+        val prefill: EventPrefill? = null,
     ) : Route
 
     /** One occurrence of an event (family, subscription or device calendar). */

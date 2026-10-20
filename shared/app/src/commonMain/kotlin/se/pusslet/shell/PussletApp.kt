@@ -229,7 +229,16 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit, 
         }
     }
     if (showQuickAdd) {
-        QuickAddSheet(viewModel = quickAdd, onDismiss = { showQuickAdd = false }, onSaved = ::onSaved)
+        QuickAddSheet(
+            viewModel = quickAdd,
+            onDismiss = { showQuickAdd = false },
+            onSaved = ::onSaved,
+            // "Fyll i själv": the full editor with what was typed (UX plan 4.6).
+            onFillIn = { prefill ->
+                showQuickAdd = false
+                navigator.navigate(Route.EventEditor(date = prefill.date, prefill = prefill))
+            },
+        )
     }
 }
 
@@ -335,7 +344,9 @@ private fun AppNavDisplay(
                 MoreScreen(onOpen = { navigator.navigate(it.route()) }, contentPadding = padding, onSimpleView = onSimpleView)
             }
             entry<Route.Tasks> { TasksScreen() }
-            entry<Route.EventEditor> { r -> EventEditorRoute(r.eventId, r.date, r.occurrenceDate, onDone = navigator::goBack) }
+            entry<Route.EventEditor> { r ->
+                EventEditorRoute(r.eventId, r.date, r.occurrenceDate, onDone = navigator::goBack, prefill = r.prefill)
+            }
             entry<Route.EventDetails> { r ->
                 EventDetailsRoute(
                     eventId = r.eventId,

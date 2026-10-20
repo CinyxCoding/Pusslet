@@ -18,6 +18,7 @@ import kotlinx.datetime.todayIn
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.Handoff
+import se.pusslet.core.quickadd.EventPrefill
 import se.pusslet.core.recurrence.EventExpander
 import se.pusslet.core.recurrence.Frequency
 import se.pusslet.core.recurrence.RRule
@@ -101,7 +102,8 @@ class EventEditorViewModel(
     private var original: Event? = null
     private var occurrenceDate: LocalDate? = null
 
-    fun load(eventId: String?, date: LocalDate?, occurrence: LocalDate?) {
+    /** [prefill] is what quick add understood ("Fyll i själv", UX plan 4.6); it only applies to a new event. */
+    fun load(eventId: String?, date: LocalDate?, occurrence: LocalDate?, prefill: EventPrefill? = null) {
         if (_state.value.loaded) return
         viewModelScope.launch {
             val people = family.people.first()
@@ -110,6 +112,7 @@ class EventEditorViewModel(
             occurrenceDate = existing?.originalDate ?: occurrence
             val single = existing != null && (existing.isOverride || (existing.isRecurring && occurrence != null))
             val draft = when {
+                existing == null && prefill != null -> draftFrom(prefill)
                 existing == null -> newDraft(date ?: clock.todayIn(zone))
                 existing.isOverride -> draftOf(existing)
                 single -> {
@@ -136,6 +139,29 @@ class EventEditorViewModel(
         val start = if (date == now.date && now.hour < LAST_SUGGESTED_HOUR) LocalTime(now.hour + 1, 0) else LocalTime(9, 0)
         val end = LocalTime((start.hour + 1).coerceAtMost(23), if (start.hour + 1 > 23) 59 else 0)
         return EventDraft(startDate = date, startTime = start, endDate = date, endTime = end)
+    }
+
+    /** A new event from quick add's text: what it understood replaces the defaults, the rest stays as for any new event. */
+    private fun draftFrom(p: EventPrefill): EventDraft {
+        val base = newDraft(p.date)
+        val start = p.startTime ?: base.startTime
+        val end = p.endTime ?: p.startTime?.let { LocalTime((it.hour + 1).coerceAtMost(23), if (it.hour + 1 > 23) 59 else it.minute) }
+            ?: base.endTime
+        val (repeat, custom) = repeatOf(p.rrule, p.date)
+        return base.copy(
+            title = p.title,
+            allDay = p.allDay,
+            startTime = start,
+            // An evening that runs past midnight ends the next day.
+            endDate = p.endDate ?: if (!p.allDay && end < start) p.date.plusDays(1) else p.date,
+            endTime = end,
+            repeat = repeat,
+            customRule = custom,
+            participants = p.participantIds.toSet(),
+            location = p.location,
+            tags = p.tags.toSet(),
+            packing = p.packingItems,
+        )
     }
 
     fun edit(transform: (EventDraft) -> EventDraft) = _state.update { s ->

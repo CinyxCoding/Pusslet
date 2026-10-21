@@ -1227,5 +1227,50 @@
     <string name="recipe_collection_menu">More for %1$s</string>
     <string name="recipe_collections_none">No collections yet. Make one here, e.g. Weekday favourites.</string>
 
+    <!-- Notifications (notify-core): channels, as shown in the phone's settings -->
+    <string name="notify_channel_reminders">Reminders</string>
+    <string name="notify_channel_reminders_desc">Events you chose a reminder for and to-dos on their day</string>
+    <string name="notify_channel_handoffs">Drop-off and pick-up</string>
+    <string name="notify_channel_handoffs_desc">30 min before you drop off or pick up</string>
+    <string name="notify_channel_morning">Morning check</string>
+    <string name="notify_channel_morning_desc">Your day in short, at the time you chose</string>
+    <string name="notify_channel_evening">Evening check</string>
+    <string name="notify_channel_evening_desc">What to pack for tomorrow</string>
+    <string name="notify_channel_requests">Requests</string>
+    <string name="notify_channel_requests_desc">When someone asks if you can drop off or pick up</string>
+    <string name="notify_channel_shopping">Shopping list</string>
+    <string name="notify_channel_shopping_desc">New items while you shop</string>
+    <string name="notify_channel_conflicts">Clashes</string>
+    <string name="notify_channel_conflicts_desc">When something in the family's plan clashes</string>
+    <!-- Notifications (notify-core): texts -->
+    <string name="notify_event_who">%1$s %2$s</string>
+    <string name="notify_event_now">%1$s starts now</string>
+    <string name="notify_event_in_minutes">%1$s in %2$d min</string>
+    <string name="notify_event_in_hours">%1$s in %2$d h</string>
+    <string name="notify_event_tomorrow_at">%1$s tomorrow %2$s</string>
+    <string name="notify_event_in_days">%1$s in %2$d days</string>
+    <string name="notify_event_allday_tomorrow">%1$s tomorrow</string>
+    <string name="notify_you_dropoff">You drop off %1$s</string>
+    <string name="notify_you_pickup">You pick up %1$s</string>
+    <string name="notify_stop">%1$s %2$s</string>
+    <string name="notify_task_today">To do today</string>
+    <string name="notify_task_today_at">To do today %1$s</string>
+    <string name="notify_brief_person_dropoff">%1$s drops off %2$s</string>
+    <string name="notify_brief_person_pickup">%1$s picks up %2$s</string>
+    <string name="notify_brief_you_dropoff">you drop off %1$s</string>
+    <string name="notify_brief_you_pickup">you pick up %1$s</string>
+    <string name="notify_brief_nobody_dropoff">drop-off %1$s</string>
+    <string name="notify_brief_nobody_pickup">pick-up %1$s</string>
+    <string name="notify_brief_sentence">%1$s.</string>
+    <string name="notify_brief_packing">To bring: %1$s.</string>
+    <string name="notify_brief_first">First today: %1$s.</string>
+    <string name="notify_brief_empty">Nothing planned today.</string>
+    <string name="notify_item_for">%1$s (%2$s)</string>
+    <string name="notify_evening_title">Evening check</string>
+    <string name="notify_evening_body">Pack tonight: %1$s</string>
+    <string name="notify_bundle_reminders">%1$d reminders</string>
+    <string name="notify_bundle_handoffs">%1$d drop-offs and pick-ups</string>
+    <string name="notify_bundle_other">%1$d notifications</string>
+
     <!-- Placeholders used until a feature is wired up -->
 </resources>

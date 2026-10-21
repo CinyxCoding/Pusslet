@@ -15,6 +15,7 @@ import se.pusslet.core.util.IdGenerator
 import se.pusslet.core.util.RandomIdGenerator
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.db.PussletDatabase
+import se.pusslet.data.notify.NotificationPlanSource
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -55,6 +56,7 @@ import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
 import se.pusslet.data.usecase.ShoppingAdder
+import se.pusslet.data.usecase.TodayInputSource
 import kotlin.time.Clock
 
 val AppScope = named("appScope")
@@ -93,6 +95,9 @@ val dataModule: Module = module {
     single { HandoffRequests(get(), get(), get(), get()) }
     single { AcceptedRequestApplier(get(), get(), get(), get(), get()) }
     single { FirstTimeHints(get()) }
+    // Idag's data for a worker, and the local notification plan built from it (WorkManager lives in composeApp, ADR-002).
+    single { TodayInputSource(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { NotificationPlanSource(get(), get(), get(), get(), get()) }
     single { DataPrivacy(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }

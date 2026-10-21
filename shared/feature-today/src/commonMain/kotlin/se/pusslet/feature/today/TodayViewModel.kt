@@ -23,11 +23,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import se.pusslet.core.calendar.EffectiveHandoffs
 import se.pusslet.core.calendar.EffectiveHandoffs.matches
-import se.pusslet.core.model.Child
 import se.pusslet.core.model.Completion
-import se.pusslet.core.model.CustodySchedule
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.Family
@@ -35,24 +32,18 @@ import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.HandoffRequest
-import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.Member
-import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingItem
-import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.Place
 import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
-import se.pusslet.core.model.SchoolLunch
 import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.tasks.TaskOccurrence
-import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.SetupChecklist
 import se.pusslet.core.today.SetupInput
 import se.pusslet.core.today.SetupProgress
 import se.pusslet.core.today.TodayBlock
-import se.pusslet.core.today.TodayInput
 import se.pusslet.core.today.TodayLayout
 import se.pusslet.core.today.TodayLayouts
 import se.pusslet.core.today.TodayPlan
@@ -78,6 +69,7 @@ import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HintIds
+import se.pusslet.data.usecase.TodayInputSource
 import kotlin.time.Clock
 
 sealed interface WeatherState {
@@ -170,42 +162,14 @@ class TodayViewModel(
     private val weatherState = MutableStateFlow<WeatherState>(WeatherState.Loading)
     private var lastPlace: Place? = null
 
-    private data class Household(
-        val people: List<FamilyPerson>,
-        val children: List<Child>,
-        val familyName: String,
-        val custody: List<CustodySchedule>,
-        val session: Session,
-    )
+    /** Idag's data, read the same way as the notification plan reads it. */
+    private val source = TodayInputSource(family, calendar, packing, meals, tasks, lunches, sessions, clock, zone)
 
-    private val household: Flow<Household> = combine(
-        family.people,
-        family.children,
-        family.family,
-        family.custody,
-        sessions.session,
-    ) { p, c, f, cu, s ->
-        Household(p, c, f?.name.orEmpty(), cu, s)
-    }
+    private val household: Flow<TodayInputSource.Household> = source.household
 
-    // A caregiver's accepted answer counts at once, before a parent's phone has written it into the event (ADR-030).
-    private val occurrences: Flow<List<EventOccurrence>> = today.flatMapLatest { d ->
-        combine(calendar.occurrences(d, d.plusDays(HORIZON_DAYS), zone), calendar.handoffRequests) { occ, requests ->
-            EffectiveHandoffs.apply(occ, requests)
-        }
-    }
+    private val occurrences: Flow<List<EventOccurrence>> = today.flatMapLatest { d -> source.occurrences(d) }
 
-    private data class Extras(
-        val rules: List<PackingRule>,
-        val checks: Map<String, PackingChecks>,
-        val weeks: List<MealPlanWeek>,
-        val lunches: Map<String, List<SchoolLunch>>,
-        val tasks: List<FamilyTask>,
-    )
-
-    private val extras: Flow<Extras> = combine(packing.rules, packing.checks, meals.weeks, lunches.lunches, tasks.tasks) { r, c, w, l, t ->
-        Extras(r, c, w, l, t)
-    }
+    private val extras: Flow<TodayInputSource.Extras> = source.extras
 
     /** The viewer's layout; another member or a role change falls back to the role's default. */
     private val layout: Flow<TodayLayout> = combine(sessions.session, prefs.observe(Prefs.TodayLayout)) { s, stored ->
@@ -300,31 +264,25 @@ class TodayViewModel(
         TodayUiState(canEdit = sessions.session.value.canEdit),
     )
 
-    private fun build(n: LocalDateTime, h: Household, occ: List<EventOccurrence>, ex: Extras, v: View): TodayUiState {
+    private fun build(
+        n: LocalDateTime,
+        h: TodayInputSource.Household,
+        occ: List<EventOccurrence>,
+        ex: TodayInputSource.Extras,
+        v: View,
+    ): TodayUiState {
         val me = h.session.memberId
         val people = h.people.associateBy { it.id }
-        val week = n.date.isoWeek
-        // Last week too: "Planera middag" is only offered to a family that planned a dinner this or last week.
-        val mealWeeks = setOf(week.previous(), week, n.date.plusDays(HORIZON_DAYS).isoWeek)
         val plan = TodayPlanner.build(
-            TodayInput(
-                today = n.date,
-                now = n.time,
-                zone = zone,
-                me = me,
-                people = h.people,
-                children = h.children,
+            source.input(
+                now = n,
+                household = h,
                 occurrences = occ,
-                packingRules = ex.rules,
-                packingChecks = ex.checks,
-                custody = h.custody,
-                mealWeeks = ex.weeks.filter { it.week in mealWeeks },
-                lunches = ex.lunches,
-                tasks = ex.tasks,
+                extras = ex,
+                requests = v.requests,
                 forecast = v.forecast?.value,
                 hasWeatherPlace = v.hasPlace,
                 shopping = TodayModel.shopping(v.shopping, people, me, clock.now()),
-                requests = v.requests,
             ),
         )
         val canEdit = h.session.canEdit
@@ -482,6 +440,5 @@ class TodayViewModel(
         const val TICK_MS = 60_000L
         const val WEATHER_REFRESH_MS = 60 * 60_000L
         const val STOP_TIMEOUT_MS = 5_000L
-        const val HORIZON_DAYS = 10
     }
 }

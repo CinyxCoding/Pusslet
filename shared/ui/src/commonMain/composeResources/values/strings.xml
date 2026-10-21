@@ -1228,5 +1228,50 @@
     <string name="recipe_collection_menu">Fler val för %1$s</string>
     <string name="recipe_collections_none">Inga samlingar än. Skapa en här, t.ex. Vardagsfavoriter.</string>
 
+    <!-- Notifications (notify-core): channels, as shown in the phone's settings -->
+    <string name="notify_channel_reminders">Påminnelser</string>
+    <string name="notify_channel_reminders_desc">Händelser du valt påminnelse för och att göra på sin dag</string>
+    <string name="notify_channel_handoffs">Lämna och hämta</string>
+    <string name="notify_channel_handoffs_desc">30 min innan du lämnar eller hämtar</string>
+    <string name="notify_channel_morning">Morgonkoll</string>
+    <string name="notify_channel_morning_desc">Dagen i korthet, på den tid du valt</string>
+    <string name="notify_channel_evening">Kvällskoll</string>
+    <string name="notify_channel_evening_desc">Det som ska packas till imorgon</string>
+    <string name="notify_channel_requests">Förfrågningar</string>
+    <string name="notify_channel_requests_desc">När någon frågar om du kan lämna eller hämta</string>
+    <string name="notify_channel_shopping">Inköpslistan</string>
+    <string name="notify_channel_shopping_desc">Nya varor medan du handlar</string>
+    <string name="notify_channel_conflicts">Krockar</string>
+    <string name="notify_channel_conflicts_desc">När något i familjens plan krockar</string>
+    <!-- Notifications (notify-core): texts -->
+    <string name="notify_event_who">%1$s %2$s</string>
+    <string name="notify_event_now">%1$s börjar nu</string>
+    <string name="notify_event_in_minutes">%1$s om %2$d min</string>
+    <string name="notify_event_in_hours">%1$s om %2$d tim</string>
+    <string name="notify_event_tomorrow_at">%1$s imorgon %2$s</string>
+    <string name="notify_event_in_days">%1$s om %2$d dagar</string>
+    <string name="notify_event_allday_tomorrow">%1$s imorgon</string>
+    <string name="notify_you_dropoff">Du lämnar %1$s</string>
+    <string name="notify_you_pickup">Du hämtar %1$s</string>
+    <string name="notify_stop">%1$s %2$s</string>
+    <string name="notify_task_today">Att göra idag</string>
+    <string name="notify_task_today_at">Att göra idag %1$s</string>
+    <string name="notify_brief_person_dropoff">%1$s lämnar %2$s</string>
+    <string name="notify_brief_person_pickup">%1$s hämtar %2$s</string>
+    <string name="notify_brief_you_dropoff">du lämnar %1$s</string>
+    <string name="notify_brief_you_pickup">du hämtar %1$s</string>
+    <string name="notify_brief_nobody_dropoff">lämning %1$s</string>
+    <string name="notify_brief_nobody_pickup">hämtning %1$s</string>
+    <string name="notify_brief_sentence">%1$s.</string>
+    <string name="notify_brief_packing">Ska med: %1$s.</string>
+    <string name="notify_brief_first">Först idag: %1$s.</string>
+    <string name="notify_brief_empty">Inget inbokat idag.</string>
+    <string name="notify_item_for">%1$s (%2$s)</string>
+    <string name="notify_evening_title">Kvällskoll</string>
+    <string name="notify_evening_body">Packa ikväll: %1$s</string>
+    <string name="notify_bundle_reminders">%1$d påminnelser</string>
+    <string name="notify_bundle_handoffs">%1$d lämningar och hämtningar</string>
+    <string name="notify_bundle_other">%1$d notiser</string>
+
     <!-- Placeholders used until a feature is wired up -->
 </resources>

@@ -299,3 +299,21 @@ behåller allt.
 **Konsekvens:** Andra personers konton raderas aldrig (de kan höra till andra familjer). Den som lämnar finns kvar som person
 utan konto. Andra telefoner behåller sin lokala kopia men kan inte synka. Loggar innehåller bara id:n och antal. App Check
 slås på när appen skickar tokens.
+
+## ADR-036 – Lokala notiser
+**Kontext:** BRIEF §4.10 vill ha påminnelser, tysta timmar, en kanal per sort och samlade notiser. WorkManager finns bara i
+composeApp (ADR-002), och appen är offline först.
+**Beslut:** `ReminderPlanner` (core) planerar 48 timmar framåt som data, från samma underlag som Idag (`TodayInputSource`),
+med stabila nycklar (`event:<id>@<datum>:<min>`, `handoff:…`, `task:<id>:<datum>`, `morning:<datum>`, `evening:<datum>`,
+`bundle:…`). Påminnelser gäller familjens egna händelser som rör mig (jag deltar, jag lämnar eller hämtar, eller – för en
+förälder – ingen vuxen deltar); heldagshändelser påminns kl. 18:00 kvällen innan. ”Du hämtar Ella 15:45” kommer 30 min innan,
+med accepterade svar inräknade (ADR-030). Att göra kommer på sin tid, annars 09:00. Morgonkollen kommer på vald tid med
+hälsningen (ADR-026), Kvällskollen kl. 19:00 för föräldrar när något är opackat till imorgon. `QuietHours` släpper igenom det
+användaren själv bett om på en viss tid (egna påminnelser, lämna/hämta, Morgonkoll, inköp) och håller resten till fönstrets
+slut; Kvällskollen i fönstret släpps. `Bundling` slår ihop samma sort inom 5 minuter. Tysta timmar och sammanslagning räknas
+från ett dygn bakåt innan passerade tider tas bort, så en ny planering vid varje tidpunkt ger samma svar.
+`NotificationPlanSource` (data) läser bara Room och har ingen timer: workern planerar med `planNow()` och kontrollerar
+`due(key)` igen när arbetet körs, så inget gammalt eller personligt sparas i arbetet. Texterna byggs av `NotificationTexts`
+(shared/ui) från strängresurserna. Notiser läser alla kalenderlager, oberoende av Kalenders filter (ADR-031).
+**Konsekvens:** Notiserna följer datan offline och blir likadana vid varje körning. Android-delen schemalägger, avbryter och
+visar bara. Kanalerna för förfrågningar, inköp och krockar finns redan; FCM fyller dem senare (ADR-018).

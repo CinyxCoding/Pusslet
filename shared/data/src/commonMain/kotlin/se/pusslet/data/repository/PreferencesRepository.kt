@@ -28,11 +28,8 @@ enum class CalendarView { Day, Week, Month, Agenda }
 @Serializable
 enum class AppTheme { System, Light, Dark }
 
-@Serializable
-data class TimeWindow(val start: LocalTime, val end: LocalTime) {
-    /** Handles windows across midnight (22:00–07:00). */
-    operator fun contains(t: LocalTime): Boolean = if (start <= end) t >= start && t < end else t >= start || t < end
-}
+/** Lives in core now, so the notification rules (`QuietHours`) can use it; stored JSON is unchanged. */
+typealias TimeWindow = se.pusslet.core.time.TimeWindow
 
 @Serializable
 data class MorningBrief(val enabled: Boolean = false, val time: LocalTime = LocalTime(6, 45))

@@ -255,6 +255,7 @@ fun SettingsRoute(
     val calendars by viewModel.calendars.collectAsStateWithLifecycle()
     val platform = LocalPlatformActions.current
     var pickPlace by remember { mutableStateOf(false) }
+    var confirmReplay by remember { mutableStateOf(false) }
     var language by remember { mutableStateOf(platform.currentLanguage()) }
     val appCalendarName = stringResource(Res.string.app_name)
     Scaffold(topBar = { PussletTopBar(stringResource(Res.string.settings_title), onBack = onBack) }) { padding ->
@@ -393,7 +394,8 @@ fun SettingsRoute(
             if (state.developerTools) {
                 Section(stringResource(Res.string.settings_dev_title)) {
                     OutlinedButton(
-                        onClick = viewModel::replayOnboarding,
+                        // It removes the family from this phone, so it asks first.
+                        onClick = { confirmReplay = true },
                         modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
                     ) { Text(stringResource(Res.string.settings_dev_replay_onboarding)) }
                     if (state.replayFailed) {
@@ -413,6 +415,20 @@ fun SettingsRoute(
         }
     }
     if (pickPlace) PlacePickerDialog(onDismiss = { pickPlace = false }, onPick = { viewModel.setPlace(it) })
+    if (confirmReplay) {
+        AlertDialog(
+            onDismissRequest = { confirmReplay = false },
+            title = { Text(stringResource(Res.string.settings_dev_replay_onboarding)) },
+            text = { Text(stringResource(Res.string.privacy_delete_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmReplay = false
+                    viewModel.replayOnboarding()
+                }) { Text(stringResource(Res.string.settings_dev_replay_onboarding)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmReplay = false }) { Text(stringResource(Res.string.action_cancel)) } },
+        )
+    }
 }
 
 @Composable

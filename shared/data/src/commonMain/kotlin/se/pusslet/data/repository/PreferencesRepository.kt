@@ -68,7 +68,7 @@ object Prefs {
     val QuickAddSaves = PrefKey("quickadd.saves", Int.serializer(), 0)
     val DeviceId = PrefKey("device.id", String.serializer(), "")
 
-    /** Set by "Visa första start igen" (developer tools): the demo family is not seeded again at start-up. */
+    /** Set by "Radera och börja om" (developer tools): the demo family is not seeded again at start-up. */
     val SkipDemoSeed = PrefKey("dev.skipDemoSeed", Boolean.serializer(), false)
 
     /**

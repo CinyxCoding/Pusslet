@@ -26,6 +26,6 @@ class FirstTimeHints(private val prefs: PreferencesRepository) {
 
     suspend fun dismiss(id: String) = prefs.update(Prefs.SeenHints) { it + id }
 
-    /** Screenshot tests and "Visa första start igen" start from a known state. */
+    /** Screenshot tests and "Radera och börja om" start from a known state. */
     suspend fun dismissAll() = prefs.update(Prefs.SeenHints) { it + HintIds.all }
 }

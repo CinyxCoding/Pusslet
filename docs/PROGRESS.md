@@ -143,7 +143,12 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
     loggas i stället för att krascha appen (`backgroundScope`, testat)
   - Onboarding: "Skapa vår familj", ditt namn, barnens förnamn (kan hoppas över), ort (kan hoppas över), klart – sex
     tryck och två textfält, väl under två minuter; kontot skapas först när man vill dela
-- [ ] Svenska + engelska texter genomlästa
+- [x] Svenska + engelska texter genomlästa (2026-10-22, alla 1 161 strängar sida vid sida plus kontroller av saknade
+  översättningar, platshållare, citattecken och stavning): samma nycklar och platshållare på båda språken. Rättat:
+  engelskan blandade "could not"/"couldn't" (nu genomgående kortformer, som tonen i DESIGN.md), "Customize" bland brittisk
+  stavning, "w. 43"/"wk", "To-do"/"To do", "present?" (gift), en krystad rad om veckomenyer; svenskan hade både "I morgon"
+  och "Imorgon" och "…" med och utan mellanslag. Utvecklarknappen som tar bort familjen hette "Visa första start igen" –
+  nu "Radera och börja om" och den frågar först
 - [x] Entitlements/Billing-förberedelse, `docs/MONETIZATION.md`: allt upplåst i alla byggen, gratisgräns för
   prenumerationer testad, Play Billing förberett bakom `BillingRepository` utan bibliotek i bygget (ADR-043)
 - [x] `docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md` (svenska och engelska, utkast för ägaren att

@@ -62,7 +62,7 @@ Vi säljer inte uppgifter och lämnar inte ut dem till någon annan, utom om lag
   tar bort ditt konto, dina telefoner och din koppling till familjen (de andra behåller familjen).
 - Det ni tar bort i appen markeras som borttaget och kan ångras en kort stund. Innehållet ligger kvar dolt i familjens
   data på servern tills familjen raderas. [Planerat: rensas automatiskt efter 30 dagar.]
-- Kalenderlänkar och inbjudningar gäller tills de stoppas eller går ut (inbjudningar efter högst 15 dagar).
+- Kalenderlänkar och inbjudningar gäller tills de stoppas eller går ut (inbjudningar efter 7 dagar).
 - Notis-token tas bort när Google säger att den inte längre gäller, och när kontot raderas.
 - Säkerhetskopior hos Google rensas enligt Googles rutiner.
 
@@ -142,7 +142,7 @@ We do not sell data and do not hand it to anyone else, unless the law requires i
   "Delete my account" removes your account, your phones and your link to the family (the others keep the family).
 - What you remove in the app is marked as removed and can be undone for a short while. The content stays hidden in the
   family's data on the server until the family is deleted. [Planned: removed automatically after 30 days.]
-- Calendar links and invitations last until they are stopped or expire (invitations after at most 15 days).
+- Calendar links and invitations last until they are stopped or expire (invitations after 7 days).
 - A notification token is removed when Google says it is no longer valid, and when the account is deleted.
 - Backups at Google are cleared according to Google's routines.
 

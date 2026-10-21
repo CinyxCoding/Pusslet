@@ -104,7 +104,7 @@
     <string name="greeting_named">%1$s, %2$s</string>
 
     <!-- Today -->
-    <string name="today_weather_tomorrow">I morgon %1$d–%2$d°</string>
+    <string name="today_weather_tomorrow">Imorgon %1$d–%2$d°</string>
     <string name="today_weather_stale">Väder från %1$s</string>
     <string name="today_weather_missing">Välj ort</string>
     <string name="today_weather_unavailable">Inget väder just nu</string>
@@ -787,7 +787,7 @@
     <string name="nutrition_kcal">%1$d kcal</string>
     <string name="nutrition_grams">%1$s g</string>
     <string name="nutrition_coverage">Uppskattat från %1$d av %2$d ingredienser, för %3$d portioner.</string>
-    <string name="nutrition_loading">Räknar …</string>
+    <string name="nutrition_loading">Räknar…</string>
     <string name="nutrition_unavailable">Behöver nät första gången</string>
     <string name="nutrition_source">Källa: Livsmedelsverket</string>
 
@@ -821,7 +821,7 @@
     <string name="calendar_until">till %1$s</string>
 
     <string name="settings_dev_title">Utvecklare</string>
-    <string name="settings_dev_replay_onboarding">Visa första start igen</string>
+    <string name="settings_dev_replay_onboarding">Radera och börja om</string>
 
     <string name="today_demo_family">Exempelfamilj</string>
 
@@ -1148,7 +1148,7 @@
     <string name="subs_people">Vems kalender?</string>
     <string name="subs_color">Färg</string>
     <string name="subs_test">Hämta och visa</string>
-    <string name="subs_testing">Hämtar …</string>
+    <string name="subs_testing">Hämtar…</string>
     <string name="subs_count_one">1 händelse</string>
     <string name="subs_count">%1$d händelser</string>
     <string name="subs_nothing_upcoming">Inget kommande</string>

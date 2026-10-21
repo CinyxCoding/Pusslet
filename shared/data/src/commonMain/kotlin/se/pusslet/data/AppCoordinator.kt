@@ -48,7 +48,7 @@ data class BackendConfig(
     val emulatorHost: String = "10.0.2.2",
     /** Host for invite links (https://<linkHost>/join/<code>). */
     val linkHost: String = "pusslet.web.app",
-    /** Developer rows in Settings ("Visa första start igen"): demo and dev builds only, never prod. Defaults to the demo flavor. */
+    /** Developer rows in Settings ("Radera och börja om"): demo and dev builds only, never prod. Defaults to the demo flavor. */
     val developerTools: Boolean = seedDemoData,
     /** Where the familyCalendarFeed function answers (ADR-041); null without a backend, so no feed link is offered. */
     val calendarFeedBase: String? = null,
@@ -92,7 +92,7 @@ class AppCoordinator(
     fun start() {
         scope.launch {
             val session = sessions.load()
-            // After "Visa första start igen" the welcome screen stays, even when the app is restarted.
+            // After "Radera och börja om" the welcome screen stays, even when the app is restarted.
             if (config.seedDemoData && !session.hasFamily && !prefs.get(Prefs.SkipDemoSeed)) {
                 seed.seed(clock.todayIn(zone))
                 prefs.set(Prefs.OnboardingDone, true)

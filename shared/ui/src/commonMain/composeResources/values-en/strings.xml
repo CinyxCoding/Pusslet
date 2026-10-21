@@ -85,7 +85,7 @@
     <string name="date_long">%1$s, %3$s %2$d</string>
     <string name="date_long_year">%1$s, %3$s %2$d, %4$d</string>
     <string name="date_short">%2$s %1$d</string>
-    <string name="week_short">w. %1$d</string>
+    <string name="week_short">wk %1$d</string>
     <string name="week_long">Week %1$d</string>
     <string name="time_range">%1$s–%2$s</string>
     <string name="at_time">at %1$s</string>
@@ -223,7 +223,7 @@
     <string name="quickadd_hint">E.g. %1$s football Tue 17:30</string>
     <string name="quickadd_uncertain">Check what's highlighted</string>
     <string name="quickadd_kind_event">Event</string>
-    <string name="quickadd_kind_task">To-do</string>
+    <string name="quickadd_kind_task">To do</string>
     <string name="quickadd_kind_shopping">To the shopping list</string>
     <string name="quickadd_kind_meal">To the meal plan</string>
     <string name="quickadd_kind_handoff">Pick-up/drop-off</string>
@@ -290,7 +290,7 @@
     <string name="event_source_subscription">From %1$s</string>
     <string name="event_source_device">From your calendar</string>
     <string name="event_source_holiday">Public holiday</string>
-    <string name="event_read_only">This event comes from another calendar and cannot be changed here.</string>
+    <string name="event_read_only">This event comes from another calendar and can't be changed here.</string>
     <string name="event_request_pickup">Can someone pick up?</string>
     <string name="event_title_required">Write what it is</string>
     <string name="event_end_before_start">The end is before the start</string>
@@ -329,7 +329,7 @@
     <string name="join_code_hint">Invite code</string>
     <string name="join_scan">Scan QR code</string>
     <string name="scanner_hint">Point the camera at the QR code or barcode</string>
-    <string name="scanner_unavailable">The camera could not be started.</string>
+    <string name="scanner_unavailable">The camera couldn't be started.</string>
     <string name="join_find">Find invite</string>
     <string name="join_found">Invite to %1$s</string>
     <string name="join_as_parent">You join as a parent and see everything.</string>
@@ -337,7 +337,7 @@
     <string name="join_button">Join</string>
     <string name="join_invalid">The code was not found or has expired.</string>
     <string name="join_needs_network">You need to be online to join.</string>
-    <string name="join_unavailable">This version of the app is not connected to a server, so joining a family is not possible.</string>
+    <string name="join_unavailable">This version of the app isn't connected to a server, so you can't join a family.</string>
 
     <!-- Family -->
     <string name="family_title">The family</string>
@@ -417,7 +417,7 @@
     <string name="school_free_text">Use “%1$s”</string>
     <string name="school_source">Source: the Swedish National Agency for Education</string>
     <string name="school_preschool_note">Preschools are not in the national register – type the name yourself.</string>
-    <string name="school_offline">Could not load schools right now. You can type the name yourself.</string>
+    <string name="school_offline">Couldn't load schools right now. You can type the name yourself.</string>
 
     <!-- Diet (opt-in sensitive data) -->
     <string name="diet_title">Allergies and diet</string>
@@ -458,7 +458,7 @@
     <string name="custody_household_hint">E.g. At dad's</string>
     <string name="custody_anchor">First day in the first home</string>
     <string name="custody_handover_time">Changeover at</string>
-    <string name="custody_exceptions">Exceptions (holidays)</string>
+    <string name="custody_exceptions">Exceptions (school breaks, holidays)</string>
     <string name="custody_exception_add">Add exception</string>
     <string name="custody_exception_line">%1$s–%2$s: %3$s</string>
     <string name="custody_preview">The next few weeks</string>
@@ -786,7 +786,7 @@
     <string name="nutrition_kcal">%1$d kcal</string>
     <string name="nutrition_grams">%1$s g</string>
     <string name="nutrition_coverage">Estimated from %1$d of %2$d ingredients, for %3$d servings.</string>
-    <string name="nutrition_loading">Calculating …</string>
+    <string name="nutrition_loading">Calculating…</string>
     <string name="nutrition_unavailable">Needs internet the first time</string>
     <string name="nutrition_source">Source: Swedish Food Agency</string>
 
@@ -799,7 +799,7 @@
     <string name="quickadd_saved_item">1 item on the list</string>
     <string name="quickadd_saved_items">%1$d items on the list</string>
     <string name="quickadd_saved_event">In the calendar %1$s</string>
-    <string name="quickadd_saved_meal">On the menu %1$s</string>
+    <string name="quickadd_saved_meal">On the meal plan %1$s</string>
     <string name="quickadd_saved_task">Saved to To do</string>
     <string name="quickadd_saved_pickup">%1$s picks up %2$s</string>
     <string name="quickadd_saved_dropoff">%1$s drops off %2$s</string>
@@ -820,7 +820,7 @@
     <string name="calendar_until">until %1$s</string>
 
     <string name="settings_dev_title">Developer</string>
-    <string name="settings_dev_replay_onboarding">Show first run again</string>
+    <string name="settings_dev_replay_onboarding">Erase and restart</string>
 
     <string name="today_demo_family">Sample family</string>
 
@@ -884,12 +884,12 @@
     <!-- Idag – sections -->
     <string name="today_show_whole_day">Show the whole day</string>
     <string name="today_show_all_count">Show all (%1$d)</string>
-    <string name="today_reminder_gift">%1$s – present?</string>
+    <string name="today_reminder_gift">%1$s – gift?</string>
     <string name="today_reminder_study_day">%1$s – who is at home?</string>
     <string name="today_reminder_squeeze">Bridge day – off or after-school care?</string>
     <string name="today_shopping_left">%1$s: %2$d left</string>
     <string name="today_quiet_end">Nothing more today</string>
-    <string name="today_customize">Customize Today</string>
+    <string name="today_customize">Customise Today</string>
 
     <string name="today_layout_intro">What you turn off is still in the tabs. Things that need sorting out always show.</string>
     <string name="today_layout_hero">Morning check</string>
@@ -1134,7 +1134,7 @@
     <!-- ICS subscriptions (Fas 3): Inställningar > Prenumerationer -->
     <string name="subs_title">Subscriptions</string>
     <string name="subs_add">New subscription</string>
-    <string name="subs_free_limit">More than %1$d calendars is part of Premium.</string>
+    <string name="subs_free_limit">More than %1$d calendars are part of Premium.</string>
     <string name="subs_edit">Edit subscription</string>
     <string name="subs_empty">Follow the school's or the club's calendar and it shows up among your events.</string>
     <string name="subs_parents_only">Subscriptions are managed by the parents.</string>
@@ -1147,16 +1147,16 @@
     <string name="subs_people">Whose calendar?</string>
     <string name="subs_color">Colour</string>
     <string name="subs_test">Fetch and show</string>
-    <string name="subs_testing">Fetching …</string>
+    <string name="subs_testing">Fetching…</string>
     <string name="subs_count_one">1 event</string>
     <string name="subs_count">%1$d events</string>
     <string name="subs_nothing_upcoming">Nothing coming up</string>
-    <string name="subs_error_unreachable">The calendar could not be reached. Check the link or try again when you are online.</string>
-    <string name="subs_error_http">The server did not hand out the calendar. Check that the link is right and that the calendar is shared.</string>
-    <string name="subs_error_not_calendar">The link does not lead to a calendar. Look for a link that ends in .ics or is called Subscribe.</string>
+    <string name="subs_error_unreachable">The calendar couldn't be reached. Check the link or try again when you're online.</string>
+    <string name="subs_error_http">The server didn't hand out the calendar. Check that the link is right and that the calendar is shared.</string>
+    <string name="subs_error_not_calendar">The link doesn't lead to a calendar. Look for a link that ends in .ics or is called Subscribe.</string>
     <string name="subs_last_fetched">Last fetched %1$s</string>
     <string name="subs_never_fetched">Not fetched yet</string>
-    <string name="subs_fetch_failed">Could not fetch – we will try again</string>
+    <string name="subs_fetch_failed">Couldn't fetch – we'll try again</string>
     <string name="subs_refresh_now">Refresh now</string>
     <string name="subs_removed">%1$s removed</string>
     <string name="subs_show_in_calendar">Show %1$s in the calendar</string>
@@ -1164,7 +1164,7 @@
     <!-- Integritet: export, this phone, delete for everyone, delete my account (Fas 3) -->
     <string name="privacy_export_action">Export</string>
     <string name="privacy_export_saved">Saved: %1$s</string>
-    <string name="privacy_export_not_saved">The file was not saved.</string>
+    <string name="privacy_export_not_saved">The file wasn't saved.</string>
     <string name="privacy_this_phone">This phone</string>
     <string name="privacy_forget_body">The family is removed from this phone. Everyone else in the family keeps everything.</string>
     <string name="privacy_forget_body_local">The family is only on this phone, so everything about it is deleted.</string>
@@ -1180,8 +1180,8 @@
     <string name="privacy_deleting">Deleting…</string>
     <string name="privacy_problem_not_allowed">Only a parent can delete the family.</string>
     <string name="privacy_problem_sign_in">Sign in again to delete.</string>
-    <string name="privacy_problem_offline">That did not work right now. Check the connection and try again.</string>
-    <string name="privacy_problem_failed">Could not delete. Try again.</string>
+    <string name="privacy_problem_offline">That didn't work right now. Check the connection and try again.</string>
+    <string name="privacy_problem_failed">Couldn't delete. Try again.</string>
     <!-- Om Pusslet: subscribed calendars (ICS), until the ICS agent reports its text -->
     <string name="source_ics">Subscribed calendars</string>
     <string name="source_ics_body">Calendars you follow, such as the school's or the club's. Fetched straight from the link you added, about every 6 hours, and only on parents' phones.</string>
@@ -1208,7 +1208,7 @@
     <string name="pantry_best_before_label">Best before</string>
     <string name="pantry_best_before_none">No date</string>
     <string name="pantry_best_before_clear">Remove date</string>
-    <string name="pantry_amount_help">Leave empty if you do not know</string>
+    <string name="pantry_amount_help">Leave empty if you don't know</string>
     <string name="pantry_edit_open">Edit</string>
     <!-- Shopping extra: "Handla till veckan" for chosen days -->
     <string name="meals_to_list_rest_of_week">Rest of the week</string>
@@ -1332,7 +1332,7 @@
     <string name="recipe_import_existing">Already saved, will be updated</string>
     <string name="recipe_import_save_all">Save (%1$d)</string>
     <string name="recipe_import_links_found">%1$d recipes from %2$d links</string>
-    <string name="recipe_import_menu">Weekly menu – recipes on it: %1$d</string>
+    <string name="recipe_import_menu">Weekly menu with %1$d recipes</string>
     <string name="recipe_import_into_collection">Saved in the collection “%1$s”</string>
 
     <!-- Home screen: Idag and the shopping list (ADR-039) -->

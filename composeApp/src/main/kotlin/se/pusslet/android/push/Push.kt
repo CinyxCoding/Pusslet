@@ -46,6 +46,9 @@ object Push {
         if (config.mode != BackendMode.Firebase) return
         val messaging = FirebaseMessaging.getInstance()
         messaging.isAutoInitEnabled = true
+        // FCM tokens, as the functions send to them (sendEachForMulticast). firebase-messaging 25 deprecates them for
+        // installation ids (register()/onRegistered); moving over needs the server side too (docs/PROGRESS.md).
+        @Suppress("DEPRECATION")
         registration.start(scope, ::locale) { messaging.token.await() }
     }
 
@@ -76,6 +79,7 @@ object Push {
 class PussletMessagingService :
     FirebaseMessagingService(),
     KoinComponent {
+    @Deprecated("FCM tokens are deprecated for installation ids; see Push.start")
     override fun onNewToken(token: String) {
         if (GlobalContext.getOrNull() == null || get<BackendConfig>().mode != BackendMode.Firebase) return
         get<CoroutineScope>(AppScope).launch { get<PushRegistration>().register(token, Push.locale()) }

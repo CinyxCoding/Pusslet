@@ -100,6 +100,8 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
     texten byggs i appen på läsarens språk, tysta timmar och redan besvarade förfrågningar respekteras. Triggers testade mot
     emulatorerna (59 funktionstester gröna), appens del med enhetstester och provstart på emulator 2026-10-21. Själva
     leveransen kräver ett riktigt Firebase-projekt (SETUP.md 2.4)
+  - [ ] Flytta från FCM-token (`getToken`/`onNewToken`, utfasade i firebase-messaging 25) till installations-id
+    (`register()`/`onRegistered`) när serversidan för att skicka till dem går att prova mot ett riktigt projekt
 - [x] Två widgets (Idag, Inköpslista) med Glance: nästa händelse, lämna/hämta, ska med; listan med bockar och + över hemskärmen (ADR-039), provade på emulator 2026-10-21
 - [x] Uppgifter/sysslor med rotation, fördelningsvy: Mer › Uppgifter och sysslor (Mina, Ingen ansvarig, Familjen, Klart), redigerare med upprepning, ”Turas om”, ”Vems tur” och ”Byt vecka”, checklista; ”Så har vi delat” för de senaste 4 veckorna
 - [x] Export/radering av data: export med kvitto (även konto och den här telefonens inställningar), ”Radera familjen för alla” och ”Radera mitt konto” via callables med tester mot emulatorn, ärlig text för ”bara den här telefonen” (ADR-035)

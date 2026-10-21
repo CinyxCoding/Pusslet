@@ -138,7 +138,7 @@ fun ShoppingRoute(
                 onStoreMode = onOpenStoreMode,
                 onFromMealPlan = {
                     showMealPlan = true
-                    viewModel.previewMealPlan(0)
+                    viewModel.previewMealPlan()
                 },
                 onDismissWeekMissing = viewModel::dismissWeekMissing,
                 onShare = { text, subject -> platform.shareText(text, subject) },
@@ -211,7 +211,9 @@ fun ShoppingRoute(
         MealPlanSheet(
             preview = preview,
             usePantry = state.usePantry,
-            onPickWeek = viewModel::previewMealPlan,
+            onPreset = viewModel::previewMealPlan,
+            onToggleDay = viewModel::toggleMealPlanDay,
+            onIngredient = viewModel::setMealPlanIngredient,
             onConfirm = {
                 viewModel.generateFromMealPlan()
                 showMealPlan = false

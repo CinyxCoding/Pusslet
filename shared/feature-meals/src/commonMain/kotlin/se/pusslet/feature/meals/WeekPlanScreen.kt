@@ -154,7 +154,9 @@ private fun DayCard(day: DayPlan, state: MealsUiState, actions: WeekActions) {
             val note = if (slot == state.mainSlot) dayNote(day, entry) else null
             when {
                 entry != null -> PlannedRow(
+                    entry = entry,
                     title = mealTitle(entry, slot, showSlot, state),
+                    cook = cookText(entry, state.people, state.me),
                     note = note,
                     onClick = { actions.onViewDay(day.date, slot) },
                 )
@@ -209,9 +211,12 @@ private fun mealTitle(entry: MealEntry, slot: MealSlot, showSlot: Boolean, state
     return if (showSlot) stringResource(Res.string.meals_slot_dish, stringResource(Labels.mealSlot(slot)), title) else title
 }
 
-/** A planned meal: the dish in bodyLarge, its one quiet line and ›. The whole row opens the read view. */
+/**
+ * A planned meal: the dish in bodyLarge, how it comes about ("Hämtmat" with its icon, or "Johan lagar"), its one quiet line
+ * and ›. The whole row opens the read view.
+ */
 @Composable
-private fun PlannedRow(title: String, note: DayNote?, onClick: () -> Unit) {
+private fun PlannedRow(entry: MealEntry, title: String, cook: String?, note: DayNote?, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -222,7 +227,9 @@ private fun PlannedRow(title: String, note: DayNote?, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
+            MealTitle(entry, title, MaterialTheme.typography.bodyLarge)
+            KindLine(entry)
+            cook?.let { NoteLine(DayNote(it)) }
             note?.let { NoteLine(it) }
         }
         Icon(PussletIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -68,7 +68,9 @@ internal fun DayViewSheet(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(state.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+        MealTitle(state.entry, state.title, MaterialTheme.typography.titleLarge, Modifier.semantics(mergeDescendants = true) { heading() })
+        KindLine(state.entry)
+        state.cook?.let { NoteLine(DayNote(cookText(it, state.cookIsMe))) }
         mealDetails(state.entry)?.let { NoteLine(DayNote(it)) }
         lunchLine(groupLunches(state.lunches, wholeMenu = true), wholeMenu = true)?.let { NoteLine(DayNote(it)) }
         val clashing = state.lunches.filter { it.clash.isNotEmpty() }

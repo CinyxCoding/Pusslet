@@ -20,6 +20,7 @@ import se.pusslet.core.model.LunchProviderType
 import se.pusslet.core.model.LunchSource
 import se.pusslet.core.model.MainComponent
 import se.pusslet.core.model.MealEntry
+import se.pusslet.core.model.MealKind
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.Recipe
@@ -645,4 +646,130 @@ class MealsViewModelTest {
         vm.setWeekLunches(listOf("c-simon"), mapOf(tuesday to ""))
         assertEquals(listOf("Ella"), vm.state.value.days[1].lunches.map { it.child.firstName }, "blank removes Simon's")
     }
+
+    // region kinds and "Vem lagar"
+
+    private suspend fun TestWorld.withJohan() {
+        seed()
+        family.saveMember(Member("m-johan", "Johan"))
+    }
+
+    @Test
+    fun takeawayAndNoCookingSaveWithoutATitle() = runTest {
+        val world = TestWorld().apply { withJohan() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+
+        vm.openDay(monday)
+        vm.saveDay("", null, cookDouble = false, note = "", kind = MealKind.Takeaway, kindLabel = "Hämtmat")
+        assertNull(vm.dayEditor.value, "the sheet closes")
+        val takeaway = assertNotNull(vm.dinner(monday))
+        assertEquals(MealKind.Takeaway, takeaway.kind)
+        assertEquals("Hämtmat", takeaway.title, "the kind's label is the title, so every place that shows the meal reads well")
+        assertEquals("Hämtmat", assertIs<MealsMessage.Planned>(messages.last()).title)
+
+        vm.openDay(tuesday)
+        vm.saveDay("  Hos mormor ", null, cookDouble = false, note = "", kind = MealKind.NoCooking, kindLabel = "Ingen matlagning")
+        assertEquals("Hos mormor", vm.dinner(tuesday)?.title)
+        assertEquals(MealKind.NoCooking, vm.dinner(tuesday)?.kind)
+
+        vm.openDay(tuesday.plusDays(1))
+        vm.saveDay("", null, cookDouble = false, note = "", kind = MealKind.Cooked, kindLabel = "")
+        assertNotNull(vm.dayEditor.value, "cooking still needs to say what")
+        assertNull(vm.dinner(tuesday.plusDays(1)))
+        vm.saveDay("tacos", null, cookDouble = false, note = "")
+        assertEquals(MealKind.Cooked, vm.dinner(tuesday.plusDays(1))?.kind)
+    }
+
+    @Test
+    fun takeawayKeepsNoRecipeDoubleBatchOrCook() = runTest {
+        val world = TestWorld().apply { withJohan() }
+        val vm = viewModel(world)
+        vm.openDay(monday)
+        vm.saveDay("Pizza", "r-lax", cookDouble = true, note = "", kind = MealKind.Takeaway, cookId = "m-johan", kindLabel = "Hämtmat")
+        val entry = assertNotNull(vm.dinner(monday))
+        assertEquals("Pizza", entry.title)
+        assertNull(entry.recipeId, "no ingredients for takeaway, even if a recipe was chosen before switching")
+        assertNull(entry.cookId)
+        assertFalse(entry.cookDouble)
+        assertNull(vm.dinner(tuesday), "no leftovers")
+
+        vm.calculateWeekNutrition()
+        assertEquals(WeekNutritionState.NoRecipes, vm.weekNutrition.value)
+    }
+
+    @Test
+    fun theCookIsSetAndCleared() = runTest {
+        val world = TestWorld().apply { withJohan() }
+        val vm = viewModel(world)
+        vm.openDay(tuesday)
+        val editor = assertNotNull(vm.dayEditor.value)
+        assertEquals(setOf("Johan", "Sara"), editor.adults.map { it.name }.toSet(), "the adults, never the children")
+
+        vm.saveDay("Ugnsbakad lax", "r-lax", cookDouble = false, note = "", cookId = "m-johan")
+        assertEquals("m-johan", vm.dinner(tuesday)?.cookId)
+        assertEquals("Johan", vm.state.value.people["m-johan"]?.name)
+        assertEquals("m-sara", vm.state.value.me)
+
+        vm.viewDay(tuesday)
+        assertEquals("Johan", vm.dayView.value?.cook?.name)
+        assertFalse(assertNotNull(vm.dayView.value).cookIsMe)
+        vm.closeView()
+
+        vm.openDay(tuesday)
+        vm.saveDay("Ugnsbakad lax", "r-lax", cookDouble = false, note = "", cookId = "m-sara")
+        vm.viewDay(tuesday)
+        assertTrue(assertNotNull(vm.dayView.value).cookIsMe, "\"Du lagar\"")
+        vm.closeView()
+
+        vm.openDay(tuesday)
+        vm.saveDay("Ugnsbakad lax", "r-lax", cookDouble = false, note = "", cookId = null)
+        assertNull(vm.dinner(tuesday)?.cookId, "\"Ingen vald\"")
+        assertEquals("r-lax", vm.dinner(tuesday)?.recipeId)
+    }
+
+    @Test
+    fun aSuggestionKeepsTheChosenCook() = runTest {
+        val world = TestWorld().apply { withJohan() }
+        val vm = viewModel(world)
+        vm.openDay(tuesday)
+        val suggestion = assertNotNull(vm.dayEditor.value).suggestions.first()
+        vm.pickSuggestion(suggestion.recipe, cookDouble = false, note = "", cookId = "m-johan")
+        assertEquals("m-johan", vm.dinner(tuesday)?.cookId)
+        assertEquals(MealKind.Cooked, vm.dinner(tuesday)?.kind)
+    }
+
+    @Test
+    fun undoRestoresKindAndCook() = runTest {
+        val world = TestWorld().apply { withJohan() }
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        vm.openDay(monday)
+        vm.saveDay("Tacos", null, cookDouble = false, note = "", cookId = "m-johan")
+        vm.openDay(monday)
+        vm.saveDay("", null, cookDouble = false, note = "", kind = MealKind.Takeaway, kindLabel = "Hämtmat")
+        assertEquals(MealKind.Takeaway, vm.dinner(monday)?.kind)
+
+        vm.undo(messages.last().undo)
+        val back = assertNotNull(vm.dinner(monday))
+        assertEquals("Tacos", back.title)
+        assertEquals(MealKind.Cooked, back.kind)
+        assertEquals("m-johan", back.cookId, "Ångra brings back who cooks too")
+
+        vm.undo(messages.first().undo)
+        assertNull(vm.dinner(monday))
+    }
+
+    @Test
+    fun aMovedMealKeepsItsKindAndCook() = runTest {
+        val world = TestWorld().apply { withJohan() }
+        val vm = viewModel(world)
+        vm.plan(monday, MealSlot.Dinner, "Pizza", null, cookDouble = false, servings = null, note = "", kind = MealKind.Takeaway)
+        vm.plan(tuesday, MealSlot.Dinner, "Tacos", null, cookDouble = false, servings = null, note = "", cookId = "m-johan")
+        vm.move(monday, tuesday)
+        assertEquals(MealKind.Takeaway, vm.dinner(tuesday)?.kind)
+        assertEquals("m-johan", vm.dinner(monday)?.cookId)
+    }
+
+    // endregion
 }

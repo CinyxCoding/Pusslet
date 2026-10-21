@@ -236,6 +236,37 @@ describe("writing family data", () => {
   });
 });
 
+describe("recipe collections", () => {
+  const path = `families/${FID}/recipeCollections/c1`;
+
+  it("lets a parent create, fill per recipe, rename and soft delete a collection", async () => {
+    const sara = db("sara");
+    await assertSucceeds(setDoc(doc(sara, path), { id: "c1", name: "Kalas", recipeIds: { "r-tacos": true }, ...stamp("sara") }));
+    await assertSucceeds(
+      updateDoc(doc(sara, path), new FieldPath("recipeIds", "r-pesto"), true, "updatedAt", serverTimestamp(), "updatedBy", "sara"),
+    );
+    await assertSucceeds(updateDoc(doc(sara, path), { name: "Barnkalas", ...stamp("sara") }));
+    await assertSucceeds(updateDoc(doc(sara, path), { deletedAt: serverTimestamp(), ...stamp("sara") }));
+  });
+
+  it("needs a short name and a map of recipes", async () => {
+    const sara = db("sara");
+    await assertFails(setDoc(doc(sara, path), { id: "c1", recipeIds: {}, ...stamp("sara") }));
+    await assertFails(setDoc(doc(sara, path), { id: "c1", name: "x".repeat(201), ...stamp("sara") }));
+    await assertFails(setDoc(doc(sara, path), { id: "c1", name: "Kalas", recipeIds: ["r-tacos"], ...stamp("sara") }));
+  });
+
+  it("lets caregivers read collections like recipes, but not change them", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), path), { id: "c1", name: "Kalas", recipeIds: { "r-tacos": true } });
+    });
+    await assertSucceeds(getDoc(doc(db("bengt"), path)));
+    await assertSucceeds(getDocs(collection(db("bengt"), `families/${FID}/recipeCollections`)));
+    await assertFails(updateDoc(doc(db("bengt"), path), { name: "Morfars", ...stamp("bengt") }));
+    await assertFails(getDoc(doc(db("stranger"), path)));
+  });
+});
+
 describe("caregivers (morfar)", () => {
   it("can read shared events but not private ones", async () => {
     const f = db("bengt");

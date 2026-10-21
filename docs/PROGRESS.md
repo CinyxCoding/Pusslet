@@ -95,10 +95,10 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Kvällskollen: från 18:00 visar Idag ”Imorgon, onsdag” med vem som lämnar och hämtar, ”Packa ikväll: …” med bockar,
   morgondagens väder och klädråd och middag. Följer ”Anpassa Idag”; problem för imorgon står kvar under ”Att lösa”
 - [ ] Påminnelser för händelser och uppgifter (med notiserna ovan)
-- [ ] Matsedeln: ”Hämtmat”, ”Ingen matlagning” och ”Vem lagar”
-- [ ] Skafferiet: plats (kyl, frys, skafferi), bäst före och ”finns hemma” utan mängd
-- [ ] Inköpslista från valda dagar, med val av ingredienser
-- [ ] Receptsamlingar
+- [x] Matsedeln: ”Laga mat | Hämtmat | Ingen matlagning” och ”Vem lagar” (syns på Matsedel och Idag); hämtmat och ingen matlagning ger inga inköp och räknas inte som lagad mat i förslagen
+- [x] Skafferiet: plats (skafferi, kyl, frys), bäst före med ”går ut snart”, ”Slut” utan att radera, streckkod; okänd mängd frågar ”Finns hemma?” i stället för att hoppas över
+- [x] Inköpslista från valda dagar (nästa 14 dagar), varje ingrediens kan väljas bort, två körningar dubblar aldrig
+- [x] Receptsamlingar: egna samlingar som synkas och slås ihop per recept, filter i receptbiblioteket, ”Lägg i samling…”
 
 ## Fas 4 – Polish & Play-beredskap
 - [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)

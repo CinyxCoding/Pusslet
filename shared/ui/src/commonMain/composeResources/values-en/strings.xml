@@ -640,21 +640,17 @@
 
     <!-- Shopping: from the meal plan -->
     <string name="meals_to_list_title">Shop for the week</string>
-    <string name="meals_to_list_this_week">This week</string>
     <string name="meals_to_list_next_week">Next week</string>
-    <string name="meals_to_list_empty">Nothing to add for %1$s. Plan dinners with recipes in the meal plan – or everything is already on the list.</string>
     <string name="meals_to_list_confirm">Update the list</string>
     <string name="meals_to_list_pantry_on">What you have at home is deducted. Salt, pepper and water are skipped.</string>
     <string name="meals_to_list_pantry_off">Salt, pepper and water are skipped. What you have at home is not deducted.</string>
 
     <!-- Shopping: pantry -->
     <string name="pantry_title">What we have at home</string>
-    <string name="pantry_intro">Note what you have at home and it is deducted when the list is made from the meal plan. Without an amount it counts as enough.</string>
+    <string name="pantry_intro">Note what you have at home and it is deducted when the list is made from the meal plan. Without an amount, the list asks if it is at home.</string>
     <string name="pantry_use">Deduct what we have at home</string>
     <string name="pantry_add_hint">E.g. 1 kg flour, rice</string>
     <string name="pantry_empty">Nothing noted yet</string>
-    <string name="pantry_enough">Enough</string>
-    <string name="pantry_remove">Remove %1$s</string>
 
     <!-- Shopping: stores and store mode -->
     <string name="stores_title">Stores</string>
@@ -1181,6 +1177,55 @@
     <string name="today_packing_tonight">Pack tonight: %1$s</string>
     <string name="today_packing_done_tomorrow">All packed for tomorrow</string>
     <string name="today_dinner_tomorrow">Dinner: %1$s</string>
+
+    <!-- Shopping extra: pantry places, "Slut", best before -->
+    <string name="pantry_location_pantry">Pantry</string>
+    <string name="pantry_location_fridge">Fridge</string>
+    <string name="pantry_location_freezer">Freezer</string>
+    <string name="pantry_at_home">At home</string>
+    <string name="pantry_out">Out</string>
+    <string name="pantry_mark_out">Out</string>
+    <string name="pantry_mark_out_description">Mark %1$s as out</string>
+    <string name="pantry_mark_back">Back in stock</string>
+    <string name="pantry_mark_back_description">%1$s is at home again</string>
+    <string name="pantry_best_before">Best before %1$s</string>
+    <string name="pantry_best_before_soon">Use soon · %1$s</string>
+    <string name="pantry_best_before_passed">Past best before · %1$s</string>
+    <string name="pantry_best_before_label">Best before</string>
+    <string name="pantry_best_before_none">No date</string>
+    <string name="pantry_best_before_clear">Remove date</string>
+    <string name="pantry_amount_help">Leave empty if you do not know</string>
+    <string name="pantry_edit_open">Edit</string>
+    <!-- Shopping extra: "Handla till veckan" for chosen days -->
+    <string name="meals_to_list_rest_of_week">Rest of the week</string>
+    <string name="meals_to_list_no_days">Choose at least one day.</string>
+    <string name="meals_to_list_nothing">Nothing to add for those days. Plan dinners with recipes in the meal plan – or everything is already on the list.</string>
+    <string name="meals_to_list_ask_home">At home?</string>
+    <string name="meals_to_list_covered">Enough at home: %1$s</string>
+
+    <!-- Mat: hämtmat, ingen matlagning och vem lagar (meals-extra) -->
+    <string name="meals_kind_cooked">Cook</string>
+    <string name="meals_kind_takeaway">Takeaway</string>
+    <string name="meals_kind_none">No cooking</string>
+    <string name="meals_takeaway_hint">From where? (optional)</string>
+    <string name="meals_none_hint">Where? (optional)</string>
+    <string name="meals_who_cooks">Who cooks</string>
+    <string name="meals_cook_nobody">Nobody chosen</string>
+    <string name="meals_cook_person">%1$s cooks</string>
+    <string name="meals_cook_you">You cook</string>
+    <!-- Recept: samlingar (meals-extra) -->
+    <string name="recipe_collection_new">New collection</string>
+    <string name="recipe_collection_name">Name, e.g. Party food</string>
+    <string name="recipe_collection_rename">Rename</string>
+    <string name="recipe_collection_delete">Delete collection</string>
+    <string name="recipe_collection_delete_confirm">Delete the collection %1$s? The recipes stay.</string>
+    <string name="recipe_collection_empty_title">No recipes in %1$s yet</string>
+    <string name="recipe_collection_empty_hint">Open a recipe and choose Add to collection.</string>
+    <string name="recipe_add_to_collection">Add to collection…</string>
+    <string name="recipe_collection_sheet_title">Add to collection</string>
+    <string name="recipe_collection_name_taken">There is already a collection with that name.</string>
+    <string name="recipe_collection_menu">More for %1$s</string>
+    <string name="recipe_collections_none">No collections yet. Make one here, e.g. Weekday favourites.</string>
 
     <!-- Placeholders used until a feature is wired up -->
 </resources>

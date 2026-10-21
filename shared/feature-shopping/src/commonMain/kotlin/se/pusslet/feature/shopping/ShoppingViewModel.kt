@@ -3,8 +3,10 @@ package se.pusslet.feature.shopping
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -37,11 +39,13 @@ import se.pusslet.core.quickadd.ParsedItem
 import se.pusslet.core.shopping.AisleGroup
 import se.pusslet.core.shopping.PurchaseRecord
 import se.pusslet.core.shopping.ShoppingListGenerator
+import se.pusslet.core.shopping.ShoppingNames
 import se.pusslet.core.shopping.ShoppingPlan
 import se.pusslet.core.shopping.StapleSuggester
 import se.pusslet.core.shopping.StapleSuggestion
 import se.pusslet.core.time.IsoWeek
 import se.pusslet.core.time.isoWeek
+import se.pusslet.core.time.plusDays
 import se.pusslet.core.util.IdGenerator
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.MealRepository
@@ -121,11 +125,45 @@ data class ShoppingUiState(
     val canShopForWeek: Boolean get() = list?.kind != ListKind.Other
 }
 
+/** One ingredient in the "Handla till veckan" sheet, with its tick. */
+data class IngredientChoice(
+    /** [se.pusslet.core.shopping.GeneratedLine.key]: the same ingredient in every recipe. */
+    val key: String,
+    /** How it would read on the list ("500 g Nötfärs"). */
+    val item: ShoppingItem,
+    /** Already on the list and gets more ("Ändras"); otherwise a new line ("Läggs till"). */
+    val change: Boolean,
+    val included: Boolean,
+    /** "Finns hemma?": the pantry has some but not an amount to count with, so the family decides. */
+    val askIfAtHome: Boolean,
+)
+
 /**
- * Preview of "Handla till veckan" for one week, grouped in the sheet as "Läggs till" ([ShoppingPlan.add]), "Ändras"
- * ([ShoppingPlan.update]) and "Tas bort" ([removed], the items behind [ShoppingPlan.remove]).
+ * Preview of "Handla till veckan" for the chosen [days], grouped in the sheet as "Läggs till" and "Ändras" ([choices],
+ * each with a tick, plus [trimmed]) and "Tas bort" ([removed], the items behind [ShoppingPlan.remove]). [plan] is what
+ * "Uppdatera listan" writes: the ticked ingredients only.
  */
-data class MealPlanPreview(val week: IsoWeek, val plan: ShoppingPlan, val removed: List<ShoppingItem> = emptyList())
+data class MealPlanPreview(
+    val days: Set<LocalDate>,
+    val plan: ShoppingPlan,
+    val removed: List<ShoppingItem> = emptyList(),
+    val choices: List<IngredientChoice> = emptyList(),
+    /** Lines that only lose a share for a meal that left the plan (typed amounts stay). */
+    val trimmed: List<ShoppingItem> = emptyList(),
+    /** "Räcker hemma: Ris": what the pantry covers completely. */
+    val coveredAtHome: List<String> = emptyList(),
+    /** The planned meals on [days] ("date/recipeId"); after "Uppdatera listan" they no longer count as missing. */
+    val meals: Set<String> = emptySet(),
+    /** The days that can be chosen: today and the 13 after it. */
+    val window: List<LocalDate> = emptyList(),
+    val today: LocalDate? = null,
+) {
+    /** Unticked ingredients, by key. */
+    val excluded: Set<String> get() = choices.filterNot { it.included }.mapTo(HashSet()) { it.key }
+
+    /** Nothing to tick and nothing to change. */
+    val isEmpty: Boolean get() = choices.isEmpty() && plan.isEmpty
+}
 
 /** One-off feedback the screen shows as a snackbar or dialog. */
 sealed interface ShoppingMessage {
@@ -185,6 +223,9 @@ class ShoppingViewModel(
     private var undoOfferedThisVisit = false
     private val preview = MutableStateFlow<MealPlanPreview?>(null)
     val mealPlanPreview: StateFlow<MealPlanPreview?> = preview
+
+    /** The latest preview being worked out; a newer choice of days cancels it, so an older answer never wins. */
+    private var previewJob: Job? = null
 
     /**
      * Presence expires by itself ("until") and the week turns, so re-evaluate every minute. The loop only runs while
@@ -315,14 +356,19 @@ class ShoppingViewModel(
     private suspend fun listIdForAdding(): String = state.value.list?.id ?: adder.activeListId()
 
     private fun launchSafely(block: suspend () -> Unit) {
-        viewModelScope.launch {
-            try {
-                block()
-            } catch (e: IllegalStateException) {
-                // E.g. no family selected yet; never crash the list, tell the user instead.
-                log.w { "Shopping action failed: ${e::class.simpleName}" }
-                messageChannel.send(ShoppingMessage.Failed)
-            }
+        launchJob(block)
+    }
+
+    private fun launchJob(block: suspend () -> Unit): Job = viewModelScope.launch {
+        try {
+            block()
+        } catch (e: IllegalStateException) {
+            // A preview replaced by a newer one is cancelled; that is no failure (CancellationException is an
+            // IllegalStateException on the JVM).
+            if (e is CancellationException) throw e
+            // E.g. no family selected yet; never crash the list, tell the user instead.
+            log.w { "Shopping action failed: ${e::class.simpleName}" }
+            messageChannel.send(ShoppingMessage.Failed)
         }
     }
 
@@ -503,35 +549,89 @@ class ShoppingViewModel(
         report(adder.addNamed(listIdForAdding(), barcode, name))
     }
 
-    /** Shows what "Handla till veckan" would change; [weeksAhead] 0 = this week, 1 = next week. */
-    fun previewMealPlan(weeksAhead: Int) = launchSafely {
-        val week = today().isoWeek.plusWeeks(weeksAhead)
-        val listId = listIdForAdding()
-        val plan = mealShopping.preview(listId, week)
-        val removing = plan.remove.toSet()
-        val removed = if (removing.isEmpty()) emptyList() else shopping.getItems(listId).filter { it.id in removing }
-        preview.value = MealPlanPreview(week, plan, removed.sortedBy { it.name.lowercase() })
+    /** Opens "Handla till veckan" with today's remaining days of the week (today to Sunday), all ingredients ticked. */
+    fun previewMealPlan() = showPreview(remainingDays(today()), emptySet())
+
+    /** The quick choices in the sheet: [weeksAhead] 0 = the rest of this week, 1 = all of next week. */
+    fun previewMealPlan(weeksAhead: Int) {
+        val today = today()
+        val days = if (weeksAhead <= 0) remainingDays(today) else today.isoWeek.plusWeeks(weeksAhead).days.toSet()
+        showPreview(days intersect dayWindow(today).toSet(), preview.value?.excluded.orEmpty())
+    }
+
+    /** Adds or removes one day (within today and the 13 days after it). Unticked ingredients stay unticked. */
+    fun toggleMealPlanDay(day: LocalDate) {
+        val current = preview.value ?: return
+        if (day !in dayWindow(today())) return
+        showPreview(if (day in current.days) current.days - day else current.days + day, current.excluded)
+    }
+
+    /** Ticks or unticks one ingredient ("Finns hemma?" → untick if it is at home). */
+    fun setMealPlanIngredient(key: String, included: Boolean) {
+        val current = preview.value ?: return
+        showPreview(current.days, if (included) current.excluded - key else current.excluded + key)
+    }
+
+    private fun showPreview(days: Set<LocalDate>, excluded: Set<String>) {
+        previewJob?.cancel()
+        previewJob = launchJob {
+            val today = today()
+            val listId = listIdForAdding()
+            val result = mealShopping.preview(listId, days, excluded)
+            val removing = result.plan.remove.toSet()
+            val removed = if (removing.isEmpty()) emptyList() else shopping.getItems(listId).filter { it.id in removing }
+            val ask = result.lines.filter { it.askIfAtHome }.mapTo(HashSet()) { it.key }
+            val keys = result.lines.mapTo(HashSet()) { it.key }
+
+            fun choices(items: List<ShoppingItem>, change: Boolean) = items.mapNotNull { item ->
+                val key = ShoppingNames.canonical(item.name)
+                if (key !in keys) return@mapNotNull null
+                IngredientChoice(key, item, change, included = key !in result.excluded, askIfAtHome = key in ask)
+            }
+            val choices = choices(result.all.add, change = false) + choices(result.all.update, change = true)
+            preview.value = MealPlanPreview(
+                days = days,
+                plan = result.plan,
+                removed = removed.sortedBy { it.name.lowercase() },
+                choices = choices,
+                trimmed = result.plan.update.filter { ShoppingNames.canonical(it.name) !in keys },
+                coveredAtHome = result.coveredAtHome,
+                meals = result.meals.mapNotNullTo(LinkedHashSet()) { entry -> entry.recipeId?.let { mealKey(entry.date, it) } },
+                window = dayWindow(today),
+                today = today,
+            )
+        }
     }
 
     fun dismissMealPlanPreview() {
+        previewJob?.cancel()
         preview.value = null
     }
 
     /**
-     * "Uppdatera listan" in the sheet. For this week, whatever was still missing counts as handled afterwards: the card
-     * must not come back for recipes that need nothing from the store.
+     * "Uppdatera listan" in the sheet: writes the ticked ingredients for the chosen days. Every planned meal on those days
+     * counts as handled afterwards, so "saknas på listan" does not come back for recipes that needed nothing from the
+     * store (or whose ingredients were all unticked).
      */
     fun generateFromMealPlan() = launchSafely {
         val p = preview.value ?: return@launchSafely
+        previewJob?.cancel()
         preview.value = null
-        val missing = state.value.weekMissing?.takeIf { it.week == p.week }?.meals.orEmpty()
-        val result = mealShopping.generate(listIdForAdding(), p.week)
-        markHandled(missing)
+        val result = mealShopping.generate(listIdForAdding(), p.days, p.excluded)
+        markHandled(p.meals)
         messageChannel.send(ShoppingMessage.Generated(result))
     }
+
+    /** Today to Sunday. */
+    private fun remainingDays(today: LocalDate): Set<LocalDate> = today.isoWeek.days.filterTo(LinkedHashSet()) { it >= today }
+
+    private fun dayWindow(today: LocalDate): List<LocalDate> = (0 until MEAL_PLAN_DAYS).map { today.plusDays(it) }
 
     private companion object {
         const val TICK_MS = 60_000L
         const val STOP_TIMEOUT_MS = 5_000L
+
+        /** "Handla till veckan" can pick days up to two weeks ahead. */
+        const val MEAL_PLAN_DAYS = 14
     }
 }

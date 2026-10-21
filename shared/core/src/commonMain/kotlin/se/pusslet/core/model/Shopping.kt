@@ -167,14 +167,51 @@ data class ShoppingItem(
     val amount: Quantity? get() = quantity?.let { Quantity(it, unit) }
 }
 
-/** "Hemma"-lagret: things the family already has. Deducted when generating from the meal plan. */
+/** Where something is kept at home ("Skafferi", "Kyl", "Frys"). */
+@Serializable
+enum class PantryLocation {
+    @SerialName("pantry")
+    Pantry,
+
+    @SerialName("fridge")
+    Fridge,
+
+    @SerialName("freezer")
+    Freezer,
+}
+
+/**
+ * "Det vi har hemma": things the family already has, used when the list is made from the meal plan and for "Använder det
+ * ni har hemma" in the meal suggestions. Every field after [name] has a default, so documents written before they existed
+ * still decode.
+ *
+ * The three states:
+ * - **Slut** ([inStock] false): kept in the list so it is quick to mark again, but counts as not at home at all.
+ * - **Finns hemma** ([inStock] and no [quantity]): there is some, nobody knows how much. The list from the meal plan
+ *   still gets the ingredient, marked "Finns hemma?", so the family decides; it is never skipped silently.
+ * - **Known amount** ([inStock] and a [quantity]): deducted from what the recipes need, but only in a unit that converts
+ *   (2 dl at home counts against 3 dl, never against 400 g). An amount without [unit] means pieces ("st").
+ *
+ * Nothing here is changed by shopping or cooking: the family keeps it up to date by hand.
+ */
 @Serializable
 data class PantryItem(
     val id: String,
     val name: String,
     val quantity: Double? = null,
     val unit: MeasureUnit? = null,
-)
+    val location: PantryLocation = PantryLocation.Pantry,
+    val bestBefore: LocalDate? = null,
+    val inStock: Boolean = true,
+    /** Set when it was added by scanning, so scanning the same package again finds it. */
+    val barcode: String? = null,
+) {
+    /** At home with an amount we can count with. */
+    val amount: Quantity? get() = if (inStock) quantity?.let { Quantity(it, unit ?: MeasureUnit.St) } else null
+
+    /** At home, but nobody noted how much ("Finns hemma"). */
+    val amountUnknown: Boolean get() = inStock && quantity == null
+}
 
 /** "Sara är i affären": visible to the family while someone is shopping. Document id: uid. */
 @Serializable

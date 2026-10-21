@@ -22,11 +22,13 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import se.pusslet.core.meals.RecipeCollectionRules
 import se.pusslet.core.meals.RecipeScaler
 import se.pusslet.core.model.Ingredient
 import se.pusslet.core.model.MainComponent
 import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.Recipe
+import se.pusslet.core.model.RecipeCollection
 import se.pusslet.core.model.RecipeTag
 import se.pusslet.core.model.Role
 import se.pusslet.core.nutrition.Food
@@ -47,6 +49,9 @@ import kotlin.time.Clock
 
 // region library
 
+/** A collection's filter chip: the collection and how many of its recipes still exist. */
+data class CollectionChip(val collection: RecipeCollection, val count: Int)
+
 data class RecipeLibraryState(
     val loading: Boolean = true,
     val recipes: List<Recipe> = emptyList(),
@@ -54,20 +59,36 @@ data class RecipeLibraryState(
     val query: String = "",
     val tags: Set<RecipeTag> = emptySet(),
     val canEdit: Boolean = true,
-)
+    /** The family's collections by name ("Kalas", "Matlådor"). */
+    val collections: List<CollectionChip> = emptyList(),
+    /** The collection filtered on, if any. */
+    val collection: RecipeCollection? = null,
+) {
+    /** The chosen collection has no recipes (yet): its own empty state instead of "Inga recept matchar". */
+    val collectionIsEmpty: Boolean get() = collection != null && collections.firstOrNull { it.collection.id == collection.id }?.count == 0
+}
 
-class RecipeLibraryViewModel(recipes: RecipeRepository, sessions: SessionProvider) : ViewModel() {
+class RecipeLibraryViewModel(private val recipes: RecipeRepository, sessions: SessionProvider, private val ids: IdGenerator) : ViewModel() {
     private val query = MutableStateFlow("")
     private val tags = MutableStateFlow<Set<RecipeTag>>(emptySet())
+    private val selected = MutableStateFlow<String?>(null)
 
-    val state: StateFlow<RecipeLibraryState> = combine(recipes.recipes, query, tags, sessions.session) { all, q, t, s ->
+    private data class Filters(val query: String, val tags: Set<RecipeTag>, val collectionId: String?)
+
+    private val filters = combine(query, tags, selected) { q, t, c -> Filters(q, t, c) }
+
+    val state: StateFlow<RecipeLibraryState> = combine(recipes.recipes, recipes.collections, filters, sessions.session) { all, cs, f, s ->
+        // A collection deleted on another phone simply stops filtering.
+        val collection = cs.firstOrNull { it.id == f.collectionId }
         RecipeLibraryState(
             loading = false,
-            recipes = all.filter { matches(it, q, t) }.sortedWith(favoritesFirst),
+            recipes = all.filter { (collection == null || it.id in collection) && matches(it, f.query, f.tags) }.sortedWith(favoritesFirst),
             total = all.size,
-            query = q,
-            tags = t,
+            query = f.query,
+            tags = f.tags,
             canEdit = s.role == Role.Parent,
+            collections = RecipeCollectionRules.sorted(cs).map { CollectionChip(it, RecipeCollectionRules.count(it, all)) },
+            collection = collection,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), RecipeLibraryState())
 
@@ -78,6 +99,39 @@ class RecipeLibraryViewModel(recipes: RecipeRepository, sessions: SessionProvide
     fun toggleTag(tag: RecipeTag) {
         tags.update { if (tag in it) it - tag else it + tag }
     }
+
+    /** A tap on a collection's chip filters on it; a second tap shows every recipe again. */
+    fun toggleCollection(id: String) {
+        selected.update { if (it == id) null else id }
+    }
+
+    /** "Ny samling": false (nothing saved) when the name is blank or already used. The new collection is shown at once. */
+    fun createCollection(name: String): Boolean {
+        val clean = RecipeCollectionRules.cleanName(name) ?: return false
+        if (RecipeCollectionRules.nameTaken(currentCollections(), clean)) return false
+        val collection = RecipeCollection(ids.newId(), clean)
+        selected.value = collection.id
+        viewModelScope.launch { recipes.saveCollection(collection) }
+        return true
+    }
+
+    /** "Byt namn": false when the name is blank or another collection has it. */
+    fun renameCollection(id: String, name: String): Boolean {
+        val clean = RecipeCollectionRules.cleanName(name) ?: return false
+        val current = currentCollections()
+        if (RecipeCollectionRules.nameTaken(current, clean, exceptId = id)) return false
+        val collection = current.firstOrNull { it.id == id } ?: return false
+        if (collection.name != clean) viewModelScope.launch { recipes.saveCollection(collection.copy(name = clean)) }
+        return true
+    }
+
+    /** "Ta bort samlingen": the collection goes, its recipes stay. */
+    fun deleteCollection(id: String) {
+        if (selected.value == id) selected.value = null
+        viewModelScope.launch { recipes.deleteCollection(id) }
+    }
+
+    private fun currentCollections(): List<RecipeCollection> = state.value.collections.map { it.collection }
 
     private fun matches(r: Recipe, q: String, t: Set<RecipeTag>): Boolean {
         if (!r.tags.containsAll(t - RecipeTag.Quick) || (RecipeTag.Quick in t && !r.isQuick)) return false
@@ -117,7 +171,11 @@ data class RecipeDetailsState(
     val nutrition: NutritionState = NutritionState.Loading,
     val mappings: Map<String, Int> = emptyMap(),
     val canEdit: Boolean = true,
-)
+    /** Every collection of the family, by name; [inCollection] tells which ones hold this recipe. */
+    val collections: List<RecipeCollection> = emptyList(),
+) {
+    fun inCollection(collection: RecipeCollection): Boolean = recipe != null && recipe.id in collection
+}
 
 sealed interface RecipeMessage {
     data class AddedToList(val outcome: AddOutcome) : RecipeMessage
@@ -135,6 +193,7 @@ class RecipeDetailsViewModel(
     sessions: SessionProvider,
     private val clock: Clock,
     private val zone: TimeZone,
+    private val ids: IdGenerator,
 ) : ViewModel() {
     private val log = Logger.withTag("Recipe")
     private val recipeId = MutableStateFlow<String?>(null)
@@ -173,13 +232,15 @@ class RecipeDetailsViewModel(
         }
         .onStart { emit(NutritionState.Loading) }
 
+    private val mappingsAndCollections = combine(recipes.ingredientMappings, recipes.collections) { m, c -> m to c }
+
     val state: StateFlow<RecipeDetailsState> = combine(
         recipe,
         portions,
         nutritionState,
-        recipes.ingredientMappings,
+        mappingsAndCollections,
         sessions.session,
-    ) { r, p, n, m, s ->
+    ) { r, p, n, (m, collections), s ->
         val count = p ?: r?.servings ?: DEFAULT_SERVINGS
         RecipeDetailsState(
             loading = false,
@@ -190,8 +251,24 @@ class RecipeDetailsViewModel(
             nutrition = n,
             mappings = m,
             canEdit = s.role == Role.Parent,
+            collections = RecipeCollectionRules.sorted(collections),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), RecipeDetailsState())
+
+    /** "Lägg i samling…": a tick puts the recipe in [collectionId], unticking takes it out (the recipe itself is untouched). */
+    fun setInCollection(collectionId: String, inside: Boolean) {
+        val r = state.value.recipe ?: return
+        viewModelScope.launch { recipes.setInCollection(collectionId, r.id, inside) }
+    }
+
+    /** "Ny samling" in "Lägg i samling…": a new collection with this recipe in it; false when the name is blank or taken. */
+    fun createCollection(name: String): Boolean {
+        val r = state.value.recipe ?: return false
+        val clean = RecipeCollectionRules.cleanName(name) ?: return false
+        if (RecipeCollectionRules.nameTaken(state.value.collections, clean)) return false
+        viewModelScope.launch { recipes.saveCollection(RecipeCollection(ids.newId(), clean).with(r.id)) }
+        return true
+    }
 
     private suspend fun nutritionOf(recipe: Recipe, portions: Int): NutritionState =
         nutrition.summary(recipe, portions)?.let { NutritionState.Ready(it) } ?: NutritionState.Unavailable

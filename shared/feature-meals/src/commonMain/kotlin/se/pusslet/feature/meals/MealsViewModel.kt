@@ -26,10 +26,12 @@ import se.pusslet.core.meals.MealSuggestion
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventTags
+import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilySettings
 import se.pusslet.core.model.FavoriteWeek
 import se.pusslet.core.model.LunchProviderType
 import se.pusslet.core.model.MealEntry
+import se.pusslet.core.model.MealKind
 import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.PantryItem
@@ -88,6 +90,10 @@ data class MealsUiState(
     /** Helpers (caregivers) can look but not plan (Firestore rules). */
     val canEdit: Boolean = true,
     val today: LocalDate? = null,
+    /** Everyone in the family by id, for "Johan lagar". */
+    val people: Map<String, FamilyPerson> = emptyMap(),
+    /** The viewer's member id: "Du lagar". */
+    val me: String? = null,
 ) {
     val plannedCount: Int get() = days.count { it.dinner != null }
 
@@ -140,6 +146,8 @@ data class DayEditorState(
     val busy: List<EventOccurrence>,
     val weekDays: List<LocalDate>,
     val today: LocalDate? = null,
+    /** The family's adults, for "Vem lagar" (cooked dinners only). */
+    val adults: List<FamilyPerson> = emptyList(),
 )
 
 /**
@@ -153,6 +161,10 @@ data class DayViewState(
     val recipe: Recipe?,
     val lunches: List<ChildLunch>,
     val canEdit: Boolean,
+    /** Who cooks ("Johan lagar"), when someone is chosen. */
+    val cook: FamilyPerson? = null,
+    /** The viewer cooks: "Du lagar". */
+    val cookIsMe: Boolean = false,
 ) {
     val title: String get() = recipe?.title ?: entry.title
 }
@@ -204,6 +216,7 @@ class MealsViewModel(
 
     private data class Household(
         val children: List<Child>,
+        val people: List<FamilyPerson>,
         val settings: FamilySettings,
         val session: Session,
         val lunches: Map<String, List<SchoolLunch>>,
@@ -211,12 +224,12 @@ class MealsViewModel(
     )
 
     private val household: Flow<Household> = combine(
-        family.children,
+        combine(family.children, family.people) { c, p -> c to p },
         family.settings,
         sessions.session,
         lunches.lunches,
-        shopping.pantry,
-    ) { c, s, se, l, p -> Household(c, s, se, l, p) }
+        shopping.pantryAtHome,
+    ) { (c, people), s, se, l, p -> Household(c, people, s, se, l, p) }
 
     private val occurrences: Flow<List<EventOccurrence>> = week.flatMapLatest { w -> calendar.occurrences(w.monday, w.sunday, zone) }
 
@@ -259,6 +272,8 @@ class MealsViewModel(
             previousWeekPlanned = p.weeks.any { it.week == p.week.previous() && it.entries.isNotEmpty() },
             canEdit = h.session.role == Role.Parent,
             today = now,
+            people = h.people.associateBy { it.id },
+            me = h.session.memberId,
         )
     }
 
@@ -312,6 +327,7 @@ class MealsViewModel(
             busy = day.busy,
             weekDays = date.isoWeek.days,
             today = now,
+            adults = h.people.filter { !it.isChild },
         )
     }
 
@@ -319,13 +335,16 @@ class MealsViewModel(
         val plan = p.weeks.firstOrNull { it.week == date.isoWeek } ?: return null
         val entry = plan.entry(date, slot) ?: return null
         val day = dayPlan(date, plan, p, h, today)
+        val cook = entry.cookId?.takeIf { entry.kind.cooks }?.let { id -> h.people.firstOrNull { it.id == id } }
         return DayViewState(
             date = date,
             slot = slot,
             entry = entry,
-            recipe = entry.recipeId?.let { id -> p.recipes.firstOrNull { it.id == id } },
+            recipe = entry.recipeId?.takeIf { entry.kind.cooks }?.let { id -> p.recipes.firstOrNull { it.id == id } },
             lunches = day.lunches,
             canEdit = h.session.role == Role.Parent,
+            cook = cook,
+            cookIsMe = cook != null && cook.id == h.session.memberId,
         )
     }
 
@@ -346,7 +365,7 @@ class MealsViewModel(
     fun calculateWeekNutrition() {
         val s = state.value
         val byId = s.recipes.associateBy { it.id }
-        val meals = s.days.flatMap { it.entries.values }.filter { it.leftoversFrom == null }.mapNotNull { e ->
+        val meals = s.days.flatMap { it.entries.values }.filter { it.cooksRecipe }.mapNotNull { e ->
             e.recipeId?.let(byId::get)?.let { it to (e.servings ?: it.servings) }
         }
         if (meals.isEmpty()) {
@@ -399,19 +418,31 @@ class MealsViewModel(
 
     /**
      * "Spara" in the planning sheet: plans [title] (a recipe when [recipeId] is set) for the day being planned and closes the
-     * sheet. Portions chosen earlier are kept while the recipe stays the same.
+     * sheet. Portions chosen earlier are kept while the recipe stays the same. Takeaway and no cooking ([kind]) may be saved
+     * without a text: then [kindLabel] ("Hämtmat") becomes the title, so every place that shows the meal still reads well.
+     * [cookId] is "Vem lagar" (cooked meals only).
      */
-    fun saveDay(title: String, recipeId: String?, cookDouble: Boolean, note: String) {
+    fun saveDay(
+        title: String,
+        recipeId: String?,
+        cookDouble: Boolean,
+        note: String,
+        kind: MealKind = MealKind.Cooked,
+        cookId: String? = null,
+        kindLabel: String = "",
+    ) {
         val (date, slot) = editing.value ?: return
-        if (title.isBlank() && recipeId == null) return
+        val text = title.trim().ifEmpty { if (kind.cooks) "" else kindLabel.trim() }
+        if (text.isEmpty() && (recipeId == null || !kind.cooks)) return
         val current = dayEditor.value?.entry?.takeIf { it.date == date && it.slot == slot }
         val servings = current?.servings?.takeIf { current.recipeId == recipeId }
         editing.value = null
-        plan(date, slot, title, recipeId, cookDouble, servings, note)
+        plan(date, slot, text, recipeId, cookDouble, servings, note, kind, cookId)
     }
 
-    /** One tap on a suggestion plans it and closes the sheet ("Tis: Ugnspannkaka · Ångra"). */
-    fun pickSuggestion(recipe: Recipe, cookDouble: Boolean = false, note: String = "") = saveDay(recipe.title, recipe.id, cookDouble, note)
+    /** One tap on a suggestion plans it and closes the sheet ("Tis: Ugnspannkaka · Ångra"); [cookId] is "Vem lagar". */
+    fun pickSuggestion(recipe: Recipe, cookDouble: Boolean = false, note: String = "", cookId: String? = null) =
+        saveDay(recipe.title, recipe.id, cookDouble, note, MealKind.Cooked, cookId)
 
     /** "Ta bort" in the planning sheet. */
     fun clearDay() {
@@ -427,9 +458,21 @@ class MealsViewModel(
         move(date, to, slot)
     }
 
-    /** Plans a recipe or free text ("tacos"). "Gör dubbelt" adds leftovers the next free day (see MealRepository). */
-    fun plan(date: LocalDate, slot: MealSlot, title: String, recipeId: String?, cookDouble: Boolean, servings: Int?, note: String) {
-        if (title.isBlank() && recipeId == null) return
+    /**
+     * Plans a recipe or free text ("tacos"), or takeaway / no cooking ([kind]), which keep no recipe, portions, "Gör dubbelt"
+     * or cook. "Gör dubbelt" adds leftovers the next free day (see MealRepository).
+     */
+    fun plan(
+        date: LocalDate,
+        slot: MealSlot,
+        title: String,
+        recipeId: String?,
+        cookDouble: Boolean,
+        servings: Int?,
+        note: String,
+        kind: MealKind = MealKind.Cooked,
+        cookId: String? = null,
+    ) {
         val entry = MealEntry(
             date = date,
             slot = slot,
@@ -438,7 +481,10 @@ class MealsViewModel(
             servings = servings,
             cookDouble = cookDouble,
             note = note.trim(),
-        )
+            kind = kind,
+            cookId = cookId?.takeIf { it.isNotBlank() },
+        ).normalized()
+        if (entry.title.isBlank() && entry.recipeId == null) return
         viewModelScope.launch {
             val undo = history.record(listOf(date)) { meals.setEntry(entry) } ?: return@launch
             changed(MealsMessage.Planned(date, titleOf(entry), undo))

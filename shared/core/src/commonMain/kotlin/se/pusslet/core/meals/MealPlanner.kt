@@ -6,6 +6,7 @@ import se.pusslet.core.model.FavoriteWeek
 import se.pusslet.core.model.Ingredient
 import se.pusslet.core.model.MainComponent
 import se.pusslet.core.model.MealEntry
+import se.pusslet.core.model.MealKind
 import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
@@ -109,6 +110,12 @@ object MealSuggester {
         }
     }
 
+    /**
+     * A busy evening asks for something quick only when the family cooks that evening ([kind] null = not planned yet):
+     * with takeaway or no cooking there is nothing to hurry.
+     */
+    fun needsQuickDinner(busy: Boolean, kind: MealKind?): Boolean = busy && (kind == null || kind.cooks)
+
     fun suggest(
         date: LocalDate,
         recipes: List<Recipe>,
@@ -118,10 +125,12 @@ object MealSuggester {
         pantryNames: Set<String> = emptySet(),
         limit: Int = 5,
     ): List<MealSuggestion> {
-        val yesterday = history.firstOrNull { it.date == date.plusDays(-1) && it.slot == MealSlot.Dinner }
+        // Takeaway and no cooking are not dishes cooked here: they neither count as made recently nor vary the week.
+        val cooked = history.filter { it.kind.cooks }
+        val yesterday = cooked.firstOrNull { it.date == date.plusDays(-1) && it.slot == MealSlot.Dinner }
         val day = Day(
             date = date,
-            lastCooked = history.filter { it.recipeId != null && it.date < date }
+            lastCooked = cooked.filter { it.recipeId != null && it.date < date }
                 .groupBy { it.recipeId }
                 .mapValues { (_, v) -> v.maxOf { it.date } },
             yesterday = yesterday?.recipeId?.let { id -> recipes.firstOrNull { it.id == id }?.mainComponent }

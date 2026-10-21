@@ -34,9 +34,11 @@ import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
 /**
- * Mat › Recept: tag filters and the family's recipes ("45 min · ICA" and a star). The search field sits in the tab's header
- * ([RecipeSearchField]) and new recipes come from the round + (UX plan 1.2), the one way to add here. An empty library
- * tells how to share a recipe from the browser, and its "Nytt recept" ([onAdd]) opens the same choice as the + (UX plan 4.5).
+ * Mat › Recept: the family's collections ("Kalas", "Matlådor", [CollectionFilters]), tag filters and the family's recipes
+ * ("45 min · ICA" and a star). The search field sits in the tab's header ([RecipeSearchField]) and new recipes come from the
+ * round + (UX plan 1.2), the one way to add here. An empty library tells how to share a recipe from the browser, and its
+ * "Nytt recept" ([onAdd]) opens the same choice as the + (UX plan 4.5). A chosen collection without recipes says how to
+ * add one.
  */
 @Composable
 fun RecipeLibraryScreen(
@@ -45,6 +47,7 @@ fun RecipeLibraryScreen(
     onToggleTag: (RecipeTag) -> Unit = {},
     onOpen: (String) -> Unit = {},
     onAdd: () -> Unit = {},
+    collections: CollectionActions = CollectionActions(),
 ) {
     if (state.loading) {
         LoadingBox()
@@ -61,6 +64,7 @@ fun RecipeLibraryScreen(
         verticalArrangement = Arrangement.spacedBy(Spacing.xs),
     ) {
         if (state.total > 0) {
+            item(key = "collections") { CollectionFilters(state, collections) }
             item(key = "tags") {
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -79,6 +83,12 @@ fun RecipeLibraryScreen(
         }
         when {
             state.total == 0 -> item(key = "empty") { EmptyLibrary(canAdd = state.canEdit, onAdd = onAdd) }
+            state.collectionIsEmpty -> item(key = "collection-empty") {
+                EmptyState(
+                    title = stringResource(Res.string.recipe_collection_empty_title, state.collection?.name.orEmpty()),
+                    message = stringResource(Res.string.recipe_collection_empty_hint),
+                )
+            }
             state.recipes.isEmpty() -> item(key = "none") { EmptyState(message = stringResource(Res.string.recipe_no_match)) }
         }
         items(state.recipes, key = { it.id }) { recipe ->

@@ -22,8 +22,11 @@ import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.ListKind
 import se.pusslet.core.model.MealEntry
+import se.pusslet.core.model.MealKind
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Member
+import se.pusslet.core.model.PantryItem
+import se.pusslet.core.model.PantryLocation
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.ShoppingItem
@@ -33,6 +36,7 @@ import se.pusslet.core.model.Store
 import se.pusslet.core.recipes.IngredientParser
 import se.pusslet.core.shopping.AisleGroup
 import se.pusslet.core.time.isoWeek
+import se.pusslet.core.units.MeasureUnit
 import se.pusslet.core.util.SequentialIdGenerator
 import se.pusslet.data.db.PreferenceDao
 import se.pusslet.data.db.PreferenceEntity
@@ -424,7 +428,7 @@ class ShoppingViewModelTest {
 
         vm.previewMealPlan(0)
         val preview = vm.mealPlanPreview.value
-        assertEquals(today.isoWeek, preview?.week)
+        assertEquals(today.isoWeek.days.filter { it >= today }.toSet(), preview?.days, "today to Sunday")
         assertEquals(3, preview?.plan?.add?.size)
 
         vm.generateFromMealPlan()
@@ -645,8 +649,9 @@ class ShoppingViewModelTest {
             assertTrue(canShopForWeek, "\"Handla till veckan\" on Veckohandling")
         }
         // "Handla till veckan" from the empty state previews the week like everywhere else.
-        vm.previewMealPlan(0)
-        assertEquals(clock.now().toLocalDateTime(zone).date.isoWeek, assertNotNull(vm.mealPlanPreview.value).week)
+        vm.previewMealPlan()
+        val today = clock.now().toLocalDateTime(zone).date
+        assertEquals(today, assertNotNull(vm.mealPlanPreview.value).days.min())
         vm.dismissMealPlanPreview()
 
         vm.selectList("l-apotek")
@@ -659,6 +664,108 @@ class ShoppingViewModelTest {
         assertTrue(messages.isEmpty())
         vm.scanned("7310865004703")
         assertEquals("7310865004703", assertIs<ShoppingMessage.UnknownProduct>(messages.last()).barcode)
+    }
+
+    @Test
+    fun chosenDaysPreviewLetsTheFamilyUntickAndNeverDuplicates() = runTest {
+        seed()
+        recipes.save(Recipe("r1", "Tacos", 4, listOf("500 g nötfärs", "1 gurka", "1 påse tacokrydda").map { IngredientParser.parse(it) }))
+        recipes.save(Recipe("r2", "Gryta", 4, listOf("600 g kycklingfilé", "1 gurka", "3 dl ris").map { IngredientParser.parse(it) }))
+        val today = now.toLocalDateTime(zone).date
+        val nextMonday = today.isoWeek.next().monday
+        meals.setEntry(MealEntry(today, recipeId = "r1", title = "Tacos"))
+        meals.setEntry(MealEntry(nextMonday, recipeId = "r2", title = "Gryta"))
+        meals.setEntry(MealEntry(today.plus(DatePeriod(days = 1)), recipeId = "r2", title = "Hämtmat", kind = MealKind.Takeaway))
+        shopping.saveItem(ShoppingItem("manual", "l-vecka", "Kaffe", 1.0, MeasureUnit.Pkt))
+        val (vm, messages) = viewModel()
+
+        vm.previewMealPlan()
+        var preview = assertNotNull(vm.mealPlanPreview.value)
+        assertEquals(14, preview.window.size)
+        assertEquals(today, preview.window.first())
+        assertEquals(setOf("nötfärs", "gurka", "tacokrydda"), preview.choices.map { it.key }.toSet(), "takeaway adds nothing")
+
+        // Next Monday is in the window: its meal joins, and the cucumbers merge into one line.
+        vm.toggleMealPlanDay(nextMonday)
+        preview = assertNotNull(vm.mealPlanPreview.value)
+        assertTrue(nextMonday in preview.days)
+        // Two people at home: half a cucumber per recipe, merged into one whole one from both meals.
+        val cucumber = preview.plan.add.single { it.name == "gurka" }
+        assertEquals(1.0, cucumber.quantity)
+        assertEquals(setOf(today, nextMonday), cucumber.sources.mapNotNull { it.mealDate }.toSet())
+        vm.toggleMealPlanDay(today.plus(DatePeriod(days = 20)))
+        assertEquals(preview.days, assertNotNull(vm.mealPlanPreview.value).days, "outside the 14 days: ignored")
+
+        // "Finns hemma?" → untick the rice: it stays in the sheet, unticked, and is not written.
+        vm.setMealPlanIngredient("ris", included = false)
+        preview = assertNotNull(vm.mealPlanPreview.value)
+        assertFalse(preview.choices.single { it.key == "ris" }.included)
+        assertTrue(preview.plan.add.none { it.name == "ris" })
+        assertEquals(setOf("ris"), preview.excluded)
+        vm.generateFromMealPlan()
+        assertIs<ShoppingMessage.Generated>(messages.last())
+        val names = vm.state.value.groups.flatMap { it.items }.map { it.name }
+        assertEquals(setOf("Kaffe", "gurka", "kycklingfilé", "nötfärs", "tacokrydda"), names.toSet())
+        assertEquals(names.size, names.toSet().size, "one line each")
+
+        // The same days again: nothing to change, and the typed coffee is never touched.
+        vm.previewMealPlan()
+        vm.toggleMealPlanDay(nextMonday)
+        vm.setMealPlanIngredient("ris", included = false)
+        preview = assertNotNull(vm.mealPlanPreview.value)
+        assertTrue(preview.plan.isEmpty, "${preview.plan}")
+        assertTrue(preview.choices.none { it.key == "ris" && it.included })
+        vm.dismissMealPlanPreview()
+        assertNull(vm.mealPlanPreview.value)
+    }
+
+    @Test
+    fun thePresetsPickTheRestOfTheWeekOrAllOfNextWeek() = runTest {
+        seed()
+        val (vm, _) = viewModel()
+        val today = now.toLocalDateTime(zone).date
+        vm.previewMealPlan(1)
+        assertEquals(today.isoWeek.next().days.toSet(), assertNotNull(vm.mealPlanPreview.value).days)
+        vm.previewMealPlan(0)
+        assertEquals(today.isoWeek.days.filter { it >= today }.toSet(), assertNotNull(vm.mealPlanPreview.value).days)
+    }
+
+    @Test
+    fun theListFromTheMealPlanAsksAboutWhatIsAtHomeAndNeverChangesThePantry() = runTest {
+        seed()
+        family.saveSettings { it.copy(usePantry = true) }
+        recipes.save(
+            Recipe(
+                "r1",
+                "Tacos",
+                4,
+                listOf("500 g nötfärs", "2 dl gräddfil", "1 påse tacokrydda").map {
+                    IngredientParser.parse(it)
+                },
+            ),
+        )
+        val today = now.toLocalDateTime(zone).date
+        meals.setEntry(MealEntry(today, recipeId = "r1", title = "Tacos"))
+        val pantry = listOf(
+            PantryItem("p1", "Tacokrydda"),
+            PantryItem("p2", "Gräddfil", 3.0, MeasureUnit.Dl, PantryLocation.Fridge),
+            PantryItem("p3", "Nötfärs", 1.0, MeasureUnit.Kg, PantryLocation.Freezer, inStock = false),
+        )
+        pantry.forEach { shopping.savePantry(it) }
+        val (vm, _) = viewModel()
+
+        vm.previewMealPlan()
+        val preview = assertNotNull(vm.mealPlanPreview.value)
+        assertTrue(preview.choices.single { it.key == "tacokrydda" }.askIfAtHome, "\"Finns hemma?\", ticked until the family says no")
+        assertTrue(preview.choices.single { it.key == "tacokrydda" }.included)
+        assertFalse(preview.choices.single { it.key == "nötfärs" }.askIfAtHome, "slut is not at home")
+        assertEquals(listOf("gräddfil"), preview.coveredAtHome)
+
+        vm.generateFromMealPlan()
+        assertEquals(pantry.toSet(), shopping.pantry.first().toSet(), "the pantry is only read")
+        vm.state.value.groups.flatMap { it.items }.forEach { vm.setChecked(it, true) }
+        vm.clearChecked()
+        assertEquals(pantry.toSet(), shopping.pantry.first().toSet(), "not even after shopping")
     }
 
     @Test

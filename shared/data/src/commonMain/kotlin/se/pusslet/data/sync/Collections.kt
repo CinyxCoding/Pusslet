@@ -46,6 +46,9 @@ object Collections {
     val MealPlans = CollectionSpec("mealPlans", RemoteLocation.Flat("mealPlans"), mapFields = setOf("entries"))
     val FavoriteWeeks = CollectionSpec("favoriteWeeks", RemoteLocation.Flat("favoriteWeeks"))
     val Recipes = CollectionSpec("recipes", RemoteLocation.Flat("recipes"))
+
+    /** "Kalas", "Matlådor": recipe ids merged per key, so two parents can fill the same collection at once. */
+    val RecipeCollections = CollectionSpec("recipeCollections", RemoteLocation.Flat("recipeCollections"), mapFields = setOf("recipeIds"))
     val ShoppingLists = CollectionSpec("shoppingLists", RemoteLocation.Flat("shoppingLists"))
     val ShoppingItems = CollectionSpec(
         "shoppingItems",
@@ -87,6 +90,7 @@ object Collections {
         MealPlans,
         FavoriteWeeks,
         Recipes,
+        RecipeCollections,
         ShoppingLists,
         ShoppingItems,
         Stores,

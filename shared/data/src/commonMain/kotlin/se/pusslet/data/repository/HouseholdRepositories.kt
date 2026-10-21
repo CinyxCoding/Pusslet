@@ -14,6 +14,7 @@ import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.PantryItem
 import se.pusslet.core.model.Recipe
+import se.pusslet.core.model.RecipeCollection
 import se.pusslet.core.model.ShoppingItem
 import se.pusslet.core.model.ShoppingList
 import se.pusslet.core.model.ShoppingPresence
@@ -142,6 +143,23 @@ class RecipeRepository(private val docs: DocumentStore) {
             IngredientMapping.serializer(),
         )
     }
+
+    /** The family's recipe collections ("Kalas", "Matlådor"). Deleting one never deletes its recipes. */
+    val collections: Flow<List<RecipeCollection>> = docs.observeAll(Collections.RecipeCollections, RecipeCollection.serializer())
+
+    suspend fun allCollections(): List<RecipeCollection> = docs.getAll(Collections.RecipeCollections, RecipeCollection.serializer())
+
+    suspend fun saveCollection(collection: RecipeCollection) =
+        docs.put(Collections.RecipeCollections, collection.id, collection, RecipeCollection.serializer())
+
+    suspend fun deleteCollection(id: String) = docs.delete(Collections.RecipeCollections, id)
+
+    /** Puts [recipeId] in the collection or takes it out; only that recipe's key changes, so it merges with other phones. */
+    suspend fun setInCollection(collectionId: String, recipeId: String, inside: Boolean) {
+        docs.update(Collections.RecipeCollections, collectionId, RecipeCollection.serializer()) { c ->
+            if (inside) c.with(recipeId) else c.without(recipeId)
+        }
+    }
 }
 
 @Serializable
@@ -163,7 +181,12 @@ class ShoppingRepository(
     }
     val items: Flow<List<ShoppingItem>> = docs.observeAll(Collections.ShoppingItems, ShoppingItem.serializer())
     val stores: Flow<List<Store>> = docs.observeAll(Collections.Stores, Store.serializer())
+
+    /** Everything noted at home, also what is marked "slut" ([PantryItem.inStock] false). */
     val pantry: Flow<List<PantryItem>> = docs.observeAll(Collections.Pantry, PantryItem.serializer())
+
+    /** Only what is at home now (not "slut"), e.g. for "Använder det ni har hemma" in the meal suggestions. */
+    val pantryAtHome: Flow<List<PantryItem>> = pantry.map { all -> all.filter { it.inStock } }
     val presence: Flow<List<ShoppingPresence>> = docs.observeAll(Collections.Presence, ShoppingPresence.serializer())
     val aisleOverrides: Flow<Map<String, Aisle>> = docs.observeAll(Collections.AisleOverrides, AisleOverride.serializer())
         .map { list -> list.associate { it.name to it.aisle } }

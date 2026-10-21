@@ -17,6 +17,24 @@ internal object MealsIcons {
         )
     }
 
+    /** "Hämtmat" (Material "Takeout Dining"). */
+    val Takeout: ImageVector by lazy {
+        icon(
+            "Takeout",
+            "M5.26,11h13.48l-0.67,9H5.93L5.26,11zM9.02,4h5.95L19,7.38l1.59,-1.59L22,7.21L19.21,10H4.79L2,7.21l1.41,-1.41L5,7.38L9.02,4z",
+        )
+    }
+
+    /** "Ingen matlagning" (Material "No Meals"). */
+    val NoCooking: ImageVector by lazy {
+        icon(
+            "NoCooking",
+            "M16,14V6c0,-1.76 2.24,-4 5,-4v16.17l-2,-2V14H16zM20.49,23.31L10.02,12.85C9.69,12.94 9.36,13 9,13v9H7v-9" +
+                "c-2.21,0 -4,-1.79 -4,-4V5.83L0.69,3.51L2.1,2.1l19.8,19.8L20.49,23.31zM6.17,9L5,7.83V9H6.17zM9,2H7v2.17l2,2V2z" +
+                "M13,9V2h-2v6.17l1.85,1.85C12.94,9.69 13,9.36 13,9z",
+        )
+    }
+
     /** Fewer portions (−). */
     val Remove: ImageVector by lazy { icon("Remove", "M19,13H5v-2h14v2z") }
 

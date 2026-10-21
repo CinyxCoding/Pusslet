@@ -28,6 +28,7 @@ import se.pusslet.core.model.LunchSource
 import se.pusslet.core.model.MainComponent
 import se.pusslet.core.model.ManualLunchWeek
 import se.pusslet.core.model.MealEntry
+import se.pusslet.core.model.MealKind
 import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.MemberColor
@@ -35,6 +36,7 @@ import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.PackingTrigger
 import se.pusslet.core.model.Place
 import se.pusslet.core.model.Recipe
+import se.pusslet.core.model.RecipeCollection
 import se.pusslet.core.model.RecipeTag
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.SchoolKind
@@ -393,10 +395,15 @@ class DemoSeed(private val family: FamilyRepository, private val docs: DocumentS
             6 to "r-kycklinggryta",
         ).forEach { (day, rid) ->
             val r = DemoRecipes.all.first { it.id == rid }
-            plan = plan.with(MealEntry(d(day), recipeId = r.id, title = r.title, cookDouble = rid == "r-kycklinggryta"))
+            // Johan makes the tacos ("Johan lagar").
+            val cook = JOHAN.takeIf { rid == "r-tacos" }
+            plan = plan.with(MealEntry(d(day), recipeId = r.id, title = r.title, cookDouble = rid == "r-kycklinggryta", cookId = cook))
         }
-        plan = plan.with(MealEntry(d(5), title = "Pizza"))
+        plan = plan.with(MealEntry(d(5), title = "Pizza", kind = MealKind.Takeaway))
         put(Collections.MealPlans, plan.week.key, plan, MealPlanWeek.serializer())
+        val favourites =
+            RecipeCollection("rc-vardag", "Vardagsfavoriter", listOf("r-kottbullar", "r-pesto", "r-tacos").associateWith { true })
+        put(Collections.RecipeCollections, favourites.id, favourites, RecipeCollection.serializer())
         val nextMonday = d(7)
         var next = MealPlanWeek(nextMonday.isoWeek)
         next = next.with(MealEntry(nextMonday, recipeId = "r-kycklinggryta", title = "Kycklinggryta", leftoversFrom = d(6)))

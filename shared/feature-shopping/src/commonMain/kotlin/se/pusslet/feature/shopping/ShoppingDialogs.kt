@@ -35,7 +35,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -43,8 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -53,15 +50,12 @@ import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.ListKind
 import se.pusslet.core.model.ShoppingItem
-import se.pusslet.core.shopping.ShoppingText
 import se.pusslet.core.units.MeasureUnit
 import se.pusslet.core.units.QuantityParser
 import se.pusslet.core.units.Units
 import se.pusslet.ui.components.Labels
-import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.OutlinedValueField
 import se.pusslet.ui.components.SelectionColors
-import se.pusslet.ui.format.weekLong
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
@@ -401,7 +395,7 @@ private val shoppingUnits = listOf(
 
 /** "Enhet ▾": "Ingen enhet" instead of an empty or "–" value. */
 @Composable
-private fun UnitPicker(unit: MeasureUnit?, onPick: (MeasureUnit?) -> Unit, modifier: Modifier = Modifier) {
+internal fun UnitPicker(unit: MeasureUnit?, onPick: (MeasureUnit?) -> Unit, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
     val none = stringResource(Res.string.shopping_unit_none)
     Box(modifier) {
@@ -435,90 +429,6 @@ private fun AislePicker(aisle: Aisle, onPick: (Aisle) -> Unit) {
                 })
             }
         }
-    }
-}
-
-/**
- * "Handla till veckan": pick this or next week, see what changes, grouped under "Läggs till", "Ändras" and "Tas bort",
- * and confirm.
- */
-@Composable
-internal fun MealPlanSheet(
-    preview: MealPlanPreview?,
-    usePantry: Boolean,
-    onPickWeek: (Int) -> Unit,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var weeksAhead by rememberSaveable { mutableIntStateOf(0) }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = Spacing.screenHorizontal)
-                .padding(bottom = Spacing.xl)
-                .navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.md),
-        ) {
-            Text(stringResource(Res.string.meals_to_list_title), style = MaterialTheme.typography.titleLarge)
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                listOf(Res.string.meals_to_list_this_week, Res.string.meals_to_list_next_week).forEachIndexed { index, label ->
-                    SegmentedButton(
-                        selected = weeksAhead == index,
-                        onClick = {
-                            weeksAhead = index
-                            onPickWeek(index)
-                        },
-                        shape = SegmentedButtonDefaults.itemShape(index, 2),
-                        colors = SelectionColors.segmentedButton(),
-                        label = { Text(stringResource(label), maxLines = 1) },
-                    )
-                }
-            }
-            Column(
-                Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(Spacing.md),
-            ) {
-                when {
-                    preview == null -> LoadingBox(Modifier.heightIn(max = Spacing.xxl * 3))
-                    preview.plan.isEmpty -> Text(stringResource(Res.string.meals_to_list_empty, weekLong(preview.week.week)))
-                    else -> {
-                        PlanGroup(stringResource(Res.string.shopping_plan_add), preview.plan.add.map(ShoppingText::line))
-                        PlanGroup(stringResource(Res.string.shopping_plan_change), preview.plan.update.map(ShoppingText::line))
-                        PlanGroup(stringResource(Res.string.shopping_plan_remove), preview.removed.map(ShoppingText::line))
-                    }
-                }
-                Text(
-                    stringResource(if (usePantry) Res.string.meals_to_list_pantry_on else Res.string.meals_to_list_pantry_off),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
-                OutlinedButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text(stringResource(Res.string.action_cancel)) }
-                Button(
-                    onClick = onConfirm,
-                    enabled = preview != null && !preview.plan.isEmpty,
-                    modifier = Modifier.weight(1f),
-                ) { Text(stringResource(Res.string.meals_to_list_confirm)) }
-            }
-        }
-    }
-}
-
-/** "Läggs till" and its lines ("500 g Nötfärs"); an empty group is not shown. */
-@Composable
-private fun PlanGroup(title: String, lines: List<String>) {
-    if (lines.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(Spacing.xxs)) {
-        Text(
-            title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.semantics { heading() },
-        )
-        lines.forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
     }
 }
 

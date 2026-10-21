@@ -97,6 +97,7 @@ fun RecipeDetailsRoute(
     var pickDate by remember { mutableStateOf(false) }
     var showMatching by remember { mutableStateOf(false) }
     var showNutrition by remember { mutableStateOf(false) }
+    var choosingCollections by remember { mutableStateOf(false) }
 
     LaunchedEffect(deleted) { if (deleted) onBack() }
     RecipeReceipts(viewModel, snackbar)
@@ -125,6 +126,10 @@ fun RecipeDetailsRoute(
                                 DropdownMenuItem(text = { Text(stringResource(Res.string.action_edit)) }, onClick = {
                                     menu = false
                                     onEdit(recipe.id)
+                                })
+                                DropdownMenuItem(text = { Text(stringResource(Res.string.recipe_add_to_collection)) }, onClick = {
+                                    menu = false
+                                    choosingCollections = true
                                 })
                                 DropdownMenuItem(text = { Text(stringResource(Res.string.action_delete)) }, onClick = {
                                     menu = false
@@ -171,6 +176,14 @@ fun RecipeDetailsRoute(
                 }) { Text(stringResource(Res.string.action_delete)) }
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.action_cancel)) } },
+        )
+    }
+    if (choosingCollections && recipe != null) {
+        AddToCollectionSheet(
+            state = state,
+            onToggle = viewModel::setInCollection,
+            onCreate = viewModel::createCollection,
+            onDismiss = { choosingCollections = false },
         )
     }
     if (showNutrition && recipe != null) {

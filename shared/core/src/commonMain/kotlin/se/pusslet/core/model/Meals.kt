@@ -110,6 +110,24 @@ data class Recipe(
     val isQuick: Boolean get() = RecipeTag.Quick in tags || (totalMinutes ?: Int.MAX_VALUE) <= 30
 }
 
+/**
+ * A family-named collection of recipes ("Vardagsfavoriter", "Kalas", "Matlådor"). Document id: [id]. The recipes are a map
+ * (recipe id -> true) and not a list, so two parents adding different recipes at the same time both keep theirs (the sync
+ * merges the map per key); renaming touches one field and deleting the collection never touches the recipes.
+ */
+@Serializable
+data class RecipeCollection(
+    val id: String,
+    val name: String,
+    val recipeIds: Map<String, Boolean> = emptyMap(),
+) {
+    operator fun contains(recipeId: String): Boolean = recipeIds[recipeId] == true
+
+    fun with(recipeId: String): RecipeCollection = copy(recipeIds = recipeIds + (recipeId to true))
+
+    fun without(recipeId: String): RecipeCollection = copy(recipeIds = recipeIds - recipeId)
+}
+
 @Serializable
 enum class MealSlot {
     @SerialName("breakfast")
@@ -122,12 +140,31 @@ enum class MealSlot {
     Dinner,
 }
 
+/** How a meal comes about: cooked at home (the default), "Hämtmat" or "Ingen matlagning" (out, at mormor's, smörgås). */
+@Serializable
+enum class MealKind {
+    @SerialName("cooked")
+    Cooked,
+
+    /** "Hämtmat": bought ready, so no recipe, no shopping and nobody cooks. */
+    @SerialName("takeaway")
+    Takeaway,
+
+    /** "Ingen matlagning": eating out, at someone else's or a sandwich evening. */
+    @SerialName("none")
+    NoCooking,
+    ;
+
+    /** Something is cooked at home: recipes, suggestions, "Gör dubbelt", "Vem lagar" and the shopping list apply. */
+    val cooks: Boolean get() = this == Cooked
+}
+
 @Serializable
 data class MealEntry(
     val date: LocalDate,
     val slot: MealSlot = MealSlot.Dinner,
     val recipeId: String? = null,
-    /** Free text ("tacos") or the recipe title. */
+    /** Free text ("tacos"), the recipe title or, for takeaway and no cooking without a text, the kind's label. */
     val title: String,
     val servings: Int? = null,
     /** "Gör dubbelt": creates a leftovers day automatically. */
@@ -135,8 +172,18 @@ data class MealEntry(
     /** Set on the leftovers/lunchbox entry that a double batch produced. */
     val leftoversFrom: LocalDate? = null,
     val note: String = "",
+    /** Older documents have no kind: they were all cooked. */
+    val kind: MealKind = MealKind.Cooked,
+    /** "Vem lagar": the adult member who cooks (cooked meals only). */
+    val cookId: String? = null,
 ) {
     val key: String get() = key(date, slot)
+
+    /** What is cooked at home and needs ingredients: never takeaway or no cooking, never the leftovers of a double batch. */
+    val cooksRecipe: Boolean get() = kind.cooks && recipeId != null && leftoversFrom == null
+
+    /** Takeaway and no cooking keep only what applies to them: no recipe, portions, double batch or cook. */
+    fun normalized(): MealEntry = if (kind.cooks) this else copy(recipeId = null, servings = null, cookDouble = false, cookId = null)
 
     companion object {
         fun key(date: LocalDate, slot: MealSlot) = "${date}_${slot.name}"

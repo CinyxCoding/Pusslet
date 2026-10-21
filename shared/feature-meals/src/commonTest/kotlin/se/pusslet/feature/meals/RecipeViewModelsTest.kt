@@ -52,7 +52,7 @@ class RecipeViewModelsTest {
         world.recipes.save(recipe("r1", "Köttfärssås", "500 g nötfärs", "1 burk krossade tomater", minutes = 30))
         world.recipes.save(recipe("r2", "Linsgryta", "2 dl röda linser", tags = setOf(RecipeTag.Vegetarian)))
         world.recipes.save(recipe("r3", "Lasagne", "500 g nötfärs", minutes = 90).copy(favorite = true))
-        val vm = RecipeLibraryViewModel(world.recipes, world.sessions)
+        val vm = RecipeLibraryViewModel(world.recipes, world.sessions, world.ids)
         eager().launch { vm.state.collect {} }
 
         assertEquals(listOf("Lasagne", "Köttfärssås", "Linsgryta"), vm.state.value.recipes.map { it.title }, "favourites first")
@@ -69,7 +69,7 @@ class RecipeViewModelsTest {
     @Test
     fun anEmptyLibraryOffersANewRecipeToParentsOnly() = runTest {
         val world = TestWorld()
-        val vm = RecipeLibraryViewModel(world.recipes, world.sessions)
+        val vm = RecipeLibraryViewModel(world.recipes, world.sessions, world.ids)
         eager().launch { vm.state.collect {} }
         with(vm.state.value) {
             assertEquals(0, total, "\"Inga recept än\" with the share tip")
@@ -79,7 +79,7 @@ class RecipeViewModelsTest {
         assertEquals(1, vm.state.value.total, "the empty state goes away with the first recipe")
 
         val helper = TestWorld(role = Role.Caregiver)
-        val helperVm = RecipeLibraryViewModel(helper.recipes, helper.sessions)
+        val helperVm = RecipeLibraryViewModel(helper.recipes, helper.sessions, helper.ids)
         eager().launch { helperVm.state.collect {} }
         assertEquals(0, helperVm.state.value.total)
         assertFalse(helperVm.state.value.canEdit, "helpers get the sentence only")
@@ -126,7 +126,16 @@ class RecipeViewModelsTest {
     }
 
     private fun TestScope.details(world: TestWorld): RecipeDetailsViewModel {
-        val vm = RecipeDetailsViewModel(world.recipes, world.nutrition, world.adder, world.meals, world.sessions, world.clock, world.zone)
+        val vm = RecipeDetailsViewModel(
+            world.recipes,
+            world.nutrition,
+            world.adder,
+            world.meals,
+            world.sessions,
+            world.clock,
+            world.zone,
+            world.ids,
+        )
         eager().launch { vm.state.collect {} }
         return vm
     }

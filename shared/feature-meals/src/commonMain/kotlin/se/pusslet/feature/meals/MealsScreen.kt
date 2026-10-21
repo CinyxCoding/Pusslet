@@ -139,6 +139,12 @@ fun MealsRoute(
                     onToggleTag = library::toggleTag,
                     onOpen = onOpenRecipe,
                     onAdd = { choosingRecipe = true },
+                    collections = CollectionActions(
+                        onToggle = library::toggleCollection,
+                        onCreate = library::createCollection,
+                        onRename = library::renameCollection,
+                        onDelete = library::deleteCollection,
+                    ),
                 )
             }
         }
@@ -153,7 +159,7 @@ fun MealsRoute(
         DayPlanSheet(
             state = e,
             onDismiss = viewModel::closeDay,
-            onSave = viewModel::saveDay,
+            onSave = { c -> viewModel.saveDay(c.title, c.recipeId, c.cookDouble, c.note, c.kind, c.cookId, c.kindLabel) },
             onPick = viewModel::pickSuggestion,
             onClear = viewModel::clearDay,
             onMove = viewModel::moveDay,

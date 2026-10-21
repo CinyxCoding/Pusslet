@@ -12,5 +12,5 @@ val shoppingModule: Module = module {
         ShoppingViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(AppScope), get(), get())
     }
     viewModel { StoresViewModel(get(), get(), get(), get()) }
-    viewModel { PantryViewModel(get(), get(), get(), get()) }
+    viewModel { PantryViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }

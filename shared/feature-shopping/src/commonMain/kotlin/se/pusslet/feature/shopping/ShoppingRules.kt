@@ -16,6 +16,7 @@ import se.pusslet.core.model.ShoppingItem
 import se.pusslet.core.model.ShoppingList
 import se.pusslet.core.model.ShoppingPresence
 import se.pusslet.core.shopping.AisleGroup
+import se.pusslet.core.shopping.ShoppingListGenerator
 import se.pusslet.data.repository.PrefKey
 
 /** Device-local preferences that only Handla reads (stored like `Prefs`, never synced). */
@@ -64,7 +65,8 @@ internal fun pruneHandled(keys: Set<String>, today: LocalDate): Set<String> {
 
 /**
  * Recipes planned from [today] to Sunday that nothing on the list was made for and that the family has not dealt with
- * ([handled]). Only grocery lists ask; leftovers ("rester") need no shopping.
+ * ([handled]). Only grocery lists ask; leftovers ("rester") and meals without a recipe need no shopping. The card stays
+ * about this week even though "Handla till veckan" can pick any days: its default days are the same, today to Sunday.
  */
 internal fun weekMissing(
     list: ShoppingList?,
@@ -76,7 +78,7 @@ internal fun weekMissing(
     if (list == null || list.kind != ListKind.Grocery || plan == null) return null
     val onList = mealKeys(items)
     val missing = plan.entries.values
-        .filter { it.leftoversFrom == null && it.date >= today && it.date in plan.week }
+        .filter { ShoppingListGenerator.needsShopping(it) && it.date >= today && it.date in plan.week }
         .mapNotNull { entry -> entry.recipeId?.let { mealKey(entry.date, it) to entry } }
         .filter { (key, _) -> key !in onList && key !in handled }
         .sortedBy { (_, entry) -> entry.date }

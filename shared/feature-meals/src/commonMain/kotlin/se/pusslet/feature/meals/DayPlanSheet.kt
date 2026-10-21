@@ -43,8 +43,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import se.pusslet.core.meals.MealSuggester
 import se.pusslet.core.meals.MealSuggestion
 import se.pusslet.core.meals.SuggestionReason
+import se.pusslet.core.model.MealKind
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
 import se.pusslet.ui.components.Labels
@@ -56,32 +58,54 @@ import se.pusslet.ui.format.weekdayName
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
+/** What "Spara" in the planning sheet hands over; [kindLabel] ("Hämtmat") is the title when nothing is typed. */
+internal data class DayChoice(
+    val title: String,
+    val recipeId: String?,
+    val kind: MealKind,
+    val cookId: String?,
+    val cookDouble: Boolean,
+    val note: String,
+    val kindLabel: String,
+)
+
 /**
- * Planning one meal (UX plan, Mat 4): the day (changeable with the week strip), what is going on that day, then one tap on a
- * suggestion (three at first, "Visa fler" for the rest) or a recipe that matches what is typed plans it and closes the sheet.
- * Free text ("tacos") is saved with "Spara", which never scrolls away. "Gör dubbelt", "Anteckning", "Flytta till…" and
- * "Ta bort" wait under "Fler val".
+ * Planning one meal (UX plan, Mat 4): the day (changeable with the week strip), "Laga mat | Hämtmat | Ingen matlagning",
+ * what is going on that day, then one tap on a suggestion (three at first, "Visa fler" for the rest) or a recipe that
+ * matches what is typed plans it and closes the sheet. Free text ("tacos") is saved with "Spara", which never scrolls away.
+ * Takeaway and no cooking need no text and get no suggestions. "Gör dubbelt", "Vem lagar", "Anteckning", "Flytta till…"
+ * and "Ta bort" wait under "Fler val".
  */
 @Composable
 internal fun DayPlanSheet(
     state: DayEditorState,
     onDismiss: () -> Unit,
-    onSave: (title: String, recipeId: String?, cookDouble: Boolean, note: String) -> Unit,
-    onPick: (recipe: Recipe, cookDouble: Boolean, note: String) -> Unit,
+    onSave: (DayChoice) -> Unit,
+    onPick: (recipe: Recipe, cookDouble: Boolean, note: String, cookId: String?) -> Unit,
     onClear: () -> Unit,
     onMove: (LocalDate) -> Unit,
     onChangeDay: (LocalDate) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val entry = state.entry
+    val labels = MealKind.entries.associateWith { k -> kindLabel(k)?.let { stringResource(it) }.orEmpty() }
     // Another empty day keeps what was typed; a planned day shows its own meal.
     val key = "${state.slot}-${entry?.key}"
-    var title by rememberSaveable(key) { mutableStateOf(entry?.title.orEmpty()) }
+    var kind by rememberSaveable(key) { mutableStateOf(entry?.kind ?: MealKind.Cooked) }
+    // Takeaway saved without a text has the kind as its title ("Hämtmat"): the field starts empty again.
+    var title by rememberSaveable(key) {
+        mutableStateOf(entry?.let { e -> e.title.takeUnless { !e.kind.cooks && it == labels[e.kind] } }.orEmpty())
+    }
     var recipeId by rememberSaveable(key) { mutableStateOf(entry?.recipeId) }
     var cookDouble by rememberSaveable(key) { mutableStateOf(entry?.cookDouble ?: false) }
+    var cookId by rememberSaveable(key) { mutableStateOf(entry?.cookId) }
     var note by rememberSaveable(key) { mutableStateOf(entry?.note.orEmpty()) }
     var moreOpen by rememberSaveable(key) { mutableStateOf(false) }
-    val selected = recipeId?.let { id -> state.recipes.firstOrNull { it.id == id } }
+    val cooks = kind.cooks
+    val selected = recipeId?.takeIf { cooks }?.let { id -> state.recipes.firstOrNull { it.id == id } }
+    val dinner = state.slot == MealSlot.Dinner
+
+    fun pick(recipe: Recipe) = onPick(recipe, cookDouble, note, cookId.takeIf { dinner })
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
@@ -96,7 +120,8 @@ internal fun DayPlanSheet(
                     stringResource(Res.string.meals_sheet_title, stringResource(Labels.mealSlot(state.slot)), formatDateLong(state.date)),
                 )
                 WeekStripPicker(days = state.weekDays, selected = state.date, onSelect = onChangeDay, today = state.today)
-                DayContext(state)
+                MealKindChoice(kind, onKind = { kind = it })
+                DayContext(state, kind)
                 OutlinedTextField(
                     value = title,
                     onValueChange = {
@@ -104,7 +129,7 @@ internal fun DayPlanSheet(
                         // Typing something else than the chosen recipe makes it free text again.
                         if (selected != null && it != selected.title) recipeId = null
                     },
-                    label = { Text(stringResource(Res.string.meals_what_hint)) },
+                    label = { Text(stringResource(fieldLabel(kind))) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                     modifier = Modifier.fillMaxWidth(),
@@ -115,36 +140,58 @@ internal fun DayPlanSheet(
                     },
                 )
                 val query = title.trim().lowercase()
-                if (query.isEmpty() || selected != null) {
-                    Suggestions(state.suggestions, chosen = recipeId, onPick = { onPick(it, cookDouble, note) })
-                } else {
-                    Matches(
-                        state.recipes.filter {
-                            query in it.title.lowercase()
-                        }.take(MAX_MATCHES),
-                        onPick = { onPick(it, cookDouble, note) },
-                    )
+                when {
+                    !cooks -> Unit
+                    query.isEmpty() || selected != null -> Suggestions(state.suggestions, chosen = recipeId, onPick = ::pick)
+                    else -> Matches(state.recipes.filter { query in it.title.lowercase() }.take(MAX_MATCHES), onPick = ::pick)
                 }
                 MoreChoices(
                     open = moreOpen,
                     onToggle = { moreOpen = !moreOpen },
                     state = state,
+                    kind = kind,
                     cookDouble = cookDouble,
                     onCookDouble = { cookDouble = it },
+                    cookId = cookId,
+                    onCook = { cookId = it },
                     note = note,
                     onNote = { note = it },
                     onMove = onMove,
                     onClear = onClear,
                 )
             }
-            SheetActions(canSave = title.isNotBlank(), onCancel = onDismiss, onSave = { onSave(title, recipeId, cookDouble, note) })
+            SheetActions(
+                canSave = title.isNotBlank() || !cooks,
+                onCancel = onDismiss,
+                onSave = {
+                    onSave(
+                        DayChoice(
+                            title = title,
+                            recipeId = recipeId.takeIf { cooks },
+                            kind = kind,
+                            cookId = cookId.takeIf { cooks && dinner },
+                            cookDouble = cookDouble && cooks && dinner,
+                            note = note,
+                            kindLabel = labels[kind].orEmpty(),
+                        ),
+                    )
+                },
+            )
         }
     }
 }
 
+/** What the field asks: "Vad blir det?", "Från var? (valfritt)" or "Var? (valfritt)". */
+private fun fieldLabel(kind: MealKind): StringResource = when (kind) {
+    MealKind.Cooked -> Res.string.meals_what_hint
+    MealKind.Takeaway -> Res.string.meals_takeaway_hint
+    MealKind.NoCooking -> Res.string.meals_none_hint
+}
+
+/** The busy evening ("Fotboll 17:30 – något snabbt?") only when cooking; the school lunch always. */
 @Composable
-private fun DayContext(state: DayEditorState) {
-    state.busy.firstOrNull()?.let { busy ->
+private fun DayContext(state: DayEditorState, kind: MealKind) {
+    state.busy.firstOrNull()?.takeIf { MealSuggester.needsQuickDinner(busy = true, kind = kind) }?.let { busy ->
         Text(
             stringResource(Res.string.meals_busy_evening, busy.event.title, formatTime(busy.start.time)),
             style = MaterialTheme.typography.bodyMedium,
@@ -245,14 +292,20 @@ private fun Matches(recipes: List<Recipe>, onPick: (Recipe) -> Unit) {
     }
 }
 
-/** "Fler val ⌄": "Gör dubbelt", "Anteckning" and, for a planned meal, "Flytta till…" and "Ta bort". Folded at first. */
+/**
+ * "Fler val ⌄": for a cooked dinner "Gör dubbelt" and "Vem lagar", then "Anteckning" and, for a planned meal, "Flytta till…"
+ * and "Ta bort". Folded at first.
+ */
 @Composable
 private fun MoreChoices(
     open: Boolean,
     onToggle: () -> Unit,
     state: DayEditorState,
+    kind: MealKind,
     cookDouble: Boolean,
     onCookDouble: (Boolean) -> Unit,
+    cookId: String?,
+    onCook: (String?) -> Unit,
     note: String,
     onNote: (String) -> Unit,
     onMove: (LocalDate) -> Unit,
@@ -278,13 +331,14 @@ private fun MoreChoices(
         )
     }
     if (!open) return
-    if (state.slot == MealSlot.Dinner) {
+    if (state.slot == MealSlot.Dinner && kind.cooks) {
         SwitchRow(
             title = stringResource(Res.string.meals_cook_double),
             supporting = stringResource(Res.string.meals_cook_double_hint),
             checked = cookDouble,
             onCheckedChange = onCookDouble,
         )
+        if (state.adults.isNotEmpty()) CookChooser(state.adults, cookId, onCook)
     }
     OutlinedTextField(
         value = note,

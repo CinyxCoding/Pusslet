@@ -51,11 +51,16 @@ service cloud.firestore {
         && (!('steps' in data()) || data().steps is list);
     }
     function validNamed(field) { return shortString(data()[field], 200); }
+    // "Kalas", "Matlådor": a name and recipe id -> true (a map, so phones merge per recipe).
+    function validRecipeCollection() {
+      return validNamed('name') && (!('recipeIds' in data()) || data().recipeIds is map);
+    }
 
     function validFor(collection) {
       return collection == 'events' ? validEvent()
         : collection == 'tasks' ? validTask()
         : collection == 'recipes' ? validRecipe()
+        : collection == 'recipeCollections' ? validRecipeCollection()
         : collection == 'children' ? validNamed('firstName')
         : collection == 'members' ? validNamed('displayName')
         : collection == 'shoppingLists' ? validNamed('name')
@@ -69,7 +74,7 @@ service cloud.firestore {
     function caregiverReadable(collection) {
       return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
         'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings',
-        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches'];
+        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches', 'recipeCollections'];
     }
     function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
 

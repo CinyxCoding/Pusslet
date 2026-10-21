@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.ItemSource
 import se.pusslet.core.model.MealEntry
+import se.pusslet.core.model.MealKind
 import se.pusslet.core.model.PantryItem
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.ShoppingItem
@@ -128,8 +129,99 @@ class ShoppingListGeneratorTest {
             ),
         )
         assertEquals(1.0, lines.line("gul lök").primary?.value)
-        assertTrue(lines.none { it.key == "ris" }, "rice at home without amount = enough")
+        assertTrue(lines.line("ris").askIfAtHome, "rice at home without amount: asked (\"Finns hemma?\"), never skipped")
+        assertEquals(3.0, lines.line("ris").primary?.value)
         assertEquals(7.0, lines.line("mjölk").primary?.value)
+    }
+
+    private fun LocalDate.plusDaysSet(vararg offsets: Int) = offsets.mapTo(LinkedHashSet()) { plusDays(it) }
+
+    private fun applied(list: List<ShoppingItem>, plan: ShoppingPlan): List<ShoppingItem> =
+        list.filterNot { it.id in plan.remove }.map { item -> plan.update.firstOrNull { it.id == item.id } ?: item } + plan.add
+
+    private fun linesFor(days: Set<LocalDate>) =
+        ShoppingListGenerator.lines(ShoppingListGenerator.demands(week().filter { it.date in days }, recipes, 4))
+
+    @Test
+    fun chosenDaysMergeAndAreIdempotent() {
+        val days = monday.plusDaysSet(0, 1)
+        var n = 0
+        val first = ShoppingListGenerator.plan("list", emptyList(), linesFor(days), days, { "g${n++}" }, now, null)
+        assertEquals(2.0, first.add.single { it.name == "gul lök" }.quantity, "one onion on Monday, one on Tuesday")
+        val list = applied(emptyList(), first)
+        val again = ShoppingListGenerator.plan("list", list, linesFor(days), days, { "g${n++}" }, now, null)
+        assertTrue(again.isEmpty, "running it twice changes nothing")
+    }
+
+    @Test
+    fun daysThatAreNotChosenAreLeftAlone() {
+        var n = 0
+        val tuesday = monday.plusDaysSet(1)
+        var list =
+            applied(emptyList(), ShoppingListGenerator.plan("list", emptyList(), linesFor(tuesday), tuesday, { "g${n++}" }, now, null))
+        // Monday and Wednesday: the range Monday..Wednesday would wrongly take Tuesday's share away.
+        val chosen = monday.plusDaysSet(0, 2)
+        val plan = ShoppingListGenerator.plan("list", list, linesFor(chosen), chosen, { "g${n++}" }, now, null)
+        assertTrue(plan.remove.isEmpty(), "${plan.remove}")
+        list = applied(list, plan)
+        assertEquals(2.0, list.single { it.name == "gul lök" }.quantity, "Tuesday's onion plus Monday's")
+        assertTrue(list.any { it.name == "matlagningsgrädde" }, "Tuesday's chicken stays")
+
+        // Later the rest of the week: shares add up, and redoing the first days changes nothing.
+        val rest = monday.plusDaysSet(3, 4)
+        list = applied(list, ShoppingListGenerator.plan("list", list, linesFor(rest), rest, { "g${n++}" }, now, null))
+        assertEquals(4.0, list.single { it.name == "gul lök" }.quantity)
+        assertTrue(ShoppingListGenerator.plan("list", list, linesFor(chosen), chosen, { "g${n++}" }, now, null).isEmpty)
+    }
+
+    @Test
+    fun untickedIngredientsAreLeftOutAndManualItemsAlwaysStay() {
+        val days = monday.plusDaysSet(0)
+        var n = 0
+        val manual = ShoppingItem("manual", "list", "Kaffe", 1.0, MeasureUnit.Pkt)
+        val typedOnion = ShoppingItem("onion", "list", "Gul lök", 2.0, MeasureUnit.St)
+        var list = applied(
+            listOf(manual, typedOnion),
+            ShoppingListGenerator.plan("list", listOf(manual, typedOnion), linesFor(days), days, { "g${n++}" }, now, null),
+        )
+        assertEquals(3.0, list.single { it.id == "onion" }.quantity)
+
+        // Unticked in the preview: "nötfärs" (at home) and "gul lök".
+        val chosen = linesFor(days).filter { it.key !in setOf("nötfärs", "gul lök") }
+        val plan = ShoppingListGenerator.plan("list", list, chosen, days, { "g${n++}" }, now, null)
+        assertTrue(plan.add.isEmpty())
+        assertEquals(listOf(list.single { it.name == "nötfärs" }.id), plan.remove, "only what was generated for it goes")
+        list = applied(list, plan)
+        assertEquals(2.0, list.single { it.id == "onion" }.quantity, "the typed onions stay")
+        assertTrue(list.any { it.id == "manual" })
+        assertTrue(list.none { it.name == "nötfärs" })
+    }
+
+    @Test
+    fun roundedUpPiecesDoNotGrowWhenRunAgain() {
+        // Two at home: half a can of tomatoes, rounded up to one can.
+        val days = monday.plusDaysSet(0)
+        val lines = ShoppingListGenerator.lines(ShoppingListGenerator.demands(week().filter { it.date in days }, recipes, 2))
+        var n = 0
+        val list = applied(emptyList(), ShoppingListGenerator.plan("list", emptyList(), lines, days, { "g${n++}" }, now, null))
+        assertEquals(1.0, list.single { it.name == "krossade tomater" }.quantity)
+        assertTrue(ShoppingListGenerator.plan("list", list, lines, days, { "g${n++}" }, now, null).isEmpty)
+        // Someone types one more can: still kept apart from the generated one.
+        val more = list.map { if (it.name == "krossade tomater") it.copy(quantity = 2.0) else it }
+        assertTrue(ShoppingListGenerator.plan("list", more, lines, days, { "g${n++}" }, now, null).isEmpty)
+    }
+
+    @Test
+    fun onlyCookedRecipesNeedShopping() {
+        val entries = listOf(
+            MealEntry(monday, recipeId = "r1", title = "Köttfärssås"),
+            MealEntry(monday.plusDays(1), title = "Pizza ute"),
+            MealEntry(monday.plusDays(2), recipeId = "r3", title = "Hämtmat", kind = MealKind.Takeaway),
+            MealEntry(monday.plusDays(3), recipeId = "r4", title = "Hos mormor", kind = MealKind.NoCooking),
+            MealEntry(monday.plusDays(4), recipeId = "r1", title = "Rester", leftoversFrom = monday),
+        )
+        assertEquals(listOf("r1"), ShoppingListGenerator.demands(entries, recipes, 4).map { it.recipe.id })
+        assertEquals(1, ShoppingListGenerator.demands(entries, recipes, 4).size)
     }
 
     @Test

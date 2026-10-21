@@ -641,21 +641,17 @@
 
     <!-- Shopping: from the meal plan -->
     <string name="meals_to_list_title">Handla till veckan</string>
-    <string name="meals_to_list_this_week">Den här veckan</string>
     <string name="meals_to_list_next_week">Nästa vecka</string>
-    <string name="meals_to_list_empty">Inget att lägga till för %1$s. Planera middagar med recept i matsedeln – eller så finns allt redan på listan.</string>
     <string name="meals_to_list_confirm">Uppdatera listan</string>
     <string name="meals_to_list_pantry_on">Det ni har hemma räknas bort. Salt, peppar och vatten hoppas över.</string>
     <string name="meals_to_list_pantry_off">Salt, peppar och vatten hoppas över. Det ni har hemma räknas inte bort.</string>
 
     <!-- Shopping: pantry -->
     <string name="pantry_title">Det vi har hemma</string>
-    <string name="pantry_intro">Skriv upp det ni har hemma, så räknas det bort när listan görs från matsedeln. Utan mängd räknas det som att ni har tillräckligt.</string>
+    <string name="pantry_intro">Skriv upp det ni har hemma, så räknas det bort när listan görs från matsedeln. Utan mängd frågar listan om det finns hemma.</string>
     <string name="pantry_use">Räkna bort det vi har hemma</string>
     <string name="pantry_add_hint">T.ex. 1 kg mjöl, ris</string>
     <string name="pantry_empty">Inget uppskrivet än</string>
-    <string name="pantry_enough">Tillräckligt</string>
-    <string name="pantry_remove">Ta bort %1$s</string>
 
     <!-- Shopping: stores and store mode -->
     <string name="stores_title">Butiker</string>
@@ -1182,6 +1178,55 @@
     <string name="today_packing_tonight">Packa ikväll: %1$s</string>
     <string name="today_packing_done_tomorrow">Allt är packat till imorgon</string>
     <string name="today_dinner_tomorrow">Middag: %1$s</string>
+
+    <!-- Shopping extra: pantry places, "Slut", best before -->
+    <string name="pantry_location_pantry">Skafferi</string>
+    <string name="pantry_location_fridge">Kyl</string>
+    <string name="pantry_location_freezer">Frys</string>
+    <string name="pantry_at_home">Finns hemma</string>
+    <string name="pantry_out">Slut</string>
+    <string name="pantry_mark_out">Slut</string>
+    <string name="pantry_mark_out_description">Markera %1$s som slut</string>
+    <string name="pantry_mark_back">Finns igen</string>
+    <string name="pantry_mark_back_description">%1$s finns hemma igen</string>
+    <string name="pantry_best_before">Bäst före %1$s</string>
+    <string name="pantry_best_before_soon">Går ut snart · %1$s</string>
+    <string name="pantry_best_before_passed">Bäst före passerat · %1$s</string>
+    <string name="pantry_best_before_label">Bäst före</string>
+    <string name="pantry_best_before_none">Inget datum</string>
+    <string name="pantry_best_before_clear">Ta bort datum</string>
+    <string name="pantry_amount_help">Lämna tomt om du inte vet</string>
+    <string name="pantry_edit_open">Ändra</string>
+    <!-- Shopping extra: "Handla till veckan" for chosen days -->
+    <string name="meals_to_list_rest_of_week">Resten av veckan</string>
+    <string name="meals_to_list_no_days">Välj minst en dag.</string>
+    <string name="meals_to_list_nothing">Inget att lägga till för de dagarna. Planera middagar med recept i matsedeln – eller så finns allt redan på listan.</string>
+    <string name="meals_to_list_ask_home">Finns hemma?</string>
+    <string name="meals_to_list_covered">Räcker hemma: %1$s</string>
+
+    <!-- Mat: hämtmat, ingen matlagning och vem lagar (meals-extra) -->
+    <string name="meals_kind_cooked">Laga mat</string>
+    <string name="meals_kind_takeaway">Hämtmat</string>
+    <string name="meals_kind_none">Ingen matlagning</string>
+    <string name="meals_takeaway_hint">Från var? (valfritt)</string>
+    <string name="meals_none_hint">Var? (valfritt)</string>
+    <string name="meals_who_cooks">Vem lagar</string>
+    <string name="meals_cook_nobody">Ingen vald</string>
+    <string name="meals_cook_person">%1$s lagar</string>
+    <string name="meals_cook_you">Du lagar</string>
+    <!-- Recept: samlingar (meals-extra) -->
+    <string name="recipe_collection_new">Ny samling</string>
+    <string name="recipe_collection_name">Namn, t.ex. Kalas</string>
+    <string name="recipe_collection_rename">Byt namn</string>
+    <string name="recipe_collection_delete">Ta bort samlingen</string>
+    <string name="recipe_collection_delete_confirm">Ta bort samlingen %1$s? Recepten finns kvar.</string>
+    <string name="recipe_collection_empty_title">Inga recept i %1$s än</string>
+    <string name="recipe_collection_empty_hint">Öppna ett recept och välj Lägg i samling.</string>
+    <string name="recipe_add_to_collection">Lägg i samling…</string>
+    <string name="recipe_collection_sheet_title">Lägg i samling</string>
+    <string name="recipe_collection_name_taken">Det finns redan en samling med det namnet.</string>
+    <string name="recipe_collection_menu">Fler val för %1$s</string>
+    <string name="recipe_collections_none">Inga samlingar än. Skapa en här, t.ex. Vardagsfavoriter.</string>
 
     <!-- Placeholders used until a feature is wired up -->
 </resources>

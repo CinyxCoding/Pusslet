@@ -54,6 +54,8 @@ import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.list_separator
+import se.pusslet.ui.resources.meals_cook_person
+import se.pusslet.ui.resources.meals_cook_you
 import se.pusslet.ui.resources.state_collapsed
 import se.pusslet.ui.resources.state_expanded
 import se.pusslet.ui.resources.today_clash
@@ -110,7 +112,7 @@ internal fun MorningCheck(
             when (row) {
                 is HeroRow.Handoff -> HandoffRow(row.line, now, actions)
                 is HeroRow.Packing -> PackingRow(row.packing, row.date ?: date, actions.onTogglePacking, tonight = tomorrow)
-                is HeroRow.Dinner -> DinnerRow(row) { actions.onPlanDinner(date) }
+                is HeroRow.Dinner -> DinnerRow(row, state.people, state.me?.id) { actions.onPlanDinner(date) }
                 HeroRow.PlanDinner -> SentenceRow(
                     stringResource(Res.string.today_plan_dinner),
                     onClick = { actions.onPlanDinner(plan.date) },
@@ -227,13 +229,20 @@ private fun PackingRow(
     }
 }
 
-/** "Ikväll: Fiskgratäng" with at most one line under it: a clash with a school lunch wins over the lunch itself. */
+/**
+ * "Ikväll: Fiskgratäng" with at most one line under it: a clash with a school lunch wins over the lunch itself. Who cooks
+ * follows on the supporting line ("Johan lagar", "Du lagar" for [me]).
+ */
 @Composable
-private fun DinnerRow(row: HeroRow.Dinner, onOpen: () -> Unit) {
+private fun DinnerRow(row: HeroRow.Dinner, people: Map<String, FamilyPerson>, me: String?, onOpen: () -> Unit) {
     val clash = row.lunches.firstOrNull { it.clash.isNotEmpty() }
+    val lunch = if (clash == null && row.lunches.isNotEmpty()) lunchText(row.lunches) else null
+    val cook = row.dinner.cookId?.takeIf { row.dinner.kind.cooks }?.let(people::get)?.let { person ->
+        if (person.id == me) stringResource(Res.string.meals_cook_you) else stringResource(Res.string.meals_cook_person, person.name)
+    }
     SentenceRow(
         stringResource(if (row.tomorrow) Res.string.today_dinner_tomorrow else Res.string.today_dinner_tonight, row.dinner.title),
-        supporting = if (clash == null && row.lunches.isNotEmpty()) lunchText(row.lunches) else null,
+        supporting = listOfNotNull(lunch, cook).joinToString(SEPARATOR).ifEmpty { null },
         onClick = onOpen,
     )
     if (clash != null) {

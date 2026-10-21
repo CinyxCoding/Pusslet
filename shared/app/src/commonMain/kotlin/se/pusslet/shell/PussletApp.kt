@@ -322,6 +322,7 @@ private fun AppNavDisplay(
                         navigator.goBack()
                         navigator.navigate(Route.RecipeDetails(id))
                     },
+                    onOpenRecipe = { navigator.navigate(Route.RecipeDetails(it)) },
                     onPasteInstead = { url ->
                         navigator.goBack()
                         navigator.navigate(Route.RecipeEditor(sourceUrl = url))

@@ -38,7 +38,8 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 > befintliga skärmdumpstester), demo-APK, release-AAB och iOS-ramverket bygger. **Inte** kört på emulator än.
 
 - [x] Receptbibliotek (sök på namn/ingrediens, taggar, favoriter), receptvy med portionsskalning, redigerare (en rad per
-  ingrediens/steg, klistra in och dela upp), URL-import (JSON-LD) med inklistring som reserv, delade länkar → import
+  ingrediens/steg, klistra in och dela upp), URL-import (JSON-LD) med inklistring som reserv, delade länkar → import;
+  veckomenyer (ItemList, recept.se) och flera länkar på en gång, menyns recept i en egen samling (ADR-038)
 - [x] Veckomatsedel: veckonummer, röda dagar, planera med förslag/recept/fritext, "gör dubbelt" (rester nästa lediga dag),
   flytta, kopiera förra veckan, favoritveckor, frukost/lunch om familjen valt det
 - [x] Livsmedelsdatabasen: näringsöversikt per portion (neutral, med källa och hur komplett den är) och ark för att bekräfta

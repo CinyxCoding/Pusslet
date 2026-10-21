@@ -332,3 +332,17 @@ recept två gånger samma vecka. ”Ingen matlagning” räknas inte; hämtmat r
 **Konsekvens:** Stöd för en varierad vecka, ingen garanti för näringen; texterna säger att det bygger på rätternas namn och
 anger Livsmedelsverket som källa. Okända rätter syns som ”Okänt” och påverkar inget. Har familjen färre recept än lediga dagar
 blir resten tomma.
+
+## ADR-038 – Veckomenyer och flera länkar i receptimporten
+**Kontext:** Ägaren vill lägga in hela veckomenyer, t.ex. recept.se:s ”Lättlagade veckomenyer”, och fler receptlänkar på en
+gång. Importen läste bara en receptsida (BRIEF §4.5), och recept.se ritar veckomenyns lista i webbläsaren, så sidan har ingen
+receptdata eller vanliga länkar till recepten.
+**Beslut:** Har sidan inget `Recipe` läser `RecipeLinks` (core) dess receptlista: schema.org `ItemList` i JSON-LD, annars
+recept.se:s `<page-week :week="…">`, där varje recept har en `slug` (receptet ligger på /recept/{slug}). Bara länkar på samma
+webbplats räknas, och en lista med fler än 12 länkar är en kategorisida, inte en meny, så den lämnas. Flera länkar inklistrade
+eller delade tillsammans importeras också. `RecipeImporter` hämtar sedan recepten en i taget, högst 12, och läser bara deras
+JSON-LD; inga andra länkar följs och inga bilder hämtas. Samma länk igen uppdaterar receptet (favorit och anteckningar finns
+kvar). En menys recept samlas i en receptsamling som heter som menyn (”Veckomeny 44 - 2026”); finns samlingen läggs de till i den.
+**Konsekvens:** En länk till en veckomeny ger hela veckans recept och en samling att planera från. recept.se-läsaren hänger på
+sidans nuvarande uppbyggnad och misslyckas mjukt (”Sidan har inget recept vi kan läsa”) om den ändras. Texten om vad som hämtas
+säger nu att en veckomeny också ger recepten på den. Recepten sparas för familjens eget bruk med källan synlig, som tidigare.

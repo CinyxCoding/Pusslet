@@ -502,16 +502,35 @@ sealed interface ImportStatus {
     data object InvalidUrl : ImportStatus
 }
 
+/** A weekly menu or several links: the recipes saved, the collection they were gathered in and the links that gave none. */
+data class ImportedBatch(val recipes: List<Recipe>, val collectionName: String?, val missed: Int)
+
 data class RecipeImportState(
     val status: ImportStatus = ImportStatus.Idle,
     val savedId: String? = null,
     val warnings: Set<ImportWarning> = emptySet(),
+    val batch: ImportedBatch? = null,
 )
 
-/** "Importera från länk": reads schema.org Recipe data from one page and saves it with the source kept. */
-class RecipeImportViewModel(private val importer: RecipeImporter, private val recipes: RecipeRepository) : ViewModel() {
+/**
+ * "Importera från länk": reads schema.org Recipe data from a recipe page, a weekly menu's recipes or several links, and
+ * saves them with the source kept. A weekly menu's recipes are gathered in a collection named after the menu.
+ */
+class RecipeImportViewModel(
+    private val importer: RecipeImporter,
+    private val recipes: RecipeRepository,
+    private val ids: IdGenerator,
+) : ViewModel() {
     private val mutable = MutableStateFlow(RecipeImportState())
     val state: StateFlow<RecipeImportState> = mutable
+    private var sharedImported = false
+
+    /** A link shared to the app is imported once, not again when the user comes back from one of its recipes. */
+    fun importShared(input: String) {
+        if (sharedImported) return
+        sharedImported = true
+        import(input)
+    }
 
     fun import(input: String) {
         if (mutable.value.status == ImportStatus.Loading) return
@@ -519,12 +538,14 @@ class RecipeImportViewModel(private val importer: RecipeImporter, private val re
         viewModelScope.launch {
             mutable.value = when (val result = importer.import(input)) {
                 is RecipeImportResult.Found -> {
-                    // The same link imported twice updates the earlier copy instead of duplicating it.
-                    val existing = recipes.all().firstOrNull { it.sourceUrl != null && it.sourceUrl == result.imported.recipe.sourceUrl }
-                    val recipe = existing?.let { e -> result.imported.recipe.copy(id = e.id, favorite = e.favorite, notes = e.notes) }
-                        ?: result.imported.recipe
-                    recipes.save(recipe)
-                    RecipeImportState(ImportStatus.Idle, savedId = recipe.id, warnings = result.imported.warnings)
+                    val id = recipes.saveImported(result.imported.recipe)
+                    RecipeImportState(ImportStatus.Idle, savedId = id, warnings = result.imported.warnings)
+                }
+                is RecipeImportResult.Several -> {
+                    val saved = result.recipes.map { it.recipe.copy(id = recipes.saveImported(it.recipe)) }
+                    val collected = result.title?.let { recipes.collect(it, saved.map(Recipe::id), ids.newId()) }
+                    val name = result.title?.takeIf { collected != null }?.let(RecipeCollectionRules::cleanName)
+                    RecipeImportState(ImportStatus.Idle, batch = ImportedBatch(saved, name, result.missed))
                 }
                 RecipeImportResult.NoRecipeData -> RecipeImportState(ImportStatus.NoRecipeData(RecipeImporter.findUrl(input).orEmpty()))
                 RecipeImportResult.NotReachable -> RecipeImportState(ImportStatus.NotReachable)

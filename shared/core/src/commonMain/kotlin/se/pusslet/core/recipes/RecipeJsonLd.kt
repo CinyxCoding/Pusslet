@@ -20,7 +20,8 @@ enum class ImportWarning { NoIngredients, NoSteps, ServingsGuessed }
 
 /**
  * Reads schema.org/Recipe JSON-LD, which practically every Swedish recipe site publishes for search engines
- * (ICA, Arla, Köket, Coop, Mitt Kök …). Only the page the user chose is fetched; nothing is crawled.
+ * (ICA, Arla, Köket, Coop, Mitt Kök …). Only the pages the user chose are fetched (for a weekly menu, the recipes on it,
+ * see [RecipeLinks]); nothing is crawled.
  * Handles `@graph`, `@type` arrays, HowToStep/HowToSection instructions, ImageObject and yields like "4 portioner".
  */
 object RecipeJsonLd {
@@ -35,12 +36,15 @@ object RecipeJsonLd {
     private const val DEFAULT_SERVINGS = 4
 
     fun extract(html: String, sourceUrl: String, id: String = ""): ImportedRecipe? {
-        val node = scriptTag.findAll(html)
-            .mapNotNull { m -> runCatching { json.parseToJsonElement(m.groupValues[1].trim()) }.getOrNull() }
-            .firstNotNullOfOrNull { findRecipe(it) }
-            ?: return null
+        val node = blocks(html).firstNotNullOfOrNull { findRecipe(it) } ?: return null
         return fromNode(node, sourceUrl, id)
     }
+
+    /** Every JSON-LD block on the page that parses; broken ones are skipped. */
+    internal fun blocks(html: String): Sequence<JsonElement> = scriptTag.findAll(html).mapNotNull { m -> parse(m.groupValues[1].trim()) }
+
+    /** Lenient JSON, also for the data a page hands its own scripts; null when it doesn't parse. */
+    internal fun parse(text: String): JsonElement? = runCatching { json.parseToJsonElement(text) }.getOrNull()
 
     /** Depth-first search for an object whose @type is (or contains) "Recipe". */
     fun findRecipe(element: JsonElement, depth: Int = 0): JsonObject? {
@@ -190,7 +194,7 @@ object RecipeJsonLd {
         "deg" to "°",
     )
 
-    private fun decodeEntities(s: String): String = Regex("""&(#x[0-9a-fA-F]+|#\d+|[a-zA-Z]+\d*);""").replace(s) { m ->
+    internal fun decodeEntities(s: String): String = Regex("""&(#x[0-9a-fA-F]+|#\d+|[a-zA-Z]+\d*);""").replace(s) { m ->
         val e = m.groupValues[1]
         when {
             e.startsWith("#x") -> e.drop(2).toIntOrNull(HEX)?.let(::codePoint)

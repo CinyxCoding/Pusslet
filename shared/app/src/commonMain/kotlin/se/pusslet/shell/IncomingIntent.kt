@@ -31,12 +31,13 @@ fun NotificationTarget.helperRoute(): Route? = when (this) {
 }
 
 /**
- * A shared link with little else around it ("Testa den här! https://…") is a recipe to import;
- * longer texts with a link (a message from school) go to quick add.
+ * A shared link with little else around it ("Testa den här! https://…") is a recipe or weekly menu to import, and so are
+ * a few links shared together (one per line); longer texts with a link (a message from school) go to quick add.
  */
 fun IncomingIntent.SharedText.recipeLink(): String? {
-    val url = RecipeImporter.findUrl(text) ?: return null
-    return url.takeIf { text.length - url.length <= LINK_ONLY_SLACK }
+    val urls = RecipeImporter.findUrls(text)
+    if (urls.isEmpty()) return null
+    return urls.joinToString("\n").takeIf { text.length - urls.sumOf { it.length } <= LINK_ONLY_SLACK }
 }
 
 private const val LINK_ONLY_SLACK = 60

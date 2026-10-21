@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
+import se.pusslet.core.meals.RecipeCollectionRules
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.FavoriteWeek
@@ -128,6 +129,17 @@ class RecipeRepository(private val docs: DocumentStore) {
 
     suspend fun save(recipe: Recipe) = docs.put(Collections.Recipes, recipe.id, recipe, Recipe.serializer())
 
+    /**
+     * Saves a recipe read from a link. The same link imported again updates the earlier copy (keeping its id, favourite
+     * and notes) instead of duplicating it; returns the id the recipe has.
+     */
+    suspend fun saveImported(recipe: Recipe): String {
+        val existing = recipe.sourceUrl?.let { url -> all().firstOrNull { it.sourceUrl == url } }
+        val saved = existing?.let { e -> recipe.copy(id = e.id, favorite = e.favorite, notes = e.notes) } ?: recipe
+        save(saved)
+        return saved.id
+    }
+
     suspend fun delete(id: String) = docs.delete(Collections.Recipes, id)
 
     /** Remembered ingredient name -> Livsmedelsverket food number (confirmed by the user). */
@@ -159,6 +171,18 @@ class RecipeRepository(private val docs: DocumentStore) {
         docs.update(Collections.RecipeCollections, collectionId, RecipeCollection.serializer()) { c ->
             if (inside) c.with(recipeId) else c.without(recipeId)
         }
+    }
+
+    /**
+     * Gathers [recipeIds] in the collection called [name] ("Veckomeny 44 - 2026"): the one already there whatever the
+     * case, else a new one with [newId]. Returns the collection's id, or null for a blank name.
+     */
+    suspend fun collect(name: String, recipeIds: List<String>, newId: String): String? {
+        val clean = RecipeCollectionRules.cleanName(name) ?: return null
+        val existing = RecipeCollectionRules.named(allCollections(), clean)
+            ?: return newId.also { saveCollection(RecipeCollection(newId, clean, recipeIds.associateWith { true })) }
+        recipeIds.forEach { setInCollection(existing.id, it, inside = true) }
+        return existing.id
     }
 }
 

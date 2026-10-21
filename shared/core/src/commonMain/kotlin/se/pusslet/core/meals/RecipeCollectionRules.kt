@@ -20,6 +20,12 @@ object RecipeCollectionRules {
         return collections.any { it.id != exceptId && it.name.trim().lowercase() == wanted }
     }
 
+    /** The collection with this name, whatever the case. */
+    fun named(collections: List<RecipeCollection>, name: String): RecipeCollection? {
+        val wanted = cleanName(name)?.lowercase() ?: return null
+        return collections.firstOrNull { it.name.trim().lowercase() == wanted }
+    }
+
     /** By name, the way the chips show them. */
     fun sorted(collections: List<RecipeCollection>): List<RecipeCollection> =
         collections.sortedWith(compareBy<RecipeCollection> { it.name.lowercase() }.thenBy { it.id })

@@ -113,5 +113,51 @@ class MealDataTest {
         assertIs<RecipeImportResult.NotReachable>(importer.import("https://other.se/x"))
     }
 
+    @Test
+    fun importsAWeeklyMenuIntoItsOwnCollection() = runTest {
+        fun recipePage(name: String) = """<script type="application/ld+json">
+            {"@type":"Recipe","name":"$name","recipeYield":"2","recipeIngredient":["1 gul lök"]}</script>"""
+        val menu = """<script type="application/ld+json">{"@type":"Article","headline":"Veckomeny 44 - 2026"}</script>
+            <page-week :week="{&quot;recipes&quot;:[{&quot;slug&quot;:&quot;linssoppa&quot;},{&quot;slug&quot;:&quot;borta&quot;},
+            {&quot;slug&quot;:&quot;fiskgratang&quot;}]}"></page-week>"""
+        val http = MockHttp { request ->
+            when (request.url.encodedPath) {
+                "/veckomeny/lattlagade-veckomenyer/2026-44" -> ok(menu, "text/html")
+                "/recept/linssoppa" -> ok(recipePage("Linssoppa"), "text/html")
+                "/recept/fiskgratang" -> ok(recipePage("Fiskgratäng"), "text/html")
+                else -> respond("", HttpStatusCode.NotFound)
+            }
+        }
+        val importer = RecipeImporter(http.client, SequentialIdGenerator("r"))
+        val menuUrl = "https://recept.se/veckomeny/lattlagade-veckomenyer/2026-44"
+
+        val fromMenu = assertIs<RecipeImportResult.Several>(importer.import(menuUrl))
+        assertEquals("Veckomeny 44 - 2026", fromMenu.title)
+        assertEquals(listOf("Linssoppa", "Fiskgratäng"), fromMenu.recipes.map { it.recipe.title })
+        assertEquals(listOf("r1", "r2"), fromMenu.recipes.map { it.recipe.id })
+        assertEquals(1, fromMenu.missed, "the page that is gone")
+        assertEquals(4, http.requests.size, "the menu and its three recipes, nothing else")
+
+        // Saved twice (the menu imported again): the same recipes and one collection, with the favourite kept.
+        repeat(2) { round ->
+            val saved = fromMenu.recipes.map { recipes.saveImported(it.recipe.copy(id = "new-$round-${it.recipe.id}")) }
+            recipes.collect("Veckomeny 44 - 2026", saved, newId = "rc-$round")
+            if (round == 0) recipes.get(saved.first())?.let { recipes.save(it.copy(favorite = true)) }
+        }
+        val all = recipes.all()
+        assertEquals(listOf("Fiskgratäng", "Linssoppa"), all.map { it.title }.sorted())
+        assertTrue(all.single { it.title == "Linssoppa" }.favorite)
+        val collection = recipes.allCollections().single()
+        assertEquals("rc-0", collection.id)
+        assertEquals(all.map { it.id }.toSet(), collection.recipeIds.keys)
+
+        val pasted = assertIs<RecipeImportResult.Several>(
+            importer.import("Middagar:\nhttps://recept.se/recept/linssoppa\nhttps://recept.se/recept/fiskgratang\n"),
+        )
+        assertEquals(null, pasted.title)
+        assertEquals(listOf("Linssoppa", "Fiskgratäng"), pasted.recipes.map { it.recipe.title })
+        assertIs<RecipeImportResult.NotReachable>(importer.import("https://recept.se/recept/borta https://recept.se/recept/annat"))
+    }
+
     private fun LocalDate.plusDays(n: Int) = LocalDate.fromEpochDays(toEpochDays() + n)
 }

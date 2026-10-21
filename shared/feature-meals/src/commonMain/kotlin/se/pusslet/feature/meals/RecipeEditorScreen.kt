@@ -50,8 +50,10 @@ import se.pusslet.core.model.MainComponent
 import se.pusslet.core.model.RecipeTag
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
+import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PussletTopBar
+import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.UnsavedChangesBackHandler
 import se.pusslet.ui.resources.*
@@ -292,26 +294,31 @@ private fun PasteDialog(onDismiss: () -> Unit, onPaste: (String) -> Unit) {
     )
 }
 
-/** "Importera från länk": paste (or share) a recipe page; the recipe is saved with its source. */
+/**
+ * "Importera från länk": paste (or share) a recipe page, a weekly menu or several links; the recipes are saved with their
+ * source. One recipe opens right away; several are listed here.
+ */
 @Composable
 fun RecipeImportRoute(
     initialUrl: String?,
     onBack: () -> Unit,
     onImported: (String) -> Unit,
+    onOpenRecipe: (String) -> Unit,
     onPasteInstead: (String) -> Unit,
     viewModel: RecipeImportViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var url by rememberSaveable { mutableStateOf(initialUrl.orEmpty()) }
-    LaunchedEffect(initialUrl) { if (!initialUrl.isNullOrBlank()) viewModel.import(initialUrl) }
+    LaunchedEffect(initialUrl) { if (!initialUrl.isNullOrBlank()) viewModel.importShared(initialUrl) }
     LaunchedEffect(state.savedId) { state.savedId?.let(onImported) }
 
     Scaffold(topBar = { PussletTopBar(stringResource(Res.string.recipe_import), onBack = onBack) }) { padding ->
         Column(
             Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = Spacing.screenHorizontal)
-                .padding(top = padding.calculateTopPadding()),
+                .padding(top = padding.calculateTopPadding(), bottom = Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             Text(stringResource(Res.string.recipe_import_intro), style = MaterialTheme.typography.bodyMedium)
@@ -322,7 +329,8 @@ fun RecipeImportRoute(
                     if (state.status != ImportStatus.Idle && state.status != ImportStatus.Loading) viewModel.reset()
                 },
                 label = { Text(stringResource(Res.string.recipe_import_url)) },
-                singleLine = true,
+                // Several links go one per line; the keyboard still shows Go.
+                maxLines = MAX_LINK_LINES,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
                 keyboardActions = KeyboardActions(onGo = { viewModel.import(url) }),
                 modifier = Modifier.fillMaxWidth(),
@@ -343,11 +351,40 @@ fun RecipeImportRoute(
                     actions = { TextButton(onClick = { onPasteInstead(status.url) }) { Text(stringResource(Res.string.recipe_paste)) } },
                 )
             }
+            state.batch?.let { ImportedBatchCard(it, onOpenRecipe = onOpenRecipe, onDone = onBack) }
             Text(
                 stringResource(Res.string.recipe_import_personal),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+/** "5 recept har sparats i samlingen ”Veckomeny 44 - 2026”" with the recipes, each opening on a tap. */
+@Composable
+private fun ImportedBatchCard(batch: ImportedBatch, onOpenRecipe: (String) -> Unit, onDone: () -> Unit) {
+    val count = batch.recipes.size
+    SectionCard(
+        title = batch.collectionName?.let { stringResource(Res.string.recipe_import_saved_in_collection, count, it) }
+            ?: stringResource(Res.string.recipe_import_saved, count),
+    ) {
+        batch.recipes.forEach { recipe ->
+            ListRow(
+                recipe.title,
+                Modifier.clickable(role = Role.Button) { onOpenRecipe(recipe.id) },
+                supporting = recipe.totalMinutes?.let { stringResource(Res.string.recipe_minutes, it) },
+            )
+        }
+        if (batch.missed > 0) {
+            Text(
+                stringResource(Res.string.recipe_import_missed, batch.missed),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = onDone) { Text(stringResource(Res.string.action_done)) }
         }
     }
 }
@@ -367,3 +404,4 @@ internal fun componentLabel(c: MainComponent): StringResource = when (c) {
 }
 
 private const val MAX_DIGITS = 3
+private const val MAX_LINK_LINES = 5

@@ -42,6 +42,9 @@ class RecipeCollectionsTest {
         assertFalse(RecipeCollectionRules.nameTaken(all, "kalas", exceptId = "c1"), "renaming to its own name in another case")
         assertFalse(RecipeCollectionRules.nameTaken(all, "Vardagsfavoriter"))
         assertFalse(RecipeCollectionRules.nameTaken(all, " "))
+        assertEquals("c2", RecipeCollectionRules.named(all, "  matlådor")?.id)
+        assertNull(RecipeCollectionRules.named(all, "Vardagsfavoriter"))
+        assertNull(RecipeCollectionRules.named(all, " "))
     }
 
     @Test

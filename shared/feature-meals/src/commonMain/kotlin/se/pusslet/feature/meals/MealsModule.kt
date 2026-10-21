@@ -9,5 +9,5 @@ val mealsModule: Module = module {
     viewModel { RecipeLibraryViewModel(get(), get(), get()) }
     viewModel { RecipeDetailsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { RecipeEditorViewModel(get(), get()) }
-    viewModel { RecipeImportViewModel(get(), get()) }
+    viewModel { RecipeImportViewModel(get(), get(), get()) }
 }

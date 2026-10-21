@@ -27,6 +27,19 @@ val emulatorHost: String = localProps.getProperty("pusslet.emulatorHost", "10.0.
 val linkHost: String = localProps.getProperty("pusslet.linkHost", "pusslet.web.app")
 
 /**
+ * The upload key for Play (docs/SETUP.md 3.2): keystore.properties in the repo root (gitignored) or the same values as
+ * PUSSLET_* environment variables in CI. Without them a release build is unsigned; the keys are never in the repo.
+ */
+val uploadKey: Map<String, String>? = run {
+    val file = rootProject.file("keystore.properties")
+    val props = Properties().apply { if (file.exists()) file.inputStream().use { load(it) } }
+    val values = listOf("storeFile", "storePassword", "keyAlias", "keyPassword").associateWith { key ->
+        props.getProperty(key) ?: providers.environmentVariable("PUSSLET_" + key.replace(Regex("([A-Z])"), "_$1").uppercase()).orNull
+    }
+    if (values.values.all { !it.isNullOrBlank() }) values.mapValues { it.value.orEmpty() } else null
+}
+
+/**
  * Reads Firebase options from src/<flavor>/google-services.json when present (gitignored, only the owner has it).
  * Missing file = empty values = the app runs local-only. No Google Services Gradle plugin needed (ADR-013).
  */
@@ -124,8 +137,20 @@ android {
         }
     }
 
+    signingConfigs {
+        if (uploadKey != null) {
+            create("upload") {
+                storeFile = rootProject.file(uploadKey.getValue("storeFile"))
+                storePassword = uploadKey.getValue("storePassword")
+                keyAlias = uploadKey.getValue("keyAlias")
+                keyPassword = uploadKey.getValue("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("upload")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

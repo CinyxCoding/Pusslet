@@ -107,3 +107,74 @@ Lägg till SHA-1 och SHA-256 för debug- och release-nyckeln i Firebase (krävs 
 ### 2.6 Kontaktuppgift för öppna datakällor
 Sätt `AppConfig.CONTACT` (webbplats eller e-post) i `shared/core/src/commonMain/kotlin/se/pusslet/core/AppConfig.kt`.
 Open Food Facts kräver att appen identifierar sig med kontaktuppgift i User-Agent.
+
+## 3. Release och lansering
+
+### 3.1 Releasebygge
+```bash
+./gradlew :composeApp:bundleProdRelease      # AAB för Play: composeApp/build/outputs/bundle/prodRelease/
+./gradlew :composeApp:assembleProdRelease    # APK att prova själv
+```
+Releasebygget kör R8 (kodkrympning och resurskrympning, `composeApp/proguard-rules.pro`). Kartfilen för att läsa
+stackspår ligger i `composeApp/build/outputs/mapping/prodRelease/mapping.txt`; Play tar den från AAB:n, men spara den
+för varje version du laddar upp. Höj `app-versionCode` (och `app-versionName`) i `gradle/libs.versions.toml` före varje
+uppladdning; Play nekar en versionskod som redan använts.
+
+Prova releasen innan uppladdning: installera `prod`-APK:n (signerad, se 3.2) på en telefon eller emulator och gå igenom
+"Utforska med en exempelfamilj", alla flikar, snabbinmatning och "Handla för veckan" (gjort 2026-10-21 utan fel).
+
+### 3.2 Signering (nycklarna checkas aldrig in)
+Play App Signing rekommenderas: Google håller appens signeringsnyckel och du signerar uppladdningar med en egen
+**uppladdningsnyckel**.
+1. Skapa uppladdningsnyckeln en gång, utanför repot:
+   ```bash
+   keytool -genkeypair -v -keystore ~/pusslet-upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 9125
+   ```
+2. Skapa `keystore.properties` i repots rot (gitignorerad, liksom `*.jks` och `*.keystore`):
+   ```properties
+   storeFile=C:/Users/<du>/pusslet-upload.jks
+   storePassword=<lösenord>
+   keyAlias=upload
+   keyPassword=<lösenord>
+   ```
+   I CI används i stället miljövariablerna `PUSSLET_STORE_FILE`, `PUSSLET_STORE_PASSWORD`, `PUSSLET_KEY_ALIAS` och
+   `PUSSLET_KEY_PASSWORD` (som hemligheter). Utan dem blir releasebygget osignerat, vilket är väntat lokalt.
+3. **Säkerhetskopiera** nyckelfilen och lösenorden på två ställen (t.ex. lösenordshanterare + krypterad disk). Tappar du
+   uppladdningsnyckeln kan Google byta den, men det tar tid.
+4. Vid första uppladdningen: välj Play App Signing. Lägg sedan till SHA-1/SHA-256 för **både** uppladdningsnyckeln och
+   Googles appsigneringsnyckel (Play Console → Test and release → App integrity) i Firebase (2.5) och i
+   `assetlinks.json` för App Links.
+
+### 3.3 Lanseringschecklista
+**Konto och Play Console**
+- [ ] Utvecklarkonto skapat och identitet verifierad. **Nya personliga konton måste köra ett stängt test med minst 12
+      testare som är med i 14 dagar i följd** innan produktionsåtkomst kan sökas. Planera in det: bjud in fler än 12
+      (någon hoppar av) och låt testet löpa minst 14 hela dagar.
+- [ ] Appen skapad med paketnamnet `se.pusslet.app` (kan aldrig ändras), standardspråk svenska.
+
+**Backend**
+- [ ] Firebase `prod`-projekt i EU, `google-services.json` i `composeApp/src/prod/` (2.1).
+- [ ] Auth-metoder, App Check med Play Integrity, Blaze med budgetvarning (2.2–2.3).
+- [ ] Regler, index och funktioner deployade (2.4); `TRIGGER_REGION` satt om databasen ligger i `eur3`.
+- [ ] SHA-fingeravtryck för uppladdnings- och appsigneringsnyckeln i Firebase (2.5, 3.2).
+- [ ] `AppConfig.CONTACT` satt (2.6). Länkdomänen (`pusslet.linkHost` i `local.properties`) publicerar
+      `/.well-known/assetlinks.json` med appsigneringsnyckelns SHA-256 (t.ex. via Firebase Hosting), annars öppnas
+      inbjudningslänkar i webbläsaren.
+
+**Butikssida och policy**
+- [ ] Integritetspolicyn publicerad på en öppen adress (docs/PRIVACY.md, fyll i det inom hakparentes).
+- [ ] Webbsida för radering av konto publicerad (docs/PLAY_DATA_SAFETY.md, sist).
+- [ ] Data safety ifyllt (docs/PLAY_DATA_SAFETY.md), innehållsklassificering, målgrupp 18+, annonser: nej.
+- [ ] Butikstexter, ikon, funktionsgrafik och skärmdumpar på svenska och engelska (docs/STORE_LISTING.md).
+
+**Bygget**
+- [ ] `./gradlew build` grönt och `npm test` i `functions/` grönt.
+- [ ] Versionskod höjd, AAB byggd och signerad med uppladdningsnyckeln (3.1–3.2).
+- [ ] Releasen provad på en riktig telefon: inloggning, gå med via inbjudan, synk mellan två telefoner, push
+      (förfrågan och svar), notiser i tysta timmar, kalenderexport, widgets.
+
+**Test och lansering**
+- [ ] Intern testning (upp till 100 testare, inga krav) för att få en första version genom granskningen.
+- [ ] Stängt test med minst 12 testare i 14 dagar i följd; samla synpunkter och rätta det viktigaste.
+- [ ] Ansök om produktionsåtkomst (frågor om testet och appen), släpp sedan stegvis (t.ex. 20 % → 100 %).
+- [ ] Efter lansering: följ ANR och krascher i Play Console (Android vitals) och kostnaden i Google Cloud Billing.

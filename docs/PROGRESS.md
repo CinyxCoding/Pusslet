@@ -118,6 +118,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 
 ## Fas 4 – Polish & Play-beredskap
 - [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)
+  - [x] Skärmdumpstester (Roborazzi) för ljust, mörkt, engelska och stor text (1,5× och 2×) på Idag, Kalender och
+    hjälparvyn, plus Mat, Handla, butiksläget, tomma lägen och onboarding
+  - [ ] Genomgång med TalkBack och Accessibility Scanner, och automatiska tillgänglighetskontroller i testerna
 - [ ] Prestanda (kallstart, 500+ varor)
 - [ ] Felhantering och tomma lägen överallt, onboarding < 2 min
 - [ ] Svenska + engelska texter genomlästa
@@ -126,7 +129,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] `docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md` (svenska och engelska, utkast för ägaren att
   fylla i och publicera). Rättat på vägen: telefonens position sparas avrundad till ~1 km, och switchen för kraschrapporter
   är dold tills kraschrapportering finns i bygget
-- [ ] Releasebygge (R8), signeringsinstruktioner, lanseringschecklista
+- [x] Releasebygge (R8), signeringsinstruktioner, lanseringschecklista (SETUP.md 3): `bundleProdRelease` bygger, signering
+  med uppladdningsnyckel från `keystore.properties` eller miljövariabler; R8-releasen provad på emulator 2026-10-21
+  (exempelfamiljen, alla flikar, snabbinmatning, Handla för veckan) utan fel
 - [ ] ✅ `./gradlew build` grönt, release-AAB bygger
 
 ## Fas 5 – V2

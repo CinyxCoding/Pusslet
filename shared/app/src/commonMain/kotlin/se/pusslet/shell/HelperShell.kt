@@ -60,6 +60,10 @@ internal fun HelperShell(incoming: IncomingIntent?, onIncomingHandled: () -> Uni
             is IncomingIntent.JoinCode -> navigator.navigate(Route.Join(incoming.code))
             // Quick add can create events, which a caregiver may not; the shared text is not kept.
             is IncomingIntent.SharedText -> log.i { "Shared text is not used in the helper view" }
+            is IncomingIntent.Open -> {
+                navigator.reset()
+                incoming.target.helperRoute()?.let(navigator::navigate)
+            }
             null -> return@LaunchedEffect
         }
         onIncomingHandled()

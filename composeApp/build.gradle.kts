@@ -212,6 +212,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.googleid)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.work.runtime)
 
     debugImplementation(libs.compose.ui.tooling)
 

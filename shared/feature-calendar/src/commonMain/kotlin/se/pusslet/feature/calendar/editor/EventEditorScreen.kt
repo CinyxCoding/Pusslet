@@ -70,6 +70,8 @@ import se.pusslet.ui.format.formatDateLong
 import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.format.weekdayName
+import se.pusslet.ui.platform.AppPermission
+import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
@@ -468,12 +470,17 @@ private fun PackingSection(items: List<String>, onAdd: (String) -> Unit, onRemov
 @Composable
 private fun ReminderField(minutes: Int?, onChange: (Int?) -> Unit) {
     var open by remember { mutableStateOf(false) }
+    val platform = LocalPlatformActions.current
     Box {
         OutlinedValueField(stringResource(Res.string.event_reminder), reminderLabel(minutes), onClick = { open = true })
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             EventEditorViewModel.reminderOptions.forEach { m ->
                 DropdownMenuItem(text = { Text(reminderLabel(m)) }, onClick = {
                     onChange(m)
+                    // Asked in context (BRIEF §6): the reminder is kept either way, the phone just stays quiet without it.
+                    if (m != null && !platform.hasPermission(AppPermission.Notifications)) {
+                        platform.requestPermission(AppPermission.Notifications) {}
+                    }
                     open = false
                 })
             }

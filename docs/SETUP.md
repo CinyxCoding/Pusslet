@@ -26,6 +26,15 @@ Android-emulatorn når datorn via `10.0.2.2`. För en fysisk enhet: sätt `pussl
 ### Android-emulator
 Skapa en AVD i Android Studio (Device Manager → Pixel 8, API 36, Google APIs-avbild). Kör sedan `installDemoDebug`.
 
+### Testa notiser
+Notiserna planeras i appen och schemaläggs med WorkManager (ADR-036), så de kommer även när appen är stängd. Exempel i demo:
+1. Inställningar → Notiser → slå på **Morgonkoll** (godkänn notiser) och sätt tiden ett par minuter fram.
+2. Eller skapa en händelse som börjar om 15 minuter med påminnelse **10 min innan**.
+3. Tryck på notisen: den öppnar händelsen (eller Idag för Morgon- och Kvällskollen).
+
+WorkManager kan i strömsparläge komma några minuter sent; en notis som skulle ha kommit för mer än 15 minuter sedan visas inte.
+Planerade notiser syns med `adb shell dumpsys jobscheduler | grep pusslet`.
+
 ### Testa synk mellan två enheter
 Två Android-emulatorer kräver mycket minne (>12 GB RAM rekommenderas). Med en emulator kan
 `functions/scripts/second-device.mjs` spela "Johans telefon": den går med i demofamiljen genom en riktig inbjudan

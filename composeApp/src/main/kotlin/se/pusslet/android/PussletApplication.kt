@@ -7,6 +7,7 @@ import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import se.pusslet.android.di.androidModule
+import se.pusslet.android.notify.NotificationWork
 import se.pusslet.core.AppConfig
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.di.AppScope
@@ -26,5 +27,7 @@ class PussletApplication : Application() {
         get<AppCoordinator>().start()
         // Parents' phones write caregivers' accepted answers into the events (ADR-030); a no-op on other phones.
         get<AcceptedRequestApplier>().start(get<CoroutineScope>(AppScope))
+        // Local notifications (ADR-036): planned from Room, scheduled on WorkManager.
+        NotificationWork.start(this, get(), get(), get<CoroutineScope>(AppScope))
     }
 }

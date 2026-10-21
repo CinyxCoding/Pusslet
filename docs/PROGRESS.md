@@ -87,7 +87,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Konfliktdetektering, hämta/lämna-förfrågningar
 - [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
   - [x] Delad planering av lokala notiser: påminnelser, lämna/hämta, att göra, Morgon- och Kvällskoll, tysta timmar, samlade notiser, kanaler och texter (ADR-036)
-  - [ ] Android: WorkManager, kanaler, visning och tryck in i appen
+  - [x] Android: WorkManager, kanaler, visning och tryck in i appen (skrivet utan Android-bygge här – verifieras lokalt, se SETUP.md)
   - [ ] FCM
 - [ ] Två widgets (Idag, Inköpslista)
 - [x] Uppgifter/sysslor med rotation, fördelningsvy: Mer › Uppgifter och sysslor (Mina, Ingen ansvarig, Familjen, Klart), redigerare med upprepning, ”Turas om”, ”Vems tur” och ”Byt vecka”, checklista; ”Så har vi delat” för de senaste 4 veckorna

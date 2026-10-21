@@ -11,7 +11,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import se.pusslet.android.notify.AndroidNotifier
 import se.pusslet.android.platform.AndroidPlatformActions
+import se.pusslet.core.notify.NotificationTarget
 import se.pusslet.core.util.InviteCodes
 import se.pusslet.shell.IncomingIntent
 import se.pusslet.shell.PussletApp
@@ -43,6 +45,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun parse(intent: Intent?): IncomingIntent? = when (intent?.action) {
+        AndroidNotifier.ACTION_OPEN -> NotificationTarget.decode(intent.getStringExtra(AndroidNotifier.EXTRA_TARGET))
+            ?.let { IncomingIntent.Open(it) }
         Intent.ACTION_VIEW -> intent.data?.let(::joinCode)?.let { IncomingIntent.JoinCode(it) }
         Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf {
             it.isNotBlank()

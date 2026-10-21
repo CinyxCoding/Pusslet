@@ -34,6 +34,7 @@ import se.pusslet.core.model.Role
 import se.pusslet.core.nutrition.Food
 import se.pusslet.core.nutrition.NutritionSummary
 import se.pusslet.core.recipes.ImportWarning
+import se.pusslet.core.recipes.ImportedRecipe
 import se.pusslet.core.recipes.RecipeText
 import se.pusslet.core.shopping.ShoppingNames
 import se.pusslet.core.util.IdGenerator
@@ -41,6 +42,7 @@ import se.pusslet.data.repository.MealRepository
 import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.usecase.AddOutcome
+import se.pusslet.data.usecase.PageImportResult
 import se.pusslet.data.usecase.RecipeImportResult
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
@@ -502,19 +504,60 @@ sealed interface ImportStatus {
     data object InvalidUrl : ImportStatus
 }
 
-/** A weekly menu or several links: the recipes saved, the collection they were gathered in and the links that gave none. */
-data class ImportedBatch(val recipes: List<Recipe>, val collectionName: String?, val missed: Int)
-
 data class RecipeImportState(
     val status: ImportStatus = ImportStatus.Idle,
     val savedId: String? = null,
     val warnings: Set<ImportWarning> = emptySet(),
-    val batch: ImportedBatch? = null,
+    /** A weekly menu or several pasted links, each with its result; null for one recipe. */
+    val batch: List<BatchLink>? = null,
+    /** How many recipes "Spara" saved from [batch]; the screen then closes. */
+    val savedCount: Int? = null,
+) {
+    val batchDone: Boolean get() = batch != null && batch.none { it.status == LinkStatus.Waiting || it.status == LinkStatus.Loading }
+
+    val selectedCount: Int get() = batch.orEmpty().sumOf { link -> link.found.count { it.selected } }
+
+    /** The collections the ticked recipes are saved in ("Veckomeny 44 - 2026"), in list order. */
+    val selectedCollections: List<String>
+        get() = batch.orEmpty().flatMap { link -> link.found.filter { it.selected }.mapNotNull { it.collection } }.distinct()
+}
+
+/** One link in the list: pasted, or one of the recipes on a weekly menu ([menu] names that menu). */
+data class BatchLink(val url: String, val status: LinkStatus = LinkStatus.Waiting, val menu: String? = null) {
+    val found: List<BatchRecipe> get() = (status as? LinkStatus.Found)?.recipes.orEmpty()
+}
+
+sealed interface LinkStatus {
+    data object Waiting : LinkStatus
+
+    data object Loading : LinkStatus
+
+    /** The page's recipes (a week menu can carry several). */
+    data class Found(val recipes: List<BatchRecipe>) : LinkStatus
+
+    /** A weekly menu that links to its recipes: the [count] links after it in the list are its recipes. */
+    data class Menu(val title: String?, val count: Int) : LinkStatus
+
+    data object NoRecipeData : LinkStatus
+
+    data object NotReachable : LinkStatus
+}
+
+/**
+ * A recipe in the list; [existingId] when the same page was saved before (it is then updated), [collection] the menu's
+ * collection it is gathered in.
+ */
+data class BatchRecipe(
+    val imported: ImportedRecipe,
+    val existingId: String? = null,
+    val selected: Boolean = true,
+    val collection: String? = null,
 )
 
 /**
- * "Importera från länk": reads schema.org Recipe data from a recipe page, a weekly menu's recipes or several links, and
- * saves them with the source kept. A weekly menu's recipes are gathered in a collection named after the menu.
+ * "Importera från länk": reads schema.org Recipe data and saves it with the source kept. One recipe is saved at once. A
+ * weekly menu and several pasted links are fetched one page after the other into a list where the recipes to keep are
+ * ticked before "Spara"; a menu's recipes are then gathered in a collection named after the menu (ADR-038).
  */
 class RecipeImportViewModel(
     private val importer: RecipeImporter,
@@ -525,7 +568,7 @@ class RecipeImportViewModel(
     val state: StateFlow<RecipeImportState> = mutable
     private var sharedImported = false
 
-    /** A link shared to the app is imported once, not again when the user comes back from one of its recipes. */
+    /** A link shared to the app is imported once, not again when the screen is drawn anew. */
     fun importShared(input: String) {
         if (sharedImported) return
         sharedImported = true
@@ -534,25 +577,121 @@ class RecipeImportViewModel(
 
     fun import(input: String) {
         if (mutable.value.status == ImportStatus.Loading) return
+        val urls = RecipeImporter.findUrls(input)
+        if (urls.size > 1) {
+            importAll(urls.map { BatchLink(it) })
+            return
+        }
+        val url = urls.firstOrNull().orEmpty()
         mutable.value = RecipeImportState(ImportStatus.Loading)
         viewModelScope.launch {
-            mutable.value = when (val result = importer.import(input)) {
+            when (val result = importer.import(input)) {
                 is RecipeImportResult.Found -> {
                     val id = recipes.saveImported(result.imported.recipe)
-                    RecipeImportState(ImportStatus.Idle, savedId = id, warnings = result.imported.warnings)
+                    mutable.value = RecipeImportState(ImportStatus.Idle, savedId = id, warnings = result.imported.warnings)
                 }
                 is RecipeImportResult.Several -> {
-                    val saved = result.recipes.map { it.recipe.copy(id = recipes.saveImported(it.recipe)) }
-                    val collected = result.title?.let { recipes.collect(it, saved.map(Recipe::id), ids.newId()) }
-                    val name = result.title?.takeIf { collected != null }?.let(RecipeCollectionRules::cleanName)
-                    RecipeImportState(ImportStatus.Idle, batch = ImportedBatch(saved, name, result.missed))
+                    val saved = savedBySource()
+                    val found = LinkStatus.Found(result.recipes.map { batchRecipe(it, saved, result.title) })
+                    mutable.value = RecipeImportState(ImportStatus.Idle, batch = listOf(BatchLink(url, found)))
                 }
-                RecipeImportResult.NoRecipeData -> RecipeImportState(ImportStatus.NoRecipeData(RecipeImporter.findUrl(input).orEmpty()))
-                RecipeImportResult.NotReachable -> RecipeImportState(ImportStatus.NotReachable)
-                RecipeImportResult.InvalidUrl -> RecipeImportState(ImportStatus.InvalidUrl)
+                is RecipeImportResult.Menu -> {
+                    val links = result.links.take(RecipeImporter.MAX_LINKS).map { BatchLink(it, menu = result.title) }
+                    importAll(listOf(BatchLink(url, LinkStatus.Menu(result.title, links.size))) + links)
+                }
+                RecipeImportResult.NoRecipeData -> mutable.value = RecipeImportState(ImportStatus.NoRecipeData(url))
+                RecipeImportResult.NotReachable -> mutable.value = RecipeImportState(ImportStatus.NotReachable)
+                RecipeImportResult.InvalidUrl -> mutable.value = RecipeImportState(ImportStatus.InvalidUrl)
             }
         }
     }
+
+    /**
+     * One page at a time, so a long paste does not hit a site with many requests at once. A weekly menu among the links
+     * adds its recipes right after it (one step only, never more than [RecipeImporter.MAX_LINKS] pages in all).
+     */
+    private fun importAll(links: List<BatchLink>) {
+        mutable.value = RecipeImportState(ImportStatus.Loading, batch = links)
+        viewModelScope.launch {
+            val saved = savedBySource()
+            val seen = mutableSetOf<String?>()
+            var index = 0
+            while (index < currentBatch().size) {
+                val link = currentBatch()[index]
+                if (link.status == LinkStatus.Waiting) {
+                    updateLink(index) { it.copy(status = LinkStatus.Loading) }
+                    val status = when (val result = importer.importPage(link.url)) {
+                        is PageImportResult.Found -> {
+                            // The same recipe behind two links (a week menu and the recipe's own page) is listed once.
+                            val fresh = result.recipes.filter { seen.add(it.recipe.sourceUrl ?: it.recipe.title) }
+                            LinkStatus.Found(fresh.map { batchRecipe(it, saved, link.menu ?: result.title) })
+                        }
+                        is PageImportResult.Menu -> if (link.menu != null) LinkStatus.NoRecipeData else addMenu(index, result)
+                        PageImportResult.NoRecipeData -> LinkStatus.NoRecipeData
+                        PageImportResult.NotReachable -> LinkStatus.NotReachable
+                    }
+                    updateLink(index) { it.copy(status = status) }
+                }
+                index++
+            }
+            mutable.update { it.copy(status = ImportStatus.Idle) }
+        }
+    }
+
+    /**
+     * Puts a pasted menu's recipes right after it. A recipe that was also pasted is read once: while it is still waiting it
+     * joins the menu (and its collection) where it is.
+     */
+    private fun addMenu(index: Int, menu: PageImportResult.Menu): LinkStatus {
+        val known = currentBatch().map { it.url }.toSet()
+        val room = (RecipeImporter.MAX_LINKS - currentBatch().size).coerceAtLeast(0)
+        val added = menu.links.filter { it !in known }.take(room).map { BatchLink(it, menu = menu.title) }
+        mutable.update { s ->
+            val joined = s.batch?.map { link ->
+                if (link.url in menu.links && link.menu == null && link.status == LinkStatus.Waiting) link.copy(menu = menu.title) else link
+            }
+            s.copy(batch = joined?.let { b -> b.take(index + 1) + added + b.drop(index + 1) })
+        }
+        return LinkStatus.Menu(menu.title, menu.links.count { it in known } + added.size)
+    }
+
+    private fun currentBatch(): List<BatchLink> = mutable.value.batch.orEmpty()
+
+    private fun updateLink(index: Int, change: (BatchLink) -> BatchLink) {
+        mutable.update { s -> s.copy(batch = s.batch?.mapIndexed { i, link -> if (i == index) change(link) else link }) }
+    }
+
+    private fun batchRecipe(imported: ImportedRecipe, saved: Map<String?, Recipe>, collection: String?) = BatchRecipe(
+        imported,
+        existingId = saved[imported.recipe.sourceUrl]?.id,
+        collection = collection?.let(RecipeCollectionRules::cleanName),
+    )
+
+    /** Ticks or unticks recipe [recipe] of link [link]. */
+    fun toggle(link: Int, recipe: Int) = updateLink(link) { l ->
+        val status = l.status as? LinkStatus.Found ?: return@updateLink l
+        l.copy(status = status.copy(recipes = status.recipes.mapIndexed { i, r -> if (i == recipe) r.copy(selected = !r.selected) else r }))
+    }
+
+    /**
+     * "Spara": the ticked recipes, a menu's gathered in its collection; a page saved before is updated, keeping the family's
+     * favourite mark and notes.
+     */
+    fun saveAll() {
+        val state = mutable.value
+        if (!state.batchDone) return
+        val chosen = state.batch.orEmpty().flatMap { link -> link.found.filter { it.selected } }
+        if (chosen.isEmpty()) return
+        viewModelScope.launch {
+            val saved = chosen.map { it.collection to recipes.saveImported(it.imported.recipe) }
+            saved.filter { it.first != null }
+                .groupBy({ it.first.orEmpty() }, { it.second })
+                .forEach { (name, recipeIds) -> recipes.collect(name, recipeIds, ids.newId()) }
+            mutable.update { it.copy(savedCount = chosen.size) }
+        }
+    }
+
+    private suspend fun savedBySource(): Map<String?, Recipe> = recipes.all().filter { it.sourceUrl != null }.associateBy { it.sourceUrl }
 
     fun reset() {
         mutable.value = RecipeImportState()

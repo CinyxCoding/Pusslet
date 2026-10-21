@@ -75,6 +75,9 @@ object RecipeLinks {
         }
     }
 
+    /** The name of a page with several recipes on it, for the collection they are gathered in. */
+    fun titleOf(html: String): String? = title(RecipeJsonLd.blocks(html).toList(), html)
+
     /** The menu's name: the list's or the article's headline, else the page title ("Veckomeny 44 - 2026"). */
     private fun title(blocks: List<JsonElement>, html: String): String? = blocks.firstNotNullOfOrNull { headline(it, 0) }
         ?: listOf(metaTitle, titleTag).firstNotNullOfOrNull { r ->

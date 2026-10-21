@@ -339,10 +339,13 @@ gång. Importen läste bara en receptsida (BRIEF §4.5), och recept.se ritar vec
 receptdata eller vanliga länkar till recepten.
 **Beslut:** Har sidan inget `Recipe` läser `RecipeLinks` (core) dess receptlista: schema.org `ItemList` i JSON-LD, annars
 recept.se:s `<page-week :week="…">`, där varje recept har en `slug` (receptet ligger på /recept/{slug}). Bara länkar på samma
-webbplats räknas, och en lista med fler än 12 länkar är en kategorisida, inte en meny, så den lämnas. Flera länkar inklistrade
-eller delade tillsammans importeras också. `RecipeImporter` hämtar sedan recepten en i taget, högst 12, och läser bara deras
-JSON-LD; inga andra länkar följs och inga bilder hämtas. Samma länk igen uppdaterar receptet (favorit och anteckningar finns
-kvar). En menys recept samlas i en receptsamling som heter som menyn (”Veckomeny 44 - 2026”); finns samlingen läggs de till i den.
+webbplats räknas, och en lista med fler än 12 länkar är en kategorisida, inte en meny, så den lämnas. En menys recept, flera
+recept med data på samma sida och flera länkar inklistrade eller delade tillsammans hamnar i samma lista: sidorna hämtas en i
+taget (`RecipeImporter.importPage`), högst 30 per import, och recepten bockas för innan ”Spara (n)”. En meny bland inklistrade
+länkar följs ett steg (dess recept läggs in direkt efter den), aldrig vidare; ett recept som både klistrats in och står på menyn
+hämtas en gång. Bara receptens JSON-LD läses och inga bilder hämtas. Samma länk igen uppdaterar receptet (favorit och
+anteckningar finns kvar). En menys recept samlas när de sparas i en receptsamling som heter som menyn (”Veckomeny 44 - 2026”);
+finns samlingen läggs de till i den. En enda receptlänk sparas direkt, som förut.
 **Konsekvens:** En länk till en veckomeny ger hela veckans recept och en samling att planera från. recept.se-läsaren hänger på
 sidans nuvarande uppbyggnad och misslyckas mjukt (”Sidan har inget recept vi kan läsa”) om den ändras. Texten om vad som hämtas
 säger nu att en veckomeny också ger recepten på den. Recepten sparas för familjens eget bruk med källan synlig, som tidigare.

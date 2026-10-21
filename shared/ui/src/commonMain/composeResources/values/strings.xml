@@ -736,15 +736,12 @@
     <string name="recipe_paste_hint">Klistra in texten från receptet. Ingredienser och steg delas upp – kolla att det blev rätt.</string>
     <string name="recipe_paste_apply">Fyll i</string>
     <string name="recipe_import_intro">Klistra in länken till en receptsida eller en veckomeny, eller flera länkar på en gång. Recepten sparas för familjens eget bruk och källan visas alltid.</string>
-    <string name="recipe_import_url">Länk till recept eller veckomeny</string>
+    <string name="recipe_import_url">Länk eller länkar</string>
     <string name="recipe_import_action">Hämta recept</string>
     <string name="recipe_import_invalid">Det där ser inte ut som en webblänk.</string>
     <string name="recipe_import_unreachable">Sidan gick inte att nå. Kolla länken eller försök igen när du har nät.</string>
     <string name="recipe_import_no_data">Sidan har inget recept vi kan läsa. Klistra in texten i stället, så delar vi upp den åt dig.</string>
     <string name="recipe_import_personal">Bara sidorna du valt hämtas, från en veckomeny bara recepten på den. Inga bilder.</string>
-    <string name="recipe_import_saved_in_collection">%1$d recept har sparats i samlingen ”%2$s”</string>
-    <string name="recipe_import_saved">%1$d recept har sparats i receptbiblioteket</string>
-    <string name="recipe_import_missed">%1$d av länkarna gav inget recept.</string>
     <string name="tag_quick">Snabbt</string>
     <string name="tag_vegetarian">Vegetariskt</string>
     <string name="tag_vegan">Veganskt</string>
@@ -1305,6 +1302,16 @@
     <string name="suggest_week_no_recipes">Lägg till några recept först, så kan appen föreslå middagar.</string>
     <string name="suggest_week_all_planned">Alla dagar som är kvar har redan en middag.</string>
     <string name="meals_week_suggested">Veckans förslag inlagda</string>
+
+    <!-- Importera flera länkar på en gång -->
+    <string name="recipe_import_waiting">Väntar</string>
+    <string name="recipe_import_page_no_data">Inget recept på sidan</string>
+    <string name="recipe_import_page_unreachable">Gick inte att hämta</string>
+    <string name="recipe_import_existing">Finns redan, uppdateras</string>
+    <string name="recipe_import_save_all">Spara (%1$d)</string>
+    <string name="recipe_import_links_found">%1$d recept från %2$d länkar</string>
+    <string name="recipe_import_menu">Veckomeny med %1$d recept</string>
+    <string name="recipe_import_into_collection">Sparas i samlingen ”%1$s”</string>
 
     <!-- Placeholders used until a feature is wired up -->
 </resources>

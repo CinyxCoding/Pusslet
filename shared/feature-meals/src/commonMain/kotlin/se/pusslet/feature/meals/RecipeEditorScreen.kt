@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -21,6 +23,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -50,10 +53,8 @@ import se.pusslet.core.model.MainComponent
 import se.pusslet.core.model.RecipeTag
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
-import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.PussletTopBar
-import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.UnsavedChangesBackHandler
 import se.pusslet.ui.resources.*
@@ -296,21 +297,23 @@ private fun PasteDialog(onDismiss: () -> Unit, onPaste: (String) -> Unit) {
 
 /**
  * "Importera från länk": paste (or share) a recipe page, a weekly menu or several links; the recipes are saved with their
- * source. One recipe opens right away; several are listed here.
+ * source. One recipe is saved at once; a menu and several links are fetched one by one into a list to tick, and
+ * [onSavedMany] follows "Spara" with how many were saved.
  */
 @Composable
 fun RecipeImportRoute(
     initialUrl: String?,
     onBack: () -> Unit,
     onImported: (String) -> Unit,
-    onOpenRecipe: (String) -> Unit,
     onPasteInstead: (String) -> Unit,
+    onSavedMany: (Int) -> Unit = { onBack() },
     viewModel: RecipeImportViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var url by rememberSaveable { mutableStateOf(initialUrl.orEmpty()) }
     LaunchedEffect(initialUrl) { if (!initialUrl.isNullOrBlank()) viewModel.importShared(initialUrl) }
     LaunchedEffect(state.savedId) { state.savedId?.let(onImported) }
+    LaunchedEffect(state.savedCount) { state.savedCount?.let(onSavedMany) }
 
     Scaffold(topBar = { PussletTopBar(stringResource(Res.string.recipe_import), onBack = onBack) }) { padding ->
         Column(
@@ -318,7 +321,7 @@ fun RecipeImportRoute(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = Spacing.screenHorizontal)
-                .padding(top = padding.calculateTopPadding(), bottom = Spacing.lg),
+                .padding(top = padding.calculateTopPadding(), bottom = Spacing.xl),
             verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             Text(stringResource(Res.string.recipe_import_intro), style = MaterialTheme.typography.bodyMedium)
@@ -329,8 +332,8 @@ fun RecipeImportRoute(
                     if (state.status != ImportStatus.Idle && state.status != ImportStatus.Loading) viewModel.reset()
                 },
                 label = { Text(stringResource(Res.string.recipe_import_url)) },
-                // Several links go one per line; the keyboard still shows Go.
-                maxLines = MAX_LINK_LINES,
+                // Several links may be pasted at once, one per line or inside other text; the keyboard still shows Go.
+                maxLines = IMPORT_FIELD_LINES,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
                 keyboardActions = KeyboardActions(onGo = { viewModel.import(url) }),
                 modifier = Modifier.fillMaxWidth(),
@@ -351,7 +354,7 @@ fun RecipeImportRoute(
                     actions = { TextButton(onClick = { onPasteInstead(status.url) }) { Text(stringResource(Res.string.recipe_paste)) } },
                 )
             }
-            state.batch?.let { ImportedBatchCard(it, onOpenRecipe = onOpenRecipe, onDone = onBack) }
+            state.batch?.let { batch -> ImportBatch(batch, state, onToggle = viewModel::toggle, onSave = viewModel::saveAll) }
             Text(
                 stringResource(Res.string.recipe_import_personal),
                 style = MaterialTheme.typography.bodySmall,
@@ -361,33 +364,76 @@ fun RecipeImportRoute(
     }
 }
 
-/** "5 recept har sparats i samlingen ”Veckomeny 44 - 2026”" with the recipes, each opening on a tap. */
+/**
+ * A weekly menu or several pasted links: each page's recipes to tick, or why it gave none, then the collections the ticked
+ * recipes go into and "Spara (n)".
+ */
 @Composable
-private fun ImportedBatchCard(batch: ImportedBatch, onOpenRecipe: (String) -> Unit, onDone: () -> Unit) {
-    val count = batch.recipes.size
-    SectionCard(
-        title = batch.collectionName?.let { stringResource(Res.string.recipe_import_saved_in_collection, count, it) }
-            ?: stringResource(Res.string.recipe_import_saved, count),
-    ) {
-        batch.recipes.forEach { recipe ->
-            ListRow(
-                recipe.title,
-                Modifier.clickable(role = Role.Button) { onOpenRecipe(recipe.id) },
-                supporting = recipe.totalMinutes?.let { stringResource(Res.string.recipe_minutes, it) },
-            )
-        }
-        if (batch.missed > 0) {
-            Text(
-                stringResource(Res.string.recipe_import_missed, batch.missed),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onDone) { Text(stringResource(Res.string.action_done)) }
+private fun ImportBatch(batch: List<BatchLink>, state: RecipeImportState, onToggle: (Int, Int) -> Unit, onSave: () -> Unit) {
+    if (state.batchDone) {
+        val found = batch.sumOf { it.found.size }
+        val links = batch.count { it.status !is LinkStatus.Menu }
+        Text(stringResource(Res.string.recipe_import_links_found, found, links), style = MaterialTheme.typography.titleMedium)
+    }
+    batch.forEachIndexed { linkIndex, link ->
+        val host = hostOf(link.url)
+        when (val status = link.status) {
+            LinkStatus.Waiting -> ImportLine(host, stringResource(Res.string.recipe_import_waiting))
+            LinkStatus.Loading -> Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            ) {
+                CircularProgressIndicator(Modifier.size(Spacing.lg))
+                Text(host, style = MaterialTheme.typography.bodyMedium)
+            }
+            is LinkStatus.Menu -> ImportLine(status.title ?: host, stringResource(Res.string.recipe_import_menu, status.count))
+            LinkStatus.NoRecipeData -> ImportLine(host, stringResource(Res.string.recipe_import_page_no_data))
+            LinkStatus.NotReachable -> ImportLine(host, stringResource(Res.string.recipe_import_page_unreachable))
+            is LinkStatus.Found -> status.recipes.forEachIndexed { recipeIndex, r ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = Spacing.primaryTouchTarget)
+                        .toggleable(value = r.selected, role = Role.Checkbox, onValueChange = { onToggle(linkIndex, recipeIndex) }),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                ) {
+                    Checkbox(checked = r.selected, onCheckedChange = null)
+                    Column(Modifier.weight(1f)) {
+                        Text(r.imported.recipe.title, style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            if (r.existingId != null) stringResource(Res.string.recipe_import_existing) else host,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
         }
     }
+    state.selectedCollections.forEach { name ->
+        Text(
+            stringResource(Res.string.recipe_import_into_collection, name),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    Button(onClick = onSave, enabled = state.batchDone && state.selectedCount > 0, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(Res.string.recipe_import_save_all, state.selectedCount))
+    }
 }
+
+/** A link that gave no recipe, is waiting or is a weekly menu: where it points (or the menu's name) and why. */
+@Composable
+private fun ImportLine(title: String, status: String) {
+    Column {
+        Text(title, style = MaterialTheme.typography.bodyLarge)
+        Text(status, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+/** "recept.se" from a link, for a short line; the link itself when it has no host. */
+private fun hostOf(url: String): String = Regex("""https?://(?:www\.)?([^/:?#]+)""").find(url)?.groupValues?.get(1) ?: url
 
 internal fun componentLabel(c: MainComponent): StringResource = when (c) {
     MainComponent.Fish -> Res.string.component_fish
@@ -404,4 +450,4 @@ internal fun componentLabel(c: MainComponent): StringResource = when (c) {
 }
 
 private const val MAX_DIGITS = 3
-private const val MAX_LINK_LINES = 5
+private const val IMPORT_FIELD_LINES = 5

@@ -16,11 +16,11 @@ import se.pusslet.core.util.IdGenerator
 sealed interface RecipeImportResult {
     data class Found(val imported: ImportedRecipe) : RecipeImportResult
 
-    /**
-     * Several recipes: the ones on a weekly menu (named [title]) or from several pasted links. [missed] counts the links
-     * that gave no recipe.
-     */
-    data class Several(val title: String?, val recipes: List<ImportedRecipe>, val missed: Int) : RecipeImportResult
+    /** Several recipes with their data on the one page (a menu or a collection), named [title] when the page has a name. */
+    data class Several(val title: String?, val recipes: List<ImportedRecipe>) : RecipeImportResult
+
+    /** A weekly menu that only links to its recipes (ADR-038); they are fetched one at a time with [RecipeImporter.importPage]. */
+    data class Menu(val title: String?, val links: List<String>) : RecipeImportResult
 
     /** The page loaded but has no schema.org Recipe data: the user can enter it by hand. */
     data object NoRecipeData : RecipeImportResult
@@ -28,6 +28,19 @@ sealed interface RecipeImportResult {
     data object NotReachable : RecipeImportResult
 
     data object InvalidUrl : RecipeImportResult
+}
+
+/** One page of several links: its recipes (a week menu can carry more than one), a menu's links, or why there are none. */
+sealed interface PageImportResult {
+    /** [title] names a page with several recipes, for the collection they are gathered in. */
+    data class Found(val recipes: List<ImportedRecipe>, val title: String? = null) : PageImportResult
+
+    /** A weekly menu that links to its recipes; the list follows them, one page at a time. */
+    data class Menu(val title: String?, val links: List<String>) : PageImportResult
+
+    data object NoRecipeData : PageImportResult
+
+    data object NotReachable : PageImportResult
 }
 
 /**
@@ -38,35 +51,28 @@ sealed interface RecipeImportResult {
 class RecipeImporter(private val http: HttpClient, private val ids: IdGenerator) {
     private val log = Logger.withTag("RecipeImport")
 
+    /** The first link in [input]: a recipe, the recipes on the page, or the links of a weekly menu. */
     suspend fun import(input: String): RecipeImportResult {
-        val urls = findUrls(input)
-        if (urls.isEmpty()) return RecipeImportResult.InvalidUrl
-        if (urls.size > 1) return several(title = null, urls)
-        val url = urls.single()
-        val html = fetch(url) ?: return RecipeImportResult.NotReachable
+        val url = findUrl(input) ?: return RecipeImportResult.InvalidUrl
+        val html = page(url) ?: return RecipeImportResult.NotReachable
+        val all = RecipeJsonLd.extractAll(html, url)
+        if (all.size > 1) return RecipeImportResult.Several(RecipeLinks.titleOf(html), all.map { it.withId(ids.newId()) })
         RecipeJsonLd.extract(html, url)?.let { return RecipeImportResult.Found(it.withId(ids.newId())) }
         val menu = RecipeLinks.extract(html, url) ?: return RecipeImportResult.NoRecipeData
-        return several(menu.title, menu.links)
+        return RecipeImportResult.Menu(menu.title, menu.links)
     }
 
-    /** At most [RecipeLinks.MAX_LINKS] pages; the rest count as missed. */
-    private suspend fun several(title: String?, urls: List<String>): RecipeImportResult {
-        val results = urls.take(RecipeLinks.MAX_LINKS).map { recipeAt(it) }
-        val found = results.filterIsInstance<RecipeImportResult.Found>().map { it.imported }
-        return when {
-            found.isNotEmpty() -> RecipeImportResult.Several(title, found, missed = urls.size - found.size)
-            RecipeImportResult.NotReachable in results -> RecipeImportResult.NotReachable
-            else -> RecipeImportResult.NoRecipeData
-        }
+    /** Every recipe on the page at [url], or the links of a weekly menu on it; only that page is fetched. */
+    suspend fun importPage(url: String): PageImportResult {
+        val html = page(url) ?: return PageImportResult.NotReachable
+        val recipes = RecipeJsonLd.extractAll(html, url, ids::newId)
+        if (recipes.isNotEmpty()) return PageImportResult.Found(recipes, title = RecipeLinks.titleOf(html).takeIf { recipes.size > 1 })
+        val menu = RecipeLinks.extract(html, url) ?: return PageImportResult.NoRecipeData
+        return PageImportResult.Menu(menu.title, menu.links)
     }
 
-    private suspend fun recipeAt(url: String): RecipeImportResult {
-        val html = fetch(url) ?: return RecipeImportResult.NotReachable
-        return RecipeJsonLd.extract(html, url)?.let { RecipeImportResult.Found(it.withId(ids.newId())) } ?: RecipeImportResult.NoRecipeData
-    }
-
-    /** The page's HTML, or null when it can't be reached. */
-    private suspend fun fetch(url: String): String? = try {
+    /** The page's HTML, or null when it cannot be fetched (logged without the address, which a user typed). */
+    private suspend fun page(url: String): String? = try {
         val response = http.get(url) { header(HttpHeaders.Accept, "text/html,application/xhtml+xml") }
         if (response.status.isSuccess()) response.bodyAsText().take(MAX_PAGE_CHARS) else null
     } catch (e: CancellationException) {
@@ -80,13 +86,22 @@ class RecipeImporter(private val http: HttpClient, private val ids: IdGenerator)
 
     companion object {
         private const val MAX_PAGE_CHARS = 3_000_000
+
+        /**
+         * More links than this in one paste are left out, and one import never reads more pages than this (menus included),
+         * so a pasted page of links cannot start hundreds of fetches.
+         */
+        const val MAX_LINKS = 30
         private val urlPattern = Regex("""https?://[^\s<>"']+""")
 
         /** The first web link in a pasted or shared text ("Testa den här! https://…"). */
         fun findUrl(text: String): String? = findUrls(text).firstOrNull()
 
-        /** Every web link in the text, in order and without repeats (a few recipes pasted from a note). */
-        fun findUrls(text: String): List<String> =
-            urlPattern.findAll(text).map { it.value.trimEnd('.', ',', ')', '!') }.distinct().toList()
+        /** Every distinct web link in a pasted text, in order, at most [MAX_LINKS] (a few recipes pasted from a note). */
+        fun findUrls(text: String): List<String> = urlPattern.findAll(text)
+            .map { it.value.trimEnd('.', ',', ')', '!') }
+            .distinct()
+            .take(MAX_LINKS)
+            .toList()
     }
 }

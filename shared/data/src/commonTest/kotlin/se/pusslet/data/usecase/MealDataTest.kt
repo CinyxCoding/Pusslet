@@ -131,16 +131,19 @@ class MealDataTest {
         val importer = RecipeImporter(http.client, SequentialIdGenerator("r"))
         val menuUrl = "https://recept.se/veckomeny/lattlagade-veckomenyer/2026-44"
 
-        val fromMenu = assertIs<RecipeImportResult.Several>(importer.import(menuUrl))
+        val fromMenu = assertIs<RecipeImportResult.Menu>(importer.import(menuUrl))
         assertEquals("Veckomeny 44 - 2026", fromMenu.title)
-        assertEquals(listOf("Linssoppa", "Fiskgratäng"), fromMenu.recipes.map { it.recipe.title })
-        assertEquals(listOf("r1", "r2"), fromMenu.recipes.map { it.recipe.id })
-        assertEquals(1, fromMenu.missed, "the page that is gone")
+        assertEquals(1, http.requests.size, "the menu's recipes are fetched one at a time by the list, not here")
+        val pages = fromMenu.links.map { importer.importPage(it) }
+        val found = pages.filterIsInstance<PageImportResult.Found>().flatMap { it.recipes }
+        assertEquals(listOf("Linssoppa", "Fiskgratäng"), found.map { it.recipe.title })
+        assertIs<PageImportResult.NotReachable>(pages[1], "the page that is gone")
         assertEquals(4, http.requests.size, "the menu and its three recipes, nothing else")
+        assertEquals(fromMenu.title, assertIs<PageImportResult.Menu>(importer.importPage(menuUrl)).title, "a menu among pasted links")
 
         // Saved twice (the menu imported again): the same recipes and one collection, with the favourite kept.
         repeat(2) { round ->
-            val saved = fromMenu.recipes.map { recipes.saveImported(it.recipe.copy(id = "new-$round-${it.recipe.id}")) }
+            val saved = found.map { recipes.saveImported(it.recipe.copy(id = "new-$round-${it.recipe.id}")) }
             recipes.collect("Veckomeny 44 - 2026", saved, newId = "rc-$round")
             if (round == 0) recipes.get(saved.first())?.let { recipes.save(it.copy(favorite = true)) }
         }
@@ -150,13 +153,34 @@ class MealDataTest {
         val collection = recipes.allCollections().single()
         assertEquals("rc-0", collection.id)
         assertEquals(all.map { it.id }.toSet(), collection.recipeIds.keys)
+    }
 
-        val pasted = assertIs<RecipeImportResult.Several>(
-            importer.import("Middagar:\nhttps://recept.se/recept/linssoppa\nhttps://recept.se/recept/fiskgratang\n"),
-        )
-        assertEquals(null, pasted.title)
-        assertEquals(listOf("Linssoppa", "Fiskgratäng"), pasted.recipes.map { it.recipe.title })
-        assertIs<RecipeImportResult.NotReachable>(importer.import("https://recept.se/recept/borta https://recept.se/recept/annat"))
+    @Test
+    fun severalPastedLinksAreFoundAndEachPageIsReadOnce() = runTest {
+        val text = "Måndag https://www.example.se/recept/a, tisdag https://www.example.se/recept/b.\nhttps://www.example.se/recept/a igen"
+        assertEquals(listOf("https://www.example.se/recept/a", "https://www.example.se/recept/b"), RecipeImporter.findUrls(text))
+        val many = (1..40).joinToString(" ") { "https://x.se/$it" }
+        assertEquals(RecipeImporter.MAX_LINKS, RecipeImporter.findUrls(many).size)
+
+        val page = """<script type="application/ld+json">
+            {"@graph":[{"@type":"Recipe","name":"Tacos"},{"@type":"Recipe","name":"Pizza"}]}</script>"""
+        val http = MockHttp { request ->
+            when (request.url.encodedPath) {
+                "/recept/a" -> ok(page, "text/html")
+                "/recept/b" -> ok("<html></html>", "text/html")
+                else -> respond("", HttpStatusCode.NotFound)
+            }
+        }
+        val importer = RecipeImporter(http.client, SequentialIdGenerator("r"))
+        val found = assertIs<PageImportResult.Found>(importer.importPage("https://www.example.se/recept/a"))
+        assertEquals(listOf("Tacos", "Pizza"), found.recipes.map { it.recipe.title })
+        assertIs<PageImportResult.NoRecipeData>(importer.importPage("https://www.example.se/recept/b"))
+        assertIs<PageImportResult.NotReachable>(importer.importPage("https://www.example.se/recept/c"))
+        assertEquals(3, http.requests.size)
+
+        // The same page as the only link: both recipes go to the list instead of only the first being saved.
+        val several = assertIs<RecipeImportResult.Several>(importer.import("https://www.example.se/recept/a"))
+        assertEquals(listOf("Tacos", "Pizza"), several.recipes.map { it.recipe.title })
     }
 
     private fun LocalDate.plusDays(n: Int) = LocalDate.fromEpochDays(toEpochDays() + n)

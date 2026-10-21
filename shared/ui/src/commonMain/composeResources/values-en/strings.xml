@@ -735,15 +735,12 @@
     <string name="recipe_paste_hint">Paste the recipe text. Ingredients and steps are split up – check that it looks right.</string>
     <string name="recipe_paste_apply">Fill in</string>
     <string name="recipe_import_intro">Paste the link to a recipe page or a weekly menu, or several links at once. The recipes are saved for the family's own use and the source is always shown.</string>
-    <string name="recipe_import_url">Link to a recipe or weekly menu</string>
+    <string name="recipe_import_url">Link or links</string>
     <string name="recipe_import_action">Get recipes</string>
     <string name="recipe_import_invalid">That doesn't look like a web link.</string>
     <string name="recipe_import_unreachable">The page couldn't be reached. Check the link or try again when you're online.</string>
     <string name="recipe_import_no_data">The page has no recipe we can read. Paste the text instead and we'll split it up for you.</string>
     <string name="recipe_import_personal">Only the pages you chose are fetched – from a weekly menu, only the recipes on it. No images.</string>
-    <string name="recipe_import_saved_in_collection">Recipes saved in the collection “%2$s”: %1$d</string>
-    <string name="recipe_import_saved">Recipes saved in the recipe library: %1$d</string>
-    <string name="recipe_import_missed">%1$d of the links gave no recipe.</string>
     <string name="tag_quick">Quick</string>
     <string name="tag_vegetarian">Vegetarian</string>
     <string name="tag_vegan">Vegan</string>
@@ -1304,6 +1301,16 @@
     <string name="suggest_week_no_recipes">Add a few recipes first, then the app can suggest dinners.</string>
     <string name="suggest_week_all_planned">Every day left already has a dinner.</string>
     <string name="meals_week_suggested">The week's suggestions added</string>
+
+    <!-- Importera flera länkar på en gång -->
+    <string name="recipe_import_waiting">Waiting</string>
+    <string name="recipe_import_page_no_data">No recipe on the page</string>
+    <string name="recipe_import_page_unreachable">Couldn't be fetched</string>
+    <string name="recipe_import_existing">Already saved, will be updated</string>
+    <string name="recipe_import_save_all">Save (%1$d)</string>
+    <string name="recipe_import_links_found">%1$d recipes from %2$d links</string>
+    <string name="recipe_import_menu">Weekly menu – recipes on it: %1$d</string>
+    <string name="recipe_import_into_collection">Saved in the collection “%1$s”</string>
 
     <!-- Placeholders used until a feature is wired up -->
 </resources>

@@ -40,6 +40,32 @@ object RecipeJsonLd {
         return fromNode(node, sourceUrl, id)
     }
 
+    /**
+     * Every recipe on one page: a week menu or a collection page can carry several. Each keeps its own page as source when it
+     * names one (`url`), else the page it was read from. Only this page is read; a menu that merely links to its recipes is
+     * [RecipeLinks]' job.
+     */
+    fun extractAll(html: String, sourceUrl: String, newId: () -> String = { "" }): List<ImportedRecipe> = blocks(html)
+        .flatMap { findRecipes(it) }
+        .map { node -> fromNode(node, text(node["url"])?.takeIf { it.startsWith("http") } ?: sourceUrl, newId()) }
+        .filter { it.recipe.title.isNotBlank() }
+        .distinctBy { it.recipe.sourceUrl to it.recipe.title.lowercase() }
+        .toList()
+
+    /** Every object whose @type is (or contains) "Recipe", in page order; a recipe's own children are not searched. */
+    fun findRecipes(element: JsonElement, depth: Int = 0): List<JsonObject> {
+        if (depth > MAX_DEPTH) return emptyList()
+        return when (element) {
+            is JsonArray -> element.flatMap { findRecipes(it, depth + 1) }
+            is JsonObject -> if (isRecipe(element["@type"])) {
+                listOf(element)
+            } else {
+                CONTAINERS.flatMap { key -> element[key]?.let { findRecipes(it, depth + 1) }.orEmpty() }
+            }
+            else -> emptyList()
+        }
+    }
+
     /** Every JSON-LD block on the page that parses; broken ones are skipped. */
     internal fun blocks(html: String): Sequence<JsonElement> = scriptTag.findAll(html).mapNotNull { m -> parse(m.groupValues[1].trim()) }
 
@@ -55,7 +81,7 @@ object RecipeJsonLd {
                 if (isRecipe(element["@type"])) {
                     element
                 } else {
-                    listOf("@graph", "mainEntity", "mainEntityOfPage", "itemListElement", "item")
+                    CONTAINERS
                         .firstNotNullOfOrNull { key -> element[key]?.let { findRecipe(it, depth + 1) } }
                 }
             }
@@ -217,6 +243,9 @@ object RecipeJsonLd {
     private fun hostOf(url: String) = url.substringAfter("://").substringBefore('/').removePrefix("www.")
 
     private const val MAX_DEPTH = 6
+
+    /** Where pages nest their recipes: a graph, the page's main entity, or a list of items. */
+    private val CONTAINERS = listOf("@graph", "mainEntity", "mainEntityOfPage", "itemListElement", "item")
     private const val MAX_SERVINGS = 50
     private const val QUICK_MINUTES = 30
     private const val HEX = 16

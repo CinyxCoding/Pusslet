@@ -369,3 +369,17 @@ undantag, i `composeApp/src/main/res/values*/strings.xml`.
 **Konsekvens:** Widgetarna säger samma sak som Idag och Morgonkollen och fungerar utan nät. Ändringar från en annan telefon
 syns när appen kör och synkar (som notiserna). Barnens namn syns på hemskärmen, inte på låsskärmen. Dynamiska färger följs
 inte än. Hjälparens egen widget (UX-planen fas 3) är inte gjord.
+
+## ADR-040 – Familjens händelser i telefonens kalender
+**Kontext:** BRIEF §3 vill ha tvåvägskoppling till telefonens kalendrar: läsa föräldrarnas egna (för krockar) och skriva
+familjens händelser till en vald kalender eller en kalender som appen äger, utan dubbletter. Läsningen fanns, men exporten
+kördes bara en gång när man valde kalender, så ändringar, raderingar och byte av kalender följde inte med.
+**Beslut:** `DeviceCalendarExporter` (data, startas av `AppCoordinator` som prenumerationerna) skriver om exporten en stund
+efter varje ändring i familjens händelser, valet i Inställningar eller rollen, så länge appen kör. Bara föräldrar exporterar.
+Varje rad bär `UID_2445` = `pusslet-<händelsens id>`; bara sådana rader uppdateras eller tas bort, användarens egna rörs
+aldrig. Rader vars händelse inte längre finns tas bort. En serie skrivs en gång med RRULE; ett enskilt flyttat tillfälle
+skrivs som egen händelse och dess ursprungliga datum läggs till seriens EXDATE (`DeviceExport.prepare`). Byts kalendern eller
+stängs exporten av tas kopiorna bort ur den förra. Prenumerationerna hämtas också av ett periodiskt WorkManager-jobb var
+6:e timme med nät, så de är färska även när appen inte öppnats.
+**Konsekvens:** Familjens kalender syns i telefonens kalenderapp och i andra appar som läser den. Ändringar från en annan
+telefon kommer till telefonkalendern när appen kör och har synkat. Utan skrivbehörighet görs ingenting (och inget kraschar).

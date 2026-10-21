@@ -82,10 +82,12 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Steg 4: första användningen (4.1–4.3 onboarding ✅: fler vuxna med bara namn, en barnrad med fokus, sökning först, ”Klart!” med ”Visa min dag”; 4.4 ”Kom igång” på Idag ✅ (ADR-034); 4.5 tomlägen på Mat, Recept och Handla ✅; 4.6 snabbinmatningen med familjens egna namn, en mening med ”Ändra”, osäkert i terrakotta och ”Fyll i själv” till redigeraren ✅; 4.7 tips som visas en gång ✅ för Idag, Handla och hjälparvyn; 4.8 ”Börja på riktigt” ✅)
 
 ## Fas 3 – Integrationer & notiser
-- [x] ICS-prenumerationer: hämtas när appen startar och var 6:e timme (bara föräldrar), skärmen ”Prenumerationer” med ”Hämta och visa”, VTIMEZONE med sommartid, acceptanstest med Google- och Outlook-liknande flöden över sommartidsskiftet (WorkManager-jobb i bakgrunden återstår)
-- [ ] Tvåvägs enhetskalender (CalendarContract)
+- [x] ICS-prenumerationer: hämtas när appen startar och var 6:e timme (bara föräldrar), skärmen ”Prenumerationer” med ”Hämta och visa”, VTIMEZONE med sommartid, acceptanstest med Google- och Outlook-liknande flöden över sommartidsskiftet; WorkManager var 6:e timme med nät även när appen är stängd
+- [x] Tvåvägs enhetskalender (CalendarContract): telefonens kalendrar läses (krockar), familjens händelser skrivs till vald kalender
+  eller en egen Pusslet-kalender och följer familjen medan appen kör – raderade tas bort, flyttade tillfällen blir egna, byte av
+  kalender städar den gamla (ADR-040); provat på emulator 2026-10-21
 - [ ] Eget ICS-flöde (Cloud Function)
-- [ ] Konfliktdetektering, hämta/lämna-förfrågningar
+- [x] Konfliktdetektering, hämta/lämna-förfrågningar (ConflictDetector, ”Att lösa” på Idag, förfrågningar och svar ADR-030)
 - [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
   - [x] Delad planering av lokala notiser: påminnelser, lämna/hämta, att göra, Morgon- och Kvällskoll, tysta timmar, samlade notiser, kanaler och texter (ADR-036)
   - [x] Android: WorkManager, kanaler, visning och tryck in i appen – verifierat på emulator 2026-10-21: sju kanaler med svenska
@@ -96,12 +98,12 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Två widgets (Idag, Inköpslista) med Glance: nästa händelse, lämna/hämta, ska med; listan med bockar och + över hemskärmen (ADR-039), provade på emulator 2026-10-21
 - [x] Uppgifter/sysslor med rotation, fördelningsvy: Mer › Uppgifter och sysslor (Mina, Ingen ansvarig, Familjen, Klart), redigerare med upprepning, ”Turas om”, ”Vems tur” och ”Byt vecka”, checklista; ”Så har vi delat” för de senaste 4 veckorna
 - [x] Export/radering av data: export med kvitto (även konto och den här telefonens inställningar), ”Radera familjen för alla” och ”Radera mitt konto” via callables med tester mot emulatorn, ärlig text för ”bara den här telefonen” (ADR-035)
-- [ ] ✅ Publik test-ICS visas korrekt (acceptanstestet finns och är grönt; kvar: familjehändelser i enhetens kalender) (återkommande + tidszoner); familjehändelser syns i enhetens kalender
+- [x] ✅ Publik test-ICS visas korrekt (återkommande + tidszoner, acceptanstestet är grönt); familjehändelser syns i enhetens kalender (ADR-040)
 
 ### Tillägg efter korskontroll (2026-10-21)
 - [x] Kvällskollen: från 18:00 visar Idag ”Imorgon, onsdag” med vem som lämnar och hämtar, ”Packa ikväll: …” med bockar,
   morgondagens väder och klädråd och middag. Följer ”Anpassa Idag”; problem för imorgon står kvar under ”Att lösa”
-- [ ] Påminnelser för händelser och uppgifter (med notiserna ovan)
+- [x] Påminnelser för händelser och uppgifter (ReminderPlanner, ADR-036; händelsepåminnelse provad på emulator 2026-10-21)
 - [x] Matsedeln: ”Laga mat | Hämtmat | Ingen matlagning” och ”Vem lagar” (syns på Matsedel och Idag); hämtmat och ingen matlagning ger inga inköp och räknas inte som lagad mat i förslagen
 - [x] Skafferiet: plats (skafferi, kyl, frys), bäst före med ”går ut snart”, ”Slut” utan att radera, streckkod; okänd mängd frågar ”Finns hemma?” i stället för att hoppas över
 - [x] Inköpslista från valda dagar (nästa 14 dagar), varje ingrediens kan väljas bort, två körningar dubblar aldrig

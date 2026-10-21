@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.calendar.DeviceExport
 import se.pusslet.core.model.Place
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.SwedishPlaces
@@ -167,17 +168,23 @@ class SettingsViewModel(
 
     fun setCrashReports(v: Boolean) = launch { prefs.set(Prefs.CrashReportsConsent, v) }
 
-    /** Picks (or creates) the calendar family events are written to, and exports right away. */
+    /**
+     * Picks (or creates) the calendar family events are written to and exports right away; the copies in the calendar
+     * chosen before are taken away. From then on [se.pusslet.data.sources.DeviceCalendarExporter] keeps it current.
+     */
     fun setExport(id: Long?, appCalendarName: String) = launch {
         val target = when (id) {
             null -> -1L
             APP_CALENDAR -> deviceCalendars.ensureAppCalendar(appCalendarName) ?: -1L
             else -> id
         }
+        val previous = prefs.get(Prefs.DeviceCalendarExport)
+        if (previous >= 0 && previous != target) deviceCalendars.removeExported(previous, emptySet())
         prefs.set(Prefs.DeviceCalendarExport, target)
         if (target >= 0) {
-            val events = calendar.events.first()
+            val events = DeviceExport.prepare(calendar.events.first())
             deviceCalendars.exportEvents(target, events)
+            deviceCalendars.removeExported(target, events.mapTo(HashSet()) { it.id })
         }
         calendars.value = deviceCalendars.calendars()
     }

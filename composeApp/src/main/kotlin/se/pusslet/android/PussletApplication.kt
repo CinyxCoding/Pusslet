@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import se.pusslet.android.calendar.SubscriptionWork
 import se.pusslet.android.di.androidModule
 import se.pusslet.android.notify.NotificationWork
 import se.pusslet.android.widget.WidgetUpdates
@@ -32,5 +33,7 @@ class PussletApplication : Application() {
         NotificationWork.start(this, get(), get(), get<CoroutineScope>(AppScope))
         // Home-screen widgets (ADR-039): drawn again a moment after what they show changes.
         WidgetUpdates.start(this, get(), get<CoroutineScope>(AppScope))
+        // ICS subscriptions also while the app is closed (every 6 hours with network).
+        SubscriptionWork.start(this)
     }
 }

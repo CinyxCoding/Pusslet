@@ -29,6 +29,7 @@ import se.pusslet.data.seed.DemoSeed
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.session.SessionRepository
 import se.pusslet.data.sources.CachedFetcher
+import se.pusslet.data.sources.DeviceCalendarExporter
 import se.pusslet.data.sources.FoodDatabase
 import se.pusslet.data.sources.LivsmedelsverketFoodDatabase
 import se.pusslet.data.sources.LunchMenuProvider
@@ -118,6 +119,8 @@ val dataModule: Module = module {
     single { SubscriptionSync(get(), get(), get(), get(), get(), get()) }
     // Keeps subscriptions fresh while the app runs (started by AppCoordinator); a WorkManager worker can call refreshAll().
     single { SubscriptionRefresher(get(), get(), get(), get()) } bind SubscriptionFeeds::class
+    // Keeps family events in the phone calendar chosen in Inställningar (ADR-040), also started by AppCoordinator.
+    single { DeviceCalendarExporter(get(), get(), get(), get()) }
     single { SwedishQuickAddParser() }
 
     single { DemoSeed(get(), get(), get()) }
@@ -134,7 +137,7 @@ val dataModule: Module = module {
             get(),
             get(),
             get(),
-            processWork = listOf(get<SubscriptionRefresher>()),
+            processWork = listOf(get<SubscriptionRefresher>(), get<DeviceCalendarExporter>()),
         )
     }
 }

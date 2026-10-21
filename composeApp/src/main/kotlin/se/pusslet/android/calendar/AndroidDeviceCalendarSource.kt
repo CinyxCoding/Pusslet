@@ -123,9 +123,11 @@ class AndroidDeviceCalendarSource(private val context: Context, private val zone
     override suspend fun exportEvents(calendarId: Long, events: List<Event>): Int = withContext(Dispatchers.IO) {
         if (!canWrite()) return@withContext 0
         var touched = 0
-        for (event in events.filter { it.seriesId == null }) {
+        val rows = exported(calendarId)
+        // A moved single occurrence is an event of its own here (DeviceExport.prepare gives its series the EXDATE).
+        for (event in events) {
             val values = toValues(calendarId, event)
-            val existing = findExported(calendarId, event.id)
+            val existing = rows[event.id]
             try {
                 if (existing != null) {
                     resolver.update(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, existing), values, null, null)
@@ -143,13 +145,31 @@ class AndroidDeviceCalendarSource(private val context: Context, private val zone
         touched
     }
 
-    private fun findExported(calendarId: Long, eventId: String): Long? = resolver.query(
+    override suspend fun removeExported(calendarId: Long, keep: Set<String>): Int = withContext(Dispatchers.IO) {
+        if (!canWrite()) return@withContext 0
+        var removed = 0
+        exported(calendarId).filterKeys { it !in keep }.values.forEach { row ->
+            try {
+                removed += resolver.delete(ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, row), null, null)
+            } catch (e: SecurityException) {
+                log.w(e) { "Calendar write not permitted" }
+                return@withContext removed
+            }
+        }
+        removed
+    }
+
+    /** The app's copies in [calendarId]: family event id -> row id. Only rows with our UID prefix; the user's own are never touched. */
+    private fun exported(calendarId: Long): Map<String, Long> = resolver.query(
         CalendarContract.Events.CONTENT_URI,
-        arrayOf(CalendarContract.Events._ID),
-        "${CalendarContract.Events.CALENDAR_ID} = ? AND ${CalendarContract.Events.UID_2445} = ?",
-        arrayOf(calendarId.toString(), uid(eventId)),
+        arrayOf(CalendarContract.Events._ID, CalendarContract.Events.UID_2445),
+        "${CalendarContract.Events.CALENDAR_ID} = ? AND ${CalendarContract.Events.UID_2445} LIKE ? AND " +
+            "${CalendarContract.Events.DELETED} = 0",
+        arrayOf(calendarId.toString(), "$UID_PREFIX%"),
         null,
-    )?.use { c -> if (c.moveToFirst()) c.getLong(0) else null }
+    )?.use { c ->
+        buildMap { while (c.moveToNext()) c.getString(1)?.removePrefix(UID_PREFIX)?.let { put(it, c.getLong(0)) } }
+    }.orEmpty()
 
     private fun toValues(calendarId: Long, e: Event): ContentValues {
         val eventZone = runCatching { TimeZone.of(e.timeZoneId) }.getOrDefault(zone)

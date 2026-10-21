@@ -80,6 +80,7 @@ fun MealsRoute(
     val dayView by viewModel.dayView.collectAsStateWithLifecycle()
     val libraryState by library.state.collectAsStateWithLifecycle()
     val weekNutrition by viewModel.weekNutrition.collectAsStateWithLifecycle()
+    val proposal by viewModel.weekProposal.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     var section by rememberSaveable { mutableStateOf(MealsSection.Week) }
     var choosingRecipe by rememberSaveable { mutableStateOf(false) }
@@ -126,6 +127,7 @@ fun MealsRoute(
                         onCopyPrevious = viewModel::copyPreviousWeek,
                         onFillLunch = { fillingLunch = true },
                         onShopForWeek = onShopForWeek,
+                        onSuggestWeek = viewModel::proposeWeek,
                         onOpenNutrition = {
                             val calculated = weekNutrition is WeekNutritionState.Ready || weekNutrition == WeekNutritionState.Loading
                             if (!calculated) viewModel.calculateWeekNutrition()
@@ -189,7 +191,21 @@ fun MealsRoute(
         )
     }
     if (showNutrition) {
-        WeekNutritionSheet(weekNutrition, onRetry = viewModel::calculateWeekNutrition, onDismiss = { showNutrition = false })
+        WeekNutritionSheet(
+            weekNutrition,
+            onRetry = viewModel::calculateWeekNutrition,
+            onDismiss = { showNutrition = false },
+            balance = { state.balance?.let { BalanceSection(it, state.children) } },
+        )
+    }
+    proposal?.let { p ->
+        WeekProposalSheet(
+            state = p,
+            onSwap = viewModel::swapProposal,
+            onToggle = viewModel::toggleProposal,
+            onApply = viewModel::applyProposal,
+            onDismiss = viewModel::dismissProposal,
+        )
     }
     if (choosingRecipe) {
         NewRecipeSheet(
@@ -234,6 +250,7 @@ private fun MealReceipts(viewModel: MealsViewModel, snackbar: SnackbarHostState)
                     is MealsMessage.Removed -> getString(Res.string.meals_removed, message.title)
                     is MealsMessage.FavoriteApplied -> getString(Res.string.meals_favorite_applied, message.name)
                     is MealsMessage.CopiedPreviousWeek -> getString(Res.string.meals_copied)
+                    is MealsMessage.WeekSuggested -> getString(Res.string.meals_week_suggested)
                 }
                 if (snackbar.showUndo(text, getString(Res.string.action_undo))) viewModel.undo(message.undo)
             }

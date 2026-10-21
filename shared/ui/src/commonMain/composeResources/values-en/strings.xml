@@ -1272,5 +1272,35 @@
     <string name="notify_bundle_handoffs">%1$d drop-offs and pick-ups</string>
     <string name="notify_bundle_other">%1$d notifications</string>
 
+    <!-- Veckans balans och förslag för veckan (Mat) -->
+    <string name="reason_week_fish">Fish this week</string>
+    <string name="reason_week_vegetarian">Vegetarian this week</string>
+    <string name="reason_less_meat">Less meat</string>
+    <string name="balance_title">The week's balance</string>
+    <string name="balance_fish">Fish %1$d</string>
+    <string name="balance_vegetarian">Vegetarian %1$d</string>
+    <string name="balance_poultry">Chicken %1$d</string>
+    <string name="balance_red_meat">Meat %1$d</string>
+    <string name="balance_unknown">Unknown %1$d</string>
+    <string name="balance_eater">%1$s: %2$s</string>
+    <string name="balance_dinners">Dinners: %1$s</string>
+    <string name="balance_need_fish">More fish: the advice is 2–3 times a week</string>
+    <string name="balance_need_vegetarian">More vegetarian: a few days a week is good</string>
+    <string name="balance_less_meat">Plenty of meat already: the advice is at most 350–500 g a week</string>
+    <string name="balance_ok">Follows the Swedish Food Agency's advice on fish, meat and vegetarian food</string>
+    <string name="balance_basis">Counts school lunch and dinner by what the dishes are called, not how much each person eats.</string>
+    <string name="balance_basis_dinners">Counts the week's dinners by what the dishes are called, not how much each person eats.</string>
+    <string name="balance_source">Advice: the Swedish Food Agency – fish 2–3 times a week, more vegetarian food, at most 350–500 g of red meat and charcuterie a week.</string>
+    <string name="balance_empty">Plan a few dinners and the week's balance shows here.</string>
+    <string name="meals_suggest_week">Suggest the week's dinners</string>
+    <string name="suggest_week_title">Suggestions for the week</string>
+    <string name="suggest_week_body">Dinners around the school lunch, so the week gets fish and vegetarian food.</string>
+    <string name="suggest_week_swap">Swap</string>
+    <string name="suggest_week_swap_description">Swap the suggestion for %1$s</string>
+    <string name="suggest_week_apply">Add (%1$d)</string>
+    <string name="suggest_week_no_recipes">Add a few recipes first, then the app can suggest dinners.</string>
+    <string name="suggest_week_all_planned">Every day left already has a dinner.</string>
+    <string name="meals_week_suggested">The week's suggestions added</string>
+
     <!-- Placeholders used until a feature is wired up -->
 </resources>

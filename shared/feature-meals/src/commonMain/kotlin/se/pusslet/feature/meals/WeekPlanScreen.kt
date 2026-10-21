@@ -62,6 +62,7 @@ data class WeekActions(
     val onFillLunch: () -> Unit = {},
     val onShopForWeek: () -> Unit = {},
     val onOpenNutrition: () -> Unit = {},
+    val onSuggestWeek: () -> Unit = {},
 )
 
 /**
@@ -101,6 +102,10 @@ fun WeekPlanScreen(state: MealsUiState, bottomPadding: PaddingValues = PaddingVa
     ) {
         if (state.weekIsEmpty) item(key = "empty") { EmptyWeek(state, actions) }
         items(state.days, key = { it.date.toString() }) { day -> DayCard(day, state, actions) }
+        val balance = state.balance
+        if (balance != null && (!state.weekIsEmpty || state.offerSuggestWeek)) {
+            item(key = "balance") { BalanceCard(balance, state, actions.onSuggestWeek) }
+        }
         if (!state.weekIsEmpty) {
             item(key = "shop") {
                 FilledTonalButton(onClick = actions.onShopForWeek, modifier = Modifier.fillMaxWidth()) {
@@ -129,6 +134,9 @@ private fun EmptyWeek(state: MealsUiState, actions: WeekActions) {
             {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                     Button(onClick = actions.onPlanWeek) { Text(stringResource(Res.string.meals_plan_week)) }
+                    if (state.offerSuggestWeek) {
+                        TextButton(onClick = actions.onSuggestWeek) { Text(stringResource(Res.string.meals_suggest_week)) }
+                    }
                     if (state.offerCopyPrevious) {
                         TextButton(onClick = actions.onCopyPrevious) { Text(stringResource(Res.string.meals_copy_previous)) }
                     }

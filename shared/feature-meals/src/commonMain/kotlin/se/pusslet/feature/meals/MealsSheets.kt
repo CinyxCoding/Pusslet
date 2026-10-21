@@ -168,9 +168,16 @@ internal fun LunchWeekSheet(
  * downloads Livsmedelsverket's food list, so it is only calculated when this opens.
  */
 @Composable
-internal fun WeekNutritionSheet(state: WeekNutritionState, onRetry: () -> Unit, onDismiss: () -> Unit) {
+internal fun WeekNutritionSheet(
+    state: WeekNutritionState,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+    balance: @Composable ColumnScope.() -> Unit = {},
+) {
     MealSheet(onDismiss) {
         SheetTitle(stringResource(Res.string.week_nutrition_title))
+        // Fish, vegetarian and meat with the school lunch first: it needs no download and is what the week can act on.
+        balance()
         when (state) {
             WeekNutritionState.Idle, WeekNutritionState.Loading -> Row(
                 verticalAlignment = Alignment.CenterVertically,

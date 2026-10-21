@@ -13,6 +13,36 @@ object DishKeywords {
         "vegobull" to "köttbullar",
         "fiskpinn" to "fisk",
         "fiskgratäng" to "fisk",
+        "fiskbull" to "fisk",
+        "sill" to "fisk",
+        "strömming" to "fisk",
+        "makrill" to "fisk",
+        "tonfisk" to "fisk",
+        "kolja" to "fisk",
+        "spätta" to "fisk",
+        "gös" to "fisk",
+        "pangasius" to "fisk",
+        "mussl" to "skaldjur",
+        "kalkon" to "kalkon",
+        "pannbiff" to "köttfärs",
+        "järpar" to "köttfärs",
+        "kebab" to "köttfärs",
+        "chorizo" to "korv",
+        "salsiccia" to "korv",
+        "bacon" to "fläsk",
+        "skink" to "fläsk",
+        "kassler" to "fläsk",
+        "karré" to "fläsk",
+        "revben" to "fläsk",
+        "carbonara" to "fläsk",
+        "gyros" to "fläsk",
+        "kalops" to "biff",
+        "högrev" to "biff",
+        "entrecote" to "biff",
+        "oxfilé" to "biff",
+        "nötkött" to "biff",
+        "renskav" to "biff",
+        "lamm" to "biff",
         "falukorv" to "korv",
         "korv" to "korv",
         "taco" to "tacos",
@@ -73,7 +103,7 @@ object DishKeywords {
         val keys = of(text)
         return when {
             keys.any { it in setOf("fisk", "lax", "fiskpinnar", "skaldjur") } -> MainComponent.Fish
-            "kyckling" in keys -> MainComponent.Chicken
+            "kyckling" in keys || "kalkon" in keys -> MainComponent.Chicken
             keys.any {
                 it in setOf("köttbullar", "köttfärs", "tacos", "lasagne", "hamburgare", "kåldolmar", "chili")
             } -> MainComponent.MincedMeat
@@ -87,6 +117,38 @@ object DishKeywords {
             else -> null
         }
     }
+
+    /**
+     * The food group of a dish name ("Fiskgratäng med potatis", "Vegobullar"), or null when the name does not tell. Only the
+     * first alternative counts ("Köttbullar / vegobullar" is köttbullar): schools list the vegetarian option second. A clearly
+     * vegetarian word wins ("Vegetarisk lasagne"); beans and lentils only when no meat or fish is named ("Kyckling med bönor").
+     * Lamb counts as red meat with beef (see the stems).
+     */
+    fun foodGroup(text: String): FoodGroup? {
+        val first = text.lowercase().split(" / ", "/", " eller ", " alt ", " alt.", "\n").first()
+        if (VEGETARIAN.any { it in first }) return FoodGroup.Vegetarian
+        mainComponent(first)?.foodGroup()?.let { return it }
+        return if (LEGUMES.any { it in first }) FoodGroup.Vegetarian else null
+    }
+
+    /** Meat, poultry or fish named in [text] (an ingredient list), ignoring vegetarian words: null when none is. */
+    internal fun animalGroup(text: String): FoodGroup? = mainComponent(text.lowercase())?.foodGroup()?.takeIf { it != FoodGroup.Vegetarian }
+
+    private val VEGETARIAN = listOf(
+        "vego",
+        "vegetar",
+        "vegan",
+        "quorn",
+        "tofu",
+        "halloumi",
+        "falafel",
+        "sojafärs",
+        "oumph",
+        "bönbiff",
+        "linsbiff",
+        "grönsaks",
+    )
+    private val LEGUMES = listOf("böna", "bönor", "bönsoppa", "lins", "kikärt")
 }
 
 object MealClash {

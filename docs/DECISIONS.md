@@ -317,3 +317,18 @@ från ett dygn bakåt innan passerade tider tas bort, så en ny planering vid va
 (shared/ui) från strängresurserna. Notiser läser alla kalenderlager, oberoende av Kalenders filter (ADR-031).
 **Konsekvens:** Notiserna följer datan offline och blir likadana vid varje körning. Android-delen schemalägger, avbryter och
 visar bara. Kanalerna för förfrågningar, inköp och krockar finns redan; FCM fyller dem senare (ADR-018).
+
+## ADR-037 – Veckans balans runt skollunchen
+**Kontext:** Ägaren vill få middagsförslag utifrån veckans skollunch, så att barnen får en varierad kost. Mängder syns aldrig
+(skolmenyn är bara text och hur mycket ett barn äter är individuellt), och inga AI-tjänster får användas (ADR-001).
+**Beslut:** Rätter sorteras i matgrupper (fisk, kyckling, rött kött, vegetariskt) med den lokala ordlistan `DishKeywords`:
+bara skolmenyns första alternativ räknas, ett tydligt vegetariskt ord vinner, bönor och linser bara när inget kött nämns.
+Recept använder huvudkomponenten, sedan titeln, sedan ingredienserna (inget kött eller fisk bland dem = vegetariskt).
+`WeekBalancer` räknar skollunch och middag per barn (barn med samma lunch delar rad; utan skollunch räknas familjens
+middagar) mot Livsmedelsverkets råd, tolkat som minst 2 fiskmåltider, minst 2 vegetariska och högst 3 med rött kött i veckan.
+Det som saknas för något barn lutar förslagen (”Fisk i veckan”, ”Vegetariskt i veckan”, ”Mindre kött”). ”Föreslå veckans
+middagar” (`WeekFiller`) fyller dagarna från idag utan middag en i taget och räknar in varje val innan nästa dag väljs; inget
+recept två gånger samma vecka. ”Ingen matlagning” räknas inte; hämtmat räknas efter namnet.
+**Konsekvens:** Stöd för en varierad vecka, ingen garanti för näringen; texterna säger att det bygger på rätternas namn och
+anger Livsmedelsverket som källa. Okända rätter syns som ”Okänt” och påverkar inget. Har familjen färre recept än lediga dagar
+blir resten tomma.

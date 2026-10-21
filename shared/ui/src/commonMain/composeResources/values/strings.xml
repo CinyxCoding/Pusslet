@@ -1273,5 +1273,35 @@
     <string name="notify_bundle_handoffs">%1$d lämningar och hämtningar</string>
     <string name="notify_bundle_other">%1$d notiser</string>
 
+    <!-- Veckans balans och förslag för veckan (Mat) -->
+    <string name="reason_week_fish">Fisk i veckan</string>
+    <string name="reason_week_vegetarian">Vegetariskt i veckan</string>
+    <string name="reason_less_meat">Mindre kött</string>
+    <string name="balance_title">Veckans balans</string>
+    <string name="balance_fish">Fisk %1$d</string>
+    <string name="balance_vegetarian">Vegetariskt %1$d</string>
+    <string name="balance_poultry">Kyckling %1$d</string>
+    <string name="balance_red_meat">Kött %1$d</string>
+    <string name="balance_unknown">Okänt %1$d</string>
+    <string name="balance_eater">%1$s: %2$s</string>
+    <string name="balance_dinners">Middagar: %1$s</string>
+    <string name="balance_need_fish">Mer fisk: rådet är 2–3 gånger i veckan</string>
+    <string name="balance_need_vegetarian">Mer vegetariskt: gärna några dagar i veckan</string>
+    <string name="balance_less_meat">Mycket kött redan: rådet är högst 350–500 g i veckan</string>
+    <string name="balance_ok">Följer Livsmedelsverkets råd om fisk, kött och vegetariskt</string>
+    <string name="balance_basis">Räknar skollunch och middag efter vad rätterna heter, inte hur mycket var och en äter.</string>
+    <string name="balance_basis_dinners">Räknar veckans middagar efter vad rätterna heter, inte hur mycket var och en äter.</string>
+    <string name="balance_source">Råd: Livsmedelsverket – fisk 2–3 gånger i veckan, mer vegetariskt, högst 350–500 g rött kött och chark i veckan.</string>
+    <string name="balance_empty">Planera några middagar så syns veckans balans här.</string>
+    <string name="meals_suggest_week">Föreslå veckans middagar</string>
+    <string name="suggest_week_title">Förslag för veckan</string>
+    <string name="suggest_week_body">Middagar runt skollunchen, så att veckan får fisk och vegetariskt.</string>
+    <string name="suggest_week_swap">Byt</string>
+    <string name="suggest_week_swap_description">Byt förslag för %1$s</string>
+    <string name="suggest_week_apply">Lägg in (%1$d)</string>
+    <string name="suggest_week_no_recipes">Lägg till några recept först, så kan appen föreslå middagar.</string>
+    <string name="suggest_week_all_planned">Alla dagar som är kvar har redan en middag.</string>
+    <string name="meals_week_suggested">Veckans förslag inlagda</string>
+
     <!-- Placeholders used until a feature is wired up -->
 </resources>

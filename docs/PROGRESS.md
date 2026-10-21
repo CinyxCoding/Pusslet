@@ -102,6 +102,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Skafferiet: plats (skafferi, kyl, frys), bäst före med ”går ut snart”, ”Slut” utan att radera, streckkod; okänd mängd frågar ”Finns hemma?” i stället för att hoppas över
 - [x] Inköpslista från valda dagar (nästa 14 dagar), varje ingrediens kan väljas bort, två körningar dubblar aldrig
 - [x] Receptsamlingar: egna samlingar som synkas och slås ihop per recept, filter i receptbiblioteket, ”Lägg i samling…”
+- [x] Veckans balans runt skollunchen: fisk/vegetariskt/kött per barn, förslag som fyller luckorna, "Föreslå veckans middagar" och balansen i Näring för veckan (ADR-037)
 
 ## Fas 4 – Polish & Play-beredskap
 - [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)

@@ -12,6 +12,7 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import se.pusslet.core.meals.FoodGroup
 import se.pusslet.core.meals.SuggestionReason
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.Event
@@ -772,4 +773,83 @@ class MealsViewModelTest {
     }
 
     // endregion
+
+    // --- Veckans balans and "Föreslå veckans middagar" ---
+
+    @Test
+    fun theWeeksBalanceCountsSchoolLunchAndDinner() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        vm.setLunch("c-ella", monday, "Fiskgratäng\nVegetarisk gratäng")
+        vm.setLunch("c-ella", tuesday, "Pannbiff med lök")
+        vm.plan(monday, MealSlot.Dinner, "Köttbullar och makaroner", "r-kb", cookDouble = false, servings = null, note = "")
+        // "Ingen matlagning" says nothing about what is eaten.
+        vm.plan(tuesday, MealSlot.Dinner, "Hos mormor", null, cookDouble = false, servings = null, note = "", kind = MealKind.NoCooking)
+        val balance = assertNotNull(vm.state.value.balance)
+        val ella = balance.eaters.single()
+        assertEquals(listOf("c-ella"), ella.childIds)
+        assertEquals(1, ella.total[FoodGroup.Fish])
+        assertEquals(2, ella.total[FoodGroup.RedMeat])
+        assertEquals(setOf(FoodGroup.Fish, FoodGroup.Vegetarian), balance.needs.wanted)
+    }
+
+    @Test
+    fun aDaysSuggestionsKnowTheRestOfTheWeek() = runTest {
+        val world = TestWorld().apply { seed() }
+        val vm = viewModel(world)
+        vm.openDay(tuesday, MealSlot.Dinner)
+        val top = assertNotNull(vm.dayEditor.value).suggestions.first()
+        assertEquals("r-lax", top.recipe.id)
+        assertTrue(SuggestionReason.FishThisWeek in top.reasons)
+    }
+
+    @Test
+    fun theWeekIsProposedAndPlannedInOneUndoableChange() = runTest {
+        val world = TestWorld().apply { seed() }
+        world.recipes.save(Recipe("r-soppa", "Linssoppa", 4, mainComponent = MainComponent.Vegetarian))
+        val vm = viewModel(world)
+        val messages = receipts(vm)
+        vm.plan(monday, MealSlot.Dinner, "tacos", null, cookDouble = false, servings = null, note = "")
+        vm.plan(
+            tuesday.plusDays(1),
+            MealSlot.Dinner,
+            "Pizza",
+            null,
+            cookDouble = false,
+            servings = null,
+            note = "",
+            kind = MealKind.Takeaway,
+        )
+        assertTrue(vm.state.value.offerSuggestWeek)
+        vm.proposeWeek()
+        val proposal = assertNotNull(vm.weekProposal.value)
+        // From today (Tuesday), the days without a dinner (Monday has passed, Wednesday is planned); four recipes fill four of
+        // them, since no recipe comes twice in a week.
+        assertEquals(listOf(tuesday) + (2..4).map { tuesday.plusDays(it) }, proposal.days.map { it.date })
+        assertEquals(proposal.days.size, proposal.days.map { it.suggestion.recipe.id }.toSet().size)
+
+        val thursday = tuesday.plusDays(2)
+        val before = proposal.days.single { it.date == thursday }.suggestion.recipe.id
+        vm.swapProposal(thursday)
+        assertTrue(before != assertNotNull(vm.weekProposal.value).days.single { it.date == thursday }.suggestion.recipe.id)
+        vm.toggleProposal(tuesday)
+        vm.applyProposal()
+        assertNull(vm.weekProposal.value)
+        assertNull(vm.dinner(tuesday))
+        assertNotNull(vm.dinner(thursday))
+        val receipt = assertIs<MealsMessage.WeekSuggested>(messages.last())
+        vm.undo(receipt.undo)
+        assertNull(vm.dinner(thursday))
+        assertEquals("Pizza", vm.dinner(tuesday.plusDays(1))?.title)
+    }
+
+    @Test
+    fun withoutRecipesThereIsNothingToPropose() = runTest {
+        val vm = viewModel(TestWorld())
+        assertFalse(vm.state.value.offerSuggestWeek)
+        vm.proposeWeek()
+        assertEquals(ProposalEmpty.NoRecipes, assertNotNull(vm.weekProposal.value).empty)
+        vm.dismissProposal()
+        assertNull(vm.weekProposal.value)
+    }
 }

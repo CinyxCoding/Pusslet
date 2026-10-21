@@ -231,12 +231,7 @@ private fun Suggestions(suggestions: List<MealSuggestion>, chosen: String?, onPi
 
 @Composable
 private fun SuggestionRow(suggestion: MealSuggestion, chosen: Boolean, onPick: () -> Unit) {
-    // The star already says "Favorit".
-    val reasons = suggestion.reasons
-        .filterNot { it == SuggestionReason.Favorite && suggestion.recipe.favorite }
-        .sortedBy { REASON_PRIORITY.indexOf(it) }
-        .take(MAX_REASONS)
-        .map { stringResource(reasonLabel(it)) }
+    val reasons = reasonTexts(suggestion)
     Row(
         Modifier
             .fillMaxWidth()
@@ -382,16 +377,30 @@ internal fun reasonLabel(reason: SuggestionReason): StringResource = when (reaso
     SuggestionReason.UsesWhatYouHave -> Res.string.reason_uses_pantry
     SuggestionReason.VariesTheWeek -> Res.string.reason_varies
     SuggestionReason.DiffersFromSchoolLunch -> Res.string.reason_not_lunch
+    SuggestionReason.FishThisWeek -> Res.string.reason_week_fish
+    SuggestionReason.VegetarianThisWeek -> Res.string.reason_week_vegetarian
+    SuggestionReason.LessRedMeat -> Res.string.reason_less_meat
 }
+
+/** A suggestion's two most telling reasons, as text ("Snabb ikväll · Fisk i veckan"); the star already says "Favorit". */
+@Composable
+internal fun reasonTexts(suggestion: MealSuggestion): List<String> = suggestion.reasons
+    .filterNot { it == SuggestionReason.Favorite && suggestion.recipe.favorite }
+    .sortedBy { REASON_PRIORITY.indexOf(it) }
+    .take(MAX_REASONS)
+    .map { stringResource(reasonLabel(it)) }
 
 private const val MAX_MATCHES = 8
 private const val MAX_REASONS = 2
 private const val FIRST_SUGGESTIONS = 3
 
-/** The reasons about this very day first; "Favorit" last. */
+/** The reasons about this very day first, then the week's balance; "Favorit" last. */
 private val REASON_PRIORITY = listOf(
     SuggestionReason.QuickForBusyEvening,
+    SuggestionReason.FishThisWeek,
+    SuggestionReason.VegetarianThisWeek,
     SuggestionReason.DiffersFromSchoolLunch,
+    SuggestionReason.LessRedMeat,
     SuggestionReason.UsesWhatYouHave,
     SuggestionReason.VariesTheWeek,
     SuggestionReason.NotRecently,

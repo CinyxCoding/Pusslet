@@ -77,7 +77,23 @@ object MealPlanner {
 }
 
 /** Why a dinner is suggested; shown as small chips so the suggestion is explainable (no black box). */
-enum class SuggestionReason { Favorite, NotRecently, QuickForBusyEvening, UsesWhatYouHave, VariesTheWeek, DiffersFromSchoolLunch }
+enum class SuggestionReason {
+    Favorite,
+    NotRecently,
+    QuickForBusyEvening,
+    UsesWhatYouHave,
+    VariesTheWeek,
+    DiffersFromSchoolLunch,
+
+    /** The week (school lunch and dinner) has less fish than Livsmedelsverket's advice ([WeekBalancer]). */
+    FishThisWeek,
+
+    /** The week has few vegetarian meals. */
+    VegetarianThisWeek,
+
+    /** Red meat is already at the advice's ceiling this week, and this is not red meat. */
+    LessRedMeat,
+}
 
 data class MealSuggestion(val recipe: Recipe, val reasons: Set<SuggestionReason>, val score: Int)
 
@@ -98,6 +114,7 @@ object MealSuggester {
         val lunchComponents: Set<MainComponent>,
         val busy: Boolean,
         val pantry: Set<String>,
+        val week: WeekNeeds,
     )
 
     private class Score {
@@ -123,6 +140,7 @@ object MealSuggester {
         schoolLunchDishes: List<String> = emptyList(),
         busyEvening: Boolean = false,
         pantryNames: Set<String> = emptySet(),
+        week: WeekNeeds = WeekNeeds(),
         limit: Int = 5,
     ): List<MealSuggestion> {
         // Takeaway and no cooking are not dishes cooked here: they neither count as made recently nor vary the week.
@@ -139,6 +157,7 @@ object MealSuggester {
             lunchComponents = schoolLunchDishes.mapNotNull { DishKeywords.mainComponent(it) }.toSet(),
             busy = busyEvening,
             pantry = pantryNames.map(ShoppingNames::canonical).toSet(),
+            week = week,
         )
         return recipes.map { r -> score(r, day) }
             .sortedWith(compareByDescending<MealSuggestion> { it.score }.thenBy { it.recipe.title })
@@ -157,6 +176,7 @@ object MealSuggester {
             }
         }
         variety(r, day, s)
+        balance(r, day.week, s)
         val uses = r.ingredients.count { ShoppingNames.canonical(it.name) in day.pantry }
         if (uses > 0) s.add(8 * uses, SuggestionReason.UsesWhatYouHave)
         if (RecipeTag.KidFriendly in r.tags) s.add(3)
@@ -167,6 +187,18 @@ object MealSuggester {
         val days = day.lastCooked[r.id]?.let { (day.date.toEpochDays() - it.toEpochDays()).toInt() }
         if (days != null && days < RECENT_DAYS) s.add(-50)
         if (days == null || days >= LONG_AGO_DAYS) s.add(10, SuggestionReason.NotRecently)
+    }
+
+    /** Leans the rest of the week towards Livsmedelsverket's advice ([WeekBalancer]): more fish and vegetarian, less red meat. */
+    private fun balance(r: Recipe, week: WeekNeeds, s: Score) {
+        if (week.isEmpty) return
+        val group = WeekBalancer.recipeGroup(r) ?: return
+        when {
+            group in week.wanted && group == FoodGroup.Fish -> s.add(25, SuggestionReason.FishThisWeek)
+            group in week.wanted && group == FoodGroup.Vegetarian -> s.add(25, SuggestionReason.VegetarianThisWeek)
+            week.lessRedMeat && group == FoodGroup.RedMeat -> s.add(-20)
+            week.lessRedMeat -> s.add(5, SuggestionReason.LessRedMeat)
+        }
     }
 
     /** Not the same as the school lunch, not the same as yesterday. */

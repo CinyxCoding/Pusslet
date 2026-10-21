@@ -125,7 +125,13 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
     Rättat: dragtaget på alla 11 ark var 32 dp brett, färgväljaren hade 40 dp-mål och lästes som "Färg 3 ✓" (nu
     "Salvia", "Terrakotta" … med valt-läge), konturfärgen i mörkt läge nådde 2,94:1 på surfaceVariant
   - [ ] En runda med TalkBack och Accessibility Scanner på en riktig telefon (lanseringschecklistan, SETUP.md 3.3)
-- [ ] Prestanda (kallstart, 500+ varor)
+- [x] Prestanda (kallstart, 500+ varor), mätt 2026-10-22 på emulator med R8-releasen (ADR-045):
+  - Kallstart 0,6–0,7 s (första gången efter installation 1,2 s)
+  - Inköpslista med 648 varor: rullar inte sämre än Idag (emulatorn ritar i mjukvara, så rendering dominerar).
+    Att bocka av i butiksläget frös skärmen ~0,5 s per bock eftersom hela listan avkodades och byggdes på
+    huvudtråden; nu byggs den i bakgrunden: långsammaste 1 % av bildrutorna 500 → 85 ms, långsamma bildrutor på
+    huvudtråden 195 → 93 för 15 bockar
+  - `ShoppingListPerformanceTest` håller 600 varor under koll (öppna, bocka, lägga till många på en gång)
 - [ ] Felhantering och tomma lägen överallt, onboarding < 2 min
 - [ ] Svenska + engelska texter genomlästa
 - [x] Entitlements/Billing-förberedelse, `docs/MONETIZATION.md`: allt upplåst i alla byggen, gratisgräns för

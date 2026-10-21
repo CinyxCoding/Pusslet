@@ -446,3 +446,13 @@ temat (`ThemeContrastTest`, WCAG 4,5:1 för text och 3:1 för konturer och ikone
 pixelrätt. Färgväljaren finns nu en gång i `shared/ui` med färgernas namn.
 **Konsekvens:** En ny skärm i skärmdumpstesterna granskas automatiskt. Läsordning, rubriker och hur TalkBack låter
 kräver fortfarande en runda på en riktig telefon (SETUP.md 3.3).
+
+## ADR-045 – Inköpslistan byggs utanför huvudtråden
+**Kontext:** Fas 4 kräver att listor med 500+ varor fungerar. Mätt på emulatorn med releasebygget och 648 varor: varje bock
+i butiksläget frös skärmen i ungefär en halv sekund, eftersom alla varor avkodades från JSON och listan grupperades och
+fick förslag på basvaror på huvudtråden, flera gånger per bock.
+**Beslut:** `ShoppingViewModel` bygger sitt tillstånd med `flowOn(compute)`, där `compute` är `Dispatchers.Default` i appen
+och testets egen dispatcher i testerna (så att testerna fortsätter att vara deterministiska). `ShoppingListPerformanceTest`
+mäter öppna, bocka och lägga till med 600 varor med generösa gränser som fångar kvadratisk tillväxt, inte en långsam dag.
+**Konsekvens:** Huvudtråden ritar bara. Samma mönster passar andra skärmar som bygger stora listor (kalendern med många
+prenumerationer) om de blir tunga; de mäts inte än.

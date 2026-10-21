@@ -152,7 +152,22 @@ class ShoppingViewModelTest {
     /** The view model plus every message it sends. Collectors run eagerly so `state.value` is always current. */
     private fun TestScope.viewModel(): Pair<ShoppingViewModel, MutableList<ShoppingMessage>> {
         val eager = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))
-        val vm = ShoppingViewModel(shopping, adder, mealShopping, meals, family, prefs, sessions, ids, clock, zone, eager, receipts, hints)
+        val vm = ShoppingViewModel(
+            shopping,
+            adder,
+            mealShopping,
+            meals,
+            family,
+            prefs,
+            sessions,
+            ids,
+            clock,
+            zone,
+            eager,
+            receipts,
+            hints,
+            compute = UnconfinedTestDispatcher(testScheduler),
+        )
         val messages = mutableListOf<ShoppingMessage>()
         eager.launch { vm.state.collect {} }
         eager.launch { vm.messages.collect { messages += it } }

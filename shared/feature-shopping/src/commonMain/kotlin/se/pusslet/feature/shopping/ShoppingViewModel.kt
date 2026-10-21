@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -208,6 +211,11 @@ class ShoppingViewModel(
     private val appScope: CoroutineScope,
     private val receipts: ShoppingReceipts,
     private val hints: FirstTimeHints,
+    /**
+     * Where the list is decoded and put together: off the main thread, so a tick in a list of 600 items never holds up
+     * a frame (measured in ShoppingListPerformanceTest). Tests pass their own dispatcher.
+     */
+    private val compute: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val log = Logger.withTag("Shopping")
     private val messageChannel = Channel<ShoppingMessage>(Channel.BUFFERED)
@@ -289,12 +297,13 @@ class ShoppingViewModel(
     ) { h, dismissed, plan, handled, hint -> Extras(h, dismissed, plan, handled, hint) }
 
     val state: StateFlow<ShoppingUiState> = combine(base, social, extras) { b, s, e -> build(b, s, e) }
+        .flowOn(compute)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ShoppingUiState())
 
     init {
         // The purchase log grows when something is ticked off; reload it then (it is local and small).
         viewModelScope.launch {
-            shopping.items.map { all -> all.count { it.checked } }.distinctUntilChanged().collect { reloadHistory() }
+            shopping.items.map { all -> all.count { it.checked } }.distinctUntilChanged().flowOn(compute).collect { reloadHistory() }
         }
     }
 

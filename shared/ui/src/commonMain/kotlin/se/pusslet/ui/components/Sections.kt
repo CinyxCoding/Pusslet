@@ -1,5 +1,6 @@
 package se.pusslet.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -25,10 +26,11 @@ import se.pusslet.ui.theme.Spacing
 /**
  * A flat section ("Idag händer", "Kommande"): a `titleLarge` heading with an optional icon and action, the content below.
  *
- * Use sections instead of cards; cards are only for the focus surface ([HeroCard]), Problem, sheets and dialogs. Put
- * `Spacing.sectionGap` between two sections (for example `Arrangement.spacedBy(Spacing.sectionGap)`), the section adds no
- * outer space itself. [action] is a quiet `TextButton` such as "Visa alla". With a null [title] only the content is drawn.
- * In a lazy list where every row is its own item, use [SectionHeader] for the heading instead.
+ * Put `Spacing.sectionGap` between two flat sections (for example `Arrangement.spacedBy(Spacing.sectionGap)`), the section
+ * adds no outer space itself. With [framed] the section is its own card ([SectionFrame]), for a screen of several parts
+ * that should read as clearly separate (Idag); framed sections only need the list's normal gap. [action] is a quiet
+ * `TextButton` such as "Visa alla". With a null [title] only the content is drawn. In a lazy list where every row is its
+ * own item, use [SectionHeader] for the heading instead.
  */
 @Composable
 fun Section(
@@ -36,15 +38,35 @@ fun Section(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     action: (@Composable () -> Unit)? = null,
+    framed: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        if (title != null) {
-            SectionHeader(title, icon = icon, action = action)
-        } else if (action != null) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { action() }
+    val body: @Composable (Modifier) -> Unit = { m ->
+        Column(m.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            if (title != null) {
+                SectionHeader(title, icon = icon, action = action)
+            } else if (action != null) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { action() }
+            }
+            content()
         }
-        content()
+    }
+    if (framed) SectionFrame(modifier) { body(Modifier) } else body(modifier)
+}
+
+/**
+ * A quiet card around one part of a screen: the low container colour with a thin outline, so it stands apart from the
+ * background in light and dark without competing with the focus surface ([HeroCard], oat).
+ */
+@Composable
+fun SectionFrame(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow, contentColor = colors.onSurface),
+        border = BorderStroke(1.dp, colors.outlineVariant),
+    ) {
+        Column(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md), content = content)
     }
 }
 

@@ -65,7 +65,7 @@ internal fun TimelineSection(state: TodayUiState, plan: TodayPlan, actions: Toda
     val passed = rows.map { TodayModel.isPassed(it, plan.date, plan.now) }
     val firstComing = passed.indexOfFirst { !it }
     val nowLineAt = if (firstComing > 0 && passed[firstComing - 1]) firstComing else -1
-    Section(stringResource(Res.string.today_block_timeline)) {
+    Section(stringResource(Res.string.today_block_timeline), framed = true) {
         rows.forEachIndexed { index, item ->
             if (index == nowLineAt) NowLine()
             when (item) {
@@ -110,7 +110,7 @@ private fun NowLine() {
 /** "Att göra": my open tasks, at most three. "Visa alla (n)" only when there is somewhere to show them. */
 @Composable
 internal fun TasksSection(plan: TodayPlan, actions: TodayActions) {
-    Section(stringResource(Res.string.today_block_tasks)) {
+    Section(stringResource(Res.string.today_block_tasks), framed = true) {
         plan.myTasks.take(TodayModel.MAX_TASKS).forEach { t ->
             // Today's need no date; Idag is about today.
             val supporting = t.date?.let { d ->
@@ -135,7 +135,7 @@ internal fun TasksSection(plan: TodayPlan, actions: TodayActions) {
  */
 @Composable
 internal fun UpcomingSection(state: TodayUiState, plan: TodayPlan, actions: TodayActions) {
-    Section(stringResource(Res.string.today_block_upcoming)) {
+    Section(stringResource(Res.string.today_block_upcoming), framed = true) {
         plan.comingUp.forEach { day ->
             Text(
                 relativeDay(day.date, plan.date).replaceFirstChar { it.uppercase() },
@@ -206,7 +206,7 @@ internal fun ShoppingSection(plan: TodayPlan, actions: TodayActions) {
         stringResource(Res.string.shopping_shopper_now, joinNames(shopping.shoppers.map { it.name }))
     }
     val left = if (shopping.remaining > 0) stringResource(Res.string.today_shopping_left, shopping.listName, shopping.remaining) else null
-    Section(stringResource(Res.string.today_block_shopping)) {
+    Section(stringResource(Res.string.today_block_shopping), framed = true) {
         NavRow(
             text = left ?: shoppers.orEmpty(),
             onClick = actions.onOpenShopping,

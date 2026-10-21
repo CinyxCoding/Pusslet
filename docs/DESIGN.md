@@ -67,7 +67,9 @@ Former: 6 / 10 / 16 / 24 / 32 dp (extraSmall … extraLarge). Kort använder med
 - **Ångra i stället för "Är du säker?"** för vardagliga handlingar (bocka av, ta bort vara, lägg till). Bekräftelse-
   dialog bara för det som inte går att ångra (ta bort lista, recept, familj).
 - **En fokusyta per skärm** (havre). Annars platta sektioner med rubrik och luft; kort bara för fokusyta, Problem, ark
-  och dialoger. **Uppmärksamhet** har tre nivåer som skiljer sig i form, ikon och placering: Info är en enkel rad,
+  och dialoger. Undantag (ägarens beslut 2026-10-21): på Idag är varje avsnitt (Idag händer, Att göra, Kommande, Inköp)
+  ett eget tyst kort (`Section(framed = true)` / `SectionFrame`: `surfaceContainerLow` med tunn `outlineVariant`-kant), och
+  Kalenderns veckolista har en tunn linje mellan dagarna. **Uppmärksamhet** har tre nivåer som skiljer sig i form, ikon och placering: Info är en enkel rad,
   Warning (påminnelse) är ofylld med terrakottaikon, Problem är fyllt (`errorContainer`) och har alltid en åtgärd.
 - **Tomt är tyst.** Ett tomt block syns inte. En helt tom skärm har en mening och en primär åtgärd (`EmptyState`).
 - **Förklarbart.** Regelbaserade förslag visar högst två skäl på en rad ("Snabbt", "Inte som lunchen"). Osäkra tolkningar
@@ -94,7 +96,7 @@ ut. Komponenterna lägger inte till skärmkanten själva – det gör skärmen (
 |---|---|---|
 | `TabHeader` | Överst på en flikrot eller helskärm utan toppfält: ”Torsdag 8 oktober” med underraden ”Vecka 41”. En rubrik för TalkBack, högst två ikonknappar. | Undersidor och ark (`PussletTopBar`, arkets rubrik) |
 | `WeekSwitcher` | Bläddra veckor i Kalender och Mat: ”Vecka 41 · oktober” till vänster, ‹ › till höger. ”Idag” bara när en annan vecka visas. Läses upp när veckan byts. | Välja en dag (`WeekStripPicker`) |
-| `Section` / `SectionHeader` | Platt avsnitt: titleLarge-rubrik, valfri ikon och en tyst åtgärd (”Visa alla”), innehållet under. `sectionGap` mellan avsnitten. `SectionHeader` när raderna är egna poster i en LazyColumn. | Kort och avdelare (`SectionCard` utgår på huvudskärmarna) |
+| `Section` / `SectionHeader` | Platt avsnitt: titleLarge-rubrik, valfri ikon och en tyst åtgärd (”Visa alla”), innehållet under. `sectionGap` mellan avsnitten. Med `framed = true` blir avsnittet ett tyst kort (`SectionFrame`), som på Idag. `SectionHeader` när raderna är egna poster i en LazyColumn. | Kort och avdelare (`SectionCard` utgår på huvudskärmarna) |
 | `HeroCard` | Skärmens enda fokusyta i havre (`secondaryContainer`): svaret skärmen finns till för, t.ex. Morgonkollen. | Listor, påminnelser, Problem, en andra fokusyta |
 | `SentenceRow` | En mening per rad, personen först: ”Johan lämnar Simon 07:50”. Egna rader (”Du …”) i fetstil och sage, högst en underrad, › när raden öppnar något. En TalkBack-nod; en knapp till höger (”Jag tar det”) är en egen. | Rader som bara leder vidare (`NavRow`) |
 | `NavRow` | En rad som öppnar något: ”Anpassa Idag ›”, ”Näring för veckan ›”, raderna i Mer. Full bredd, ›, minst 56 dp. | Att göra något (knapp) eller välja ett värde |

@@ -16,13 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -290,10 +291,14 @@ private fun WeekList(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
     ) {
         if (empty) item(key = "empty") { QuietLine(stringResource(Res.string.calendar_empty_week)) }
-        items(days, key = { it.date.toString() }) { day ->
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                DateCell(day, day.date == today, today, onOpenDay)
-                Column(Modifier.weight(1f)) { DayContent(day, people, state.canEdit, onOpen, onTake, changeovers = false) }
+        itemsIndexed(days, key = { _, day -> day.date.toString() }) { index, day ->
+            Column {
+                // A thin line between the days, so each date reads as its own block.
+                if (index > 0) HorizontalDivider(Modifier.padding(bottom = Spacing.sm), color = MaterialTheme.colorScheme.outlineVariant)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                    DateCell(day, day.date == today, today, onOpenDay)
+                    Column(Modifier.weight(1f)) { DayContent(day, people, state.canEdit, onOpen, onTake, changeovers = false) }
+                }
             }
         }
     }

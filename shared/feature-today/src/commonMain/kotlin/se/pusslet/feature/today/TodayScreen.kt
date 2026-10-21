@@ -231,16 +231,14 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         val dismissHint = actions.onDismissHint
         if (state.showAddHint && dismissHint != null) item(key = "hint") { AddHint(state, dismissHint) }
         items(state.sections, key = { "section-${it.id}" }) { block ->
-            // Flat sections, separated by air (sectionGap), never by cards.
-            Column(Modifier.padding(top = Spacing.sectionGap - Spacing.md)) {
-                when (block) {
-                    TodayBlock.Timeline -> TimelineSection(state, plan, actions)
-                    TodayBlock.Tasks -> TasksSection(plan, actions)
-                    TodayBlock.Upcoming -> UpcomingSection(state, plan, actions)
-                    TodayBlock.Shopping -> ShoppingSection(plan, actions)
-                    // Morgonkollen rows are never sections.
-                    TodayBlock.Handoffs, TodayBlock.Packing, TodayBlock.Dinner, TodayBlock.Weather -> Unit
-                }
+            // Each section is its own card, so Idag händer, Att göra and Kommande read as separate parts (DESIGN.md).
+            when (block) {
+                TodayBlock.Timeline -> TimelineSection(state, plan, actions)
+                TodayBlock.Tasks -> TasksSection(plan, actions)
+                TodayBlock.Upcoming -> UpcomingSection(state, plan, actions)
+                TodayBlock.Shopping -> ShoppingSection(plan, actions)
+                // Morgonkollen rows are never sections.
+                TodayBlock.Handoffs, TodayBlock.Packing, TodayBlock.Dinner, TodayBlock.Weather -> Unit
             }
         }
         if (state.quiet) item(key = "quiet") { QuietLine(stringResource(Res.string.today_quiet_end)) }

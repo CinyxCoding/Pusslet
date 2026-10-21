@@ -79,6 +79,11 @@ data class FamilyTask(
     val note: String = "",
     val createdBy: String? = null,
     val createdAt: Instant? = null,
+    /**
+     * "Byt vecka" on a rotating chore: ISO week key ("2026-W43") -> the member who has the turn that week instead of the
+     * rotation's. Merged per key (sync `mapFields`), so two parents swapping different weeks do not overwrite each other.
+     */
+    val turnOverrides: Map<String, String> = emptyMap(),
 )
 
 @Serializable

@@ -37,6 +37,8 @@ import se.pusslet.data.sources.SchoolRegistry
 import se.pusslet.data.sources.SkolmatenRssProvider
 import se.pusslet.data.sources.SkolverketSchoolRegistry
 import se.pusslet.data.sources.SmhiWeatherSource
+import se.pusslet.data.sources.SubscriptionFeeds
+import se.pusslet.data.sources.SubscriptionRefresher
 import se.pusslet.data.sources.SubscriptionSync
 import se.pusslet.data.sources.WeatherSource
 import se.pusslet.data.sync.DocumentStore
@@ -69,6 +71,7 @@ val dataModule: Module = module {
 
     single { get<PussletDatabase>().preferenceDao() }
     single { get<PussletDatabase>().cacheDao() }
+    single { get<PussletDatabase>().cacheKeyDao() }
     single { get<PussletDatabase>().foodDao() }
     single { get<PussletDatabase>().purchaseLogDao() }
 
@@ -79,7 +82,7 @@ val dataModule: Module = module {
     single { PreferencesRepository(get()) }
 
     single { FamilyRepository(get(), get(), get(), get(), get(), get()) }
-    single { CalendarRepository(get(), get(), get(), get(), get()) }
+    single { CalendarRepository(get(), get(), get(), get(), get(), cacheKeys = get()) }
     single { PackingRepository(get()) }
     single { MealRepository(get()) }
     single { RecipeRepository(get()) }
@@ -104,9 +107,26 @@ val dataModule: Module = module {
     single<FoodDatabase> { LivsmedelsverketFoodDatabase(get(), get(), get()) }
     single<ProductLookup> { OpenFoodFactsLookup(get()) }
     single<CalendarFeedParser> { IcsParser() }
-    single { SubscriptionSync(get(), get(), get()) }
+    single { SubscriptionSync(get(), get(), get(), get(), get(), get()) }
+    // Keeps subscriptions fresh while the app runs (started by AppCoordinator); a WorkManager worker can call refreshAll().
+    single { SubscriptionRefresher(get(), get(), get(), get()) } bind SubscriptionFeeds::class
     single { SwedishQuickAddParser() }
 
     single { DemoSeed(get(), get(), get()) }
-    single { AppCoordinator(get(AppScope), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single {
+        AppCoordinator(
+            get(AppScope),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            processWork = listOf(get<SubscriptionRefresher>()),
+        )
+    }
 }

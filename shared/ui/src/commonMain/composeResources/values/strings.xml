@@ -1070,6 +1070,88 @@
     <string name="event_private_hint_named">%1$s ser inte den här händelsen.</string>
     <string name="helper_preview_invite">Bjud in %1$s</string>
 
+    <!-- Uppgifter och sysslor (Fas 3) -->
+    <string name="tasks_new">Ny uppgift</string>
+    <string name="tasks_edit">Ändra uppgift</string>
+    <string name="tasks_empty">Inga uppgifter just nu</string>
+    <string name="tasks_section_mine">Mina</string>
+    <string name="tasks_section_unassigned">Ingen ansvarig</string>
+    <string name="tasks_section_family">Familjen (%1$d)</string>
+    <string name="tasks_section_done">Klart (%1$d)</string>
+    <string name="tasks_row_my_turn">%1$s – din tur %2$s</string>
+    <string name="tasks_row_turn">%1$s – %2$s %3$s</string>
+    <string name="tasks_week_this">den här veckan</string>
+    <string name="tasks_week_next">nästa vecka</string>
+    <string name="tasks_week_last">förra veckan</string>
+    <string name="tasks_week_number">vecka %1$d</string>
+    <string name="tasks_row_due">%1$s · senast %2$s</string>
+    <string name="tasks_row_on">%1$s · %2$s</string>
+    <string name="tasks_checklist_progress">%1$d av %2$d</string>
+    <string name="tasks_done_receipt">%1$s klar</string>
+    <string name="tasks_reopened_receipt">%1$s öppen igen</string>
+    <string name="tasks_deleted_receipt">%1$s borttagen</string>
+    <string name="tasks_kind_task">Uppgift</string>
+    <string name="tasks_kind_chore">Syssla</string>
+    <string name="tasks_assignee_none">Ingen</string>
+    <string name="tasks_no_date">Inget datum</string>
+    <string name="tasks_no_time">Ingen tid</string>
+    <string name="tasks_clear_date">Ta bort datum</string>
+    <string name="tasks_clear_time">Ta bort tid</string>
+    <string name="tasks_rotation_on">Turas om</string>
+    <string name="tasks_rotation_members">Vilka turas om?</string>
+    <string name="tasks_rotation_every">Byter tur</string>
+    <string name="tasks_whose_turn">Vems tur</string>
+    <string name="tasks_turn_this_week">Den här veckan: %1$s</string>
+    <string name="tasks_turn_next_week">Nästa vecka: %1$s</string>
+    <string name="tasks_turn_then">Sedan %1$s</string>
+    <string name="tasks_turn_week">vecka %1$d: %2$s</string>
+    <string name="action_swap_week">Byt vecka</string>
+    <string name="tasks_checklist">Checklista</string>
+    <string name="tasks_checklist_add">Lägg till punkt</string>
+    <string name="tasks_checklist_remove">Ta bort %1$s</string>
+    <string name="tasks_shared_helpers">Visa för hjälpare</string>
+    <string name="tasks_distribution">Så har vi delat</string>
+    <string name="distribution_weeks">Vecka %1$d–%2$d</string>
+    <string name="distribution_explain">Avbockade uppgifter och sysslor, planerade lämningar och hämtningar och ja på frågor.</string>
+    <string name="distribution_purpose">För samtal, inte skuld</string>
+    <string name="distribution_tasks">Uppgifter</string>
+    <string name="distribution_chores">Sysslor</string>
+    <string name="distribution_handoffs">Lämna och hämta (planerat)</string>
+    <string name="distribution_requests">Ja på frågor</string>
+    <string name="distribution_former">%1$d av någon som inte är med längre</string>
+    <string name="distribution_empty">Inget att visa för de här veckorna</string>
+
+    <string name="distribution_row_a11y">%1$s: %2$d</string>
+
+    <!-- ICS subscriptions (Fas 3): Inställningar > Prenumerationer -->
+    <string name="subs_title">Prenumerationer</string>
+    <string name="subs_add">Ny prenumeration</string>
+    <string name="subs_edit">Ändra prenumeration</string>
+    <string name="subs_empty">Följ skolans eller klubbens kalender, så syns den bland era händelser.</string>
+    <string name="subs_parents_only">Prenumerationerna sköts av föräldrarna.</string>
+    <string name="subs_url">Länk</string>
+    <string name="subs_url_hint">Börjar med webcal:// eller https://</string>
+    <string name="subs_url_invalid">Länken ska börja med webcal://, http:// eller https://</string>
+    <string name="subs_url_too_long">Länken är för lång</string>
+    <string name="subs_name">Namn</string>
+    <string name="subs_name_required">Ge kalendern ett namn</string>
+    <string name="subs_people">Vems kalender?</string>
+    <string name="subs_color">Färg</string>
+    <string name="subs_test">Hämta och visa</string>
+    <string name="subs_testing">Hämtar …</string>
+    <string name="subs_count_one">1 händelse</string>
+    <string name="subs_count">%1$d händelser</string>
+    <string name="subs_nothing_upcoming">Inget kommande</string>
+    <string name="subs_error_unreachable">Kalendern gick inte att nå. Kolla länken eller försök igen när du har nät.</string>
+    <string name="subs_error_http">Servern lämnade inte ut kalendern. Kolla att länken är rätt och att kalendern är delad.</string>
+    <string name="subs_error_not_calendar">Länken leder inte till en kalender. Leta efter en länk som slutar på .ics eller heter Prenumerera.</string>
+    <string name="subs_last_fetched">Senast hämtad %1$s</string>
+    <string name="subs_never_fetched">Inte hämtad än</string>
+    <string name="subs_fetch_failed">Kunde inte hämta – vi försöker igen</string>
+    <string name="subs_refresh_now">Uppdatera nu</string>
+    <string name="subs_removed">%1$s borttagen</string>
+    <string name="subs_show_in_calendar">Visa %1$s i kalendern</string>
+
     <!-- Integritet: export, this phone, delete for everyone, delete my account (Fas 3) -->
     <string name="privacy_export_action">Exportera</string>
     <string name="privacy_export_saved">Sparat: %1$s</string>
@@ -1096,5 +1178,4 @@
     <string name="source_ics_body">Kalendrar ni följer, t.ex. skolans eller klubbens. Hämtas direkt från länken ni lagt in, ungefär var 6:e timme, och bara på föräldrarnas telefoner.</string>
 
     <!-- Placeholders used until a feature is wired up -->
-    <string name="empty_more">Familj, uppgifter och inställningar hittar du här.</string>
 </resources>

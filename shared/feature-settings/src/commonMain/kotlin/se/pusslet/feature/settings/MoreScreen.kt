@@ -41,10 +41,10 @@ private data class MoreItem(val dest: MoreDestination, val title: StringResource
  */
 @Composable
 fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues = PaddingValues(), onSimpleView: (() -> Unit)? = null) {
-    // "Uppgifter och sysslor" (MoreDestination.Tasks) stays hidden until the tasks phase is done; its route is kept.
     val groups = listOf(
         Res.string.more_group_family to listOf(
             MoreItem(MoreDestination.Family, Res.string.more_family, PussletIcons.Family),
+            MoreItem(MoreDestination.Tasks, Res.string.more_tasks, PussletIcons.Task),
             MoreItem(MoreDestination.Account, Res.string.more_account, Icons.Filled.AccountCircle),
         ),
         Res.string.more_group_app to listOf(

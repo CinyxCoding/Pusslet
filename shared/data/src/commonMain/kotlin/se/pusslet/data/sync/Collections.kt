@@ -62,7 +62,7 @@ object Collections {
         CollectionSpec(
             "tasks",
             RemoteLocation.Flat("tasks"),
-            mapFields = setOf("completions"),
+            mapFields = setOf("completions", "turnOverrides"),
             caregiverFilterField = "sharedWithCaregivers",
         )
     val Subscriptions = CollectionSpec("icsSubscriptions", RemoteLocation.Flat("icsSubscriptions"), parentsOnly = true)

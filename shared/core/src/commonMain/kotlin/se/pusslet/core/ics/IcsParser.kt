@@ -1,6 +1,5 @@
 package se.pusslet.core.ics
 
-import kotlinx.datetime.FixedOffsetTimeZone
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -10,6 +9,7 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.model.Event
 import se.pusslet.core.recurrence.EventExpander
+import se.pusslet.core.recurrence.RRule
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -32,8 +32,9 @@ interface CalendarFeedParser {
 
 /**
  * RFC 5545 parser for read-only subscriptions: VEVENT with DTSTART/DTEND/DURATION (DATE, floating, UTC or TZID),
- * RRULE, EXDATE, RDATE, RECURRENCE-ID overrides and STATUS:CANCELLED. Time zones: IANA ids, common Windows names and
- * a fixed-offset fallback from VTIMEZONE. Unknown components are skipped, never fatal.
+ * RRULE, EXDATE, RDATE, RECURRENCE-ID overrides and STATUS:CANCELLED. Time zones: IANA ids, common Windows names and,
+ * for any other TZID, its VTIMEZONE: daylight saving rules are matched to a known zone ([VTimeZone.resolve]), else the
+ * standard offset is used. Unknown components are skipped, never fatal.
  */
 class IcsParser : CalendarFeedParser {
     internal data class ContentLine(val name: String, val params: Map<String, String>, val value: String)
@@ -54,12 +55,13 @@ class IcsParser : CalendarFeedParser {
         var calName: String? = null
         var calZone: String? = null
         val rawEvents = ArrayList<RawEvent>()
-        val vtimezones = HashMap<String, UtcOffset>()
+        val vtimezones = HashMap<String, VTimeZone>()
 
         var current: RawEvent? = null
         val stack = ArrayList<String>()
         var tzId: String? = null
-        var tzStandardOffset: UtcOffset? = null
+        val tzObservances = ArrayList<VTimeZone.Observance>()
+        var observance: ArrayList<ContentLine>? = null
 
         for (line in lines) {
             when (line.name) {
@@ -69,7 +71,10 @@ class IcsParser : CalendarFeedParser {
                     if (comp == "VEVENT" && stack.size == 2) current = RawEvent()
                     if (comp == "VTIMEZONE") {
                         tzId = null
-                        tzStandardOffset = null
+                        tzObservances.clear()
+                    }
+                    if ((comp == "STANDARD" || comp == "DAYLIGHT") && stack.getOrNull(stack.lastIndex - 1) == "VTIMEZONE") {
+                        observance = ArrayList()
                     }
                 }
                 "END" -> {
@@ -78,10 +83,14 @@ class IcsParser : CalendarFeedParser {
                         rawEvents += current
                         current = null
                     }
+                    val props = observance
+                    if ((comp == "STANDARD" || comp == "DAYLIGHT") && props != null) {
+                        parseObservance(comp == "DAYLIGHT", props)?.let { tzObservances += it }
+                        observance = null
+                    }
                     if (comp == "VTIMEZONE") {
                         val id = tzId
-                        val off = tzStandardOffset
-                        if (id != null && off != null) vtimezones[id] = off
+                        if (id != null && tzObservances.isNotEmpty()) vtimezones[id] = VTimeZone(id, tzObservances.toList())
                     }
                     if (stack.isNotEmpty()) stack.removeAt(stack.lastIndex)
                 }
@@ -92,18 +101,21 @@ class IcsParser : CalendarFeedParser {
                         top == "VCALENDAR" && line.name == "X-WR-CALNAME" -> calName = unescape(line.value)
                         top == "VCALENDAR" && line.name == "X-WR-TIMEZONE" -> calZone = line.value.trim()
                         top == "VTIMEZONE" && line.name == "TZID" -> tzId = line.value.trim()
-                        top == "STANDARD" && line.name == "TZOFFSETTO" -> tzStandardOffset = parseOffset(line.value)
+                        top == "STANDARD" || top == "DAYLIGHT" -> observance?.add(line)
                     }
                 }
             }
         }
 
-        val calendarZone = calZone?.let { resolveZone(it, emptyMap(), fallbackZone) } ?: fallbackZone
+        // The years the events start in decide which daylight saving rules a VTIMEZONE is compared with.
+        val years = rawEvents.mapNotNull { e -> e.first("DTSTART")?.value?.trim()?.take(4)?.toIntOrNull() }.filter { it in YEARS }
+        val zones = Zones(vtimezones, years)
+        val calendarZone = calZone?.let { zones.of(it, fallbackZone) } ?: fallbackZone
         val events = ArrayList<Event>()
         val masterExDates = HashMap<String, MutableList<LocalDate>>()
 
         for (raw in rawEvents) {
-            val result = runCatching { toEvent(raw, idPrefix, calendarZone, vtimezones) }
+            val result = runCatching { toEvent(raw, idPrefix, calendarZone, zones) }
             result.exceptionOrNull()?.let { warnings += "Skipped VEVENT: ${it::class.simpleName}" }
             val mapped = result.getOrNull() ?: continue
             if (mapped.cancelled) {
@@ -118,12 +130,45 @@ class IcsParser : CalendarFeedParser {
         // Apply cancelled occurrences to their masters; de-duplicate repeated UIDs (last one wins).
         val withEx = events.map { e -> masterExDates[e.id]?.let { e.copy(exDates = e.exDates + it) } ?: e }
         val deduped = withEx.associateBy { it.id }.values.toList()
-        return IcsCalendar(calName, calZone, deduped, warnings)
+        return IcsCalendar(calName, calZone, deduped, warnings + zones.warnings)
+    }
+
+    /** Looks up TZIDs: known names first, then the feed's own VTIMEZONE, resolved once per TZID. */
+    private class Zones(private val definitions: Map<String, VTimeZone>, private val years: List<Int>) {
+        private val resolved = HashMap<String, TimeZone?>()
+        val warnings = ArrayList<String>()
+
+        fun of(tzid: String, fallback: TimeZone): TimeZone = knownZone(tzid) ?: fromDefinition(tzid.trim()) ?: fallback
+
+        private fun fromDefinition(tzid: String): TimeZone? = resolved.getOrPut(tzid) {
+            val result = definitions[tzid]?.resolve(years)
+            // The TZID itself may be a name the user typed in Outlook; never put it in a warning.
+            if (result != null && !result.matched) warnings += "VTIMEZONE with unknown daylight saving rules; using its standard offset"
+            result?.zone
+        }
+    }
+
+    private fun parseObservance(daylight: Boolean, props: List<ContentLine>): VTimeZone.Observance? {
+        fun prop(name: String) = props.firstOrNull { it.name == name }
+        val to = prop("TZOFFSETTO")?.let { parseOffset(it.value) } ?: return null
+        val from = prop("TZOFFSETFROM")?.let { parseOffset(it.value) } ?: to
+        val start = prop("DTSTART")?.value?.trim()?.let { runCatching { parseLocal(it) }.getOrNull() }
+            ?: LocalDateTime(OBSERVANCE_EPOCH, 1, 1, 0, 0)
+        val rule = prop("RRULE")?.value?.let { RRule.parse(it.trim(), TimeZone.UTC) }
+        val rDates = props.filter { it.name == "RDATE" }.flatMap { r -> r.value.split(',') }
+            .mapNotNull { v -> runCatching { parseLocal(v.trim()) }.getOrNull() }
+        return VTimeZone.Observance(daylight, from, to, start, rule, rDates)
+    }
+
+    private fun parseLocal(v: String): LocalDateTime = if (v.length == DATE_LENGTH) {
+        LocalDateTime(parseDate(v), LocalTime(0, 0))
+    } else {
+        LocalDateTime(parseDate(v.substring(0, DATE_LENGTH)), parseTime(v.substring(DATE_LENGTH + 1, DATE_LENGTH + 7)))
     }
 
     private data class Mapped(val event: Event, val cancelled: Boolean, val extraRDates: List<Event>)
 
-    private fun toEvent(raw: RawEvent, idPrefix: String, calendarZone: TimeZone, vtz: Map<String, UtcOffset>): Mapped? {
+    private fun toEvent(raw: RawEvent, idPrefix: String, calendarZone: TimeZone, vtz: Zones): Mapped? {
         val uid = raw.first("UID")?.value?.trim()?.ifEmpty { null } ?: return null
         val dtStart = raw.first("DTSTART") ?: return null
         val start = parseDateValue(dtStart, calendarZone, vtz)
@@ -182,7 +227,7 @@ class IcsParser : CalendarFeedParser {
 
     internal data class IcsTime(val local: LocalDateTime, val zone: TimeZone, val isDate: Boolean)
 
-    private fun parseDateValue(line: ContentLine, calendarZone: TimeZone, vtz: Map<String, UtcOffset>): IcsTime {
+    private fun parseDateValue(line: ContentLine, calendarZone: TimeZone, vtz: Zones): IcsTime {
         val v = line.value.trim()
         val isDate = line.params["VALUE"]?.uppercase() == "DATE" || (v.length == 8 && v.all { it.isDigit() })
         if (isDate) {
@@ -193,7 +238,7 @@ class IcsParser : CalendarFeedParser {
         val local = LocalDateTime(date, time)
         return when {
             v.endsWith("Z") -> IcsTime(local, TimeZone.UTC, false)
-            line.params["TZID"] != null -> IcsTime(local, resolveZone(line.params.getValue("TZID"), vtz, calendarZone), false)
+            line.params["TZID"] != null -> IcsTime(local, vtz.of(line.params.getValue("TZID"), calendarZone), false)
             // Floating time: interpret in the calendar's zone.
             else -> IcsTime(local, calendarZone, false)
         }
@@ -322,7 +367,11 @@ class IcsParser : CalendarFeedParser {
             "AUS Eastern Standard Time" to "Australia/Sydney",
         )
 
-        fun resolveZone(tzid: String, vtz: Map<String, UtcOffset>, fallback: TimeZone = TimeZone.UTC): TimeZone {
+        /** A TZID we know by name, or [fallback]. Feeds' own VTIMEZONE definitions are handled inside [parse]. */
+        fun resolveZone(tzid: String, fallback: TimeZone = TimeZone.UTC): TimeZone = knownZone(tzid) ?: fallback
+
+        /** IANA ids, Windows names and "(UTC+01:00) Amsterdam, … Stockholm"-style labels; null when the name says nothing. */
+        private fun knownZone(tzid: String): TimeZone? {
             val id = tzid.trim().removePrefix("/")
             runCatching { return TimeZone.of(id) }
             windowsZones[id]?.let { return TimeZone.of(it) }
@@ -331,9 +380,12 @@ class IcsParser : CalendarFeedParser {
                 return TimeZone.of("Europe/Stockholm")
             }
             Regex("""[A-Za-z]+/[A-Za-z_]+""").find(id)?.let { m -> runCatching { return TimeZone.of(m.value) } }
-            vtz[tzid]?.let { return FixedOffsetTimeZone(it) }
-            return fallback
+            return null
         }
+
+        private val YEARS = 1900..2200
+        private const val OBSERVANCE_EPOCH = 1970
+        private const val DATE_LENGTH = 8
 
         private fun zoneId(zone: TimeZone): String = zone.id
     }

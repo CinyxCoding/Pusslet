@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import se.pusslet.data.db.CacheDao
 import se.pusslet.data.db.CacheEntryEntity
+import se.pusslet.data.db.CacheKeyDao
 import se.pusslet.data.db.CacheSummary
 import se.pusslet.data.db.FoodDao
 import se.pusslet.data.db.FoodEntity
@@ -41,6 +42,16 @@ class FakeCacheDao : CacheDao {
     }
 
     override suspend fun summaries() = entries.value.values.map { CacheSummary(it.key, it.fetchedAt, it.lastError) }
+}
+
+/** The exact-key delete of [se.pusslet.data.db.CacheKeyDao] over a [FakeCacheDao]'s entries. */
+class FakeCacheKeyDao(private val cache: FakeCacheDao) : CacheKeyDao {
+    val deleted = ArrayList<List<String>>()
+
+    override suspend fun delete(keys: List<String>) {
+        deleted += keys
+        cache.entries.value = cache.entries.value - keys.toSet()
+    }
 }
 
 class FakeFoodDao : FoodDao {

@@ -19,6 +19,9 @@ import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.recurrence.EventExpander
 import se.pusslet.data.db.CacheDao
+import se.pusslet.data.db.CacheEntryEntity
+import se.pusslet.data.db.CacheKeyDao
+import se.pusslet.data.sources.SubscriptionStatus
 import se.pusslet.data.sync.Collections
 import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.DomainJson
@@ -68,6 +71,9 @@ object NoDeviceCalendars : DeviceCalendarSource {
     override fun changes(): Flow<Unit> = flowOf()
 }
 
+/** What [CalendarRepository.deleteSubscription] removed, so "Ångra" can put it back as it was, events included. */
+data class RemovedSubscription(val subscription: CalendarSubscription, val cached: List<CacheEntryEntity>)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class CalendarRepository(
     private val docs: DocumentStore,
@@ -76,6 +82,8 @@ class CalendarRepository(
     private val deviceCalendars: DeviceCalendarSource,
     private val sessions: se.pusslet.data.session.SessionProvider,
     private val json: Json = DomainJson,
+    /** Exact deletes of cache keys. The app always passes it (DataModule); without it a prefix delete is used. */
+    private val cacheKeys: CacheKeyDao? = null,
 ) {
     val events: Flow<List<Event>> = docs.observeAll(Collections.Events, Event.serializer())
 
@@ -105,9 +113,59 @@ class CalendarRepository(
         CalendarSubscription.serializer(),
     )
 
-    suspend fun deleteSubscription(id: String) {
+    suspend fun subscription(id: String): CalendarSubscription? = docs.get(Collections.Subscriptions, id, CalendarSubscription.serializer())
+
+    /**
+     * Removes the subscription and what this phone cached for it: the download, the parsed events and the status, each by
+     * its exact key (never another subscription whose id starts the same). Returns what was removed, for "Ångra".
+     */
+    suspend fun deleteSubscription(id: String): RemovedSubscription? {
+        val sub = subscription(id)
+        val keys = subscriptionKeys(id)
+        val cached = keys.mapNotNull { cache.get(it) }
         docs.delete(Collections.Subscriptions, id)
-        cache.deletePrefix(subscriptionCacheKey(id))
+        deleteCacheKeys(keys)
+        return sub?.let { RemovedSubscription(it, cached) }
+    }
+
+    /** "Ångra" after [deleteSubscription]: the cache first, so the events are back at once, without a download. */
+    suspend fun restoreSubscription(removed: RemovedSubscription) {
+        removed.cached.forEach { cache.put(it) }
+        saveSubscription(removed.subscription)
+    }
+
+    /** Forgets the download and the parsed events of [id] (the status stays), e.g. because its link changed. */
+    suspend fun dropSubscriptionData(id: String) = deleteCacheKeys(listOf(subscriptionRawKey(id), subscriptionCacheKey(id)))
+
+    /** The last refresh of [id] on this phone, or null when it was never refreshed here. */
+    suspend fun subscriptionStatus(id: String): SubscriptionStatus? = cache.get(subscriptionStatusKey(id))?.let { decodeStatus(it) }
+
+    suspend fun saveSubscriptionStatus(status: SubscriptionStatus) = cache.put(
+        CacheEntryEntity(
+            key = subscriptionStatusKey(status.subscriptionId),
+            body = json.encodeToString(SubscriptionStatus.serializer(), status),
+            fetchedAt = (status.fetchedAt ?: status.checkedAt)?.toEpochMilliseconds() ?: 0L,
+        ),
+    )
+
+    /** The last refresh of every subscription, by id (missing: never refreshed on this phone). */
+    fun subscriptionStatuses(): Flow<Map<String, SubscriptionStatus>> = subscriptions.flatMapLatest { list ->
+        if (list.isEmpty()) {
+            flowOf(emptyMap())
+        } else {
+            combine(list.map { sub -> cache.observe(subscriptionStatusKey(sub.id)).map { entry -> entry?.let { decodeStatus(it) } } }) {
+                it.filterNotNull().associateBy { s -> s.subscriptionId }
+            }
+        }
+    }
+
+    // A status that does not decode (written by another app version) counts as never refreshed; the next refresh rewrites it.
+    private fun decodeStatus(entry: CacheEntryEntity): SubscriptionStatus? =
+        runCatching { json.decodeFromString(SubscriptionStatus.serializer(), entry.body) }.getOrNull()
+
+    private suspend fun deleteCacheKeys(keys: List<String>) {
+        val exact = cacheKeys
+        if (exact != null) exact.delete(keys) else keys.forEach { cache.deletePrefix(it) }
     }
 
     suspend fun saveHandoffRequest(request: HandoffRequest) = docs.put(
@@ -117,7 +175,7 @@ class CalendarRepository(
         HandoffRequest.serializer(),
     )
 
-    /** Cached, parsed events of one subscription (written by the ICS sync worker). */
+    /** Cached, parsed events of one subscription (written by [se.pusslet.data.sources.SubscriptionSync]). */
     fun subscriptionEvents(id: String): Flow<List<Event>> = cache.observe(subscriptionCacheKey(id)).map { entry ->
         entry?.let { runCatching { json.decodeFromString(ListSerializer(Event.serializer()), it.body) }.getOrNull() }.orEmpty()
     }
@@ -183,6 +241,15 @@ class CalendarRepository(
     }
 
     companion object {
+        /** The parsed events of a subscription, as a JSON list of [Event]. */
         fun subscriptionCacheKey(id: String) = "ics:$id"
+
+        /** The downloaded feed, with its ETag and Last-Modified ([se.pusslet.data.sources.CachedFetcher]). */
+        fun subscriptionRawKey(id: String) = "icsraw:$id"
+
+        /** The last refresh ([SubscriptionStatus]) as JSON. */
+        fun subscriptionStatusKey(id: String) = "icsstatus:$id"
+
+        fun subscriptionKeys(id: String) = listOf(subscriptionRawKey(id), subscriptionCacheKey(id), subscriptionStatusKey(id))
     }
 }

@@ -1069,6 +1069,88 @@
     <string name="event_private_hint_named">%1$s can't see this event.</string>
     <string name="helper_preview_invite">Invite %1$s</string>
 
+    <!-- Uppgifter och sysslor (Fas 3) -->
+    <string name="tasks_new">New task</string>
+    <string name="tasks_edit">Edit task</string>
+    <string name="tasks_empty">No tasks right now</string>
+    <string name="tasks_section_mine">Mine</string>
+    <string name="tasks_section_unassigned">Nobody yet</string>
+    <string name="tasks_section_family">Family (%1$d)</string>
+    <string name="tasks_section_done">Done (%1$d)</string>
+    <string name="tasks_row_my_turn">%1$s – your turn %2$s</string>
+    <string name="tasks_row_turn">%1$s – %2$s %3$s</string>
+    <string name="tasks_week_this">this week</string>
+    <string name="tasks_week_next">next week</string>
+    <string name="tasks_week_last">last week</string>
+    <string name="tasks_week_number">in week %1$d</string>
+    <string name="tasks_row_due">%1$s · by %2$s</string>
+    <string name="tasks_row_on">%1$s · %2$s</string>
+    <string name="tasks_checklist_progress">%1$d of %2$d</string>
+    <string name="tasks_done_receipt">%1$s done</string>
+    <string name="tasks_reopened_receipt">%1$s reopened</string>
+    <string name="tasks_deleted_receipt">%1$s deleted</string>
+    <string name="tasks_kind_task">Task</string>
+    <string name="tasks_kind_chore">Chore</string>
+    <string name="tasks_assignee_none">Nobody</string>
+    <string name="tasks_no_date">No date</string>
+    <string name="tasks_no_time">No time</string>
+    <string name="tasks_clear_date">Remove date</string>
+    <string name="tasks_clear_time">Remove time</string>
+    <string name="tasks_rotation_on">Take turns</string>
+    <string name="tasks_rotation_members">Who takes turns?</string>
+    <string name="tasks_rotation_every">Turn changes</string>
+    <string name="tasks_whose_turn">Whose turn</string>
+    <string name="tasks_turn_this_week">This week: %1$s</string>
+    <string name="tasks_turn_next_week">Next week: %1$s</string>
+    <string name="tasks_turn_then">Then %1$s</string>
+    <string name="tasks_turn_week">week %1$d: %2$s</string>
+    <string name="action_swap_week">Swap weeks</string>
+    <string name="tasks_checklist">Checklist</string>
+    <string name="tasks_checklist_add">Add item</string>
+    <string name="tasks_checklist_remove">Remove %1$s</string>
+    <string name="tasks_shared_helpers">Show to helpers</string>
+    <string name="tasks_distribution">How we have shared</string>
+    <string name="distribution_weeks">Weeks %1$d–%2$d</string>
+    <string name="distribution_explain">Ticked-off tasks and chores, planned drop-offs and pick-ups, and yes to requests.</string>
+    <string name="distribution_purpose">To talk about, not to blame</string>
+    <string name="distribution_tasks">Tasks</string>
+    <string name="distribution_chores">Chores</string>
+    <string name="distribution_handoffs">Drop-off and pick-up (planned)</string>
+    <string name="distribution_requests">Yes to requests</string>
+    <string name="distribution_former">%1$d by someone no longer in the family</string>
+    <string name="distribution_empty">Nothing to show for these weeks</string>
+
+    <string name="distribution_row_a11y">%1$s: %2$d</string>
+
+    <!-- ICS subscriptions (Fas 3): Inställningar > Prenumerationer -->
+    <string name="subs_title">Subscriptions</string>
+    <string name="subs_add">New subscription</string>
+    <string name="subs_edit">Edit subscription</string>
+    <string name="subs_empty">Follow the school's or the club's calendar and it shows up among your events.</string>
+    <string name="subs_parents_only">Subscriptions are managed by the parents.</string>
+    <string name="subs_url">Link</string>
+    <string name="subs_url_hint">Starts with webcal:// or https://</string>
+    <string name="subs_url_invalid">The link should start with webcal://, http:// or https://</string>
+    <string name="subs_url_too_long">The link is too long</string>
+    <string name="subs_name">Name</string>
+    <string name="subs_name_required">Give the calendar a name</string>
+    <string name="subs_people">Whose calendar?</string>
+    <string name="subs_color">Colour</string>
+    <string name="subs_test">Fetch and show</string>
+    <string name="subs_testing">Fetching …</string>
+    <string name="subs_count_one">1 event</string>
+    <string name="subs_count">%1$d events</string>
+    <string name="subs_nothing_upcoming">Nothing coming up</string>
+    <string name="subs_error_unreachable">The calendar could not be reached. Check the link or try again when you are online.</string>
+    <string name="subs_error_http">The server did not hand out the calendar. Check that the link is right and that the calendar is shared.</string>
+    <string name="subs_error_not_calendar">The link does not lead to a calendar. Look for a link that ends in .ics or is called Subscribe.</string>
+    <string name="subs_last_fetched">Last fetched %1$s</string>
+    <string name="subs_never_fetched">Not fetched yet</string>
+    <string name="subs_fetch_failed">Could not fetch – we will try again</string>
+    <string name="subs_refresh_now">Refresh now</string>
+    <string name="subs_removed">%1$s removed</string>
+    <string name="subs_show_in_calendar">Show %1$s in the calendar</string>
+
     <!-- Integritet: export, this phone, delete for everyone, delete my account (Fas 3) -->
     <string name="privacy_export_action">Export</string>
     <string name="privacy_export_saved">Saved: %1$s</string>
@@ -1095,5 +1177,4 @@
     <string name="source_ics_body">Calendars you follow, such as the school's or the club's. Fetched straight from the link you added, about every 6 hours, and only on parents' phones.</string>
 
     <!-- Placeholders used until a feature is wired up -->
-    <string name="empty_more">Family, tasks and settings live here.</string>
 </resources>

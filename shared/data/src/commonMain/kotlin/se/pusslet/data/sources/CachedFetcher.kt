@@ -55,7 +55,8 @@ class CachedFetcher(
             throw e
         } catch (e: Exception) {
             val reason = e.message ?: e::class.simpleName ?: "error"
-            log.w { "Fetch failed for ${hostOf(url)}: ${e::class.simpleName}" }
+            // The source's name, not the host: a subscribed calendar's address can say who it belongs to.
+            log.w { "Fetch failed for ${key.substringBefore(':')}: ${e::class.simpleName}" }
             if (cached != null) {
                 cache.setError(key, reason)
                 Sourced(cached.body, Instant.fromEpochMilliseconds(cached.fetchedAt), stale = true, error = reason)
@@ -99,8 +100,12 @@ class CachedFetcher(
         Sourced(it.body, Instant.fromEpochMilliseconds(it.fetchedAt), stale = it.lastError != null, error = it.lastError)
     }
 
-    suspend fun store(key: String, body: String) {
-        cache.put(CacheEntryEntity(key = key, body = body, fetchedAt = clock.now().toEpochMilliseconds()))
+    /**
+     * Stores a value derived from a fetched one (e.g. parsed ICS events). [fetchedAt] is when its source was fetched, so a
+     * value re-derived from an old download keeps the old time instead of looking fresh; [error] keeps the source's last error.
+     */
+    suspend fun store(key: String, body: String, fetchedAt: Instant = clock.now(), error: String? = null) {
+        cache.put(CacheEntryEntity(key = key, body = body, fetchedAt = fetchedAt.toEpochMilliseconds(), lastError = error))
     }
 
     private fun hostOf(url: String) = url.substringAfter("://").substringBefore('/')

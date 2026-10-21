@@ -195,7 +195,13 @@ class SettingsViewModel(
 }
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsRoute(
+    onBack: () -> Unit,
+    onCustomizeToday: () -> Unit = {},
+    /** "Prenumerationer" (ICS feeds); the row is shown to parents only, and only when the shell passes this. */
+    onSubscriptions: (() -> Unit)? = null,
+    viewModel: SettingsViewModel = koinViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val calendars by viewModel.calendars.collectAsStateWithLifecycle()
     val platform = LocalPlatformActions.current
@@ -292,6 +298,7 @@ fun SettingsRoute(onBack: () -> Unit, onCustomizeToday: () -> Unit = {}, viewMod
                 }
             }
             Section(stringResource(Res.string.settings_calendars)) {
+                if (onSubscriptions != null && state.canEditFamily) NavRow(stringResource(Res.string.subs_title), onClick = onSubscriptions)
                 val hasPermission = platform.hasPermission(AppPermission.Calendar)
                 SwitchRow(
                     stringResource(Res.string.settings_device_calendars),

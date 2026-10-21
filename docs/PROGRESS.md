@@ -81,15 +81,15 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Steg 4: första användningen (4.1–4.3 onboarding ✅: fler vuxna med bara namn, en barnrad med fokus, sökning först, ”Klart!” med ”Visa min dag”; 4.4 ”Kom igång” på Idag ✅ (ADR-034); 4.5 tomlägen på Mat, Recept och Handla ✅; 4.6 snabbinmatningen med familjens egna namn, en mening med ”Ändra”, osäkert i terrakotta och ”Fyll i själv” till redigeraren ✅; 4.7 tips som visas en gång ✅ för Idag, Handla och hjälparvyn; 4.8 ”Börja på riktigt” ✅)
 
 ## Fas 3 – Integrationer & notiser
-- [ ] ICS-prenumerationer
+- [x] ICS-prenumerationer: hämtas när appen startar och var 6:e timme (bara föräldrar), skärmen ”Prenumerationer” med ”Hämta och visa”, VTIMEZONE med sommartid, acceptanstest med Google- och Outlook-liknande flöden över sommartidsskiftet (WorkManager-jobb i bakgrunden återstår)
 - [ ] Tvåvägs enhetskalender (CalendarContract)
 - [ ] Eget ICS-flöde (Cloud Function)
 - [ ] Konfliktdetektering, hämta/lämna-förfrågningar
 - [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
 - [ ] Två widgets (Idag, Inköpslista)
-- [ ] Uppgifter/sysslor med rotation, fördelningsvy
+- [x] Uppgifter/sysslor med rotation, fördelningsvy: Mer › Uppgifter och sysslor (Mina, Ingen ansvarig, Familjen, Klart), redigerare med upprepning, ”Turas om”, ”Vems tur” och ”Byt vecka”, checklista; ”Så har vi delat” för de senaste 4 veckorna
 - [x] Export/radering av data: export med kvitto (även konto och den här telefonens inställningar), ”Radera familjen för alla” och ”Radera mitt konto” via callables med tester mot emulatorn, ärlig text för ”bara den här telefonen” (ADR-035)
-- [ ] ✅ Publik test-ICS visas korrekt (återkommande + tidszoner); familjehändelser syns i enhetens kalender
+- [ ] ✅ Publik test-ICS visas korrekt (acceptanstestet finns och är grönt; kvar: familjehändelser i enhetens kalender) (återkommande + tidszoner); familjehändelser syns i enhetens kalender
 
 ## Fas 4 – Polish & Play-beredskap
 - [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)

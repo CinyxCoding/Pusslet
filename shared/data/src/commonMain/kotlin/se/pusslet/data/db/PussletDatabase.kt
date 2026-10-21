@@ -66,6 +66,8 @@ abstract class PussletDatabase : RoomDatabase() {
 
     abstract fun cacheDao(): CacheDao
 
+    abstract fun cacheKeyDao(): CacheKeyDao
+
     abstract fun foodDao(): FoodDao
 
     abstract fun purchaseLogDao(): PurchaseLogDao

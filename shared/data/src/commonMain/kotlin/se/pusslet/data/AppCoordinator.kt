@@ -53,6 +53,14 @@ data class BackendConfig(
 )
 
 /**
+ * Work that lives as long as the app process, such as keeping ICS subscriptions fresh. [AppCoordinator.start] starts each
+ * one once, in the app scope, after the stored session has been read.
+ */
+fun interface AppProcessWork {
+    fun start(scope: CoroutineScope)
+}
+
+/**
  * App-level wiring: restores the session, seeds the demo family, signs in anonymously against the emulator,
  * registers the account in the family's access index and keeps the sync engine running while signed in.
  */
@@ -68,6 +76,7 @@ class AppCoordinator(
     private val prefs: PreferencesRepository,
     private val zone: TimeZone,
     private val clock: Clock = Clock.System,
+    private val processWork: List<AppProcessWork> = emptyList(),
 ) {
     private val log = Logger.withTag("App")
     private val _ready = kotlinx.coroutines.flow.MutableStateFlow(false)
@@ -87,6 +96,7 @@ class AppCoordinator(
                 prefs.set(Prefs.OnboardingDone, true)
             }
             _ready.value = true
+            processWork.forEach { it.start(scope) }
             if (config.mode == BackendMode.Emulator && auth.currentUser.value == null && auth.available) {
                 runCatching { auth.signInAnonymously() }.onFailure { log.i { "Emulator not reachable yet; staying local" } }
             }

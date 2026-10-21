@@ -49,6 +49,7 @@ import se.pusslet.feature.calendar.CalendarDayRoute
 import se.pusslet.feature.calendar.CalendarRoute
 import se.pusslet.feature.calendar.details.EventDetailsRoute
 import se.pusslet.feature.calendar.editor.EventEditorRoute
+import se.pusslet.feature.calendar.subscriptions.SubscriptionsRoute
 import se.pusslet.feature.family.FamilyRoute
 import se.pusslet.feature.family.child.ChildEditorRoute
 import se.pusslet.feature.family.custody.CustodyEditorRoute
@@ -72,7 +73,9 @@ import se.pusslet.feature.shopping.ShoppingRoute
 import se.pusslet.feature.shopping.StoreEditorRoute
 import se.pusslet.feature.shopping.StoreModeRoute
 import se.pusslet.feature.shopping.StoresRoute
-import se.pusslet.feature.tasks.TasksScreen
+import se.pusslet.feature.tasks.TasksRoute
+import se.pusslet.feature.tasks.distribution.TaskDistributionRoute
+import se.pusslet.feature.tasks.editor.TaskEditorRoute
 import se.pusslet.feature.today.TodayLayoutRoute
 import se.pusslet.feature.today.TodayRoute
 import se.pusslet.feature.today.helper.HelperPreviewRoute
@@ -266,6 +269,8 @@ private fun AppNavDisplay(
                     onQuickAdd = onQuickAdd,
                     onOpenCalendar = { navigator.selectTab(TopLevelTab.Calendar) },
                     onOpenShopping = { navigator.selectTab(TopLevelTab.Shopping) },
+                    // "Visa alla (n)" under "Att göra".
+                    onOpenTasks = { navigator.navigate(Route.Tasks) },
                     onCustomize = { navigator.navigate(Route.TodayLayout) },
                     onOpenChild = { navigator.navigate(Route.ChildEditor(it)) },
                     onInvite = { navigator.navigate(Route.Invite(claimMemberId = it)) },
@@ -343,7 +348,15 @@ private fun AppNavDisplay(
                 // "Enkel vy" first, for a caregiver who chose the full app.
                 MoreScreen(onOpen = { navigator.navigate(it.route()) }, contentPadding = padding, onSimpleView = onSimpleView)
             }
-            entry<Route.Tasks> { TasksScreen() }
+            entry<Route.Tasks> {
+                TasksRoute(
+                    onBack = navigator::goBack,
+                    onOpenTask = { navigator.navigate(Route.TaskEditor(it)) },
+                    onOpenDistribution = { navigator.navigate(Route.TaskDistribution) },
+                )
+            }
+            entry<Route.TaskEditor> { r -> TaskEditorRoute(r.taskId, onDone = navigator::goBack) }
+            entry<Route.TaskDistribution> { TaskDistributionRoute(onBack = navigator::goBack) }
             entry<Route.EventEditor> { r ->
                 EventEditorRoute(r.eventId, r.date, r.occurrenceDate, onDone = navigator::goBack, prefill = r.prefill)
             }
@@ -396,8 +409,13 @@ private fun AppNavDisplay(
             entry<Route.Custody> { r -> CustodyEditorRoute(r.scheduleId, onDone = navigator::goBack) }
             entry<Route.Handover> { r -> HandoverRoute(r.scheduleId, onBack = navigator::goBack) }
             entry<Route.Settings> {
-                SettingsRoute(onBack = navigator::goBack, onCustomizeToday = { navigator.navigate(Route.TodayLayout) })
+                SettingsRoute(
+                    onBack = navigator::goBack,
+                    onCustomizeToday = { navigator.navigate(Route.TodayLayout) },
+                    onSubscriptions = { navigator.navigate(Route.Subscriptions) },
+                )
             }
+            entry<Route.Subscriptions> { SubscriptionsRoute(onBack = navigator::goBack) }
             entry<Route.TodayLayout> { TodayLayoutRoute(onBack = navigator::goBack) }
             entry<Route.Account> { AccountRoute(onBack = navigator::goBack) }
             entry<Route.AboutData> { AboutDataRoute(onBack = navigator::goBack) }

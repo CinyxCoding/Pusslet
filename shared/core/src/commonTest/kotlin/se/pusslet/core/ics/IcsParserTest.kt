@@ -170,6 +170,122 @@ class IcsParserTest {
         assertEquals(dt("2026-12-08T08:00"), o.start)
     }
 
+    /** Outlook writes its own name and the rules when a calendar uses a "Customized Time Zone". */
+    private fun outlookFeed(tzid: String, standard: List<String>, daylight: List<String>, events: String) = (
+        listOf(
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//Microsoft Corporation//Outlook 16.0 MIMEDIR//EN",
+            "BEGIN:VTIMEZONE",
+            "TZID:$tzid",
+        ) +
+            listOf("BEGIN:STANDARD") + standard + listOf("END:STANDARD", "BEGIN:DAYLIGHT") + daylight +
+            listOf("END:DAYLIGHT", "END:VTIMEZONE") +
+            events.trimIndent().lines() + "END:VCALENDAR"
+    ).joinToString("\r\n")
+
+    private val euStandard =
+        listOf("DTSTART:16010101T030000", "TZOFFSETFROM:+0200", "TZOFFSETTO:+0100", "RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10")
+    private val euDaylight =
+        listOf("DTSTART:16010101T020000", "TZOFFSETFROM:+0100", "TZOFFSETTO:+0200", "RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=3")
+
+    @Test
+    fun customZoneWithEuRulesKeepsDaylightSaving() {
+        val ics = outlookFeed(
+            "Customized Time Zone",
+            euStandard,
+            euDaylight,
+            """
+            BEGIN:VEVENT
+            UID:swim
+            DTSTART;TZID="Customized Time Zone":20261020T173000
+            DTEND;TZID="Customized Time Zone":20261020T183000
+            RRULE:FREQ=WEEKLY;COUNT=3
+            SUMMARY:Simskola
+            END:VEVENT
+            """,
+        )
+        val cal = parser.parse(ics, "", TimeZone.UTC)
+        val swim = cal.events.single()
+        assertEquals("Europe/Stockholm", swim.timeZoneId)
+        assertEquals(emptyList(), cal.warnings)
+        // Summer time ends on Sunday 25 October 2026: same wall clock in Sweden, one hour later in UTC.
+        val local = EventExpander.expand(cal.events, d("2026-10-19"), d("2026-11-08"), stockholm).map { it.start }
+        assertEquals(listOf("2026-10-20T17:30", "2026-10-27T17:30", "2026-11-03T17:30").map { dt(it) }, local)
+        val utc = EventExpander.expand(cal.events, d("2026-10-19"), d("2026-11-08"), TimeZone.UTC).map { it.start }
+        assertEquals(listOf("2026-10-20T15:30", "2026-10-27T16:30", "2026-11-03T16:30").map { dt(it) }, utc)
+    }
+
+    @Test
+    fun localisedWindowsNameWithRulesIsMatchedToo() {
+        val ics = outlookFeed(
+            "Västeuropa, normaltid",
+            euStandard,
+            euDaylight,
+            """
+            BEGIN:VEVENT
+            UID:dentist
+            DTSTART;TZID="Västeuropa, normaltid":20260324T080000
+            DTEND;TZID="Västeuropa, normaltid":20260324T083000
+            SUMMARY:Tandläkaren
+            END:VEVENT
+            BEGIN:VEVENT
+            UID:meeting
+            DTSTART;TZID="Västeuropa, normaltid":20260331T080000
+            DTEND;TZID="Västeuropa, normaltid":20260331T090000
+            SUMMARY:Utvecklingssamtal
+            END:VEVENT
+            """,
+        )
+        val cal = parser.parse(ics, "", TimeZone.UTC)
+        // Before and after summer time starts on Sunday 29 March 2026.
+        val utc = EventExpander.expand(cal.events, d("2026-03-23"), d("2026-04-01"), TimeZone.UTC).map { it.start }
+        assertEquals(listOf(dt("2026-03-24T07:00"), dt("2026-03-31T06:00")), utc)
+    }
+
+    @Test
+    fun usRulesAreMatchedAcrossTheWeekWhenEuropeHasSwitchedAlready() {
+        val ics = outlookFeed(
+            "Eastern",
+            listOf("DTSTART:20071104T020000", "TZOFFSETFROM:-0400", "TZOFFSETTO:-0500", "RRULE:FREQ=YEARLY;BYMONTH=11;BYDAY=1SU"),
+            listOf("DTSTART:20070311T020000", "TZOFFSETFROM:-0500", "TZOFFSETTO:-0400", "RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=2SU"),
+            """
+            BEGIN:VEVENT
+            UID:call
+            DTSTART;TZID=Eastern:20261023T090000
+            DTEND;TZID=Eastern:20261023T093000
+            RRULE:FREQ=WEEKLY;COUNT=3
+            SUMMARY:Samtal med moster
+            END:VEVENT
+            """,
+        )
+        val cal = parser.parse(ics, "", stockholm)
+        assertEquals("America/New_York", cal.events.single().timeZoneId)
+        // Sweden leaves summer time on 25 October, New York on 1 November: one week with 5 hours between instead of 6.
+        val local = EventExpander.expand(cal.events, d("2026-10-19"), d("2026-11-08"), stockholm).map { it.start }
+        assertEquals(listOf("2026-10-23T15:00", "2026-10-30T14:00", "2026-11-06T15:00").map { dt(it) }, local)
+    }
+
+    @Test
+    fun unknownDaylightRulesKeepTheStandardOffsetAndSayNothingPersonal() {
+        val ics = outlookFeed(
+            "Familjen Linds zon",
+            listOf("DTSTART:20000903T030000", "TZOFFSETFROM:+0200", "TZOFFSETTO:+0100", "RRULE:FREQ=YEARLY;BYMONTH=9;BYDAY=1SU"),
+            listOf("DTSTART:20000604T020000", "TZOFFSETFROM:+0100", "TZOFFSETTO:+0200", "RRULE:FREQ=YEARLY;BYMONTH=6;BYDAY=1SU"),
+            """
+            BEGIN:VEVENT
+            UID:x
+            DTSTART;TZID=Familjen Linds zon:20261208T080000
+            SUMMARY:Lucia
+            END:VEVENT
+            """,
+        )
+        val cal = parser.parse(ics, "", TimeZone.UTC)
+        assertEquals("+01:00", cal.events.single().timeZoneId)
+        assertEquals(1, cal.warnings.size)
+        assertTrue(cal.warnings.none { "Lind" in it })
+    }
+
     @Test
     fun brokenEventsAreSkippedNotFatal() {
         val ics = "BEGIN:VCALENDAR\nBEGIN:VEVENT\nUID:a\nDTSTART:garbage\nEND:VEVENT\nBEGIN:VEVENT\nUID:b\n" +

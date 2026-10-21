@@ -243,6 +243,30 @@ class ShellScreenshotTest {
         snap("helper_home_large_text")
     }
 
+    /** Mer › Uppgifter och sysslor: mine first, then what nobody has (Fas 3). */
+    @Test
+    fun tasksList() {
+        launch()
+        compose.onNodeWithText("Mer").performClick()
+        tap("Uppgifter och sysslor")
+        compose.waitUntilAtLeastOneExists(hasText("Mina"), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("tasks_list")
+    }
+
+    /** A rotating chore in the editor: "Vems tur" with "Byt vecka". */
+    @Test
+    fun taskEditor() {
+        launch()
+        compose.onNodeWithText("Mer").performClick()
+        tap("Uppgifter och sysslor")
+        compose.waitUntilAtLeastOneExists(hasText("Dammsuga", substring = true) and hasClickAction(), timeoutMillis = 10_000)
+        compose.onAllNodes(hasText("Dammsuga", substring = true) and hasClickAction()).onFirst().performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Vems tur"), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("task_editor")
+    }
+
     @Test
     fun onboarding() {
         launch(seed = false, waitFor = "Pusslet")

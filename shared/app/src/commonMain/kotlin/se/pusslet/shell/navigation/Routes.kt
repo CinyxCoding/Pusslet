@@ -50,6 +50,9 @@ sealed interface Route {
 
     @Serializable data object Settings : Route
 
+    /** "Prenumerationer": the family's ICS subscriptions (parents only), with the add/edit screen on top. */
+    @Serializable data object Subscriptions : Route
+
     /** "Anpassa Idag" (ADR-027); in the helper view "Visa på startsidan". */
     @Serializable data object TodayLayout : Route
 
@@ -72,6 +75,12 @@ sealed interface Route {
     @Serializable data object Account : Route
 
     @Serializable data object Tasks : Route
+
+    /** New (no id) or edited task or chore. */
+    @Serializable data class TaskEditor(val taskId: String? = null) : Route
+
+    /** "Så har vi delat": how tasks, chores and hand-offs were shared over the last four weeks (parents). */
+    @Serializable data object TaskDistribution : Route
 
     /** Butiksläge for the active shopping list. */
     @Serializable data object StoreMode : Route

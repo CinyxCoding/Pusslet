@@ -41,7 +41,7 @@ class AppCoordinatorTest {
     private val prod = BackendConfig(BackendMode.LocalOnly, seedDemoData = false, versionName = "test")
 
     /** One app process: everything in memory is new, the stored data is shared. */
-    private inner class AppProcess(scope: CoroutineScope, config: BackendConfig) {
+    private inner class AppProcess(scope: CoroutineScope, config: BackendConfig, work: List<AppProcessWork> = emptyList()) {
         val sessions = SessionRepository(prefDao)
         val prefs = PreferencesRepository(prefDao)
         val docs = DocumentStore(local, sessions, clock)
@@ -58,6 +58,7 @@ class AppCoordinatorTest {
             prefs = prefs,
             zone = zone,
             clock = clock,
+            processWork = work,
         )
     }
 
@@ -90,6 +91,20 @@ class AppCoordinatorTest {
         assertTrue(restarted.coordinator.ready.value)
         assertFalse(restarted.sessions.session.value.hasFamily)
         assertFalse(restarted.prefs.get(Prefs.OnboardingDone))
+    }
+
+    @Test
+    fun processWorkStartsOnceTheSessionIsRead() = runTest {
+        val familyAtStart = ArrayList<String?>()
+        lateinit var app: AppProcess
+        app = AppProcess(backgroundScope, demo, listOf(AppProcessWork { familyAtStart += app.sessions.session.value.familyId }))
+
+        app.coordinator.start()
+        runCurrent()
+
+        // Once, after the demo family was seeded: what the work watches (e.g. subscriptions) belongs to the family here.
+        assertNotNull(familyAtStart.single())
+        assertEquals(app.sessions.session.value.familyId, familyAtStart.single())
     }
 
     @Test

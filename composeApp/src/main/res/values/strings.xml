@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Only what Android reads from its own resources before the app runs: the home-screen widgets' names and descriptions
+    in the widget picker (ADR-039). Everything the app itself shows lives in shared/ui/.../composeResources.
+-->
+<resources>
+    <string name="widget_today_label">Idag</string>
+    <string name="widget_today_description">Nästa händelse, vem som lämnar och hämtar och vad som ska med</string>
+    <string name="widget_shopping_label">Inköpslistan</string>
+    <string name="widget_shopping_description">Bocka av och lägg till direkt från hemskärmen</string>
+</resources>

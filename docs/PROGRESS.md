@@ -93,7 +93,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
     ett tryck efter att Android återställt appen lade samma händelse två gånger (två Tillbaka), och en Idag-notis visade
     det som låg öppet i Idag-fliken i stället för Idag (`AppNavigator.open`)
   - [ ] FCM
-- [ ] Två widgets (Idag, Inköpslista)
+- [x] Två widgets (Idag, Inköpslista) med Glance: nästa händelse, lämna/hämta, ska med; listan med bockar och + över hemskärmen (ADR-039), provade på emulator 2026-10-21
 - [x] Uppgifter/sysslor med rotation, fördelningsvy: Mer › Uppgifter och sysslor (Mina, Ingen ansvarig, Familjen, Klart), redigerare med upprepning, ”Turas om”, ”Vems tur” och ”Byt vecka”, checklista; ”Så har vi delat” för de senaste 4 veckorna
 - [x] Export/radering av data: export med kvitto (även konto och den här telefonens inställningar), ”Radera familjen för alla” och ”Radera mitt konto” via callables med tester mot emulatorn, ärlig text för ”bara den här telefonen” (ADR-035)
 - [ ] ✅ Publik test-ICS visas korrekt (acceptanstestet finns och är grönt; kvar: familjehändelser i enhetens kalender) (återkommande + tidszoner); familjehändelser syns i enhetens kalender

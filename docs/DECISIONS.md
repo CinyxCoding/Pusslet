@@ -349,3 +349,23 @@ finns samlingen läggs de till i den. En enda receptlänk sparas direkt, som fö
 **Konsekvens:** En länk till en veckomeny ger hela veckans recept och en samling att planera från. recept.se-läsaren hänger på
 sidans nuvarande uppbyggnad och misslyckas mjukt (”Sidan har inget recept vi kan läsa”) om den ändras. Texten om vad som hämtas
 säger nu att en veckomeny också ger recepten på den. Recepten sparas för familjens eget bruk med källan synlig, som tidigare.
+
+## ADR-039 – Widgets på hemskärmen: Idag och Inköpslistan
+**Kontext:** BRIEF §4.11 vill ha två widgets: Idag (nästa händelse, vem hämtar, ska med idag) och Inköpslistan (listan och
+att snabbt lägga till). Glance och WorkManager finns bara i composeApp (ADR-002), och appen är offline först.
+**Beslut:** Fakta räknas i core ur samma `TodayPlan` som Idag (`TodayGlances`): nästa händelse som inte har börjat (annars
+dagens heldagshändelse, som Morgonkollens ”Först idag”), lämna/hämta som Morgonkollen, ”Ska med” eller ”Allt är packat”
+tills barnen gått, antal ”Att lösa” och nästa klockslag då bilden ändras av sig själv. Idags kalenderfilter gäller, men inte
+Idags egen uppställning (UX-planen) och inget väder. `ShoppingGlances` tar listan Handla visar på telefonen, bara det som är
+kvar, i butikens ordning. `WidgetSource` (data) läser Room; `WidgetTexts` (shared/ui) skriver orden från strängresurserna
+utanför composition och låter `NotificationTexts` formulera lämna/hämta och packning. I composeApp ritar Glance med appens
+eget färgschema (ljust/mörkt). Tryck öppnar appen genom notisernas `OPEN_NOTIFICATION` (Idag, händelsen, Handla). En bock
+markerar varan som handlad som i Handla; + öppnar en ruta över hemskärmen (`ShoppingQuickAddActivity`) som läser texten som
+listan gör (”2 l mjölk, bröd”). Widgetarna ritas om en sekund efter ändringar medan appen kör, efter en bock eller ett
+tillägg, och Idag vid nästa förändring via en unik WorkManager-uppgift (annars strax efter midnatt); `updatePeriodMillis`
+30 min är reserv. Eftersom Glance bara komponerar om en pågående session läggs en versionsräknare i widgetens state som
+innehållet laddas om på. Widgetväljarens namn och beskrivning måste vara Android-resurser och ligger därför, som enda
+undantag, i `composeApp/src/main/res/values*/strings.xml`.
+**Konsekvens:** Widgetarna säger samma sak som Idag och Morgonkollen och fungerar utan nät. Ändringar från en annan telefon
+syns när appen kör och synkar (som notiserna). Barnens namn syns på hemskärmen, inte på låsskärmen. Dynamiska färger följs
+inte än. Hjälparens egen widget (UX-planen fas 3) är inte gjord.

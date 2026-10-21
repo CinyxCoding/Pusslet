@@ -269,14 +269,16 @@ object ReminderPlanner {
         shopping = null,
     )
 
-    private fun brief(line: HandoffLine) = BriefHandoff(
+    /** A Morgonkollen hand-off line as words to say; also the Idag widget's ([se.pusslet.core.widget.TodayGlances]). */
+    internal fun brief(line: HandoffLine) = BriefHandoff(
         kind = line.kind,
         person = line.person?.name,
         isMe = line.isMe,
         stops = line.stops.map { BriefStop(it.child.name, it.time) },
     )
 
-    private fun unpacked(children: List<ChildPacking>): List<BriefPacking> = children.mapNotNull { cp ->
+    /** What each child still has to bring, children with nothing left out. */
+    internal fun unpacked(children: List<ChildPacking>): List<BriefPacking> = children.mapNotNull { cp ->
         val left = cp.items.filter { !it.checked }.map { it.text.trim() }.filter { it.isNotEmpty() }
         if (left.isEmpty()) null else BriefPacking(cp.child.name, left)
     }

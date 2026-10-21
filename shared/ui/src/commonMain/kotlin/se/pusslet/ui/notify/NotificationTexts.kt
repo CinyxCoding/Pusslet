@@ -194,6 +194,12 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
         return sentences.joinToString(" ")
     }
 
+    /** One hand-off as a line of its own, as Morgonkollen says it: "Du hämtar Ella 15:45" (the Idag widget). */
+    suspend fun handoffLine(line: BriefHandoff): String = clause(line, sameChildren = false).capitalized()
+
+    /** What is left to bring, as Morgonkollen lists it: "gympapåse (Ella), regnkläder (Simon)" (the Idag widget). */
+    suspend fun packingList(packing: List<BriefPacking>): String = packing(packing)
+
     /** "Johan lämnar Simon 07:50", "du hämtar 15:30" (the same children as the clause before are not repeated). */
     private suspend fun clause(line: BriefHandoff, sameChildren: Boolean): String {
         val what = stops(line.stops, withChildren = !sameChildren)

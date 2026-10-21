@@ -1312,5 +1312,9 @@
     <string name="recipe_import_menu">Weekly menu – recipes on it: %1$d</string>
     <string name="recipe_import_into_collection">Saved in the collection “%1$s”</string>
 
+    <!-- Home screen: Idag and the shopping list (ADR-039) -->
+    <string name="widget_no_family">Open Pusslet to get started</string>
+    <string name="widget_problems">To sort out: %1$d</string>
+
     <!-- Placeholders used until a feature is wired up -->
 </resources>

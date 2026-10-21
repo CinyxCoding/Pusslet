@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -14,12 +13,12 @@ import androidx.core.content.ContextCompat
 import co.touchlab.kermit.Logger
 import se.pusslet.android.MainActivity
 import se.pusslet.android.R
+import se.pusslet.android.platform.useAppLanguage
 import se.pusslet.core.notify.NotificationImportance
 import se.pusslet.core.notify.NotificationKind
 import se.pusslet.core.notify.PlannedNotification
 import se.pusslet.ui.notify.NotificationText
 import se.pusslet.ui.notify.NotificationTexts
-import java.util.Locale
 
 /**
  * Shows a [PlannedNotification] (ADR-036): one channel per [NotificationKind], the texts from the string resources, and a
@@ -35,7 +34,7 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
             log.i { "Notifications are off; ${n.kind} not shown" }
             return
         }
-        useAppLanguage()
+        useAppLanguage(context)
         ensureChannels()
         val text = texts.text(n)
         val notification = NotificationCompat.Builder(context, n.kind.channelId)
@@ -77,14 +76,6 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
     }
 
     private fun allowed(): Boolean = manager.areNotificationsEnabled()
-
-    /**
-     * Compose resources pick the language from `Locale.getDefault()` outside composition. An activity applies the per-app
-     * language chosen in Inställningar, a worker started without one does not, so the default is set from it here.
-     */
-    private fun useAppLanguage() {
-        AppCompatDelegate.getApplicationLocales()[0]?.let(Locale::setDefault)
-    }
 
     private fun style(text: NotificationText): NotificationCompat.Style = if (text.lines.isEmpty()) {
         NotificationCompat.BigTextStyle().bigText(text.body)

@@ -8,6 +8,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import se.pusslet.android.di.androidModule
 import se.pusslet.android.notify.NotificationWork
+import se.pusslet.android.widget.WidgetUpdates
 import se.pusslet.core.AppConfig
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.di.AppScope
@@ -29,5 +30,7 @@ class PussletApplication : Application() {
         get<AcceptedRequestApplier>().start(get<CoroutineScope>(AppScope))
         // Local notifications (ADR-036): planned from Room, scheduled on WorkManager.
         NotificationWork.start(this, get(), get(), get<CoroutineScope>(AppScope))
+        // Home-screen widgets (ADR-039): drawn again a moment after what they show changes.
+        WidgetUpdates.start(this, get(), get<CoroutineScope>(AppScope))
     }
 }

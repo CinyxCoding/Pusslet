@@ -1313,5 +1313,9 @@
     <string name="recipe_import_menu">Veckomeny med %1$d recept</string>
     <string name="recipe_import_into_collection">Sparas i samlingen ”%1$s”</string>
 
+    <!-- Hemskärmen: Idag och Inköpslistan (ADR-039) -->
+    <string name="widget_no_family">Öppna Pusslet och kom igång</string>
+    <string name="widget_problems">Att lösa: %1$d</string>
+
     <!-- Placeholders used until a feature is wired up -->
 </resources>

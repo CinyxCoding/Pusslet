@@ -57,6 +57,7 @@ import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
 import se.pusslet.data.usecase.ShoppingAdder
 import se.pusslet.data.usecase.TodayInputSource
+import se.pusslet.data.widget.WidgetSource
 import kotlin.time.Clock
 
 val AppScope = named("appScope")
@@ -98,6 +99,8 @@ val dataModule: Module = module {
     // Idag's data for a worker, and the local notification plan built from it (WorkManager lives in composeApp, ADR-002).
     single { TodayInputSource(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { NotificationPlanSource(get(), get(), get(), get(), get()) }
+    // The home-screen widgets' data (ADR-039); Glance lives in composeApp.
+    single { WidgetSource(get(), get(), get(), get(), get(), get(), get()) }
     single { DataPrivacy(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }

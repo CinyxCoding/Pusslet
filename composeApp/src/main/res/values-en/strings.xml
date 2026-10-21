@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- See values/strings.xml: the widget picker only. -->
+<resources>
+    <string name="widget_today_label">Today</string>
+    <string name="widget_today_description">The next event, who drops off and picks up, and what to bring</string>
+    <string name="widget_shopping_label">Shopping list</string>
+    <string name="widget_shopping_description">Tick off and add straight from the home screen</string>
+</resources>

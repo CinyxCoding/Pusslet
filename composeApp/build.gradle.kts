@@ -213,6 +213,8 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
 
     debugImplementation(libs.compose.ui.tooling)
 

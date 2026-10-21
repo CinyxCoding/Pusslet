@@ -9,6 +9,7 @@ import org.koin.core.context.startKoin
 import se.pusslet.android.calendar.SubscriptionWork
 import se.pusslet.android.di.androidModule
 import se.pusslet.android.notify.NotificationWork
+import se.pusslet.android.push.Push
 import se.pusslet.android.widget.WidgetUpdates
 import se.pusslet.core.AppConfig
 import se.pusslet.data.AppCoordinator
@@ -35,5 +36,7 @@ class PussletApplication : Application() {
         WidgetUpdates.start(this, get(), get<CoroutineScope>(AppScope))
         // ICS subscriptions also while the app is closed (every 6 hours with network).
         SubscriptionWork.start(this)
+        // Push from other phones (ADR-042): requests, answers and items while shopping; only with a real Firebase project.
+        Push.start(backend, get(), get<CoroutineScope>(AppScope))
     }
 }

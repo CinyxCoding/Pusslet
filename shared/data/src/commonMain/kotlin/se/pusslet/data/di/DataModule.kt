@@ -16,6 +16,8 @@ import se.pusslet.core.util.RandomIdGenerator
 import se.pusslet.data.AppCoordinator
 import se.pusslet.data.db.PussletDatabase
 import se.pusslet.data.notify.NotificationPlanSource
+import se.pusslet.data.notify.PushMessages
+import se.pusslet.data.notify.PushRegistration
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -101,6 +103,9 @@ val dataModule: Module = module {
     // Idag's data for a worker, and the local notification plan built from it (WorkManager lives in composeApp, ADR-002).
     single { TodayInputSource(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { NotificationPlanSource(get(), get(), get(), get(), get()) }
+    // Push from other phones as notifications on this one (ADR-042); FCM lives in composeApp.
+    single { PushMessages(get(), get(), get(), get(), get(), get()) }
+    single { PushRegistration(get(), get(), get(), get()) }
     // The home-screen widgets' data (ADR-039); Glance lives in composeApp.
     single { WidgetSource(get(), get(), get(), get(), get(), get(), get()) }
     single { DataPrivacy(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

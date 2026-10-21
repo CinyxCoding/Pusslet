@@ -92,6 +92,12 @@ konfiguration. Prova efter deploy: Inställningar → Kalendrar → ”Skapa lä
 ner) och lägg till den i Google Kalender under ”Andra kalendrar → Från webbadress”. Google hämtar prenumerationer med
 några timmars mellanrum.
 
+Push mellan telefonerna (ADR-042) är triggers på Firestore och måste ligga i databasens region. Med en EU-region
+(`europe-north1`) behövs inget; med multiregionen `eur3`, skriv `TRIGGER_REGION=europe-west1` i `functions/.env` före deploy
+(`functions/.env.local` gäller bara emulatorerna). Push kommer bara i `dev`- och `prod`-flavorn. Prova med två telefoner i
+samma familj: be om hämtning från den ena (händelsen → ”Kan någon hämta?”), notisen kommer på den andra; svara, och
+svaret kommer tillbaka. I emulatorerna skickas inget, men det som skulle ha skickats syns i samlingen `_pushOutbox`.
+
 ### 2.5 SHA-fingeravtryck
 Lägg till SHA-1 och SHA-256 för debug- och release-nyckeln i Firebase (krävs för Google Sign-In och App Links):
 ```bash

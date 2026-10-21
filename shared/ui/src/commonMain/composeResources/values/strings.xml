@@ -1249,6 +1249,15 @@
     <string name="notify_channel_shopping_desc">Nya varor medan du handlar</string>
     <string name="notify_channel_conflicts">Krockar</string>
     <string name="notify_channel_conflicts_desc">När något i familjens plan krockar</string>
+    <string name="notify_request_pickup">Kan du hämta %1$s?</string>
+    <string name="notify_request_dropoff">Kan du lämna %1$s?</string>
+    <string name="notify_request_from">%1$s frågar</string>
+    <string name="notify_answer_yes_pickup">%1$s hämtar %2$s</string>
+    <string name="notify_answer_yes_dropoff">%1$s lämnar %2$s</string>
+    <string name="notify_answer_no">%1$s kan inte</string>
+    <string name="notify_someone">Någon</string>
+    <string name="notify_shopping_added">%1$s lade till %2$s</string>
+    <string name="notify_shopping_added_body">På listan du handlar från</string>
     <!-- Notifications (notify-core): texts -->
     <string name="notify_event_who">%1$s %2$s</string>
     <string name="notify_event_now">%1$s börjar nu</string>

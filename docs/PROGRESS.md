@@ -53,7 +53,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Butiksläge: stor text, avdelningsordning, avbockade sjunker, skärmen hålls vaken, Ångra, "Allt i vagnen!"
 - [x] Streckkodsskanning + Open Food Facts (namn + märke, avdelning från kategori, okänd kod → fråga efter namn, samma kod igen
   räknar upp)
-- [x] "Jag handlar nu": synlig för familjen medan butiksläget är öppet (push kommer med FCM i fas 3)
+- [x] "Jag handlar nu": synlig för familjen medan butiksläget är öppet; varor som läggs till då kommer som push (ADR-042)
 - [x] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (ShoppingListGeneratorTest)
 - [ ] Skärmdumpstester för Mat/Handla (Roborazzi) – kräver Android-miljö
 - [x] Köra fas 2-UI:t på emulator och gå igenom flödena för hand (ägaren, Android Studio, 2026-10-13)
@@ -90,13 +90,16 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   Inställningar, RFC 5545 med serier, flyttade tillfällen och Stockholms sommartid; 55 funktions- och regeltester gröna mot
   emulatorerna (ADR-041). Kräver deploy till ett riktigt projekt (SETUP.md 2.4)
 - [x] Konfliktdetektering, hämta/lämna-förfrågningar (ConflictDetector, ”Att lösa” på Idag, förfrågningar och svar ADR-030)
-- [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
+- [x] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
   - [x] Delad planering av lokala notiser: påminnelser, lämna/hämta, att göra, Morgon- och Kvällskoll, tysta timmar, samlade notiser, kanaler och texter (ADR-036)
   - [x] Android: WorkManager, kanaler, visning och tryck in i appen – verifierat på emulator 2026-10-21: sju kanaler med svenska
     namn, påminnelse i tid med appen i bakgrunden, privat på låsskärmen, tryck öppnar händelsen även från kallstart. Rättat:
     ett tryck efter att Android återställt appen lade samma händelse två gånger (två Tillbaka), och en Idag-notis visade
     det som låg öppet i Idag-fliken i stället för Idag (`AppNavigator.open`)
-  - [ ] FCM
+  - [x] FCM (ADR-042): förfrågan till den som tillfrågas, svar tillbaka, vara till den som handlar; data-only med id:n,
+    texten byggs i appen på läsarens språk, tysta timmar och redan besvarade förfrågningar respekteras. Triggers testade mot
+    emulatorerna (59 funktionstester gröna), appens del med enhetstester och provstart på emulator 2026-10-21. Själva
+    leveransen kräver ett riktigt Firebase-projekt (SETUP.md 2.4)
 - [x] Två widgets (Idag, Inköpslista) med Glance: nästa händelse, lämna/hämta, ska med; listan med bockar och + över hemskärmen (ADR-039), provade på emulator 2026-10-21
 - [x] Uppgifter/sysslor med rotation, fördelningsvy: Mer › Uppgifter och sysslor (Mina, Ingen ansvarig, Familjen, Klart), redigerare med upprepning, ”Turas om”, ”Vems tur” och ”Byt vecka”, checklista; ”Så har vi delat” för de senaste 4 veckorna
 - [x] Export/radering av data: export med kvitto (även konto och den här telefonens inställningar), ”Radera familjen för alla” och ”Radera mitt konto” via callables med tester mot emulatorn, ärlig text för ”bara den här telefonen” (ADR-035)

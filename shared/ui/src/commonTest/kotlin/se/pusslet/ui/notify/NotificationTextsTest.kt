@@ -56,6 +56,14 @@ class NotificationTextsTest {
         "notify_bundle_handoffs" to "%1\$d lämningar och hämtningar",
         "notify_channel_handoffs" to "Lämna och hämta",
         "notify_channel_handoffs_desc" to "30 min innan du lämnar eller hämtar",
+        "notify_request_pickup" to "Kan du hämta %1\$s?",
+        "notify_request_dropoff" to "Kan du lämna %1\$s?",
+        "notify_request_from" to "%1\$s frågar",
+        "notify_answer_yes_pickup" to "%1\$s hämtar %2\$s",
+        "notify_answer_no" to "%1\$s kan inte",
+        "notify_someone" to "Någon",
+        "notify_shopping_added" to "%1\$s lade till %2\$s",
+        "notify_shopping_added_body" to "På listan du handlar från",
     )
 
     private val texts = NotificationTexts { res, args ->
@@ -182,6 +190,24 @@ class NotificationTextsTest {
             ),
             text.lines,
         )
+    }
+
+    @Test
+    fun pushFromAnotherPhone() = runTest {
+        val ask = NotificationPayload.Request("e", day, HandoffKind.PickUp, "Sara", listOf("Ella", "Simon"), LocalTime(15, 45), "Skola")
+        assertEquals(NotificationText("Kan du hämta Ella och Simon?", "Sara frågar · 15:45"), texts.text(n(ask, NotificationKind.Requests)))
+        val unknown = ask.copy(kind = HandoffKind.DropOff, from = null, children = emptyList(), time = null)
+        assertEquals(NotificationText("Kan du lämna Skola?", ""), texts.text(n(unknown, NotificationKind.Requests)))
+
+        val yes = NotificationPayload.Answer("e", day, HandoffKind.PickUp, "Bengt", true, listOf("Ella"), "Skola")
+        assertEquals(NotificationText("Bengt hämtar Ella", "Skola"), texts.text(n(yes, NotificationKind.Requests)))
+        assertEquals(
+            NotificationText("Någon kan inte", "Skola"),
+            texts.text(n(yes.copy(by = null, accepted = false), NotificationKind.Requests)),
+        )
+
+        val item = NotificationPayload.ShoppingAdded("Johan", "mjölk")
+        assertEquals(NotificationText("Johan lade till mjölk", "På listan du handlar från"), texts.text(n(item, NotificationKind.Shopping)))
     }
 
     @Test

@@ -1248,6 +1248,15 @@
     <string name="notify_channel_shopping_desc">New items while you shop</string>
     <string name="notify_channel_conflicts">Clashes</string>
     <string name="notify_channel_conflicts_desc">When something in the family's plan clashes</string>
+    <string name="notify_request_pickup">Can you pick up %1$s?</string>
+    <string name="notify_request_dropoff">Can you drop off %1$s?</string>
+    <string name="notify_request_from">%1$s is asking</string>
+    <string name="notify_answer_yes_pickup">%1$s is picking up %2$s</string>
+    <string name="notify_answer_yes_dropoff">%1$s is dropping off %2$s</string>
+    <string name="notify_answer_no">%1$s can't</string>
+    <string name="notify_someone">Someone</string>
+    <string name="notify_shopping_added">%1$s added %2$s</string>
+    <string name="notify_shopping_added_body">On the list you're shopping from</string>
     <!-- Notifications (notify-core): texts -->
     <string name="notify_event_who">%1$s %2$s</string>
     <string name="notify_event_now">%1$s starts now</string>

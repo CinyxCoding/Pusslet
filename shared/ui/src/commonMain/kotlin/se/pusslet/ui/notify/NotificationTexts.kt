@@ -19,6 +19,9 @@ import se.pusslet.ui.resources.greeting_evening
 import se.pusslet.ui.resources.greeting_morning
 import se.pusslet.ui.resources.greeting_night
 import se.pusslet.ui.resources.list_separator
+import se.pusslet.ui.resources.notify_answer_no
+import se.pusslet.ui.resources.notify_answer_yes_dropoff
+import se.pusslet.ui.resources.notify_answer_yes_pickup
 import se.pusslet.ui.resources.notify_brief_empty
 import se.pusslet.ui.resources.notify_brief_first
 import se.pusslet.ui.resources.notify_brief_nobody_dropoff
@@ -56,6 +59,12 @@ import se.pusslet.ui.resources.notify_event_now
 import se.pusslet.ui.resources.notify_event_tomorrow_at
 import se.pusslet.ui.resources.notify_event_who
 import se.pusslet.ui.resources.notify_item_for
+import se.pusslet.ui.resources.notify_request_dropoff
+import se.pusslet.ui.resources.notify_request_from
+import se.pusslet.ui.resources.notify_request_pickup
+import se.pusslet.ui.resources.notify_shopping_added
+import se.pusslet.ui.resources.notify_shopping_added_body
+import se.pusslet.ui.resources.notify_someone
 import se.pusslet.ui.resources.notify_stop
 import se.pusslet.ui.resources.notify_task_today
 import se.pusslet.ui.resources.notify_task_today_at
@@ -112,6 +121,33 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
             str(Res.string.notify_evening_body, packing(p.packing)),
         )
         is NotificationPayload.Bundle -> bundle(p)
+        is NotificationPayload.Request -> request(p)
+        is NotificationPayload.Answer -> answer(p)
+        is NotificationPayload.ShoppingAdded -> NotificationText(
+            str(Res.string.notify_shopping_added, p.by ?: str(Res.string.notify_someone), p.item),
+            str(Res.string.notify_shopping_added_body),
+        )
+    }
+
+    /** "Kan du hämta Ella?" · "Sara frågar · 15:45" (push, ADR-042). */
+    private suspend fun request(p: NotificationPayload.Request): NotificationText {
+        val who = if (p.children.isEmpty()) p.title else joinNames(p.children)
+        val pickUp = p.kind == HandoffKind.PickUp
+        val title = str(if (pickUp) Res.string.notify_request_pickup else Res.string.notify_request_dropoff, who)
+        val body = listOfNotNull(p.from?.let { str(Res.string.notify_request_from, it) }, p.time?.let(::formatTime)).joinToString(SEPARATOR)
+        return NotificationText(title, body)
+    }
+
+    /** "Bengt hämtar Ella" or "Bengt kan inte", with the event under it (push, ADR-042). */
+    private suspend fun answer(p: NotificationPayload.Answer): NotificationText {
+        val by = p.by ?: str(Res.string.notify_someone)
+        val who = if (p.children.isEmpty()) p.title else joinNames(p.children)
+        val title = when {
+            !p.accepted -> str(Res.string.notify_answer_no, by)
+            p.kind == HandoffKind.PickUp -> str(Res.string.notify_answer_yes_pickup, by, who)
+            else -> str(Res.string.notify_answer_yes_dropoff, by, who)
+        }
+        return NotificationText(title, p.title)
     }
 
     suspend fun channel(kind: NotificationKind): ChannelText = when (kind) {

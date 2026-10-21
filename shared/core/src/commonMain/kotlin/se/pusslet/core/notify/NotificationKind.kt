@@ -32,10 +32,10 @@ enum class NotificationKind(val channelId: String, val importance: NotificationI
     /** Kvällskollen: "Packa ikväll: gympapåse (Ella)" at [ReminderPlanner.EVENING_TIME]. */
     Evening("pusslet.evening", NotificationImportance.Default),
 
-    /** "Kan du hämta Ella?" – arrives with FCM later (fas 3); the channel exists from the start. */
+    /** "Kan du hämta Ella?", and the answer to it: push from another phone (ADR-042). */
     Requests("pusslet.requests", NotificationImportance.High),
 
-    /** "Sara lade till mjölk medan du handlar" (ADR-018) – arrives with FCM later. */
+    /** "Sara lade till mjölk" while I shop from that list (ADR-018): push from another phone (ADR-042). */
     Shopping("pusslet.shopping", NotificationImportance.Default),
 
     /** Something in the family's plan clashes – arrives with FCM or a later local rule. */

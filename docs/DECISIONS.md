@@ -400,3 +400,24 @@ telefonen som skapade den, eftersom servern aldrig lämnar ut den igen.
 **Konsekvens:** Den som har länken ser familjens händelser, vilket texten i appen säger. Att sluta dela stoppar länken för
 alla som prenumererat. Bara telefonen som skapade länken kan visa och återkalla den. Hjälparnas synlighet styr inte flödet,
 eftersom bara föräldrar kan skapa länken. Funktionen kräver Blaze-planen och deploy (SETUP.md 2.4).
+
+## ADR-042 – Push mellan telefonerna (FCM)
+**Kontext:** BRIEF §4.10 vill att en förfrågan om att lämna eller hämta, svaret på den och en vara som läggs till medan någon
+handlar ska nå de andra telefonerna även när appen är stängd. De lokala notiserna (ADR-036) täcker bara det telefonen själv
+vet, och kanalerna för förfrågningar och inköp fanns redan men användes inte.
+**Beslut:** Tre Firestore-triggers i `functions/src/push.ts`: en ny förfrågan går till den som tillfrågas, eller till alla
+utom avsändaren när den gäller vem som helst; ett svar (ja eller nej) går tillbaka till den som frågade; en vara går till
+den som just nu handlar från samma lista (`presence`, ADR-018), aldrig till den som lade till den. Meddelandena är
+data-only med id:n och det minsta som behövs (`pickup`, ett datum, varan som den skrevs). Appen formulerar notisen själv
+från sina egna data och strängar (`PushMessages`), så namn och titlar går aldrig genom FCM och texten blir på läsarens
+språk. En förfrågan som telefonen redan vet är besvarad, eller som jag själv har sagt nej till, visas inte. Tysta timmar
+gäller som för de lokala notiserna: en förfrågan eller ett svar väntar till fönstrets slut (ett WorkManager-jobb med
+meddelandets id:n som frågar `PushMessages` igen då), en vara medan man handlar kommer direkt. Flera varor till samma lista
+ersätter varandra i stället för att staplas. Token sparas i `users/{uid}/devices/{deviceId}` (`PushRegistration`, ett
+dokument per telefon, enhets-id i `Prefs.DeviceId`); tokens som FCM inte längre känner till tas bort när ett utskick
+misslyckas. FCM slås på i kod och bara med ett riktigt Firebase-projekt (`firebase_messaging_auto_init_enabled=false` i
+manifestet); i emulatorerna finns ingen FCM, så funktionerna skriver där vad de skulle skickat till `_pushOutbox`, vilket
+testerna läser. Triggers körs där databasen ligger: `TRIGGER_REGION` (standard europe-north1, europe-west1 för `eur3`).
+**Konsekvens:** Push kräver Blaze, deploy och ett riktigt projekt (SETUP.md 2.4); demo-flavorn visar inga push-notiser.
+Kommer meddelandet innan förfrågan har synkats till telefonen visas den ändå (händelsen måste finnas lokalt). Den som tagit
+bort appen eller loggat ut får inga fler meddelanden när FCM svarar att token är okänd. Loggar har bara typ och antal.

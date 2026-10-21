@@ -65,6 +65,40 @@ sealed interface NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Occurrence(eventId, occurrenceDate)
     }
 
+    /**
+     * Push from another phone (ADR-042): [from] asks whoever reads it to drop off or pick up [children] at [time]
+     * ("Kan du hämta Ella?" · "Sara frågar · 15:45"). [from] is null when the sender is not on this phone yet.
+     */
+    data class Request(
+        val eventId: String,
+        val occurrenceDate: LocalDate,
+        val kind: HandoffKind,
+        val from: String?,
+        val children: List<String>,
+        val time: LocalTime?,
+        val title: String,
+    ) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Occurrence(eventId, occurrenceDate)
+    }
+
+    /** Push (ADR-042): [by] answered my request, yes ("Bengt hämtar Ella") or no ("Bengt kan inte"). */
+    data class Answer(
+        val eventId: String,
+        val occurrenceDate: LocalDate,
+        val kind: HandoffKind,
+        val by: String?,
+        val accepted: Boolean,
+        val children: List<String>,
+        val title: String,
+    ) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Occurrence(eventId, occurrenceDate)
+    }
+
+    /** Push (ADR-042, ADR-018): [by] added [item] to the list I am shopping from ("Johan lade till mjölk"). */
+    data class ShoppingAdded(val by: String?, val item: String) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Shopping
+    }
+
     /** A to-do on its day; [time] is the task's own time (null = the default morning time). */
     data class Task(val taskId: String, val date: LocalDate, val title: String, val time: LocalTime?) : NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Task(taskId)

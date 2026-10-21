@@ -55,6 +55,7 @@ import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.format.relativeDay
 import se.pusslet.ui.format.weekLong
+import se.pusslet.ui.format.weekdayName
 import se.pusslet.ui.format.weekdayShort
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_add
@@ -87,6 +88,7 @@ import se.pusslet.ui.resources.today_request_answer
 import se.pusslet.ui.resources.today_request_dropoff
 import se.pusslet.ui.resources.today_request_pickup
 import se.pusslet.ui.resources.today_request_someone
+import se.pusslet.ui.resources.today_tomorrow_title
 import se.pusslet.ui.theme.Spacing
 
 /**
@@ -208,7 +210,24 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
                 SetupChecklistCard(setup, onOpen = { actions.openSetup(it, plan.date) }, onHide = actions.onHideSetup)
             }
         }
-        if (state.hero.isNotEmpty()) item(key = "hero") { MorningCheck(state, plan, actions, flat = setup != null) }
+        // In the evening Kvällskollen is the focus surface; what is left of today (tonight's dinner) is drawn flat above it.
+        if (state.hero.isNotEmpty()) {
+            item(key = "hero") { MorningCheck(state, plan, actions, flat = setup != null || state.tomorrow.isNotEmpty()) }
+        }
+        val tomorrow = plan.tomorrow
+        if (state.tomorrow.isNotEmpty() && tomorrow != null) {
+            item(key = "tomorrow") {
+                MorningCheck(
+                    state,
+                    plan,
+                    actions,
+                    flat = setup != null,
+                    rows = state.tomorrow,
+                    date = tomorrow.date,
+                    title = stringResource(Res.string.today_tomorrow_title, weekdayName(tomorrow.date.dayOfWeek)),
+                )
+            }
+        }
         val dismissHint = actions.onDismissHint
         if (state.showAddHint && dismissHint != null) item(key = "hint") { AddHint(state, dismissHint) }
         items(state.sections, key = { "section-${it.id}" }) { block ->

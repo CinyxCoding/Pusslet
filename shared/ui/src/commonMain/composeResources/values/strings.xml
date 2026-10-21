@@ -1177,5 +1177,11 @@
     <string name="source_ics">Prenumererade kalendrar</string>
     <string name="source_ics_body">Kalendrar ni följer, t.ex. skolans eller klubbens. Hämtas direkt från länken ni lagt in, ungefär var 6:e timme, och bara på föräldrarnas telefoner.</string>
 
+    <!-- Kvällskollen (Idag from 18:00) -->
+    <string name="today_tomorrow_title">Imorgon, %1$s</string>
+    <string name="today_packing_tonight">Packa ikväll: %1$s</string>
+    <string name="today_packing_done_tomorrow">Allt är packat till imorgon</string>
+    <string name="today_dinner_tomorrow">Middag: %1$s</string>
+
     <!-- Placeholders used until a feature is wired up -->
 </resources>

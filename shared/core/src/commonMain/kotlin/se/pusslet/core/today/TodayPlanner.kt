@@ -172,6 +172,8 @@ data class TodayPlan(
     /** False when no weather place is chosen: the weather row is hidden. */
     val hasWeatherPlace: Boolean = weather != null,
     val shopping: TodayShopping? = null,
+    /** Kvällskollen: tomorrow made ready, from [TodayInput.tomorrowWeatherFrom]; null earlier or when tomorrow has nothing. */
+    val tomorrow: TomorrowPrep? = null,
 ) {
     val isQuiet: Boolean get() = timeline.isEmpty() && packing.all { it.items.isEmpty() }
 
@@ -244,7 +246,13 @@ object TodayPlanner {
         val cannotMake = cannotMake(input, byId)
         val handoffsToday = handoffsOn(today, todays, byId)
         val hero = TodayHero(
-            handoffs = heroHandoffs(input, handoffsToday, byId, handoffProblemKeys(problems, today) + cannotMakeKeys(cannotMake, today)),
+            handoffs = heroHandoffs(
+                input,
+                handoffsToday,
+                byId,
+                handoffProblemKeys(problems, today) + cannotMakeKeys(cannotMake, today),
+                from = input.now,
+            ),
             packing = packingSummary(today, packing, handoffsToday, todays),
             dinner = TodayDinner(dinner, LunchMerge.merge(lunches, clash), dinnerPlannedRecently(input)),
         )
@@ -274,7 +282,46 @@ object TodayPlanner {
             custodyNotes = custodyNotes(custody, input.now),
             hasWeatherPlace = input.hasWeatherPlace,
             shopping = input.shopping,
+            tomorrow = tomorrowPrep(input, byId, problems, cannotMake),
         )
+    }
+
+    /**
+     * Kvällskollen: from [TodayInput.tomorrowWeatherFrom], tomorrow's hand-offs (those with a problem are under "Att lösa"),
+     * what to pack and dinner. Null before that time and when tomorrow has nothing of it.
+     */
+    private fun tomorrowPrep(
+        input: TodayInput,
+        byId: Map<String, FamilyPerson>,
+        problems: List<Conflict>,
+        cannotMake: List<CaregiverCannot>,
+    ): TomorrowPrep? {
+        if (input.now < input.tomorrowWeatherFrom) return null
+        val tomorrow = input.today.plusDays(1)
+        val tomorrows = input.occurrences.filter { it.overlapsDate(tomorrow) }
+        val handoffs = handoffsOn(tomorrow, tomorrows, byId)
+        val packingMap = PackingPlanner.itemsFor(
+            tomorrow,
+            input.children,
+            input.packingRules,
+            tomorrows,
+            input.custody,
+            input.packingChecks,
+        )
+        val packing = input.children.map(FamilyPerson::of).map { ChildPacking(it, packingMap[it.id].orEmpty()) }
+        val prep = TomorrowPrep(
+            date = tomorrow,
+            handoffs = heroHandoffs(
+                input,
+                handoffs,
+                byId,
+                handoffProblemKeys(problems, tomorrow) + cannotMakeKeys(cannotMake, tomorrow),
+                from = null,
+            ),
+            packing = packingSummary(tomorrow, packing, handoffs, tomorrows),
+            dinner = input.mealWeeks.firstOrNull { it.week == tomorrow.isoWeek }?.entry(tomorrow, MealSlot.Dinner),
+        )
+        return prep.takeUnless { it.isEmpty }
     }
 
     /** Hidden from 20:00: dinner is over. */
@@ -353,18 +400,19 @@ object TodayPlanner {
         if (o.allDay || o.end.time == LocalTime(0, 0)) maxOf(o.start.date, o.end.date.plusDays(-1)) else o.end.date
 
     /**
-     * "Johan lämnar Simon 07:50 och Ella 08:05": one line per kind and person, sorted by the first time. Hand-offs that
-     * have passed, have nobody or have a problem are left out (the problem is shown under "Att lösa").
+     * "Johan lämnar Simon 07:50 och Ella 08:05": one line per kind and person, sorted by the first time. Hand-offs before
+     * [from] (passed today; null = keep all), with nobody or with a problem are left out (the problem is under "Att lösa").
      */
     private fun heroHandoffs(
         input: TodayInput,
         handoffs: List<DayHandoff>,
         byId: Map<String, FamilyPerson>,
         blocked: Set<String>,
+        from: LocalTime?,
     ): List<HandoffLine> {
         val childOrder = input.children.withIndex().associate { (i, c) -> c.id to i }
         return handoffs
-            .filter { it.time >= input.now && it.personId != null && handoffKey(it.occurrence, it.kind) !in blocked }
+            .filter { (from == null || it.time >= from) && it.personId != null && handoffKey(it.occurrence, it.kind) !in blocked }
             .groupBy { it.kind to it.personId }
             .map { (key, list) ->
                 val (kind, personId) = key

@@ -113,6 +113,8 @@ data class TodayUiState(
     val layout: TodayLayout = TodayLayouts.defaultFor(Role.Parent),
     /** Morgonkollen rows, fixed order, at most five; empty = no card. */
     val hero: List<HeroRow> = emptyList(),
+    /** Kvällskollen ("Imorgon, onsdag") from 18:00; empty before that or when tomorrow has nothing. */
+    val tomorrow: List<HeroRow> = emptyList(),
     /** The sections with something to show, in the viewer's order. */
     val sections: List<TodayBlock> = emptyList(),
     /** Unanswered hand-off requests to the viewer ("Sara frågar om du kan hämta Ella fre 15:45 · Svara"). */
@@ -358,6 +360,7 @@ class TodayViewModel(
             demo = h.session.demo,
             layout = v.layout,
             hero = TodayModel.heroRows(v.layout, plan, canEdit, weatherLoading = v.weather == WeatherState.Loading),
+            tomorrow = TodayModel.tomorrowRows(v.layout, plan, weatherLoading = v.weather == WeatherState.Loading),
             sections = sections,
             // A caregiver's "Jag kan inte" is a problem above ("Bengt kan inte hämta Simon 15:30"), not a question as well.
             requests = TodayModel.requests(me, v.requests, occ, people, n.date, n.time)

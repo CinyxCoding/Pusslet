@@ -34,11 +34,17 @@ sealed interface HeroRow {
     /** "Johan lämnar Simon 07:50 och Ella 08:05"; the viewer's own rows ("Du hämtar …") are emphasized. Opens the event. */
     data class Handoff(val line: HandoffLine) : HeroRow
 
-    /** "Ska med: gympapåse (Ella)" or "Allt är packat"; unfolds in place to check boxes per child. */
-    data class Packing(val packing: TodayPacking) : HeroRow
+    /**
+     * "Ska med: gympapåse (Ella)" or "Allt är packat"; unfolds in place to check boxes per child. [date] is tomorrow in
+     * Kvällskollen ("Packa ikväll: …"); null = the plan's day.
+     */
+    data class Packing(val packing: TodayPacking, val date: LocalDate? = null) : HeroRow
 
-    /** "Ikväll: Fiskgratäng" with at most one line under it: a clash with a school lunch, else the merged lunch. */
-    data class Dinner(val dinner: MealEntry, val lunches: List<LunchGroup>) : HeroRow
+    /**
+     * "Ikväll: Fiskgratäng" with at most one line under it: a clash with a school lunch, else the merged lunch. [tomorrow] =
+     * "Middag: Tacos" in Kvällskollen.
+     */
+    data class Dinner(val dinner: MealEntry, val lunches: List<LunchGroup>, val tomorrow: Boolean = false) : HeroRow
 
     /** "Planera middag": parents only, no dinner yet, before 18:00 and the family planned a dinner this or last week. */
     data object PlanDinner : HeroRow
@@ -94,7 +100,8 @@ internal object TodayModel {
                     canEdit && dinner.planPromptAt(plan.now) -> add(HeroRow.PlanDinner)
                 }
             }
-            if (TodayBlock.Weather in visible) {
+            // In the evening tomorrow's weather belongs to Kvällskollen (see tomorrowRows).
+            if (TodayBlock.Weather in visible && !weatherInKvallskoll(layout, plan)) {
                 if (!weatherLoading) add(HeroRow.Weather)
             } else if (canEdit && layout.isOn(TodayBlock.Weather) && !plan.hasWeatherPlace) {
                 add(HeroRow.ChoosePlace)
@@ -107,6 +114,34 @@ internal object TodayModel {
         }
         val room = (MAX_HERO_ROWS - others.size).coerceAtLeast(0)
         return handoffs.take(room).map(HeroRow::Handoff) + others
+    }
+
+    /**
+     * Kvällskollen ("Imorgon, onsdag"), from 18:00: tomorrow's hand-offs, what to pack tonight, tomorrow's weather and dinner,
+     * for the blocks that are switched on. Empty when the plan has no [TodayPlan.tomorrow].
+     */
+    fun tomorrowRows(layout: TodayLayout, plan: TodayPlan, weatherLoading: Boolean): List<HeroRow> {
+        val prep = plan.tomorrow ?: return emptyList()
+        val others = buildList {
+            if (layout.isOn(TodayBlock.Packing) && prep.packing.total > 0) add(HeroRow.Packing(prep.packing, prep.date))
+            val dinner = prep.dinner
+            if (layout.isOn(TodayBlock.Dinner) && dinner != null) add(HeroRow.Dinner(dinner, emptyList(), tomorrow = true))
+            if (weatherInKvallskoll(layout, plan) && !weatherLoading) add(HeroRow.Weather)
+        }
+        val handoffs = if (layout.isOn(TodayBlock.Handoffs)) prep.handoffs else emptyList()
+        val room = (MAX_HERO_ROWS - others.size).coerceAtLeast(0)
+        val rows = handoffs.take(room).map(HeroRow::Handoff) + others
+        // Weather alone is not a reason for the card: Morgonkollen keeps it then.
+        return rows.takeUnless { it.all { row -> row == HeroRow.Weather } }.orEmpty()
+    }
+
+    /** Tomorrow's weather moves into Kvällskollen when there is one with something else in it. */
+    private fun weatherInKvallskoll(layout: TodayLayout, plan: TodayPlan): Boolean {
+        val prep = plan.tomorrow ?: return false
+        val other = (layout.isOn(TodayBlock.Handoffs) && prep.handoffs.isNotEmpty()) ||
+            (layout.isOn(TodayBlock.Packing) && prep.packing.total > 0) ||
+            (layout.isOn(TodayBlock.Dinner) && prep.dinner != null)
+        return other && plan.weatherForTomorrow && layout.isOn(TodayBlock.Weather)
     }
 
     /** The sections to draw, in the user's order: switched on and with something to show ("tomt är tyst"). */

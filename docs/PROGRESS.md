@@ -91,6 +91,15 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Export/radering av data: export med kvitto (även konto och den här telefonens inställningar), ”Radera familjen för alla” och ”Radera mitt konto” via callables med tester mot emulatorn, ärlig text för ”bara den här telefonen” (ADR-035)
 - [ ] ✅ Publik test-ICS visas korrekt (acceptanstestet finns och är grönt; kvar: familjehändelser i enhetens kalender) (återkommande + tidszoner); familjehändelser syns i enhetens kalender
 
+### Tillägg efter korskontroll (2026-10-21)
+- [x] Kvällskollen: från 18:00 visar Idag ”Imorgon, onsdag” med vem som lämnar och hämtar, ”Packa ikväll: …” med bockar,
+  morgondagens väder och klädråd och middag. Följer ”Anpassa Idag”; problem för imorgon står kvar under ”Att lösa”
+- [ ] Påminnelser för händelser och uppgifter (med notiserna ovan)
+- [ ] Matsedeln: ”Hämtmat”, ”Ingen matlagning” och ”Vem lagar”
+- [ ] Skafferiet: plats (kyl, frys, skafferi), bäst före och ”finns hemma” utan mängd
+- [ ] Inköpslista från valda dagar, med val av ingredienser
+- [ ] Receptsamlingar
+
 ## Fas 4 – Polish & Play-beredskap
 - [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)
 - [ ] Prestanda (kallstart, 500+ varor)

@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,7 @@ import se.pusslet.ui.resources.state_collapsed
 import se.pusslet.ui.resources.state_expanded
 import se.pusslet.ui.resources.today_clash
 import se.pusslet.ui.resources.today_clothes_for
+import se.pusslet.ui.resources.today_dinner_tomorrow
 import se.pusslet.ui.resources.today_dinner_tonight
 import se.pusslet.ui.resources.today_handoff_stop
 import se.pusslet.ui.resources.today_item_for
@@ -64,9 +66,11 @@ import se.pusslet.ui.resources.today_lunch
 import se.pusslet.ui.resources.today_nobody_dropoff
 import se.pusslet.ui.resources.today_nobody_pickup
 import se.pusslet.ui.resources.today_packing_done
+import se.pusslet.ui.resources.today_packing_done_tomorrow
 import se.pusslet.ui.resources.today_packing_line
 import se.pusslet.ui.resources.today_packing_reason_event
 import se.pusslet.ui.resources.today_packing_reason_handover
+import se.pusslet.ui.resources.today_packing_tonight
 import se.pusslet.ui.resources.today_person_dropoff
 import se.pusslet.ui.resources.today_person_pickup
 import se.pusslet.ui.resources.today_plan_dinner
@@ -82,16 +86,31 @@ import kotlin.math.roundToInt
 
 /**
  * Morgonkollen: the one focus surface of Idag, without a visible title (UX plan, Idag). The rows are decided by the view
- * model ([TodayUiState.hero]); this only draws them. [flat] while "Kom igång" is the focus surface above it (4.4).
+ * model ([TodayUiState.hero]); this only draws them. [flat] while "Kom igång" (4.4) or Kvällskollen is the focus surface.
+ * Kvällskollen draws [TodayUiState.tomorrow] here too, for tomorrow's [date] and with a [title] ("Imorgon, onsdag").
  */
 @Composable
-internal fun MorningCheck(state: TodayUiState, plan: TodayPlan, actions: TodayActions, flat: Boolean = false) {
-    val rows: @Composable ColumnScope.() -> Unit = {
-        state.hero.forEach { row ->
+internal fun MorningCheck(
+    state: TodayUiState,
+    plan: TodayPlan,
+    actions: TodayActions,
+    flat: Boolean = false,
+    rows: List<HeroRow> = state.hero,
+    date: LocalDate = plan.date,
+    title: String? = null,
+) {
+    val tomorrow = date != plan.date
+    // Tomorrow's stops are all ahead, whatever the clock says tonight.
+    val now = if (tomorrow) LocalTime(0, 0) else plan.now
+    val content: @Composable ColumnScope.() -> Unit = {
+        if (title != null) {
+            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.semantics { heading() })
+        }
+        rows.forEach { row ->
             when (row) {
-                is HeroRow.Handoff -> HandoffRow(row.line, plan.now, actions)
-                is HeroRow.Packing -> PackingRow(row.packing, plan.date, actions.onTogglePacking)
-                is HeroRow.Dinner -> DinnerRow(row) { actions.onPlanDinner(plan.date) }
+                is HeroRow.Handoff -> HandoffRow(row.line, now, actions)
+                is HeroRow.Packing -> PackingRow(row.packing, row.date ?: date, actions.onTogglePacking, tonight = tomorrow)
+                is HeroRow.Dinner -> DinnerRow(row) { actions.onPlanDinner(date) }
                 HeroRow.PlanDinner -> SentenceRow(
                     stringResource(Res.string.today_plan_dinner),
                     onClick = { actions.onPlanDinner(plan.date) },
@@ -106,9 +125,9 @@ internal fun MorningCheck(state: TodayUiState, plan: TodayPlan, actions: TodayAc
         }
     }
     if (flat) {
-        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs), content = rows)
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs), content = content)
     } else {
-        HeroCard(content = rows)
+        HeroCard(content = content)
     }
 }
 
@@ -148,12 +167,20 @@ private fun stopsText(stops: List<HandoffStop>): String {
     return joinNames(groups.map { (time, names) -> stringResource(Res.string.today_handoff_stop, joinNames(names), formatTime(time)) })
 }
 
-/** "Ska med: gympapåse (Ella)" or "Allt är packat"; a tap unfolds the check boxes per child in place. */
+/**
+ * "Ska med: gympapåse (Ella)" or "Allt är packat"; a tap unfolds the check boxes per child in place. [tonight] is
+ * Kvällskollen: "Packa ikväll: …" and "Allt är packat till imorgon".
+ */
 @Composable
-private fun PackingRow(packing: TodayPacking, date: LocalDate, onToggle: (LocalDate, PackingItem, Boolean) -> Unit) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
+private fun PackingRow(
+    packing: TodayPacking,
+    date: LocalDate,
+    onToggle: (LocalDate, PackingItem, Boolean) -> Unit,
+    tonight: Boolean = false,
+) {
+    var expanded by rememberSaveable(date) { mutableStateOf(false) }
     val summary = if (packing.allPacked) {
-        stringResource(Res.string.today_packing_done)
+        stringResource(if (tonight) Res.string.today_packing_done_tomorrow else Res.string.today_packing_done)
     } else {
         val separator = stringResource(Res.string.list_separator)
         val perChild = packing.children.mapNotNull { cp ->
@@ -165,7 +192,7 @@ private fun PackingRow(packing: TodayPacking, date: LocalDate, onToggle: (LocalD
                 stringResource(Res.string.today_item_for, items, cp.child.name)
             }
         }
-        stringResource(Res.string.today_packing_line, perChild.joinToString(SEPARATOR))
+        stringResource(if (tonight) Res.string.today_packing_tonight else Res.string.today_packing_line, perChild.joinToString(SEPARATOR))
     }
     val stateText = stringResource(if (expanded) Res.string.state_expanded else Res.string.state_collapsed)
     Row(
@@ -205,7 +232,7 @@ private fun PackingRow(packing: TodayPacking, date: LocalDate, onToggle: (LocalD
 private fun DinnerRow(row: HeroRow.Dinner, onOpen: () -> Unit) {
     val clash = row.lunches.firstOrNull { it.clash.isNotEmpty() }
     SentenceRow(
-        stringResource(Res.string.today_dinner_tonight, row.dinner.title),
+        stringResource(if (row.tomorrow) Res.string.today_dinner_tomorrow else Res.string.today_dinner_tonight, row.dinner.title),
         supporting = if (clash == null && row.lunches.isNotEmpty()) lunchText(row.lunches) else null,
         onClick = onOpen,
     )

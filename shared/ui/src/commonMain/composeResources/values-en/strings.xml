@@ -1176,5 +1176,11 @@
     <string name="source_ics">Subscribed calendars</string>
     <string name="source_ics_body">Calendars you follow, such as the school's or the club's. Fetched straight from the link you added, about every 6 hours, and only on parents' phones.</string>
 
+    <!-- Kvällskollen (Idag from 18:00) -->
+    <string name="today_tomorrow_title">Tomorrow, %1$s</string>
+    <string name="today_packing_tonight">Pack tonight: %1$s</string>
+    <string name="today_packing_done_tomorrow">All packed for tomorrow</string>
+    <string name="today_dinner_tomorrow">Dinner: %1$s</string>
+
     <!-- Placeholders used until a feature is wired up -->
 </resources>

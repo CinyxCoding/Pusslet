@@ -80,6 +80,22 @@ data class TodayPacking(
     }
 }
 
+/**
+ * Kvällskollen (UX plan, Idag): from [TodayInput.tomorrowWeatherFrom] Idag also gets tomorrow ready – who leaves and picks
+ * up, what to pack tonight and tomorrow's dinner. Tomorrow's weather and clothing are already [TodayPlan.weather]. Problems
+ * for tomorrow stay under "Att lösa"; events stay in "Kommande".
+ */
+data class TomorrowPrep(
+    val date: LocalDate,
+    /** Tomorrow's hand-off lines, without those that have a problem. */
+    val handoffs: List<HandoffLine> = emptyList(),
+    /** What to pack for tomorrow; checking it tonight is the point ("Packa ikväll: gympapåse (Ella)"). */
+    val packing: TodayPacking = TodayPacking(),
+    val dinner: MealEntry? = null,
+) {
+    val isEmpty: Boolean get() = handoffs.isEmpty() && packing.total == 0 && dinner == null
+}
+
 /** Children who eat the same school lunch, one row: "Lunch: Köttbullar (Ella, Simon)". */
 data class LunchGroup(
     val children: List<FamilyPerson>,

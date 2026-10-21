@@ -177,7 +177,7 @@ private fun MainShell(incoming: IncomingIntent?, onIncomingHandled: () -> Unit, 
                     showQuickAdd = true
                 }
             }
-            is IncomingIntent.Open -> navigator.navigate(incoming.target.route())
+            is IncomingIntent.Open -> navigator.open(incoming.target.route())
             null -> return@LaunchedEffect
         }
         onIncomingHandled()

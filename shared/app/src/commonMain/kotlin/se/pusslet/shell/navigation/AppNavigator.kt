@@ -53,6 +53,22 @@ class AppNavigator internal constructor(
         }
     }
 
+    /**
+     * Opens what a tapped notification points at. A tab's root shows that tab from its root, not the screen last left open
+     * there (Morgonkollen opens Idag). A screen already on top is not stacked again: when Android has restored the app
+     * after closing it in the background, the tap arrives on top of the screen that was open.
+     */
+    fun open(route: Route) {
+        val tab = TopLevelTab.entries.firstOrNull { it.root == route }
+        if (tab != null) {
+            currentTab = tab
+            val stack = stack(tab)
+            while (stack.size > 1) stack.removeAt(stack.lastIndex)
+        } else if (backStack.lastOrNull() != route) {
+            stack(currentTab).add(route)
+        }
+    }
+
     fun goBack() {
         val stack = stack(currentTab)
         when {

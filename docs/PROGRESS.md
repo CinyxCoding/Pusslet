@@ -88,7 +88,10 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Konfliktdetektering, hämta/lämna-förfrågningar
 - [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
   - [x] Delad planering av lokala notiser: påminnelser, lämna/hämta, att göra, Morgon- och Kvällskoll, tysta timmar, samlade notiser, kanaler och texter (ADR-036)
-  - [x] Android: WorkManager, kanaler, visning och tryck in i appen (skrivet utan Android-bygge här – verifieras lokalt, se SETUP.md)
+  - [x] Android: WorkManager, kanaler, visning och tryck in i appen – verifierat på emulator 2026-10-21: sju kanaler med svenska
+    namn, påminnelse i tid med appen i bakgrunden, privat på låsskärmen, tryck öppnar händelsen även från kallstart. Rättat:
+    ett tryck efter att Android återställt appen lade samma händelse två gånger (två Tillbaka), och en Idag-notis visade
+    det som låg öppet i Idag-fliken i stället för Idag (`AppNavigator.open`)
   - [ ] FCM
 - [ ] Två widgets (Idag, Inköpslista)
 - [x] Uppgifter/sysslor med rotation, fördelningsvy: Mer › Uppgifter och sysslor (Mina, Ingen ansvarig, Familjen, Klart), redigerare med upprepning, ”Turas om”, ”Vems tur” och ”Byt vecka”, checklista; ”Så har vi delat” för de senaste 4 veckorna

@@ -33,7 +33,13 @@ Notiserna planeras i appen och schemaläggs med WorkManager (ADR-036), så de ko
 3. Tryck på notisen: den öppnar händelsen (eller Idag för Morgon- och Kvällskollen).
 
 WorkManager kan i strömsparläge komma några minuter sent; en notis som skulle ha kommit för mer än 15 minuter sedan visas inte.
-Planerade notiser syns med `adb shell dumpsys jobscheduler | grep pusslet`.
+En påminnelse vars tid redan har passerat när den sparas planeras inte alls, så ge testhändelsen marginal (15 minuter fram
+och 10 min innan ger notisen om ca 5 minuter). Appen räknar i telefonens tidszon: emulatorer står ofta på GMT, så räkna
+från emulatorns klocka (`adb shell date`), inte datorns.
+Planerade notiser syns med `adb shell dumpsys jobscheduler | grep pusslet`, och med namn (t.ex. `notify:event:…:10`) med
+`adb shell am broadcast -a androidx.work.diagnostics.REQUEST_DIAGNOSTICS -p se.pusslet.app.demo` och sedan
+`adb logcat -d -s WM-DiagnosticsWrkr`. `am force-stop` tar bort appens notiser; stäng processen med `am kill` (appen i
+bakgrunden) för att prova ett tryck från kallstart.
 
 ### Testa synk mellan två enheter
 Två Android-emulatorer kräver mycket minne (>12 GB RAM rekommenderas). Med en emulator kan

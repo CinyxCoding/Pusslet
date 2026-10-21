@@ -173,7 +173,7 @@ class OnboardingViewModel(
     fun useLocation(latitude: Double, longitude: Double) {
         val nearest = SwedishPlaces.all.minByOrNull { abs(it.latitude - latitude) + abs(it.longitude - longitude) * LON_SCALE }
         val name = nearest?.name.orEmpty()
-        _state.update { it.copy(place = Place(name, latitude, longitude), placeQuery = name) }
+        _state.update { it.copy(place = Place.coarse(name, latitude, longitude), placeQuery = name) }
     }
 
     private fun finish(defaultFamilyName: String) {

@@ -54,6 +54,8 @@ object Prefs {
     val Morning = PrefKey("notify.morning", MorningBrief.serializer(), MorningBrief())
     val QuietHours = PrefKey("notify.quiet", TimeWindow.serializer(), TimeWindow(LocalTime(21, 0), LocalTime(6, 30)))
     val QuietHoursEnabled = PrefKey("notify.quiet.enabled", Boolean.serializer(), true)
+
+    /** Consent to crash reports; not asked for until Crashlytics is in the build (PRIVACY.md), so nothing is sent. */
     val CrashReportsConsent = PrefKey("privacy.crashReports", Boolean.serializer(), false)
     val ActiveShoppingList = PrefKey("shopping.activeList", String.serializer(), "")
     val ActiveStore = PrefKey("shopping.activeStore", String.serializer(), "")

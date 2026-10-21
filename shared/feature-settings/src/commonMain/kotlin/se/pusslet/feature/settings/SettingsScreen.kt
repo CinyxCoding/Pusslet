@@ -389,14 +389,7 @@ fun SettingsRoute(
                 }
                 if (state.canEditFamily && viewModel.feedAvailable) CalendarFeedRows(viewModel)
             }
-            Section(null) {
-                SwitchRow(
-                    stringResource(Res.string.settings_crash_reports),
-                    state.crashReports,
-                    viewModel::setCrashReports,
-                    supporting = stringResource(Res.string.settings_crash_reports_body),
-                )
-            }
+            // The crash-report switch comes back with crash reporting itself (Crashlytics is not in the build yet, PRIVACY.md).
             if (state.developerTools) {
                 Section(stringResource(Res.string.settings_dev_title)) {
                     OutlinedButton(

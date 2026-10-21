@@ -264,10 +264,11 @@ class OnboardingViewModelTest {
         vm.setPlaceQuery("uppsala")
         assertNull(vm.state.value.place)
 
-        vm.useLocation(57.70, 11.95)
+        vm.useLocation(57.704_31, 11.951_87)
         assertEquals("Göteborg", vm.state.value.place?.name)
         assertEquals("Göteborg", vm.state.value.placeQuery)
-        assertEquals(57.70, vm.state.value.place?.latitude)
+        assertEquals(57.70, vm.state.value.place?.latitude, "kept to about 1 km")
+        assertEquals(11.95, vm.state.value.place?.longitude)
 
         vm.next("Familjen Sara")
         assertEquals("Göteborg", world.family.settings.first().weatherPlace?.name)

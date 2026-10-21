@@ -123,7 +123,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Svenska + engelska texter genomlästa
 - [x] Entitlements/Billing-förberedelse, `docs/MONETIZATION.md`: allt upplåst i alla byggen, gratisgräns för
   prenumerationer testad, Play Billing förberett bakom `BillingRepository` utan bibliotek i bygget (ADR-043)
-- [ ] `docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md`
+- [x] `docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md` (svenska och engelska, utkast för ägaren att
+  fylla i och publicera). Rättat på vägen: telefonens position sparas avrundad till ~1 km, och switchen för kraschrapporter
+  är dold tills kraschrapportering finns i bygget
 - [ ] Releasebygge (R8), signeringsinstruktioner, lanseringschecklista
 - [ ] ✅ `./gradlew build` grönt, release-AAB bygger
 

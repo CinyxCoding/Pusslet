@@ -5,6 +5,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import se.pusslet.core.time.IsoWeek
+import kotlin.math.roundToInt
 import kotlin.time.Instant
 
 @Serializable
@@ -155,4 +156,16 @@ data class FamilySettings(
 )
 
 @Serializable
-data class Place(val name: String, val latitude: Double, val longitude: Double)
+data class Place(val name: String, val latitude: Double, val longitude: Double) {
+    companion object {
+        /**
+         * A place from the phone's position, kept to two decimals (about 1 km): enough for the weather, and the family's
+         * settings never hold a more exact position than that (docs/PRIVACY.md).
+         */
+        fun coarse(name: String, latitude: Double, longitude: Double): Place = Place(name, round2(latitude), round2(longitude))
+
+        private fun round2(v: Double): Double = (v * HUNDRED).roundToInt() / HUNDRED
+
+        private const val HUNDRED = 100.0
+    }
+}

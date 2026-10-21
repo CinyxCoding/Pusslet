@@ -12,6 +12,7 @@ import se.pusslet.data.db.createDatabase
 import se.pusslet.data.di.AppScope
 import se.pusslet.data.net.createHttpClient
 import se.pusslet.data.remote.AuthRepository
+import se.pusslet.data.remote.DeletionCalls
 import se.pusslet.data.remote.FamilyRemote
 import se.pusslet.data.remote.FirestoreFamilyRemote
 import se.pusslet.data.remote.FirestoreRemoteStore
@@ -35,7 +36,11 @@ fun androidModule(config: BackendConfig): Module = module {
         single<AuthRepository> { LocalOnlyAuthRepository() }
     } else {
         single<RemoteStore> { FirestoreRemoteStore(FirebaseFirestore.getInstance()) }
-        single<FamilyRemote> { FirestoreFamilyRemote(FirebaseFirestore.getInstance()) }
+        single<FamilyRemote> {
+            // The demo flavor's callables (deleteFamily, deleteAccount) run in the local functions emulator.
+            val calls = DeletionCalls(config.emulatorHost.takeIf { config.mode == BackendMode.Emulator })
+            FirestoreFamilyRemote(FirebaseFirestore.getInstance(), calls)
+        }
         single<AuthRepository> { GitLiveAuthRepository(get(AppScope)) }
     }
 }

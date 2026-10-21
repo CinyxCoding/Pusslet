@@ -554,11 +554,11 @@
     <string name="privacy_summary">The family's information is stored on the phone and – once you sign in – with Google Firebase within the EU. Children only need a first name. Nothing is sold, no ads, no AI.</string>
     <string name="privacy_sensitive">Allergies and diet are only stored if you actively choose so, and can be removed at any time.</string>
     <string name="privacy_export">Export all data</string>
-    <string name="privacy_export_body">A file (JSON) with everything about the family on this phone.</string>
-    <string name="privacy_delete_family">Delete the family</string>
-    <string name="privacy_delete_family_body">Removes all of the family's information for all members. Cannot be undone.</string>
+    <string name="privacy_export_body">A file (JSON) with what this phone has about the family, your settings and your account. Open data such as weather and school lunches is not included.</string>
+    <string name="privacy_delete_family">Delete the family for everyone</string>
+    <string name="privacy_delete_family_body">The family is deleted from the server for everyone in it, and nobody can sync it any more.</string>
     <string name="privacy_delete_account">Delete my account</string>
-    <string name="privacy_delete_account_body">Removes your account and your link to the family.</string>
+    <string name="privacy_delete_account_body">Your account is deleted and you leave the family. The others keep everything.</string>
     <string name="privacy_delete_confirm">Are you completely sure? This cannot be undone.</string>
     <string name="privacy_forget_device">Remove the family from this phone</string>
 
@@ -1068,6 +1068,31 @@
     <!-- H3 leftovers -->
     <string name="event_private_hint_named">%1$s can't see this event.</string>
     <string name="helper_preview_invite">Invite %1$s</string>
+
+    <!-- Integritet: export, this phone, delete for everyone, delete my account (Fas 3) -->
+    <string name="privacy_export_action">Export</string>
+    <string name="privacy_export_saved">Saved: %1$s</string>
+    <string name="privacy_export_not_saved">The file was not saved.</string>
+    <string name="privacy_this_phone">This phone</string>
+    <string name="privacy_forget_body">The family is removed from this phone. Everyone else in the family keeps everything.</string>
+    <string name="privacy_forget_body_local">The family is only on this phone, so everything about it is deleted.</string>
+    <string name="privacy_delete_family_action">Delete for everyone</string>
+    <string name="privacy_delete_family_confirm_title">Delete %1$s for everyone?</string>
+    <string name="privacy_delete_family_confirm">This cannot be undone. Type the family's name to confirm.</string>
+    <string name="privacy_family_name_label">Family name</string>
+    <string name="privacy_delete_account_alone">You are the only one with an account, so the family is deleted too.</string>
+    <string name="privacy_delete_account_last_parent">You are the only parent. Delete the family for everyone or invite another parent first.</string>
+    <string name="privacy_delete_account_action">Delete the account</string>
+    <string name="privacy_delete_account_confirm_title">Delete your account?</string>
+    <string name="privacy_sign_in_to_delete">Sign in to delete the family or your account on the server.</string>
+    <string name="privacy_deleting">Deleting…</string>
+    <string name="privacy_problem_not_allowed">Only a parent can delete the family.</string>
+    <string name="privacy_problem_sign_in">Sign in again to delete.</string>
+    <string name="privacy_problem_offline">That did not work right now. Check the connection and try again.</string>
+    <string name="privacy_problem_failed">Could not delete. Try again.</string>
+    <!-- Om Pusslet: subscribed calendars (ICS), until the ICS agent reports its text -->
+    <string name="source_ics">Subscribed calendars</string>
+    <string name="source_ics_body">Calendars you follow, such as the school's or the club's. Fetched straight from the link you added, about every 6 hours, and only on parents' phones.</string>
 
     <!-- Placeholders used until a feature is wired up -->
     <string name="empty_more">Family, tasks and settings live here.</string>

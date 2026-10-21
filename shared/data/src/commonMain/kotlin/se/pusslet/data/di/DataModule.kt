@@ -90,7 +90,7 @@ val dataModule: Module = module {
     single { HandoffRequests(get(), get(), get(), get()) }
     single { AcceptedRequestApplier(get(), get(), get(), get(), get()) }
     single { FirstTimeHints(get()) }
-    single { DataPrivacy(get(), get(), get(), get()) }
+    single { DataPrivacy(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get()) }

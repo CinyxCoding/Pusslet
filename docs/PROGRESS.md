@@ -88,7 +88,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
 - [ ] Två widgets (Idag, Inköpslista)
 - [ ] Uppgifter/sysslor med rotation, fördelningsvy
-- [ ] Export/radering av data
+- [x] Export/radering av data: export med kvitto (även konto och den här telefonens inställningar), ”Radera familjen för alla” och ”Radera mitt konto” via callables med tester mot emulatorn, ärlig text för ”bara den här telefonen” (ADR-035)
 - [ ] ✅ Publik test-ICS visas korrekt (återkommande + tidszoner); familjehändelser syns i enhetens kalender
 
 ## Fas 4 – Polish & Play-beredskap

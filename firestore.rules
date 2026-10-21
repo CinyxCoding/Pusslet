@@ -108,10 +108,19 @@ service cloud.firestore {
       allow read, update: if false;
     }
 
+    // Tombstones written by the deleteFamily/deleteAccount functions (only a timestamp). A deleted family can never be
+    // created again, so a phone that still has it offline cannot bring it back; knowing the id lets a phone check
+    // whether its family was deleted.
+    match /deletedFamilies/{fid} {
+      allow get: if signedIn();
+      allow list, write: if false;
+    }
+
     // ---------- families ----------
     match /families/{fid} {
       allow read: if isMember(fid);
-      allow create: if signedIn() && data().createdBy == me() && stamped() && shortString(data().name, 100);
+      allow create: if signedIn() && data().createdBy == me() && stamped() && shortString(data().name, 100)
+        && !exists(/databases/$(database)/documents/deletedFamilies/$(fid));
       allow update: if isParent(fid) && stamped() && data().createdBy == resource.data.createdBy && shortString(data().name, 100);
       allow delete: if false;
 

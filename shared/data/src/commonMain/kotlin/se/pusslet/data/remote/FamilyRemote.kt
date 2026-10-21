@@ -18,6 +18,28 @@ data class InviteInfo(
 /** Thrown when the backend is not configured (local-only mode) or unreachable for an online-only operation. */
 class BackendUnavailableException(message: String) : Exception(message)
 
+/** Why a deletion on the server (callables `deleteFamily` / `deleteAccount` in functions/src/privacy.ts) did not go through. */
+enum class DeletionRefusal {
+    /** No signed-in account, or its token was refused. */
+    NotSignedIn,
+
+    /** Not a parent of the family, or not in it at all. */
+    NotAllowed,
+
+    /** The only parent while others in the family have accounts: delete the family or hand it over first. */
+    LastParent,
+
+    /** The backend wants a fresh sign-in before it deletes anything. */
+    RecentLoginRequired,
+
+    /** No connection, or the server did not answer. */
+    Network,
+
+    Unknown,
+}
+
+class DeletionRefusedException(val refusal: DeletionRefusal, cause: Throwable? = null) : Exception(refusal.name, cause)
+
 /** Online-only family operations (everything else goes through the sync engine). */
 interface FamilyRemote {
     val available: Boolean
@@ -44,6 +66,28 @@ interface FamilyRemote {
     suspend fun revokeCalendarFeed(token: String)
 
     suspend fun createHandoverShare(token: String, familyId: String, uid: String, payload: JsonObject, expiresAt: Instant)
+
+    /**
+     * Deletes the family on the server for everyone in it (callable `deleteFamily`, parents only, safe to repeat): every
+     * document, the invites, calendar feeds and handover links that point at it, and every account's link to it. Other
+     * people's accounts are kept. A tombstone stops any phone from creating the family again.
+     * @throws DeletionRefusedException when the server says no or cannot be reached.
+     */
+    suspend fun deleteFamily(familyId: String)
+
+    /**
+     * Deletes the signed-in account (callable `deleteAccount`, safe to repeat): leaves every family, or deletes it when
+     * nobody else there has an account, then removes `users/{uid}` with its devices and the Firebase account.
+     * [familyId] is the family on this phone, in case the profile missed it.
+     * @throws DeletionRefusedException with [DeletionRefusal.LastParent] while the caller is the family's only parent.
+     */
+    suspend fun deleteAccount(familyId: String?)
+
+    /** True when the family was deleted on the server (its tombstone exists). For phones that still have it locally. */
+    suspend fun familyDeleted(familyId: String): Boolean
+
+    /** The caller's own `users/{uid}` document and devices, for the data export. Null when there is nothing to read. */
+    suspend fun accountData(uid: String): JsonObject?
 }
 
 /** Used when no backend is configured: the app works fully on the device, sharing features explain why they are off. */
@@ -77,4 +121,12 @@ object LocalOnlyFamilyRemote : FamilyRemote {
         payload: JsonObject,
         expiresAt: Instant,
     ) = unavailable()
+
+    override suspend fun deleteFamily(familyId: String) = unavailable()
+
+    override suspend fun deleteAccount(familyId: String?) = unavailable()
+
+    override suspend fun familyDeleted(familyId: String) = false
+
+    override suspend fun accountData(uid: String): JsonObject? = null
 }

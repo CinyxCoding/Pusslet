@@ -10,10 +10,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "firebase emulators:exec --only firestore,auth --project demo-pusslet \"vitest run\"",
-    "test:unit": "vitest run test/unit",
+    "test": "npm run build && firebase emulators:exec --only functions,firestore,auth --project demo-pusslet \"vitest run\"",
     "serve": "npm run build && firebase emulators:start --project demo-pusslet",
-    "deploy": "firebase deploy --only functions"
+    "deploy": "firebase deploy --only functions",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-pusslet \"vitest run test/rules.test.ts\""
   },
   "dependencies": {
     "firebase-admin": "^14.5.0",

@@ -344,3 +344,31 @@ describe("server-only collections", () => {
     );
   });
 });
+
+describe("deleted families (tombstones from deleteFamily/deleteAccount)", () => {
+  async function tombstone(fid: string) {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), `deletedFamilies/${fid}`), { deletedAt: Timestamp.now() });
+    });
+  }
+
+  it("never lets anyone create a deleted family again, not even its creator", async () => {
+    await tombstone("gone");
+    const f = db("anna");
+    const batch = writeBatch(f);
+    batch.set(doc(f, "families/gone"), { name: "Familjen Berg", createdBy: "anna", ...stamp("anna") });
+    batch.set(doc(f, "families/gone/access/anna"), { memberId: "m-anna", role: "parent" });
+    await assertFails(batch.commit());
+    await assertFails(setDoc(doc(f, "families/gone/access/anna"), { memberId: "m-anna", role: "parent" }));
+    await assertFails(setDoc(doc(f, "families/gone/events/e1"), { title: "Tillbaka", start: "x", end: "y", ...stamp("anna") }));
+  });
+
+  it("lets a signed-in phone check its family's tombstone, but not list or write them", async () => {
+    await tombstone("gone");
+    await assertSucceeds(getDoc(doc(db("johan"), "deletedFamilies/gone")));
+    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), "deletedFamilies/gone")));
+    await assertFails(getDocs(collection(db("johan"), "deletedFamilies")));
+    await assertFails(setDoc(doc(db("sara"), `deletedFamilies/${FID}`), { deletedAt: serverTimestamp() }));
+    await assertFails(deleteDoc(doc(db("johan"), "deletedFamilies/gone")));
+  });
+});

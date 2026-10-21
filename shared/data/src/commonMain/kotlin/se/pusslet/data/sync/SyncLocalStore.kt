@@ -57,6 +57,7 @@ class RoomSyncLocalStore(private val db: PussletDatabase) : SyncLocalStore {
     private val docs = db.documentDao()
     private val outbox = db.outboxDao()
     private val state = db.syncStateDao()
+    private val purchases = db.purchaseLogDao()
 
     override fun observeCollection(familyId: String, collection: String) = docs.observeCollection(familyId, collection)
 
@@ -93,11 +94,13 @@ class RoomSyncLocalStore(private val db: PussletDatabase) : SyncLocalStore {
     override suspend fun setWatermark(familyId: String, path: String, serverTime: Long) =
         state.put(SyncStateEntity(familyId, path, serverTime))
 
+    /** Everything this phone stores for the family, including the purchase history that is never synced (ADR-019). */
     override suspend fun deleteFamily(familyId: String) {
         transaction {
             docs.deleteFamily(familyId)
             outbox.deleteFamily(familyId)
             state.deleteFamily(familyId)
+            purchases.deleteFamily(familyId)
         }
     }
 

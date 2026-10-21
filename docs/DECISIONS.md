@@ -285,3 +285,17 @@ telefonen (`Prefs.SetupHidden`). Det är inget block i ”Anpassa Idag”: det f
 ”Börja på riktigt” på raden Exempelfamilj bekräftas och kör `AppCoordinator.replayOnboarding`, som nu tillåts i alla byggen
 när sessionen är exempelfamiljen; en riktig familj tas aldrig bort den vägen i prod.
 **Konsekvens:** Tipset om + (4.7) väntar tills ”Kom igång” är borta, så att Idag aldrig har två sådana ytor samtidigt.
+
+## ADR-035 – Radera familj och konto
+**Kontext:** GDPR (BRIEF §4.12, §6). Klienter får inte hårdradera i Firestore, och telefonerna är offline först.
+**Beslut:** Två callables i europe-north1 (`functions/src/privacy.ts`), båda går att köra igen utan skada.
+`deleteFamily({familyId})` (bara föräldrar) skriver först en tombstone `deletedFamilies/{id}`, tar bort familjen ur
+`users/{uid}.familyIds` för alla med access, raderar `invites`, `calendarFeeds` och `handoverShares` för familjen, sedan
+access-dokumenten och till sist `families/{id}` rekursivt. Reglerna vägrar att skapa familjen igen när tombstone finns, så en
+telefon som varit offline inte kan återskapa den. `deleteAccount` vägrar om den som raderar är enda förälder medan andra har
+konto (”last-parent”); annars lämnar personen varje familj (eller raderar den om hen är ensam med konto), och sist raderas
+`users/{uid}` med enheter och Auth-kontot. ”Ta bort familjen från den här telefonen” finns kvar och säger tydligt att de andra
+behåller allt.
+**Konsekvens:** Andra personers konton raderas aldrig (de kan höra till andra familjer). Den som lämnar finns kvar som person
+utan konto. Andra telefoner behåller sin lokala kopia men kan inte synka. Loggar innehåller bara id:n och antal. App Check
+slås på när appen skickar tokens.

@@ -6,7 +6,10 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.Role
@@ -16,7 +19,11 @@ import se.pusslet.data.sync.RemotePermissionException
 import java.util.Date
 import kotlin.time.Instant
 
-class FirestoreFamilyRemote(private val db: FirebaseFirestore) : FamilyRemote {
+/**
+ * Online-only family operations with the native Firestore SDK (ADR-006). The GDPR callables go through GitLive in [calls];
+ * pass `DeletionCalls(config.emulatorHost)` in the demo flavor so they reach the Functions emulator.
+ */
+class FirestoreFamilyRemote(private val db: FirebaseFirestore, private val calls: DeletionCalls = DeletionCalls()) : FamilyRemote {
     override val available = true
 
     private fun stamp(uid: String) = mapOf(MetaFields.UPDATED_AT to FieldValue.serverTimestamp(), MetaFields.UPDATED_BY to uid)
@@ -128,6 +135,28 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore) : FamilyRemote {
             ),
         ).await()
         Unit
+    }
+
+    override suspend fun deleteFamily(familyId: String) = calls.deleteFamily(familyId)
+
+    override suspend fun deleteAccount(familyId: String?) = calls.deleteAccount(familyId)
+
+    override suspend fun familyDeleted(familyId: String): Boolean = guard {
+        db.document("deletedFamilies/$familyId").get().await().exists()
+    }
+
+    override suspend fun accountData(uid: String): JsonObject? = guard {
+        val user = db.document("users/$uid").get().await()
+        val devices = db.collection("users/$uid/devices").get().await().documents
+        if (!user.exists() && devices.isEmpty()) return@guard null
+        JsonObject(
+            mapOf(
+                "user" to (if (user.exists()) FirestoreRemoteStore.toJson(user.data.orEmpty()) else JsonNull),
+                "devices" to JsonArray(
+                    devices.map { d -> JsonObject(FirestoreRemoteStore.toJson(d.data.orEmpty()) + ("_id" to JsonPrimitive(d.id))) },
+                ),
+            ),
+        )
     }
 
     private fun Role.wire() = when (this) {

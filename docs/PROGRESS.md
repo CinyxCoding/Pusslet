@@ -120,7 +120,11 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)
   - [x] Skärmdumpstester (Roborazzi) för ljust, mörkt, engelska och stor text (1,5× och 2×) på Idag, Kalender och
     hjälparvyn, plus Mat, Handla, butiksläget, tomma lägen och onboarding
-  - [ ] Genomgång med TalkBack och Accessibility Scanner, och automatiska tillgänglighetskontroller i testerna
+  - [x] Automatiska tillgänglighetskontroller (ADR-044): varje skärmdumpstest (37 skärmar, dialoger och ark) kontrollerar
+    att allt tryckbart har ett namn och är minst 48 dp, och temats färger har WCAG-kontrast (4,5:1 text, 3:1 kontroller).
+    Rättat: dragtaget på alla 11 ark var 32 dp brett, färgväljaren hade 40 dp-mål och lästes som "Färg 3 ✓" (nu
+    "Salvia", "Terrakotta" … med valt-läge), konturfärgen i mörkt läge nådde 2,94:1 på surfaceVariant
+  - [ ] En runda med TalkBack och Accessibility Scanner på en riktig telefon (lanseringschecklistan, SETUP.md 3.3)
 - [ ] Prestanda (kallstart, 500+ varor)
 - [ ] Felhantering och tomma lägen överallt, onboarding < 2 min
 - [ ] Svenska + engelska texter genomlästa

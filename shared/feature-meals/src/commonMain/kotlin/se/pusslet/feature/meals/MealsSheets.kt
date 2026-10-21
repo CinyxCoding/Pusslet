@@ -43,6 +43,7 @@ import se.pusslet.core.model.FavoriteWeek
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.ListRow
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.components.SmallAction
 import se.pusslet.ui.format.formatDateLong
 import se.pusslet.ui.format.weekdayName
@@ -114,7 +115,7 @@ internal fun LunchWeekSheet(
 
     fun initial(day: DayPlan) = day.lunches.firstOrNull { it.child.id in selected }?.dishes?.joinToString("\n").orEmpty()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
             Column(
                 Modifier
@@ -205,7 +206,7 @@ internal fun WeekNutritionSheet(
 @Composable
 internal fun NewRecipeSheet(onDismiss: () -> Unit, onImport: () -> Unit, onTypeIn: () -> Unit, onPaste: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(Modifier.fillMaxWidth().padding(bottom = Spacing.xl).navigationBarsPadding()) {
             Text(
                 stringResource(Res.string.recipe_new),
@@ -298,7 +299,7 @@ internal fun FavoritesDialog(
 @Composable
 internal fun MealSheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()

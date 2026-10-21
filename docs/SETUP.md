@@ -172,6 +172,9 @@ Play App Signing rekommenderas: Google håller appens signeringsnyckel och du si
 - [ ] Versionskod höjd, AAB byggd och signerad med uppladdningsnyckeln (3.1–3.2).
 - [ ] Releasen provad på en riktig telefon: inloggning, gå med via inbjudan, synk mellan två telefoner, push
       (förfrågan och svar), notiser i tysta timmar, kalenderexport, widgets.
+- [ ] En runda med TalkBack (Idag, snabbinmatning, kalender, inköpslistan i butiksläge, onboarding) och
+      Accessibility Scanner på samma skärmar; de automatiska kontrollerna täcker namn, storlek och kontrast men inte
+      läsordning och hur det låter.
 
 **Test och lansering**
 - [ ] Intern testning (upp till 100 testare, inga krav) för att få en första version genom granskningen.

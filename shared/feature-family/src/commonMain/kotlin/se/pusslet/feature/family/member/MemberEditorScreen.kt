@@ -41,7 +41,7 @@ import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.Role
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.session.SessionProvider
-import se.pusslet.feature.family.child.ColorPicker
+import se.pusslet.ui.components.ColorPicker
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar

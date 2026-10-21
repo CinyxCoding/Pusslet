@@ -433,3 +433,16 @@ används inte, och inget faktureringsbibliotek finns i bygget, så appen begär 
 hela familjen och verifieras på servern; stegen står i docs/MONETIZATION.md.
 **Konsekvens:** Att slå på premium blir att skriva Play-implementationen och serververifieringen och byta bindning i `prod`,
 utan att skärmarna ändras mer än premiumsidan. Gratisgränsen är testad i `SubscriptionsViewModelTest`.
+
+## ADR-044 – Tillgänglighet kontrolleras i skärmdumpstesterna
+**Kontext:** Fas 4 kräver en tillgänglighetsgenomgång. Googles Accessibility Test Framework (via Compose
+`enableAccessibilityChecks`) körs inte under Robolectric, där skärmdumpstesterna går.
+**Beslut:** `AccessibilityAudit` går igenom det sammanslagna semantikträdet i varje fönster (skärmen och en dialog eller ett
+ark ovanpå) när ett skärmdumpstest tar sin bild: allt som går att trycka på, slå av och på eller skriva i ska ha ett namn och
+vara minst 48 × 48 dp i egen storlek (Compose förstorar själv ett litet tryckområde, men bara där inget annat är i vägen,
+och Accessibility Scanner mäter den synliga storleken). Testet misslyckas om en skärm inte har några kontroller alls, så
+att kontrollen inte blir tom, och granskningen har ett eget test med en medvetet dålig knapp. Färgkontrasten kontrolleras på
+temat (`ThemeContrastTest`, WCAG 4,5:1 för text och 3:1 för konturer och ikoner) eftersom Robolectric inte ritar text
+pixelrätt. Färgväljaren finns nu en gång i `shared/ui` med färgernas namn.
+**Konsekvens:** En ny skärm i skärmdumpstesterna granskas automatiskt. Läsordning, rubriker och hur TalkBack låter
+kräver fortfarande en runda på en riktig telefon (SETUP.md 3.3).

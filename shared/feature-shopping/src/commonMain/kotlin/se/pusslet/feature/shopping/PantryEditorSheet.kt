@@ -40,6 +40,7 @@ import se.pusslet.core.units.Units
 import se.pusslet.ui.components.DatePickerSheet
 import se.pusslet.ui.components.OutlinedValueField
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.format.formatDateLong
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
@@ -66,7 +67,7 @@ internal fun PantryEditorSheet(
     val parsedAmount = amount.trim().takeIf { it.isNotEmpty() }?.let { QuantityParser.parsePrefix(it).quantity?.value }
     val amountInvalid = amount.isNotBlank() && parsedAmount == null
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()

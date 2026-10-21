@@ -41,6 +41,7 @@ import se.pusslet.core.shopping.ShoppingText
 import se.pusslet.core.time.isoWeek
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.format.formatDateLong
 import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.format.weekLong
@@ -63,7 +64,7 @@ internal fun MealPlanSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -30,6 +31,7 @@ import org.robolectric.annotation.Config
 import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.shell.PussletApp
+import kotlin.test.assertTrue
 
 /**
  * Screenshots of the real app with the demo family (Familjen Lind) on a fixed morning: light, dark, English and
@@ -52,7 +54,15 @@ class ShellScreenshotTest {
         compose.waitForIdle()
     }
 
-    private fun snap(name: String) = compose.onRoot().captureRoboImage("src/test/snapshots/$name.png")
+    /** The screenshot, and the accessibility audit of the same screen (named, 48 dp controls). */
+    private fun snap(name: String) {
+        compose.onRoot().captureRoboImage("src/test/snapshots/$name.png")
+        // Every window: the screen, and a dialog or sheet on top of it.
+        val audits = compose.onAllNodes(isRoot()).fetchSemanticsNodes().map(AccessibilityAudit::audit)
+        assertTrue(audits.sumOf { it.checked } > 0, "The audit of $name found no controls at all")
+        val problems = audits.flatMap { it.problems }
+        assertTrue(problems.isEmpty(), "Accessibility on $name:\n" + problems.joinToString("\n"))
+    }
 
     /** A bottom-bar tab; "Mat" alone would also match the meals heading on Idag. */
     private fun openTab(label: String) =
@@ -385,5 +395,89 @@ class ShellScreenshotTest {
         tap("Skip")
         compose.waitUntilAtLeastOneExists(hasText("All set!"), timeoutMillis = 10_000)
         snap("onboarding_done_en")
+    }
+
+    // Screens opened for the accessibility audit too (AccessibilityAudit): settings, the family, editors and sheets.
+
+    @Test
+    fun settings() {
+        launch()
+        openMore("Inställningar")
+        compose.waitUntilAtLeastOneExists(hasText("Notiser", substring = true), timeoutMillis = 10_000)
+        snap("settings")
+    }
+
+    @Test
+    fun family() {
+        launch()
+        openMore("Familjen")
+        compose.waitUntilAtLeastOneExists(hasText("Så ser", substring = true), timeoutMillis = 10_000)
+        snap("family")
+    }
+
+    @Test
+    fun childEditor() {
+        launch()
+        openMore("Familjen")
+        compose.waitUntilAtLeastOneExists(hasText("Ella") and hasClickAction(), timeoutMillis = 10_000)
+        compose.onAllNodes(hasText("Ella", substring = true) and hasClickAction()).onFirst().performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Allergier och kost"), timeoutMillis = 10_000)
+        snap("child_editor")
+    }
+
+    @Test
+    fun eventEditor() {
+        launch()
+        openTab("Kalender")
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41 · oktober"), timeoutMillis = 10_000)
+        compose.onAllNodesWithText("lämnar 07:50", substring = true).onFirst().performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Lämning och hämtning"), timeoutMillis = 10_000)
+        compose.onNode(hasContentDescription("Redigera") and hasClickAction()).performClick()
+        // School is a series: first the question whether to change this time or the whole series.
+        compose.waitUntilAtLeastOneExists(hasText("Hela serien"), timeoutMillis = 10_000)
+        snap("event_edit_scope")
+        tap("Hela serien")
+        compose.waitUntilAtLeastOneExists(hasText("Spara") and hasClickAction(), timeoutMillis = 10_000)
+        snap("event_editor")
+    }
+
+    @Test
+    fun calendarFilter() {
+        launch()
+        openTab("Kalender")
+        compose.waitUntilAtLeastOneExists(hasText("Vecka 41 · oktober"), timeoutMillis = 10_000)
+        compose.onNode(hasContentDescription("Filtrera") and hasClickAction()).performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Visa i kalendern"), timeoutMillis = 10_000)
+        snap("calendar_filter")
+    }
+
+    @Test
+    fun recipeDetails() {
+        launch()
+        openTab("Mat")
+        compose.waitUntilAtLeastOneExists(hasText("Matsedel"), timeoutMillis = 10_000)
+        compose.onAllNodesWithText("Recept").onFirst().performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Pasta med pesto och broccoli"), timeoutMillis = 10_000)
+        compose.onAllNodesWithText("Pasta med pesto och broccoli").onFirst().performClick()
+        compose.waitUntilAtLeastOneExists(hasText("Ingredienser", substring = true), timeoutMillis = 10_000)
+        snap("recipe_details")
+    }
+
+    @Test
+    fun subscriptions() {
+        launch()
+        openMore("Inställningar")
+        compose.waitUntilAtLeastOneExists(hasText("Prenumerationer", substring = true) and hasClickAction(), timeoutMillis = 10_000)
+        compose.onNode(hasText("Prenumerationer", substring = true) and hasClickAction()).performClick()
+        compose.waitUntilAtLeastOneExists(hasContentDescription("Tillbaka"), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("subscriptions")
+    }
+
+    private fun openMore(item: String) {
+        compose.onNodeWithText("Mer").performClick()
+        compose.waitUntilAtLeastOneExists(hasText(item) and hasClickAction(), timeoutMillis = 10_000)
+        compose.onNode(hasText(item) and hasClickAction()).performClick()
+        compose.waitForIdle()
     }
 }

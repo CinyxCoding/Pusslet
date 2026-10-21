@@ -401,7 +401,14 @@
     <string name="contact_add">Add contact</string>
     <string name="child_notes">Notes</string>
     <string name="child_delete_confirm">Remove %1$s from the family?</string>
-    <string name="color_label">Colour %1$d</string>
+    <string name="color_sage">Sage</string>
+    <string name="color_terracotta">Terracotta</string>
+    <string name="color_ocean">Ocean</string>
+    <string name="color_plum">Plum</string>
+    <string name="color_ochre">Ochre</string>
+    <string name="color_teal">Teal</string>
+    <string name="color_rose">Rose</string>
+    <string name="color_slate">Slate</string>
 
     <!-- School picker -->
     <string name="school_municipality">Municipality</string>

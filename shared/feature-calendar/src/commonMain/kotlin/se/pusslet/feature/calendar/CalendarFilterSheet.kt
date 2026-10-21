@@ -23,6 +23,7 @@ import org.jetbrains.compose.resources.stringResource
 import se.pusslet.data.repository.CalendarLayer
 import se.pusslet.ui.components.PersonAvatar
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.resources.*
@@ -38,7 +39,7 @@ internal fun CalendarFilterSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()

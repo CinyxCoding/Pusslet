@@ -56,6 +56,7 @@ import se.pusslet.core.units.Units
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.OutlinedValueField
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
@@ -269,7 +270,7 @@ internal fun ItemEditorSheet(
     val parsedPrice = price.trim().replace(',', '.').takeIf { it.isNotEmpty() }?.toDoubleOrNull()
     val priceInvalid = price.isNotBlank() && parsedPrice == null
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()

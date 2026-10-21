@@ -25,6 +25,7 @@ import se.pusslet.core.helper.HelperMission
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.feature.today.SEPARATOR
 import se.pusslet.ui.components.CheckRow
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.helper_cannot_send
 import se.pusslet.ui.resources.helper_cannot_send_family
@@ -47,7 +48,7 @@ internal fun CannotMakeSheet(
     var chosen by rememberSaveable { mutableStateOf(missions.map { it.key }) }
     // Large text needs the whole height; a half-open sheet would hide the button.
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, dragHandle = { SheetDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()

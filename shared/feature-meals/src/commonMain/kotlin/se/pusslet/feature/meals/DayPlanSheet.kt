@@ -50,6 +50,7 @@ import se.pusslet.core.model.MealKind
 import se.pusslet.core.model.MealSlot
 import se.pusslet.core.model.Recipe
 import se.pusslet.ui.components.Labels
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.components.SwitchRow
 import se.pusslet.ui.components.WeekStripPicker
 import se.pusslet.ui.format.formatDateLong
@@ -107,7 +108,7 @@ internal fun DayPlanSheet(
 
     fun pick(recipe: Recipe) = onPick(recipe, cookDouble, note, cookId.takeIf { dinner })
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
             Column(
                 Modifier

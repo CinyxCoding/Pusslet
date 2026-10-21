@@ -70,6 +70,7 @@ import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.Section
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.components.showUndo
 import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.*
@@ -482,7 +483,7 @@ private fun FoodMatchingSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         Column(
             Modifier
                 .fillMaxWidth()

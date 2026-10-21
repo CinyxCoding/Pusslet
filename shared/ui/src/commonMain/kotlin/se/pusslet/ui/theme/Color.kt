@@ -40,7 +40,9 @@ internal object PussletPalette {
     val Neutral98 = Color(0xFFFBF8F3)
     val NeutralVariant30 = Color(0xFF45483F)
     val NeutralVariant50 = Color(0xFF75786E)
-    val NeutralVariant60 = Color(0xFF8F9287)
+
+    // A touch lighter than tone 60, so outlines keep 3:1 on surfaceVariant in dark mode (ThemeContrastTest).
+    val NeutralVariant60 = Color(0xFF93968B)
     val NeutralVariant80 = Color(0xFFC5C8BC)
     val NeutralVariant90 = Color(0xFFE1E4D8)
     val Ink = Color(0xFF1F1C17)

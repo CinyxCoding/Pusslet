@@ -81,6 +81,7 @@ import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.PersonChips
 import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.SheetDragHandle
 import se.pusslet.ui.components.TimeField
 import se.pusslet.ui.components.ValueField
 import se.pusslet.ui.format.describe
@@ -102,7 +103,7 @@ fun QuickAddSheet(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, dragHandle = { SheetDragHandle() }) {
         QuickAddContent(
             state = state,
             onTextChange = viewModel::onTextChange,

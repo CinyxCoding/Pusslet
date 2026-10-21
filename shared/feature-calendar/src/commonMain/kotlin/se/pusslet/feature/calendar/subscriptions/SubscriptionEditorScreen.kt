@@ -3,7 +3,6 @@ package se.pusslet.feature.calendar.subscriptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -23,9 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -38,7 +34,7 @@ import se.pusslet.core.model.MemberColor
 import se.pusslet.data.sources.SubscriptionError
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
-import se.pusslet.ui.components.ColorBadge
+import se.pusslet.ui.components.ColorPicker
 import se.pusslet.ui.components.PersonAvatar
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SelectionColors
@@ -140,7 +136,7 @@ fun SubscriptionEditorScreen(
             }
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 FieldHeading(stringResource(Res.string.subs_color))
-                ColorChoice(draft.color, onColor)
+                ColorPicker(draft.color, onColor)
             }
             // "Ta bort" last, like the other editors (UX plan Steg 2, Mer 3); undone with "Ångra" instead of a question.
             if (!editor.isNew) {
@@ -202,19 +198,4 @@ private fun errorText(error: SubscriptionError) = when (error) {
 @Composable
 private fun FieldHeading(text: String) {
     Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-
-/** The eight member colours as round badges with a ✓ on the chosen one; TalkBack reads "Färg 3". */
-@Composable
-private fun ColorChoice(selected: MemberColor, onPick: (MemberColor) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-        MemberColor.entries.forEachIndexed { i, c ->
-            Row(
-                Modifier.selectable(selected = c == selected, role = Role.RadioButton) { onPick(c) }.heightIn(min = Spacing.touchTarget),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ColorBadge(c, if (c == selected) "✓" else "", stringResource(Res.string.color_label, i + 1), size = 40.dp)
-            }
-        }
-    }
 }

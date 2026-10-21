@@ -402,7 +402,14 @@
     <string name="contact_add">Lägg till kontakt</string>
     <string name="child_notes">Anteckningar</string>
     <string name="child_delete_confirm">Ta bort %1$s från familjen?</string>
-    <string name="color_label">Färg %1$d</string>
+    <string name="color_sage">Salvia</string>
+    <string name="color_terracotta">Terrakotta</string>
+    <string name="color_ocean">Hav</string>
+    <string name="color_plum">Plommon</string>
+    <string name="color_ochre">Ockra</string>
+    <string name="color_teal">Blågrön</string>
+    <string name="color_rose">Ros</string>
+    <string name="color_slate">Skiffer</string>
 
     <!-- School picker -->
     <string name="school_municipality">Kommun</string>

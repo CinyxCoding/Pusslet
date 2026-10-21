@@ -100,4 +100,26 @@ class RecipeJsonLdTest {
         assertNull(RecipeJsonLd.extract("<html><script type=\"application/ld+json\">{ broken </script></html>", "https://e.se"))
         assertNull(RecipeJsonLd.extract("<html>no data</html>", "https://e.se"))
     }
+
+    @Test
+    fun aWeekMenuPageGivesEveryRecipeOnIt() {
+        val html = """<html><script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","itemListElement":[
+            {"@type":"ListItem","position":1,"item":{"@type":"Recipe","name":"Fiskgratäng","url":"https://example.se/recept/fiskgratang",
+              "recipeIngredient":["600 g torsk"],"recipeInstructions":"Gratinera."}},
+            {"@type":"ListItem","position":2,"item":{"@type":"Recipe","name":"Linssoppa","recipeIngredient":["2 dl röda linser"]}},
+            {"@type":"ListItem","position":3,"url":"https://example.se/recept/tacos"}
+        ]}</script>
+        <script type="application/ld+json">{"@type":"Recipe","name":"Fiskgratäng","url":"https://example.se/recept/fiskgratang"}</script></html>"""
+        var n = 0
+        val all = RecipeJsonLd.extractAll(html, "https://example.se/veckomeny/44") { "r${++n}" }
+        assertEquals(listOf("Fiskgratäng", "Linssoppa"), all.map { it.recipe.title })
+        // Each keeps its own page when it names one, else the page it was read from; the plain link is not followed.
+        assertEquals(listOf("https://example.se/recept/fiskgratang", "https://example.se/veckomeny/44"), all.map { it.recipe.sourceUrl })
+        assertEquals(listOf("r1", "r2"), all.map { it.recipe.id })
+    }
+
+    @Test
+    fun aPageWithoutRecipesGivesNone() {
+        assertTrue(RecipeJsonLd.extractAll("<html><p>Veckomeny</p></html>", "https://example.se").isEmpty())
+    }
 }

@@ -113,5 +113,29 @@ class MealDataTest {
         assertIs<RecipeImportResult.NotReachable>(importer.import("https://other.se/x"))
     }
 
+    @Test
+    fun severalPastedLinksAreFoundAndEachPageIsReadOnce() = runTest {
+        val text = "Måndag https://www.example.se/recept/a, tisdag https://www.example.se/recept/b.\nhttps://www.example.se/recept/a igen"
+        assertEquals(listOf("https://www.example.se/recept/a", "https://www.example.se/recept/b"), RecipeImporter.findUrls(text))
+        val many = (1..40).joinToString(" ") { "https://x.se/$it" }
+        assertEquals(RecipeImporter.MAX_LINKS, RecipeImporter.findUrls(many).size)
+
+        val page = """<script type="application/ld+json">
+            {"@graph":[{"@type":"Recipe","name":"Tacos"},{"@type":"Recipe","name":"Pizza"}]}</script>"""
+        val http = MockHttp { request ->
+            when (request.url.encodedPath) {
+                "/recept/a" -> ok(page, "text/html")
+                "/recept/b" -> ok("<html></html>", "text/html")
+                else -> respond("", HttpStatusCode.NotFound)
+            }
+        }
+        val importer = RecipeImporter(http.client, SequentialIdGenerator("r"))
+        val found = assertIs<PageImportResult.Found>(importer.importPage("https://www.example.se/recept/a"))
+        assertEquals(listOf("Tacos", "Pizza"), found.recipes.map { it.recipe.title })
+        assertIs<PageImportResult.NoRecipeData>(importer.importPage("https://www.example.se/recept/b"))
+        assertIs<PageImportResult.NotReachable>(importer.importPage("https://www.example.se/recept/c"))
+        assertEquals(3, http.requests.size)
+    }
+
     private fun LocalDate.plusDays(n: Int) = LocalDate.fromEpochDays(toEpochDays() + n)
 }

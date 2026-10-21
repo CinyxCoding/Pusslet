@@ -103,6 +103,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Inköpslista från valda dagar (nästa 14 dagar), varje ingrediens kan väljas bort, två körningar dubblar aldrig
 - [x] Receptsamlingar: egna samlingar som synkas och slås ihop per recept, filter i receptbiblioteket, ”Lägg i samling…”
 - [x] Veckans balans runt skollunchen: fisk/vegetariskt/kött per barn, förslag som fyller luckorna, "Föreslå veckans middagar" och balansen i Näring för veckan (ADR-037)
+- [x] Importera flera receptlänkar på en gång: alla länkar i inklistrad text hämtas en i taget, alla recept på en sida (t.ex. en veckomeny med receptdata) listas, bocka för och spara; länkar på sidan följs aldrig
 
 ## Fas 4 – Polish & Play-beredskap
 - [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)

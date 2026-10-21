@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -37,6 +38,7 @@ import kotlinx.datetime.LocalDateTime
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.premium.FreeLimits
 import se.pusslet.ui.components.ColorBadge
 import se.pusslet.ui.components.EmptyState
 import se.pusslet.ui.components.ListRow
@@ -128,7 +130,7 @@ fun SubscriptionsScreen(
     Scaffold(
         topBar = { PussletTopBar(stringResource(Res.string.subs_title), onBack = onBack) },
         floatingActionButton = {
-            if (state.canManage) {
+            if (state.canManage && !state.atFreeLimit) {
                 // A sub page with its own round + (ADR-023), without text on the button.
                 FloatingActionButton(onClick = onAdd) {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.subs_add))
@@ -150,6 +152,16 @@ fun SubscriptionsScreen(
                     bottom = padding.calculateBottomPadding() + Spacing.listBottomInset,
                 ),
             ) {
+                if (state.atFreeLimit) {
+                    item(key = "free-limit") {
+                        Text(
+                            stringResource(Res.string.subs_free_limit, FreeLimits.SUBSCRIPTIONS),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = Spacing.md),
+                        )
+                    }
+                }
                 items(state.rows, key = { it.subscription.id }) { row ->
                     SubscriptionListRow(row, state.today, onEdit, onEnabled)
                 }

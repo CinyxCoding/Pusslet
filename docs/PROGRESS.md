@@ -121,7 +121,8 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Prestanda (kallstart, 500+ varor)
 - [ ] Felhantering och tomma lägen överallt, onboarding < 2 min
 - [ ] Svenska + engelska texter genomlästa
-- [ ] Entitlements/Billing-förberedelse, `docs/MONETIZATION.md`
+- [x] Entitlements/Billing-förberedelse, `docs/MONETIZATION.md`: allt upplåst i alla byggen, gratisgräns för
+  prenumerationer testad, Play Billing förberett bakom `BillingRepository` utan bibliotek i bygget (ADR-043)
 - [ ] `docs/PRIVACY.md`, `docs/PLAY_DATA_SAFETY.md`, `docs/STORE_LISTING.md`
 - [ ] Releasebygge (R8), signeringsinstruktioner, lanseringschecklista
 - [ ] ✅ `./gradlew build` grönt, release-AAB bygger

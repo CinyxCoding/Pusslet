@@ -1127,6 +1127,7 @@
     <!-- ICS subscriptions (Fas 3): Inställningar > Prenumerationer -->
     <string name="subs_title">Subscriptions</string>
     <string name="subs_add">New subscription</string>
+    <string name="subs_free_limit">More than %1$d calendars is part of Premium.</string>
     <string name="subs_edit">Edit subscription</string>
     <string name="subs_empty">Follow the school's or the club's calendar and it shows up among your events.</string>
     <string name="subs_parents_only">Subscriptions are managed by the parents.</string>

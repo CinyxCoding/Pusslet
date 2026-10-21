@@ -17,7 +17,12 @@ import se.pusslet.core.model.Child
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.Role
+import se.pusslet.core.premium.Entitlement
+import se.pusslet.core.premium.FreeLimits
 import se.pusslet.data.db.CacheEntryEntity
+import se.pusslet.data.premium.AllUnlocked
+import se.pusslet.data.premium.Entitlements
+import se.pusslet.data.premium.FixedEntitlements
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.RemovedSubscription
 import se.pusslet.data.sources.PreviewResult
@@ -77,8 +82,13 @@ class SubscriptionsViewModelTest {
         return this
     }
 
-    private fun TestScope.viewModel(world: TestWorld, feeds: SubscriptionFeeds = FakeFeeds()): SubscriptionsViewModel {
-        val vm = SubscriptionsViewModel(world.calendar, world.family, feeds, world.sessions, world.ids, world.clock, world.zone)
+    private fun TestScope.viewModel(
+        world: TestWorld,
+        feeds: SubscriptionFeeds = FakeFeeds(),
+        entitlements: Entitlements = AllUnlocked,
+    ): SubscriptionsViewModel {
+        val vm =
+            SubscriptionsViewModel(world.calendar, world.family, feeds, world.sessions, entitlements, world.ids, world.clock, world.zone)
         CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler)).launch { vm.state.collect {} }
         return vm
     }
@@ -110,6 +120,27 @@ class SubscriptionsViewModelTest {
         assertEquals(CalendarSubscription(saved.id, "Björkängsskolan 3B", link, listOf("c-ella"), MemberColor.Ocean, true), saved)
         assertNull(vm.state.value.editor)
         assertEquals("Björkängsskolan 3B", vm.state.value.rows.single().subscription.name)
+    }
+
+    @Test
+    fun theFreeVersionKeepsItsCalendarsButAddsNoMore() = runTest {
+        val world = TestWorld().withFamily()
+        repeat(FreeLimits.SUBSCRIPTIONS) { i ->
+            world.calendar.saveSubscription(
+                CalendarSubscription("s$i", "Kalender $i", "https://example.se/$i.ics", emptyList(), MemberColor.Ocean),
+            )
+        }
+        val entitlements = FixedEntitlements(Entitlement.Free)
+        val vm = viewModel(world, entitlements = entitlements)
+        assertTrue(vm.state.value.atFreeLimit)
+        assertEquals(FreeLimits.SUBSCRIPTIONS, vm.state.value.rows.size, "the ones already there keep working")
+        vm.add()
+        assertNull(vm.state.value.editor)
+
+        entitlements.set(Entitlement.Everything)
+        assertFalse(vm.state.value.atFreeLimit)
+        vm.add()
+        assertTrue(vm.editor().isNew)
     }
 
     @Test

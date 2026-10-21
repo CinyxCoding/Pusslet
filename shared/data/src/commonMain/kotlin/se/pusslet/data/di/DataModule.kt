@@ -18,6 +18,8 @@ import se.pusslet.data.db.PussletDatabase
 import se.pusslet.data.notify.NotificationPlanSource
 import se.pusslet.data.notify.PushMessages
 import se.pusslet.data.notify.PushRegistration
+import se.pusslet.data.premium.AllUnlocked
+import se.pusslet.data.premium.Entitlements
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -75,6 +77,8 @@ val dataModule: Module = module {
     single<Clock> { Clock.System }
     single<TimeZone> { TimeZone.currentSystemDefault() }
     single<IdGenerator> { RandomIdGenerator }
+    // Nothing is sold yet: every build unlocks everything (BRIEF §7, docs/MONETIZATION.md).
+    single<Entitlements> { AllUnlocked }
 
     single { get<PussletDatabase>().preferenceDao() }
     single { get<PussletDatabase>().cacheDao() }

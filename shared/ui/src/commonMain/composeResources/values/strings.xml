@@ -1128,6 +1128,7 @@
     <!-- ICS subscriptions (Fas 3): Inställningar > Prenumerationer -->
     <string name="subs_title">Prenumerationer</string>
     <string name="subs_add">Ny prenumeration</string>
+    <string name="subs_free_limit">Fler än %1$d kalendrar ingår i Premium.</string>
     <string name="subs_edit">Ändra prenumeration</string>
     <string name="subs_empty">Följ skolans eller klubbens kalender, så syns den bland era händelser.</string>
     <string name="subs_parents_only">Prenumerationerna sköts av föräldrarna.</string>

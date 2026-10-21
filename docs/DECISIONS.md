@@ -421,3 +421,15 @@ testerna läser. Triggers körs där databasen ligger: `TRIGGER_REGION` (standar
 **Konsekvens:** Push kräver Blaze, deploy och ett riktigt projekt (SETUP.md 2.4); demo-flavorn visar inga push-notiser.
 Kommer meddelandet innan förfrågan har synkats till telefonen visas den ändå (händelsen måste finnas lokalt). Den som tagit
 bort appen eller loggat ut får inga fler meddelanden när FCM svarar att token är okänd. Loggar har bara typ och antal.
+
+## ADR-043 – Premium förberett, avstängt
+**Kontext:** BRIEF §7 vill ha en `Entitlements`-abstraktion som i dag låser upp allt, och en förberedd men inte aktiv
+koppling till Google Play Billing, utan att någon funktion beror på att betalningen fungerar.
+**Beslut:** `Entitlement` och `Feature` i `shared/core` (`premium`) beskriver vad premium skulle lägga till, `FreeLimits` gratisgränserna
+(3 ICS-prenumerationer). `Entitlements` i `shared/data` har `AllUnlocked` bundet i alla flavors. En spärr stoppar bara något
+nytt: över gränsen fungerar de befintliga prenumerationerna som förut, bara knappen för att lägga till försvinner och en rad
+förklarar varför (i dag aldrig synlig). `BillingRepository`, `PremiumProducts` och `BillingEntitlements` är förberedda men
+används inte, och inget faktureringsbibliotek finns i bygget, så appen begär ingen faktureringsbehörighet. Premium ska gälla
+hela familjen och verifieras på servern; stegen står i docs/MONETIZATION.md.
+**Konsekvens:** Att slå på premium blir att skriva Play-implementationen och serververifieringen och byta bindning i `prod`,
+utan att skärmarna ändras mer än premiumsidan. Gratisgränsen är testad i `SubscriptionsViewModelTest`.

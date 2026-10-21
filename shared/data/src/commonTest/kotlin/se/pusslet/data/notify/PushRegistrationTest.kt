@@ -1,5 +1,6 @@
 package se.pusslet.data.notify
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import se.pusslet.core.util.SequentialIdGenerator
@@ -24,6 +25,7 @@ private class Devices : FamilyRemote by LocalOnlyFamilyRemote {
     }
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PushRegistrationTest {
     @Test
     fun theTokenIsStoredOncePerPhoneWhenAnAccountWithAFamilyIsOnIt() = runTest {

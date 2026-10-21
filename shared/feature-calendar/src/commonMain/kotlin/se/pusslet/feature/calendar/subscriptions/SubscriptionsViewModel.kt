@@ -20,6 +20,7 @@ import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.Role
 import se.pusslet.core.util.IdGenerator
+import se.pusslet.data.premium.Entitlements
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.RemovedSubscription
@@ -90,6 +91,8 @@ data class SubscriptionsUiState(
     /** The add/edit screen, when open. */
     val editor: SubscriptionEditor? = null,
     val removal: Removal? = null,
+    /** The free version's number of subscriptions is reached (never today, see [Entitlements]): no new ones. */
+    val atFreeLimit: Boolean = false,
 )
 
 /**
@@ -103,6 +106,7 @@ class SubscriptionsViewModel(
     family: FamilyRepository,
     private val feeds: SubscriptionFeeds,
     private val sessions: SessionProvider,
+    private val entitlements: Entitlements,
     private val ids: IdGenerator,
     private val clock: Clock,
     private val zone: TimeZone,
@@ -138,7 +142,7 @@ class SubscriptionsViewModel(
             Content(parent, rows, ordered)
         }
 
-    val state: StateFlow<SubscriptionsUiState> = combine(content, editor, refreshing, removal) { c, e, r, rm ->
+    val state: StateFlow<SubscriptionsUiState> = combine(content, editor, refreshing, removal, entitlements.current) { c, e, r, rm, ent ->
         SubscriptionsUiState(
             loading = false,
             canManage = c.canManage,
@@ -148,12 +152,13 @@ class SubscriptionsViewModel(
             refreshing = r,
             editor = e.takeIf { c.canManage },
             removal = rm,
+            atFreeLimit = !ent.canAddSubscription(c.rows.size),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), SubscriptionsUiState(canManage = canManage))
 
     /** The round +: a new subscription in a colour no person or other subscription has yet. */
     fun add() {
-        if (!canManage) return
+        if (!canManage || !entitlements.current.value.canAddSubscription(state.value.rows.size)) return
         val used = state.value.rows.map { it.subscription.color } + state.value.people.map { it.color }
         val draft = SubscriptionDraft(id = ids.newId(), color = MemberColor.nextFree(used))
         editor.value = SubscriptionEditor(draft, isNew = true)

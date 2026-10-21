@@ -13,5 +13,5 @@ val calendarModule: Module = module {
     viewModel { CalendarDayViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { EventEditorViewModel(get(), get(), get(), get(), get()) }
     viewModel { EventDetailsViewModel(get(), get(), get(), get(), get(), get<SyncEngine>().status, get(), get()) }
-    viewModel { SubscriptionsViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { SubscriptionsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
 }

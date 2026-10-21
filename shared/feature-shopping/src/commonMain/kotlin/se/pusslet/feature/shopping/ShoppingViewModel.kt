@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -298,12 +299,16 @@ class ShoppingViewModel(
 
     val state: StateFlow<ShoppingUiState> = combine(base, social, extras) { b, s, e -> build(b, s, e) }
         .flowOn(compute)
+        // A failed read (the database closing under the screen) leaves the list as it was instead of crashing the app.
+        .catch { e -> log.w(e) { "Shopping list could not be read" } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), ShoppingUiState())
 
     init {
         // The purchase log grows when something is ticked off; reload it then (it is local and small).
         viewModelScope.launch {
-            shopping.items.map { all -> all.count { it.checked } }.distinctUntilChanged().flowOn(compute).collect { reloadHistory() }
+            shopping.items.map { all -> all.count { it.checked } }.distinctUntilChanged().flowOn(compute)
+                .catch { e -> log.w(e) { "Shopping list could not be read" } }
+                .collect { reloadHistory() }
         }
     }
 
@@ -356,8 +361,14 @@ class ShoppingViewModel(
 
     private suspend fun reloadHistory() {
         val since = clock.now() - StapleSuggester.LOOKBACK_DAYS.days
-        history.value = shopping.purchaseHistory(since.toEpochMilliseconds()).map {
-            PurchaseRecord(it.displayName, Instant.fromEpochMilliseconds(it.boughtAt))
+        try {
+            history.value = shopping.purchaseHistory(since.toEpochMilliseconds()).map {
+                PurchaseRecord(it.displayName, Instant.fromEpochMilliseconds(it.boughtAt))
+            }
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            // Only the staple suggestions depend on it; they wait for the next tick.
+            log.w(e) { "Purchase history could not be read" }
         }
     }
 

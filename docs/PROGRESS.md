@@ -55,7 +55,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   räknar upp)
 - [x] "Jag handlar nu": synlig för familjen medan butiksläget är öppet; varor som läggs till då kommer som push (ADR-042)
 - [x] ✅ 5 recept → korrekt sammanslagen och avdelningssorterad lista (ShoppingListGeneratorTest)
-- [ ] Skärmdumpstester för Mat/Handla (Roborazzi) – kräver Android-miljö
+- [x] Skärmdumpstester för Mat/Handla (Roborazzi): matsedel, tom vecka, inköpslista, tom lista, butiksläge, recept
 - [x] Köra fas 2-UI:t på emulator och gå igenom flödena för hand (ägaren, Android Studio, 2026-10-13)
 
 ## UX-förenkling (docs/UX_PLAN.md)
@@ -119,7 +119,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Importera flera receptlänkar på en gång: alla länkar i inklistrad text hämtas en i taget, alla recept på en sida (t.ex. en veckomeny med receptdata) listas, bocka för och spara; en veckomeny som bara länkar till sina recept följs ett steg och dess recept samlas i en samling (ADR-038)
 
 ## Fas 4 – Polish & Play-beredskap
-- [ ] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)
+- [x] Tillgänglighetsgenomgång, skärmdumpstester (ljust/mörkt/stor text)
   - [x] Skärmdumpstester (Roborazzi) för ljust, mörkt, engelska och stor text (1,5× och 2×) på Idag, Kalender och
     hjälparvyn, plus Mat, Handla, butiksläget, tomma lägen och onboarding
   - [x] Automatiska tillgänglighetskontroller (ADR-044): varje skärmdumpstest (37 skärmar, dialoger och ark) kontrollerar
@@ -157,7 +157,8 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Releasebygge (R8), signeringsinstruktioner, lanseringschecklista (SETUP.md 3): `bundleProdRelease` bygger, signering
   med uppladdningsnyckel från `keystore.properties` eller miljövariabler; R8-releasen provad på emulator 2026-10-21
   (exempelfamiljen, alla flikar, snabbinmatning, Handla för veckan) utan fel
-- [ ] ✅ `./gradlew build` grönt, release-AAB bygger
+- [x] ✅ `./gradlew build` grönt (alla varianter, tester och lint), release-AAB bygger och 59 funktionstester gröna
+  (2026-10-22). Kvar för ägaren: TalkBack-rundan och allt i lanseringschecklistan (SETUP.md 3.3)
 
 ## Fas 5 – V2
 - [ ] Barnvy & veckopeng · kalas/presenter · sök · flerhushållsdelning · fler lunchleverantörer

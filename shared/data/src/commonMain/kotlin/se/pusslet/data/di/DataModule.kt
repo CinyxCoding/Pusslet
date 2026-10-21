@@ -1,8 +1,5 @@
 package se.pusslet.data.di
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.datetime.TimeZone
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -73,7 +70,7 @@ val AppScope = named("appScope")
  * FamilyRemote, AuthRepository, DeviceCalendarSource and BackendConfig.
  */
 val dataModule: Module = module {
-    single(AppScope) { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+    single(AppScope) { backgroundScope() }
     single<Clock> { Clock.System }
     single<TimeZone> { TimeZone.currentSystemDefault() }
     single<IdGenerator> { RandomIdGenerator }

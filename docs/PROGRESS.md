@@ -134,7 +134,15 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
     huvudtråden; nu byggs den i bakgrunden: långsammaste 1 % av bildrutorna 500 → 85 ms, långsamma bildrutor på
     huvudtråden 195 → 93 för 15 bockar
   - `ShoppingListPerformanceTest` håller 600 varor under koll (öppna, bocka, lägga till många på en gång)
-- [ ] Felhantering och tomma lägen överallt, onboarding < 2 min
+- [x] Felhantering och tomma lägen överallt, onboarding < 2 min (genomgång 2026-10-22):
+  - Tomma lägen på alla listskärmar (Idag, uppgifter, skafferi, inköpslista, recept, matsedel, prenumerationer,
+    fördelning, hjälparens vecka); dagvyn är ett timrutnät där en tom timme går att trycka på för att lägga till
+  - Nätfel ger en begriplig rad överallt där appen hämtar något: väder, skolsök, inbjudan, streckkod, receptimport,
+    prenumerationer, näringsvärden, kalenderlänk, radering; synken visar "Offline – försöker igen automatiskt"
+  - Inga `!!` i produktionskoden och inga tysta `catch`. Nytt: bakgrundsjobb som inte fångar ett oväntat fel själva
+    loggas i stället för att krascha appen (`backgroundScope`, testat)
+  - Onboarding: "Skapa vår familj", ditt namn, barnens förnamn (kan hoppas över), ort (kan hoppas över), klart – sex
+    tryck och två textfält, väl under två minuter; kontot skapas först när man vill dela
 - [ ] Svenska + engelska texter genomlästa
 - [x] Entitlements/Billing-förberedelse, `docs/MONETIZATION.md`: allt upplåst i alla byggen, gratisgräns för
   prenumerationer testad, Play Billing förberett bakom `BillingRepository` utan bibliotek i bygget (ADR-043)

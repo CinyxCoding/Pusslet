@@ -86,7 +86,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Tvåvägs enhetskalender (CalendarContract): telefonens kalendrar läses (krockar), familjens händelser skrivs till vald kalender
   eller en egen Pusslet-kalender och följer familjen medan appen kör – raderade tas bort, flyttade tillfällen blir egna, byte av
   kalender städar den gamla (ADR-040); provat på emulator 2026-10-21
-- [ ] Eget ICS-flöde (Cloud Function)
+- [x] Eget ICS-flöde (Cloud Function `familyCalendarFeed`): hemlig länk som en förälder skapar och kan sluta dela i
+  Inställningar, RFC 5545 med serier, flyttade tillfällen och Stockholms sommartid; 55 funktions- och regeltester gröna mot
+  emulatorerna (ADR-041). Kräver deploy till ett riktigt projekt (SETUP.md 2.4)
 - [x] Konfliktdetektering, hämta/lämna-förfrågningar (ConflictDetector, ”Att lösa” på Idag, förfrågningar och svar ADR-030)
 - [ ] FCM, lokala påminnelser, morgonnotis, tysta timmar, notiskanaler
   - [x] Delad planering av lokala notiser: påminnelser, lämna/hämta, att göra, Morgon- och Kvällskoll, tysta timmar, samlade notiser, kanaler och texter (ADR-036)

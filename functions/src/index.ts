@@ -7,6 +7,7 @@ import { onRequest } from "firebase-functions/v2/https";
 
 export { REGION } from "./setup.js";
 export { deleteAccount, deleteFamily } from "./privacy.js";
+export { familyCalendarFeed } from "./calendarFeed.js";
 
 /** Liveness probe used by the app's "Om data / status" view and by uptime checks. */
 export const health = onRequest({ cors: false }, (_req, res) => {

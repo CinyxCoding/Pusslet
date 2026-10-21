@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
@@ -57,6 +58,9 @@ import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.TimeWindow
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.data.usecase.CalendarFeedLink
+import se.pusslet.ui.components.Banner
+import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.Section
@@ -97,9 +101,15 @@ class SettingsViewModel(
     sessions: SessionProvider,
     private val coordinator: AppCoordinator,
     private val local: SyncLocalStore,
+    private val feeds: CalendarFeedLink,
 ) : ViewModel() {
     val calendars = MutableStateFlow<List<DeviceCalendar>>(emptyList())
     private val replayFailed = MutableStateFlow(false)
+
+    /** The family's own calendar feed made on this phone (ADR-041); null when there is none. */
+    val feedLink: StateFlow<String?> = feeds.link.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+    val feedAvailable: Boolean get() = feeds.available
+    val feedFailed = MutableStateFlow(false)
 
     private val appearance =
         combine(prefs.observe(Prefs.Theme), prefs.observe(Prefs.DynamicColor), family.settings) { t, d, s -> Triple(t, d, s.weatherPlace) }
@@ -189,6 +199,12 @@ class SettingsViewModel(
         calendars.value = deviceCalendars.calendars()
     }
 
+    /** "Skapa länk" for the family's calendar in other apps; [feedFailed] when it could not be saved (no network). */
+    fun createFeed() = launch { feedFailed.value = !feeds.create() }
+
+    /** "Sluta dela": every calendar that subscribed loses the family's events at its next update. */
+    fun revokeFeed() = launch { feedFailed.value = !feeds.revoke() }
+
     /** Developer tools: forgets the family on this device and resets onboarding; the shell then shows the welcome screen. */
     fun replayOnboarding() = launch { replayFailed.value = !coordinator.replayOnboarding(local) }
 
@@ -199,6 +215,32 @@ class SettingsViewModel(
     companion object {
         const val APP_CALENDAR = -2L
     }
+}
+
+/** "Familjens kalender i andra appar": make, share or stop the secret feed link (ADR-041). */
+@Composable
+private fun CalendarFeedRows(viewModel: SettingsViewModel) {
+    val link by viewModel.feedLink.collectAsStateWithLifecycle()
+    val failed by viewModel.feedFailed.collectAsStateWithLifecycle()
+    val platform = LocalPlatformActions.current
+    val subject = stringResource(Res.string.settings_feed_title)
+    Text(subject, style = MaterialTheme.typography.labelLarge)
+    Text(
+        stringResource(Res.string.settings_feed_body),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    val current = link
+    if (current == null) {
+        OutlinedButton(onClick = viewModel::createFeed) { Text(stringResource(Res.string.settings_feed_create)) }
+    } else {
+        SelectionContainer { Text(current, style = MaterialTheme.typography.bodySmall) }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            OutlinedButton(onClick = { platform.shareText(current, subject) }) { Text(stringResource(Res.string.settings_feed_share)) }
+            TextButton(onClick = viewModel::revokeFeed) { Text(stringResource(Res.string.settings_feed_stop)) }
+        }
+    }
+    if (failed) Banner(stringResource(Res.string.settings_feed_failed), kind = BannerKind.Warning)
 }
 
 @Composable
@@ -345,6 +387,7 @@ fun SettingsRoute(
                         }
                     }
                 }
+                if (state.canEditFamily && viewModel.feedAvailable) CalendarFeedRows(viewModel)
             }
             Section(null) {
                 SwitchRow(

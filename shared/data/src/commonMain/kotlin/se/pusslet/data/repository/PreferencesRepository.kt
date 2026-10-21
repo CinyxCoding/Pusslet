@@ -34,6 +34,10 @@ typealias TimeWindow = se.pusslet.core.time.TimeWindow
 @Serializable
 data class MorningBrief(val enabled: Boolean = false, val time: LocalTime = LocalTime(6, 45))
 
+/** The family's calendar feed made on this phone (ADR-041); the server never lets a client read a token back. */
+@Serializable
+data class CalendarFeedToken(val familyId: String = "", val token: String = "")
+
 object Prefs {
     val Theme = PrefKey("ui.theme", AppTheme.serializer(), AppTheme.System)
     val DynamicColor = PrefKey("ui.dynamicColor", Boolean.serializer(), false)
@@ -44,6 +48,9 @@ object Prefs {
     val CalendarPersonFilter = PrefKey("calendar.personFilter", SetSerializer(String.serializer()), emptySet())
     val DeviceCalendarsRead = PrefKey("calendar.device.read", SetSerializer(Long.serializer()), emptySet())
     val DeviceCalendarExport = PrefKey("calendar.device.export", Long.serializer(), -1L)
+
+    /** A secret: never exported with the user's data (DataPrivacy) and cleared with this phone's data. */
+    val CalendarFeed = PrefKey("calendar.feed", CalendarFeedToken.serializer(), CalendarFeedToken())
     val Morning = PrefKey("notify.morning", MorningBrief.serializer(), MorningBrief())
     val QuietHours = PrefKey("notify.quiet", TimeWindow.serializer(), TimeWindow(LocalTime(21, 0), LocalTime(6, 30)))
     val QuietHoursEnabled = PrefKey("notify.quiet.enabled", Boolean.serializer(), true)

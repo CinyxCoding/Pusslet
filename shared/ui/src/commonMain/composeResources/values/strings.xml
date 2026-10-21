@@ -501,6 +501,12 @@
     <string name="settings_export_calendar">Lägg familjens händelser i</string>
     <string name="settings_export_none">Exportera inte</string>
     <string name="settings_export_app_calendar">En egen Pusslet-kalender</string>
+    <string name="settings_feed_title">Familjens kalender i andra appar</string>
+    <string name="settings_feed_body">Prenumerera i Google Kalender, Apple Kalender eller Outlook med en hemlig länk. Den som har länken ser familjens händelser, så dela den bara med de du litar på.</string>
+    <string name="settings_feed_create">Skapa länk</string>
+    <string name="settings_feed_share">Dela länken</string>
+    <string name="settings_feed_stop">Sluta dela</string>
+    <string name="settings_feed_failed">Det gick inte just nu. Kolla att du har nät och försök igen.</string>
     <string name="settings_crash_reports">Skicka kraschrapporter</string>
     <string name="settings_crash_reports_body">Anonyma tekniska uppgifter när appen kraschar. Av som standard.</string>
     <string name="settings_version">Version %1$s</string>

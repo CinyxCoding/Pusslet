@@ -383,3 +383,20 @@ stängs exporten av tas kopiorna bort ur den förra. Prenumerationerna hämtas o
 6:e timme med nät, så de är färska även när appen inte öppnats.
 **Konsekvens:** Familjens kalender syns i telefonens kalenderapp och i andra appar som läser den. Ändringar från en annan
 telefon kommer till telefonkalendern när appen kör och har synkat. Utan skrivbehörighet görs ingenting (och inget kraschar).
+
+## ADR-041 – Familjens eget kalenderflöde (ICS)
+**Kontext:** BRIEF §3 vill att familjens kalender ska gå att prenumerera på i Google Kalender, Apple Kalender och Outlook.
+Firestore-reglerna för hemliga flödesnycklar (`calendarFeeds/{token}`, aldrig läsbara för klienter) och appens anrop för att
+skapa och återkalla en nyckel fanns, men inte funktionen som serverar flödet eller något sätt att skapa länken i appen.
+**Beslut:** Cloud Function `familyCalendarFeed` (europe-north1) svarar på `GET /familyCalendarFeed/<token>.ics` (eller
+`?t=<token>`) med familjens händelser som RFC 5545. Okänd, återkallad eller felformad nyckel och raderad familj ger samma
+404. Raderade händelser tas inte med; ett flöde med `memberId` har bara den personens händelser. Lokala tider behåller sin
+zon (TZID, med VTIMEZONE för Europe/Stockholm, IANA-id för andra zoner, "Z" för UTC) så att en vecka med sommartidsskifte
+blir rätt. En serie är en VEVENT med RRULE och EXDATE; ett flyttat tillfälle har seriens UID och RECURRENCE-ID. Beskrivningen
+är deltagarnas namn; anteckningar och bilagor tas inte med. Svaret cachas privat i 15 minuter, och kalendrarna uppmanas att
+hämta om varje timme. Loggar har bara antal. I appen skapar en förälder länken under Inställningar → Kalendrar ("Familjens
+kalender i andra appar"), kan dela den och "Sluta dela". Nyckeln är två slumpade UUID (64 hextecken) och sparas bara på
+telefonen som skapade den, eftersom servern aldrig lämnar ut den igen.
+**Konsekvens:** Den som har länken ser familjens händelser, vilket texten i appen säger. Att sluta dela stoppar länken för
+alla som prenumererat. Bara telefonen som skapade länken kan visa och återkalla den. Hjälparnas synlighet styr inte flödet,
+eftersom bara föräldrar kan skapa länken. Funktionen kräver Blaze-planen och deploy (SETUP.md 2.4).

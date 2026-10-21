@@ -50,6 +50,8 @@ data class BackendConfig(
     val linkHost: String = "pusslet.web.app",
     /** Developer rows in Settings ("Visa första start igen"): demo and dev builds only, never prod. Defaults to the demo flavor. */
     val developerTools: Boolean = seedDemoData,
+    /** Where the familyCalendarFeed function answers (ADR-041); null without a backend, so no feed link is offered. */
+    val calendarFeedBase: String? = null,
 )
 
 /**

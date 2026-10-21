@@ -48,6 +48,7 @@ import se.pusslet.data.sync.RoomSyncLocalStore
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.data.usecase.AcceptedRequestApplier
+import se.pusslet.data.usecase.CalendarFeedLink
 import se.pusslet.data.usecase.DataPrivacy
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffAssigner
@@ -103,6 +104,8 @@ val dataModule: Module = module {
     // The home-screen widgets' data (ADR-039); Glance lives in composeApp.
     single { WidgetSource(get(), get(), get(), get(), get(), get(), get()) }
     single { DataPrivacy(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    // The family's own calendar feed link (ADR-041).
+    single { CalendarFeedLink(get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get()) }

@@ -500,6 +500,12 @@
     <string name="settings_export_calendar">Put family events in</string>
     <string name="settings_export_none">Don't export</string>
     <string name="settings_export_app_calendar">A separate Pusslet calendar</string>
+    <string name="settings_feed_title">The family's calendar in other apps</string>
+    <string name="settings_feed_body">Subscribe in Google Calendar, Apple Calendar or Outlook with a secret link. Anyone with the link sees the family's events, so only share it with people you trust.</string>
+    <string name="settings_feed_create">Create link</string>
+    <string name="settings_feed_share">Share the link</string>
+    <string name="settings_feed_stop">Stop sharing</string>
+    <string name="settings_feed_failed">That didn't work right now. Check that you're online and try again.</string>
     <string name="settings_crash_reports">Send crash reports</string>
     <string name="settings_crash_reports_body">Anonymous technical details when the app crashes. Off by default.</string>
     <string name="settings_version">Version %1$s</string>

@@ -36,6 +36,7 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.InMemoryRemoteStore
 import se.pusslet.data.sync.InMemorySyncLocalStore
 import se.pusslet.data.sync.SyncEngine
+import se.pusslet.data.usecase.CalendarFeedLink
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -144,6 +145,7 @@ class SettingsViewModelTest {
             world.sessions,
             world.coordinator,
             world.local,
+            CalendarFeedLink(LocalOnlyFamilyRemote, world.prefs, world.sessions, world.config),
         )
         CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler)).launch { vm.state.collect {} }
         return vm

@@ -86,6 +86,11 @@ Cloud Functions kräver **Blaze** (betala per användning). Sätt en **budgetvar
 firebase use --add                       # välj projektet
 firebase deploy --only firestore:rules,firestore:indexes,functions
 ```
+Familjens kalenderflöde (ADR-041) är funktionen `familyCalendarFeed`; appen bygger länken
+`https://europe-north1-<projekt-id>.cloudfunctions.net/familyCalendarFeed/<token>.ics`, så den behöver ingen egen
+konfiguration. Prova efter deploy: Inställningar → Kalendrar → ”Skapa länk”, öppna länken i en webbläsare (en `.ics` laddas
+ner) och lägg till den i Google Kalender under ”Andra kalendrar → Från webbadress”. Google hämtar prenumerationer med
+några timmars mellanrum.
 
 ### 2.5 SHA-fingeravtryck
 Lägg till SHA-1 och SHA-256 för debug- och release-nyckeln i Firebase (krävs för Google Sign-In och App Links):

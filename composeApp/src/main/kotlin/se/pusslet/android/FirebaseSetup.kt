@@ -31,6 +31,12 @@ object FirebaseSetup {
             BuildConfig.EMULATOR_HOST,
             BuildConfig.LINK_HOST,
             developerTools = BuildConfig.DEVELOPER_TOOLS,
+            calendarFeedBase = when (mode) {
+                BackendMode.Emulator ->
+                    "http://${BuildConfig.EMULATOR_HOST}:$FUNCTIONS_PORT/${BuildConfig.FIREBASE_PROJECT_ID}/$REGION/$FEED"
+                BackendMode.Firebase -> "https://$REGION-${BuildConfig.FIREBASE_PROJECT_ID}.cloudfunctions.net/$FEED"
+                BackendMode.LocalOnly -> null
+            },
         )
         if (mode == BackendMode.LocalOnly) {
             log.i { "No Firebase configuration for this flavor; running local-only" }
@@ -60,4 +66,9 @@ object FirebaseSetup {
 
     const val FIRESTORE_PORT = 8080
     const val AUTH_PORT = 9099
+    private const val FUNCTIONS_PORT = 5001
+
+    /** As in functions/src/setup.ts and calendarFeed.ts. */
+    private const val REGION = "europe-north1"
+    private const val FEED = "familyCalendarFeed"
 }

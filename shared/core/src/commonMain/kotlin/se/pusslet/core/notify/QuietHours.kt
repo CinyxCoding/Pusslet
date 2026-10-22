@@ -24,7 +24,7 @@ object QuietHours {
     fun passes(kind: NotificationKind, userTimed: Boolean): Boolean = when (kind) {
         NotificationKind.HandoffSoon, NotificationKind.Morning, NotificationKind.Shopping -> true
         NotificationKind.Reminder -> userTimed
-        NotificationKind.Evening, NotificationKind.Requests, NotificationKind.Conflicts -> false
+        NotificationKind.Evening, NotificationKind.Requests, NotificationKind.Conflicts, NotificationKind.SickDay -> false
     }
 
     /**

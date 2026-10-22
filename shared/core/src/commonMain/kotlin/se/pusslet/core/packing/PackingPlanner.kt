@@ -24,7 +24,7 @@ object PackingPlanner {
         checks: Map<String, PackingChecks> = emptyMap(),
     ): Map<String, List<PackingItem>> = children.associate { child ->
         val checked = checks[PackingChecks.docId(date, child.id)]?.checked.orEmpty()
-        val todays = occurrences.filter { it.overlapsDate(date) && child.id in it.event.participantIds }
+        val todays = occurrences.filter { it.overlapsDate(date) && child.id in it.attending }
         val items = ArrayList<PackingItem>()
 
         for (rule in rules) {

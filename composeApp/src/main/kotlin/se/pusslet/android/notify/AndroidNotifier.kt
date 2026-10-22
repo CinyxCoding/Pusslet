@@ -99,7 +99,8 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
     private fun category(kind: NotificationKind): String = when (kind) {
         NotificationKind.Reminder, NotificationKind.HandoffSoon, NotificationKind.Morning, NotificationKind.Evening ->
             NotificationCompat.CATEGORY_REMINDER
-        NotificationKind.Requests, NotificationKind.Shopping, NotificationKind.Conflicts -> NotificationCompat.CATEGORY_MESSAGE
+        NotificationKind.Requests, NotificationKind.Shopping, NotificationKind.Conflicts, NotificationKind.SickDay ->
+            NotificationCompat.CATEGORY_MESSAGE
     }
 
     private fun NotificationImportance.toAndroid(): Int = when (this) {

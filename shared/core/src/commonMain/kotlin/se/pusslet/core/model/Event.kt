@@ -97,8 +97,13 @@ data class EventOccurrence(
     /** Hand-off times converted to the display time zone (the stored ones are in the event's zone). */
     val dropOffAt: LocalTime? = null,
     val pickUpAt: LocalTime? = null,
+    /** Children home sick this day (ADR-047): still in the event, but not dropped off, picked up or expected there. */
+    val absent: Set<String> = emptySet(),
 ) {
     val key: String get() = "${event.id}@$occurrenceDate"
+
+    /** Who takes part this time: the event's participants without the [absent] ones. Read this to plan the day. */
+    val attending: List<String> get() = if (absent.isEmpty()) event.participantIds else event.participantIds.filter { it !in absent }
     val allDay: Boolean get() = event.allDay
 
     fun pickUpTime(): LocalTime? = pickUpAt ?: event.pickUp?.time ?: if (event.allDay) null else end.time

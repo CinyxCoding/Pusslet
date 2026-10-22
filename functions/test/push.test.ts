@@ -3,7 +3,7 @@
 import { type App, deleteApp, initializeApp } from "firebase-admin/app";
 import { type Firestore, getFirestore } from "firebase-admin/firestore";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { itemAdded, requestAnswered, requestCreated } from "../src/push.js";
+import { itemAdded, requestAnswered, requestCreated, sickChanged } from "../src/push.js";
 
 const PROJECT = process.env.GCLOUD_PROJECT ?? "demo-pusslet";
 const RUN = Math.random().toString(36).slice(2, 8);
@@ -51,6 +51,31 @@ describe("who gets a push", () => {
   });
 });
 
+describe("who hears about a sick child", () => {
+  const members = [{ id: "sara", uid: "u-sara" }, { id: "johan", uid: "u-johan" }, { id: "bengt", uid: "u-bengt" }];
+  const day = { childId: "ella", date: "2026-10-22", reportedBy: "sara", updatedBy: "u-sara" };
+
+  it("a new sick day goes to everyone but the one who reported it, caregivers too", () => {
+    const push = sickChanged("f", "ella_2026-10-22", undefined, day, members);
+    expect(push?.memberIds).toEqual(["johan", "bengt"]);
+    expect(push?.data).toEqual({
+      type: "sick", familyId: "f", sickDayId: "ella_2026-10-22", childId: "ella", date: "2026-10-22", by: "sara", homeWith: "",
+    });
+  });
+
+  it("who stays home goes to everyone but the one who chose", () => {
+    const chosen = { ...day, homeWith: "johan", updatedBy: "u-johan" };
+    expect(sickChanged("f", "s", day, chosen, members)?.memberIds).toEqual(["sara", "bengt"]);
+    expect(sickChanged("f", "s", day, chosen, members)?.data.homeWith).toBe("johan");
+  });
+
+  it("ticking a report, the same person again or Ångra says nothing", () => {
+    const home = { ...day, homeWith: "johan" };
+    expect(sickChanged("f", "s", home, { ...home, absenceReported: true } as typeof home, members)).toBeNull();
+    expect(sickChanged("f", "s", home, { ...home, deletedAt: "now" }, members)).toBeNull();
+  });
+});
+
 describe("the push triggers", () => {
   let app: App;
   let db: Firestore;
@@ -95,9 +120,15 @@ describe("the push triggers", () => {
     expect(answer?.data.status).toBe("accepted");
 
     await db.doc(`families/${fid}/presence/sara`).set({ memberId: "sara", listId: "l1", until: new Date(Date.now() + 3_600_000).toISOString() });
-    await db.doc(`families/${fid}/shoppingItems/i1`).set({ listId: "l1", name: "Mjölk", addedBy: "bengt" });
+    // Where the app writes items: under their list (the trigger used to listen to a path nothing is written to).
+    await db.doc(`families/${fid}/shoppingLists/l1/items/i1`).set({ listId: "l1", name: "Mjölk", addedBy: "bengt" });
     const item = await outbox(fid, "shopping");
     expect(item?.memberIds).toEqual(["sara"]);
     expect(item?.data.item).toBe("Mjölk");
+
+    await db.doc(`families/${fid}/sickDays/ella_2026-10-22`).set({ childId: "ella", date: "2026-10-22", reportedBy: "sara", updatedBy: `u-sara-${RUN}` });
+    const sick = await outbox(fid, "sick");
+    expect(sick?.memberIds).toEqual(["bengt"]);
+    expect(sick?.data.childId).toBe("ella");
   });
 });

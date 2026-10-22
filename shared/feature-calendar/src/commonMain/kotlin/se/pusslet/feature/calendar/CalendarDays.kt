@@ -12,6 +12,8 @@ import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.Household
+import se.pusslet.core.model.SickDay
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.time.datesUntil
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.TodayPlanner
@@ -32,10 +34,15 @@ data class CalendarDay(
     val events: List<EventOccurrence> = emptyList(),
     /** Custody changeovers this day: "Byte 15:00 till Ahmed". */
     val changeovers: List<CustodyChangeover> = emptyList(),
+    /** Children home sick this day (ADR-047): "Ella sjuk · Sara hemma". Their activities are already left out. */
+    val sick: List<SickLine> = emptyList(),
 ) {
     /** Nothing to show for the day; TalkBack hears "Inget planerat" with the date. */
-    val isEmpty: Boolean get() = occurrences.isEmpty() && holidays.isEmpty() && changeovers.isEmpty()
+    val isEmpty: Boolean get() = occurrences.isEmpty() && holidays.isEmpty() && changeovers.isEmpty() && sick.isEmpty()
 }
+
+/** A sick child on a calendar day, and who stays home (null = not decided). */
+data class SickLine(val child: FamilyPerson, val homeWith: FamilyPerson?)
 
 /**
  * A school or preschool day as one quiet line: "Simon: Johan lämnar 07:50 · Morfar hämtar 15:30". A tap opens [occurrence];
@@ -93,11 +100,13 @@ object CalendarDays {
         personFilter: Set<String>,
         layers: Set<CalendarLayer>,
         me: String?,
+        sickDays: List<SickDay> = emptyList(),
     ): List<CalendarDay> {
+        val byId = people.associateBy { it.id }
         val visible = if (personFilter.isEmpty()) {
             occurrences
         } else {
-            occurrences.filter { o -> o.event.participantIds.any { it in personFilter } }
+            occurrences.filter { o -> o.attending.any { it in personFilter } }
         }
         val custody = if (CalendarLayer.Custody in layers) relevant(schedules, personFilter) else emptyList()
         return from.datesUntil(to).map { d ->
@@ -116,6 +125,9 @@ object CalendarDays {
                     if (!CustodyCalculator.isHandoverDay(s, d)) return@mapNotNull null
                     CustodyCalculator.nextHandover(s, d)?.let { CustodyChangeover(it, namedChildren(s, people)) }
                 },
+                sick = SickDays.on(sickDays, d)
+                    .filter { personFilter.isEmpty() || it.childId in personFilter }
+                    .mapNotNull { s -> byId[s.childId]?.let { SickLine(it, s.homeWith?.let(byId::get)) } },
             )
         }
     }
@@ -143,9 +155,9 @@ object CalendarDays {
         val byId = people.associateBy { it.id }
         val children = people.filter { it.isChild }
         return occurrences
-            .filter { o -> !o.allDay && TodayPlanner.isRoutine(o) && o.event.participantIds.any { byId[it]?.isChild == true } }
+            .filter { o -> !o.allDay && TodayPlanner.isRoutine(o) && o.attending.any { byId[it]?.isChild == true } }
             .sortedBy { it.start }
-            .groupBy { o -> children.filter { it.id in o.event.participantIds }.map { it.id } }
+            .groupBy { o -> children.filter { it.id in o.attending }.map { it.id } }
             .map { (ids, group) ->
                 RoutineLine(
                     children = ids.mapNotNull { byId[it] },

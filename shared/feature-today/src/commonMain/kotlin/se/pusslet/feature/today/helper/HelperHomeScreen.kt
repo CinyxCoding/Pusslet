@@ -49,6 +49,8 @@ import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.today.Greeting
 import se.pusslet.core.today.TodayBlock
 import se.pusslet.feature.today.SEPARATOR
+import se.pusslet.ui.components.Banner
+import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.CheckRow
 import se.pusslet.ui.components.FirstTimeHint
 import se.pusslet.ui.components.HeroCard
@@ -95,6 +97,7 @@ import se.pusslet.ui.resources.helper_taken_pickup
 import se.pusslet.ui.resources.helper_week
 import se.pusslet.ui.resources.helper_yes_dropoff
 import se.pusslet.ui.resources.helper_yes_pickup
+import se.pusslet.ui.resources.sick_card_title
 import se.pusslet.ui.resources.today
 import se.pusslet.ui.resources.today_block_packing
 import se.pusslet.ui.resources.today_block_shopping
@@ -193,6 +196,10 @@ fun HelperHomeScreen(
         verticalArrangement = Arrangement.spacedBy(HelperDimens.gap),
     ) {
         item(key = "header") { Header(state, plan) }
+        // "Ella är sjuk idag": her pick-up is already gone, this says why (ADR-047).
+        items(plan.sickToday, key = { "sick-${it.id}" }) { child ->
+            Banner(stringResource(Res.string.sick_card_title, child.name), kind = BannerKind.Warning)
+        }
         // Questions come first and can never be hidden.
         items(requests, key = { "request-${it.request.id}" }) { RequestCard(it, plan.date, state.waitingForNetwork, actions) }
         if (hiddenRequests > 0) {

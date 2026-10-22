@@ -29,6 +29,7 @@ val todayModule: Module = module {
             get(),
             get(),
             get(),
+            get(),
         )
     }
     viewModel {

@@ -1341,4 +1341,47 @@
     <string name="widget_problems">Att lösa: %1$d</string>
 
     <!-- Placeholders used until a feature is wired up -->
+    <!-- Sjuk dag och VAB (ADR-047) -->
+    <string name="decimal_separator">,</string>
+    <string name="sick_report_action">Sjuk idag?</string>
+    <string name="sick_sheet_title">Vem är sjuk?</string>
+    <string name="sick_sheet_body">Lämning, hämtning och aktiviteter ställs in för dem, och de andra i familjen får veta. Sjukdagarna sparas för att räkna VAB i år och nästa år.</string>
+    <string name="sick_report_confirm">Sjukanmäl</string>
+    <string name="sick_card_title">%1$s är sjuk idag</string>
+    <string name="sick_card_title_tomorrow">%1$s är sjuk imorgon</string>
+    <string name="sick_cancelled">Inställt: %1$s</string>
+    <string name="sick_home_with">Vem stannar hemma?</string>
+    <string name="sick_vab">VAB</string>
+    <string name="sick_vab_whole">Hel dag</string>
+    <string name="sick_vab_three_quarters">¾ dag</string>
+    <string name="sick_vab_half">Halv dag</string>
+    <string name="sick_vab_quarter">¼ dag</string>
+    <string name="sick_vab_eighth">⅛ dag</string>
+    <string name="sick_absence_reported">Frånvaro anmäld till %1$s</string>
+    <string name="sick_absence_reported_school">Frånvaro anmäld till skolan</string>
+    <string name="sick_work_told">Sagt till jobbet</string>
+    <string name="sick_vab_reported">VAB anmäld till Försäkringskassan</string>
+    <string name="sick_vab_year">VAB i år: %1$s</string>
+    <string name="sick_vab_person">%1$s %2$s</string>
+    <string name="sick_still_title">Är %1$s fortfarande sjuk?</string>
+    <string name="sick_still_yes">Sjuk idag också</string>
+    <string name="sick_still_no">Frisk igen</string>
+    <string name="sick_vab_report_title">Anmäl VAB för %1$s</string>
+    <string name="sick_vab_report_one">1 dag · %1$s</string>
+    <string name="sick_vab_report_days">%1$s dagar · %2$s</string>
+    <string name="sick_vab_report_open">Öppna Försäkringskassan</string>
+    <string name="sick_vab_report_done">Anmält</string>
+    <string name="sick_line">%1$s sjuk</string>
+    <string name="sick_line_home">%1$s sjuk · %2$s hemma</string>
+    <string name="notify_channel_sick">Sjukt barn</string>
+    <string name="notify_channel_sick_desc">När ett barn är sjukt och vem som stannar hemma</string>
+    <string name="notify_sick_title">%1$s är sjuk idag</string>
+    <string name="notify_sick_title_tomorrow">%1$s är sjuk imorgon</string>
+    <string name="notify_sick_by">%1$s sjukanmälde · Vem stannar hemma?</string>
+    <string name="notify_sick_home">%1$s stannar hemma med %2$s</string>
+    <string name="notify_sick_cancelled">Lämning, hämtning och aktiviteter är inställda</string>
+    <string name="notify_absence_title">Anmäl frånvaro för %1$s</string>
+    <string name="notify_absence_body">Till %1$s</string>
+    <string name="notify_vab_title">Anmäl VAB för %1$s</string>
+    <string name="notify_vab_body">Till Försäkringskassan, inom 90 dagar</string>
 </resources>

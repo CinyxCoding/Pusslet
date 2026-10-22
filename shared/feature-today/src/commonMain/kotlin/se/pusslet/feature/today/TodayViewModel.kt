@@ -37,7 +37,10 @@ import se.pusslet.core.model.PackingItem
 import se.pusslet.core.model.Place
 import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
+import se.pusslet.core.model.SickDay
 import se.pusslet.core.model.TaskCategory
+import se.pusslet.core.model.VabPart
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.SetupChecklist
@@ -60,6 +63,7 @@ import se.pusslet.data.repository.PackingRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.ShoppingRepository
+import se.pusslet.data.repository.SickDayRepository
 import se.pusslet.data.repository.TaskRepository
 import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionProvider
@@ -124,6 +128,8 @@ data class TodayUiState(
     val leavingDemo: Boolean = false,
     /** Leaving the example family did not work: a quiet line says so and the button stays. */
     val leaveDemoFailed: Boolean = false,
+    /** Sick days (ADR-047): "Ella är sjuk idag", "Fortfarande sjuk?", VAB to report. Parents only. */
+    val sick: SickToday = SickToday(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -146,6 +152,7 @@ class TodayViewModel(
     private val ids: IdGenerator,
     private val clock: Clock,
     private val zone: TimeZone,
+    private val sick: SickDayRepository,
 ) : ViewModel() {
     private val log = Logger.withTag("Today")
 
@@ -167,7 +174,8 @@ class TodayViewModel(
 
     private val household: Flow<TodayInputSource.Household> = source.household
 
-    private val occurrences: Flow<List<EventOccurrence>> = today.flatMapLatest { d -> source.occurrences(d) }
+    /** The day's occurrences with sick children absent, and what their sick day cancelled (ADR-047). */
+    private val day: Flow<SickDays.Applied> = today.flatMapLatest { d -> source.day(d) }
 
     private val extras: Flow<TodayInputSource.Extras> = source.extras
 
@@ -255,8 +263,8 @@ class TodayViewModel(
         View(l, s, r, place, fwu.first, fwu.second, fwu.third)
     }
 
-    val state: StateFlow<TodayUiState> = combine(now, household, occurrences, extras, view) { n, h, occ, ex, v ->
-        build(n, h, occ, ex, v)
+    val state: StateFlow<TodayUiState> = combine(now, household, day, extras, view) { n, h, d, ex, v ->
+        build(n, h, d, ex, v)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -267,10 +275,11 @@ class TodayViewModel(
     private fun build(
         n: LocalDateTime,
         h: TodayInputSource.Household,
-        occ: List<EventOccurrence>,
+        day: SickDays.Applied,
         ex: TodayInputSource.Extras,
         v: View,
     ): TodayUiState {
+        val occ = day.occurrences
         val me = h.session.memberId
         val people = h.people.associateBy { it.id }
         val plan = TodayPlanner.build(
@@ -329,6 +338,7 @@ class TodayViewModel(
             showAddHint = canEdit && v.firstUse.hintUnseen && setup == null,
             leavingDemo = v.firstUse.demoExit == DemoExit.Leaving,
             leaveDemoFailed = v.firstUse.demoExit == DemoExit.Failed,
+            sick = if (canEdit) SickModel.build(n.date, me, ex.sickDays, day.cancelled, people, h.children) else SickToday(),
         )
     }
 
@@ -414,6 +424,46 @@ class TodayViewModel(
             demoExit.value = if (left) DemoExit.Idle else DemoExit.Failed
         }
     }
+
+    // region Sick days (ADR-047)
+
+    /** "Sjukanmäl": [childIds] are home sick on [date]; their day is cancelled and the others are told (push). */
+    fun reportSick(childIds: List<String>, date: LocalDate) = sickWrite { sick.report(childIds, date) }
+
+    /** "Ångra": the report was a mistake. */
+    fun undoSick(day: SickDay) = sickWrite { sick.undo(day.id) }
+
+    /** "Vem stannar hemma?": a parent takes VAB by default, another adult (morfar) does not. */
+    fun setHomeWith(day: SickDay, memberId: String?) {
+        val parent = memberId != null && state.value.people[memberId]?.role == Role.Parent
+        sickWrite { sick.update(day.id) { it.copy(homeWith = memberId, vab = parent) } }
+    }
+
+    fun setVab(day: SickDay, on: Boolean) = sickWrite { sick.update(day.id) { it.copy(vab = on) } }
+
+    fun setVabPart(day: SickDay, part: VabPart) = sickWrite { sick.update(day.id) { it.copy(vabPart = part) } }
+
+    fun setAbsenceReported(day: SickDay, done: Boolean) = sickWrite { sick.update(day.id) { it.copy(absenceReported = done) } }
+
+    fun setWorkTold(day: SickDay, done: Boolean) = sickWrite { sick.update(day.id) { it.copy(workTold = done) } }
+
+    fun setVabReported(day: SickDay, done: Boolean) = sickWrite { sick.update(day.id) { it.copy(vabReported = done) } }
+
+    /** "Sjuk idag också": today becomes a sick day too, with the same person at home. */
+    fun stillSick(previous: SickDay) = sickWrite { sick.stillSick(previous, clock.now().toLocalDateTime(zone).date) }
+
+    /** "Frisk igen". */
+    fun wellAgain(previous: SickDay) = sickWrite { sick.wellAgain(previous) }
+
+    /** "Anmält" on "Anmäl VAB för Ella". */
+    fun vabReported(report: SickDays.VabToReport) = sickWrite { sick.setVabReported(report.days) }
+
+    private fun sickWrite(block: suspend () -> Unit) {
+        if (!sessions.session.value.canEdit) return
+        viewModelScope.launch { block() }
+    }
+
+    // endregion
 
     /** "Kalas på lördag – present?": "Påminn mig" creates the to-do linked to the party, due the day before. */
     fun addGiftTask(occurrence: EventOccurrence, title: String) {

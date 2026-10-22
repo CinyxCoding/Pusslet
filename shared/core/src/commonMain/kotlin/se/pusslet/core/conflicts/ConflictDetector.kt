@@ -68,7 +68,7 @@ object ConflictDetector {
         val result = ArrayList<Conflict>()
 
         for (o in today) {
-            val kids = o.event.participantIds.filter { it in children }
+            val kids = o.attending.filter { it in children }
             if (kids.isEmpty() || o.allDay) continue
             for ((kind, handoff) in listOf(HandoffKind.DropOff to o.event.dropOff, HandoffKind.PickUp to o.event.pickUp)) {
                 if (handoff == null) continue
@@ -77,10 +77,10 @@ object ConflictDetector {
                 val at = LocalDateTime(date, time)
                 val busy = today.filter { other ->
                     other !== o && overlaps(other, at, slackMinutes) &&
-                        other.event.participantIds.none { it in kids }
+                        other.attending.none { it in kids }
                 }
 
-                fun busyWith(personId: String) = busy.firstOrNull { personId in it.event.participantIds }
+                fun busyWith(personId: String) = busy.firstOrNull { personId in it.attending }
                 val assigned = handoff.personId
                 if (assigned == null) {
                     val busyParents = parents.filter { busyWith(it) != null }
@@ -97,7 +97,7 @@ object ConflictDetector {
 
         // Children in two activities at once.
         for (child in children) {
-            val mine = today.filter { child in it.event.participantIds && !it.allDay }.sortedBy { it.start }
+            val mine = today.filter { child in it.attending && !it.allDay }.sortedBy { it.start }
             for (i in mine.indices) {
                 for (j in i + 1 until mine.size) {
                     if (mine[i].end > mine[j].start && mine[i].event.id != mine[j].event.id) {

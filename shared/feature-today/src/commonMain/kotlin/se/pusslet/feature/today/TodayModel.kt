@@ -174,7 +174,7 @@ internal object TodayModel {
                 TodayRequest(
                     request = r,
                     from = people[r.fromMemberId],
-                    children = o.event.participantIds.mapNotNull { people[it] }.filter { it.isChild },
+                    children = o.attending.mapNotNull { people[it] }.filter { it.isChild },
                     date = date,
                     time = time,
                     occurrence = o,

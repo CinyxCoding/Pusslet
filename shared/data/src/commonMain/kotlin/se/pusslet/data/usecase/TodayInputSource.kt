@@ -3,6 +3,7 @@ package se.pusslet.data.usecase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -18,6 +19,8 @@ import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.SchoolLunch
+import se.pusslet.core.model.SickDay
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.TodayInput
@@ -38,7 +41,7 @@ import kotlin.time.Clock
  * background worker (the notification plan) read the same data the same way.
  */
 class TodayInputSource(
-    family: FamilyRepository,
+    private val family: FamilyRepository,
     private val calendar: CalendarRepository,
     packing: PackingRepository,
     meals: MealRepository,
@@ -71,6 +74,7 @@ class TodayInputSource(
         val weeks: List<MealPlanWeek>,
         val lunches: Map<String, List<SchoolLunch>>,
         val tasks: List<FamilyTask>,
+        val sickDays: List<SickDay> = emptyList(),
     )
 
     val household: Flow<Household> = combine(
@@ -83,23 +87,35 @@ class TodayInputSource(
         Household(p, c, f?.name.orEmpty(), cu, s)
     }
 
-    val extras: Flow<Extras> = combine(packing.rules, packing.checks, meals.weeks, lunches.lunches, tasks.tasks) { r, c, w, l, t ->
-        Extras(r, c, w, l, t)
-    }
+    private val sickDays: Flow<List<SickDay>> = calendar.sickDays
+
+    val extras: Flow<Extras> = combine(
+        combine(packing.rules, packing.checks, meals.weeks, lunches.lunches, tasks.tasks) { r, c, w, l, t -> Extras(r, c, w, l, t) },
+        sickDays,
+    ) { ex, s -> ex.copy(sickDays = s) }
 
     val requests: Flow<List<HandoffRequest>> get() = calendar.handoffRequests
 
     /**
      * Occurrences from [today] through [HORIZON_DAYS] days ahead. A caregiver's accepted answer counts at once, before a
-     * parent's phone has written it into the event (ADR-030).
+     * parent's phone has written it into the event (ADR-030), and a sick child is absent that day (ADR-047).
      */
-    fun occurrences(today: LocalDate, layers: Layers = Layers.Shown): Flow<List<EventOccurrence>> {
+    fun occurrences(
+        today: LocalDate,
+        layers: Layers = Layers.Shown,
+    ): Flow<List<EventOccurrence>> = day(today, layers).map { it.occurrences }
+
+    /** [occurrences] and what a sick child's day cancelled, for Idag's sick card ("Inställt: Dans 17:00"). */
+    fun day(today: LocalDate, layers: Layers = Layers.Shown): Flow<SickDays.Applied> {
         val to = today.plusDays(HORIZON_DAYS)
         val occurrences = when (layers) {
             Layers.Shown -> calendar.occurrences(today, to, zone)
             Layers.All -> calendar.allOccurrences(today, to, zone)
         }
-        return combine(occurrences, calendar.handoffRequests) { occ, requests -> EffectiveHandoffs.apply(occ, requests) }
+        val childIds = family.children.map { list -> list.map { it.id }.toSet() }
+        return combine(occurrences, calendar.handoffRequests, sickDays, childIds) { occ, requests, sick, children ->
+            SickDays.apply(EffectiveHandoffs.apply(occ, requests), sick, children)
+        }
     }
 
     /** The input for [now]; weather and shopping come from the caller, since only Idag reads them. */
@@ -134,6 +150,7 @@ class TodayInputSource(
             hasWeatherPlace = hasWeatherPlace,
             shopping = shopping,
             requests = requests,
+            sickDays = extras.sickDays,
         )
     }
 

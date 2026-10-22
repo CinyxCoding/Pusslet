@@ -40,6 +40,9 @@ enum class NotificationKind(val channelId: String, val importance: NotificationI
 
     /** Something in the family's plan clashes – arrives with FCM or a later local rule. */
     Conflicts("pusslet.conflicts", NotificationImportance.Default),
+
+    /** "Ella är sjuk idag" and who stays home, from another phone (ADR-047). */
+    SickDay("pusslet.sick", NotificationImportance.High),
     ;
 
     /** The Android notification group, so the system can stack a kind's notifications. */

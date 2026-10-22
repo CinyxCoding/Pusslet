@@ -19,6 +19,8 @@ import se.pusslet.ui.resources.greeting_evening
 import se.pusslet.ui.resources.greeting_morning
 import se.pusslet.ui.resources.greeting_night
 import se.pusslet.ui.resources.list_separator
+import se.pusslet.ui.resources.notify_absence_body
+import se.pusslet.ui.resources.notify_absence_title
 import se.pusslet.ui.resources.notify_answer_no
 import se.pusslet.ui.resources.notify_answer_yes_dropoff
 import se.pusslet.ui.resources.notify_answer_yes_pickup
@@ -49,6 +51,8 @@ import se.pusslet.ui.resources.notify_channel_requests
 import se.pusslet.ui.resources.notify_channel_requests_desc
 import se.pusslet.ui.resources.notify_channel_shopping
 import se.pusslet.ui.resources.notify_channel_shopping_desc
+import se.pusslet.ui.resources.notify_channel_sick
+import se.pusslet.ui.resources.notify_channel_sick_desc
 import se.pusslet.ui.resources.notify_evening_body
 import se.pusslet.ui.resources.notify_evening_title
 import se.pusslet.ui.resources.notify_event_allday_tomorrow
@@ -64,10 +68,17 @@ import se.pusslet.ui.resources.notify_request_from
 import se.pusslet.ui.resources.notify_request_pickup
 import se.pusslet.ui.resources.notify_shopping_added
 import se.pusslet.ui.resources.notify_shopping_added_body
+import se.pusslet.ui.resources.notify_sick_by
+import se.pusslet.ui.resources.notify_sick_cancelled
+import se.pusslet.ui.resources.notify_sick_home
+import se.pusslet.ui.resources.notify_sick_title
+import se.pusslet.ui.resources.notify_sick_title_tomorrow
 import se.pusslet.ui.resources.notify_someone
 import se.pusslet.ui.resources.notify_stop
 import se.pusslet.ui.resources.notify_task_today
 import se.pusslet.ui.resources.notify_task_today_at
+import se.pusslet.ui.resources.notify_vab_body
+import se.pusslet.ui.resources.notify_vab_title
 import se.pusslet.ui.resources.notify_you_dropoff
 import se.pusslet.ui.resources.notify_you_pickup
 import se.pusslet.ui.resources.time_range
@@ -123,6 +134,17 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
         is NotificationPayload.Bundle -> bundle(p)
         is NotificationPayload.Request -> request(p)
         is NotificationPayload.Answer -> answer(p)
+        is NotificationPayload.Sick -> NotificationText(
+            str(if (p.tomorrow) Res.string.notify_sick_title_tomorrow else Res.string.notify_sick_title, p.child),
+            p.homeWith?.let { str(Res.string.notify_sick_home, it, p.child) }
+                ?: p.by?.let { str(Res.string.notify_sick_by, it) }
+                ?: str(Res.string.notify_sick_cancelled),
+        )
+        is NotificationPayload.SickAbsence -> NotificationText(
+            str(Res.string.notify_absence_title, p.child),
+            p.school?.let { str(Res.string.notify_absence_body, it) }.orEmpty(),
+        )
+        is NotificationPayload.VabReport -> NotificationText(str(Res.string.notify_vab_title, p.child), str(Res.string.notify_vab_body))
         is NotificationPayload.ShoppingAdded -> NotificationText(
             str(Res.string.notify_shopping_added, p.by ?: str(Res.string.notify_someone), p.item),
             str(Res.string.notify_shopping_added_body),
@@ -158,6 +180,7 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
         NotificationKind.Requests -> channel(Res.string.notify_channel_requests, Res.string.notify_channel_requests_desc)
         NotificationKind.Shopping -> channel(Res.string.notify_channel_shopping, Res.string.notify_channel_shopping_desc)
         NotificationKind.Conflicts -> channel(Res.string.notify_channel_conflicts, Res.string.notify_channel_conflicts_desc)
+        NotificationKind.SickDay -> channel(Res.string.notify_channel_sick, Res.string.notify_channel_sick_desc)
     }
 
     private suspend fun channel(name: StringResource, description: StringResource) = ChannelText(str(name), str(description))

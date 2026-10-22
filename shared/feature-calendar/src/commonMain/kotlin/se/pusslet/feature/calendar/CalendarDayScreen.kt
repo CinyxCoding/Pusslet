@@ -51,6 +51,7 @@ import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.Role
 import se.pusslet.core.recurrence.EventExpander
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
 import se.pusslet.data.repository.CalendarRepository
@@ -97,16 +98,21 @@ class CalendarDayViewModel(
     private val settings = combine(prefs.observe(Prefs.CalendarPersonFilter), prefs.observe(Prefs.CalendarLayers), ::Pair)
 
     val state: StateFlow<CalendarDayUiState> = date.filterNotNull().flatMapLatest { d ->
-        combine(calendar.occurrences(d, d, zone), family.people, family.custody, settings, sessions.session) {
-            occ,
+        // A sick child is absent that day (ADR-047); the sick days also give the "Ella sjuk" line.
+        val occurrences = combine(calendar.occurrences(d, d, zone), calendar.sickDays, family.children) { occ, sick, kids ->
+            SickDays.apply(occ, sick, kids.map { it.id }.toSet()).occurrences to sick
+        }
+        combine(occurrences, family.people, family.custody, settings, sessions.session) {
+            occSick,
             people,
             custody,
             s,
             session,
             ->
+            val (occ, sick) = occSick
             val (filter, layers) = s
-            val day = CalendarDays.build(d, d, occ, people, custody, CalendarDays.effectiveFilter(filter, people), layers, session.memberId)
-                .firstOrNull()
+            val filtered = CalendarDays.effectiveFilter(filter, people)
+            val day = CalendarDays.build(d, d, occ, people, custody, filtered, layers, session.memberId, sick).firstOrNull()
             CalendarDayUiState(date = d, today = clock.todayIn(zone), day = day, people = people, role = session.role)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarDayUiState(role = sessions.session.value.role))

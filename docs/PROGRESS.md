@@ -164,6 +164,18 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] ✅ `./gradlew build` grönt (alla varianter, tester och lint), release-AAB bygger och 59 funktionstester gröna
   (2026-10-22). Kvar för ägaren: TalkBack-rundan och allt i lanseringschecklistan (SETUP.md 3.3)
 
+## Efter fas 4 – det föräldrar saknar
+- [x] Sjuk dag och VAB (ADR-047): ”Sjuk idag?” på Idag ställer in barnets lämning, hämtning och aktiviteter överallt
+  (Idag, notiser, widget, kalender, hjälparvyn), säger till de andra med push, ”Vem stannar hemma?” med VAB och del av dag,
+  bockar för frånvaroanmälan, jobbet och Försäkringskassan, ”Fortfarande sjuk?” nästa morgon, ”Anmäl VAB” när barnet är
+  friskt och VAB per förälder i år. Påminnelser för frånvaroanmälan och VAB. Testat i kärnan, Idag, kalendern, push och
+  regler, med skärmdumpstest och tillgänglighetskontroll av arket och kortet
+  - [ ] Sjukanmälan via snabbinmatningen (”Ella sjuk”)
+- [ ] Medicin och feber: delad logg och påminnelser för kurer
+- [ ] Kvitto på hämtning (”Hämtad ✓”) och varning när ingen bockat av
+- [ ] Lov och vistelsetider
+- [ ] Delade kostnader mellan hemmen
+
 ## Fas 5 – V2
 - [ ] Barnvy & veckopeng · kalas/presenter · sök · flerhushållsdelning · fler lunchleverantörer
 

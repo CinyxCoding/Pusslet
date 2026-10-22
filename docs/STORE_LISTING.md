@@ -30,6 +30,7 @@ KALENDER
 LÄMNA OCH HÄMTA
 • Fråga om någon kan hämta, och få svar som notis
 • Hjälpare, som morfar eller barnvakten, ser bara det ni delar och kan svara ja eller nej
+• Sjukt barn? Ett tryck ställer in lämning, hämtning och aktiviteter, säger till de andra och håller koll på VAB
 
 MAT OCH HANDLA
 • Veckans matsedel med recept, och importera recept från en länk eller en hel veckomeny
@@ -78,6 +79,7 @@ CALENDAR
 DROP-OFF AND PICK-UP
 • Ask if someone can pick up, and get the answer as a notification
 • Helpers, like grandpa or the babysitter, only see what you share and can answer yes or no
+• Sick child? One tap cancels drop-offs, pick-ups and activities, tells the others and keeps track of VAB
 
 FOOD AND SHOPPING
 • The week's meal plan with recipes; import recipes from a link or a whole weekly menu

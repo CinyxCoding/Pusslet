@@ -12,10 +12,12 @@ import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.Role
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.tasks.TaskScheduler
 import se.pusslet.core.time.TimeWindow
 import se.pusslet.core.time.datesUntil
 import se.pusslet.core.time.minusDays
+import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.ChildPacking
 import se.pusslet.core.today.HandoffLine
 import se.pusslet.core.today.TimelineItem
@@ -77,6 +79,9 @@ object ReminderPlanner {
     /** Kvällskollen: after dinner, while there is still time to pack. */
     val EVENING_TIME: LocalTime = LocalTime(19, 0)
 
+    /** "Anmäl frånvaro": before school starts, after most have reported a sick child. */
+    val ABSENCE_TIME: LocalTime = LocalTime(7, 45)
+
     /** All-day events are reminded of the evening before, never at midnight. */
     val ALL_DAY_REMINDER_TIME: LocalTime = LocalTime(18, 0)
 
@@ -112,7 +117,7 @@ object ReminderPlanner {
             occurrences = EffectiveHandoffs.apply(input.base.occurrences, input.base.requests),
             days = from.toLocalDateTime(zone).date.datesUntil(until.toLocalDateTime(zone).date),
         )
-        val all = eventReminders(ctx) + handoffs(ctx) + tasks(ctx) + mornings(ctx) + evenings(ctx)
+        val all = eventReminders(ctx) + handoffs(ctx) + tasks(ctx) + mornings(ctx) + evenings(ctx) + sickReminders(ctx)
         return all.filter { it.at > from && it.at <= until }
             .distinctBy { it.key }
             .sortedWith(compareBy({ it.at }, { it.key }))
@@ -128,7 +133,7 @@ object ReminderPlanner {
     ) {
         val me: String? get() = input.base.me
 
-        fun childrenOf(o: EventOccurrence): List<FamilyPerson> = o.event.participantIds.mapNotNull { people[it] }.filter { it.isChild }
+        fun childrenOf(o: EventOccurrence): List<FamilyPerson> = o.attending.mapNotNull { people[it] }.filter { it.isChild }
     }
 
     private fun eventReminders(ctx: Context): List<PlannedNotification> = ctx.occurrences
@@ -173,7 +178,7 @@ object ReminderPlanner {
     /** I take part, I have a hand-off on it, or – for a parent – no adult takes part. */
     private fun concernsMe(o: EventOccurrence, ctx: Context): Boolean {
         val me = ctx.me ?: return false
-        val ids = o.event.participantIds
+        val ids = o.attending
         if (me in ids || o.event.dropOff?.personId == me || o.event.pickUp?.personId == me) return true
         return ctx.input.role == Role.Parent && ids.none { ctx.people[it]?.isChild == false }
     }
@@ -226,6 +231,43 @@ object ReminderPlanner {
                     PlannedNotification("task:${task.id}:$date", at, NotificationKind.Reminder, payload, userTimed = task.dueTime != null)
                 }
         }
+    }
+
+    /**
+     * Sick days (ADR-047): "Anmäl frånvaro för Ella" at [ABSENCE_TIME] on the day until it is ticked, to the one at home (or
+     * who reported it while nobody is chosen), and "Anmäl VAB för Ella" at [EVENING_TIME] on the first day she is well again,
+     * to the parent who took VAB and has not reported it.
+     */
+    private fun sickReminders(ctx: Context): List<PlannedNotification> {
+        val me = ctx.me ?: return emptyList()
+        val sick = ctx.input.base.sickDays
+        if (sick.isEmpty()) return emptyList()
+        val schools = ctx.input.base.children.associate { it.id to it.school?.name }
+        val absence = ctx.days.flatMap { day ->
+            SickDays.on(sick, day).filter { !it.absenceReported && (it.homeWith ?: it.reportedBy) == me }.mapNotNull { s ->
+                val child = ctx.people[s.childId] ?: return@mapNotNull null
+                val at = LocalDateTime(day, ABSENCE_TIME).toInstant(ctx.zone)
+                PlannedNotification(
+                    "sick:absence:${s.id}",
+                    at,
+                    NotificationKind.Reminder,
+                    NotificationPayload.SickAbsence(child.name, schools[s.childId]),
+                )
+            }
+        }
+        val vab = ctx.days.flatMap { day ->
+            SickDays.vabToReport(sick, me, day).filter { it.last == day.plusDays(-1) }.mapNotNull { r ->
+                val child = ctx.people[r.childId] ?: return@mapNotNull null
+                val at = LocalDateTime(day, EVENING_TIME).toInstant(ctx.zone)
+                PlannedNotification(
+                    "sick:vab:${r.childId}:${r.first}",
+                    at,
+                    NotificationKind.Reminder,
+                    NotificationPayload.VabReport(child.name, r.total),
+                )
+            }
+        }
+        return absence + vab
     }
 
     private fun mornings(ctx: Context): List<PlannedNotification> {

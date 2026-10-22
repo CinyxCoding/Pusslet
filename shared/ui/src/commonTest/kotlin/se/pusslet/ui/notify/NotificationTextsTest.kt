@@ -64,6 +64,15 @@ class NotificationTextsTest {
         "notify_someone" to "Någon",
         "notify_shopping_added" to "%1\$s lade till %2\$s",
         "notify_shopping_added_body" to "På listan du handlar från",
+        "notify_sick_title" to "%1\$s är sjuk idag",
+        "notify_sick_title_tomorrow" to "%1\$s är sjuk imorgon",
+        "notify_sick_by" to "%1\$s sjukanmälde · Vem stannar hemma?",
+        "notify_sick_home" to "%1\$s stannar hemma med %2\$s",
+        "notify_sick_cancelled" to "Lämning, hämtning och aktiviteter är inställda",
+        "notify_absence_title" to "Anmäl frånvaro för %1\$s",
+        "notify_absence_body" to "Till %1\$s",
+        "notify_vab_title" to "Anmäl VAB för %1\$s",
+        "notify_vab_body" to "Till Försäkringskassan, inom 90 dagar",
     )
 
     private val texts = NotificationTexts { res, args ->
@@ -208,6 +217,28 @@ class NotificationTextsTest {
 
         val item = NotificationPayload.ShoppingAdded("Johan", "mjölk")
         assertEquals(NotificationText("Johan lade till mjölk", "På listan du handlar från"), texts.text(n(item, NotificationKind.Shopping)))
+    }
+
+    @Test
+    fun aSickChild() = runTest {
+        val reported = NotificationPayload.Sick("Ella", day, tomorrow = false, by = "Sara", homeWith = null)
+        assertEquals(
+            NotificationText("Ella är sjuk idag", "Sara sjukanmälde · Vem stannar hemma?"),
+            texts.text(n(reported, NotificationKind.SickDay)),
+        )
+        val home = reported.copy(tomorrow = true, homeWith = "Johan")
+        assertEquals(
+            NotificationText("Ella är sjuk imorgon", "Johan stannar hemma med Ella"),
+            texts.text(n(home, NotificationKind.SickDay)),
+        )
+        assertEquals(
+            NotificationText("Anmäl frånvaro för Ella", "Till Björkängsskolan"),
+            texts.text(n(NotificationPayload.SickAbsence("Ella", "Björkängsskolan"))),
+        )
+        assertEquals(
+            NotificationText("Anmäl VAB för Ella", "Till Försäkringskassan, inom 90 dagar"),
+            texts.text(n(NotificationPayload.VabReport("Ella", 1.5))),
+        )
     }
 
     @Test

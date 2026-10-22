@@ -217,6 +217,13 @@ describe("writing family data", () => {
     await assertFails(setDoc(doc(db("sara"), `families/${FID}/events/e3`), { title: 42, start: "s", end: "e", ...stamp("sara") }));
   });
 
+  it("lets a parent report a sick child, with a child and a date", async () => {
+    const f = db("sara");
+    const day = { childId: "ella", date: "2026-10-23", reportedBy: "m-sara", vab: true, homeWith: "m-sara", ...stamp("sara") };
+    await assertSucceeds(setDoc(doc(f, `families/${FID}/sickDays/ella_2026-10-23`), day));
+    await assertFails(setDoc(doc(f, `families/${FID}/sickDays/x`), { childId: "ella", vab: "ja", ...stamp("sara") }));
+  });
+
   it("allows soft delete but never hard delete", async () => {
     await assertSucceeds(updateDoc(doc(db("sara"), `families/${FID}/events/shared`), { deletedAt: serverTimestamp(), ...stamp("sara") }));
     await assertFails(deleteDoc(doc(db("sara"), `families/${FID}/events/private`)));
@@ -313,6 +320,17 @@ describe("caregivers (morfar)", () => {
     await assertFails(
       setDoc(doc(f, `families/${FID}/events/e9`), { title: "x", start: "s", end: "e", ...stamp("bengt") }),
     );
+  });
+
+  it("can see that a child is sick, but not report or change it", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), `families/${FID}/sickDays/ella_2026-10-22`), { childId: "ella", date: "2026-10-22" });
+    });
+    await assertSucceeds(getDoc(doc(db("bengt"), `families/${FID}/sickDays/ella_2026-10-22`)));
+    await assertFails(
+      setDoc(doc(db("bengt"), `families/${FID}/sickDays/simon_2026-10-22`), { childId: "simon", date: "2026-10-22", ...stamp("bengt") }),
+    );
+    await assertFails(updateDoc(doc(db("bengt"), `families/${FID}/sickDays/ella_2026-10-22`), { homeWith: "m-bengt", ...stamp("bengt") }));
   });
 
   it("cannot read allergies and diets", async () => {

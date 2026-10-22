@@ -477,3 +477,24 @@ servern när det skapas igen.
 familjen från den här telefonen” och att gå med igen ger en ren kopia. Det som tas bort kan inte ångras efter 30 dagar (ångra finns bara några sekunder i appen). En gammal
 ändring i en samling utan fältkontroll (t.ex. matsedeln) kan lämna det ändrade fältet i en markering; saken syns ändå
 inte och raderas med markeringen.
+
+## ADR-047 – Sjuk dag och VAB
+**Kontext:** Ett sjukt barn är det vanligaste skälet till att familjens dag rasar: lämning, hämtning och aktiviteter ska
+ställas in, de andra ska få veta, någon ska stanna hemma, skolan ska ha en frånvaroanmälan och den som tar VAB ska säga
+till jobbet och anmäla till Försäkringskassan (inom 90 dagar). Appen hade inget för det.
+**Beslut:** En förälder trycker ”Sjuk idag?” på Idag, väljer barn och idag eller imorgon. Det sparas som ett dokument per
+barn och dag (`sickDays/{barn}_{datum}`: vem som rapporterade, vem som stannar hemma, VAB och hur stor del av dagen, och
+tre bockar: frånvaro anmäld, sagt till jobbet, VAB anmäld). Händelserna ändras aldrig: `SickDays.apply` markerar barnet
+som frånvarande på dagens tillfällen (`EventOccurrence.absent`, läses som `attending`), så dess lämning och hämtning
+försvinner överallt där dagen planeras (Idag, notiser, widget, kalender, hjälparvyn, krockar), och en aktivitet som bara
+det sjuka barnet skulle till lämnas bort som inställd. Det som skrivs tillbaka till en händelse (”Jag tar det”) läser
+fortfarande händelsen själv, så ingen tas bort ur den för gott. Idag visar ett kort med vad som är inställt, ”Vem stannar
+hemma?” (en förälder får VAB som förval, morfar inte) och bockarna; nästa morgon frågar Idag ”Är Ella fortfarande sjuk?”
+(Sjuk idag också kopierar vem som är hemma och VAB) och när barnet är friskt ”Anmäl VAB för Ella: 2 dagar” med länk till
+Försäkringskassan. VAB räknas per förälder och kalenderår (”VAB i år: Sara 4,5”). En ny sjukdag och ett val av vem som
+stannar hemma skickas som push till alla andra i familjen, hjälpare också (`pushOnSickDay`). Påminnelser på telefonen:
+frånvaroanmälan 07:45 till den som är hemma, VAB kvällen barnet är friskt igen. Hjälpare läser sjukdagarna men skriver
+dem inte. Sjukdagar från före förra året tas bort från föräldrarnas telefoner och sedan av rensningen (ADR-046).
+**Konsekvens:** Sjukdagar är hälsouppgifter; bara att barnet är sjukt sparas, aldrig symtom eller diagnos, och arket
+säger vad som sparas och varför (PRIVACY.md). Händelser över flera dagar (läger) ställs inte in av en sjukdag. Att
+sjukanmäla via snabbinmatningen (”Ella sjuk”) är inte byggt än.

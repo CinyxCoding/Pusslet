@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
@@ -45,8 +46,27 @@ class PushMessages(
             "request" -> request(data)
             "answer" -> answer(data)
             "shopping" -> shopping(data)
+            "sick" -> sick(data)
             else -> null
         }
+    }
+
+    /** "Ella är sjuk idag" · "Sara sjukanmälde · Vem stannar hemma?" or "Johan stannar hemma med Ella" (ADR-047). */
+    private suspend fun sick(data: Map<String, String>): PlannedNotification? {
+        val date = data["date"]?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return null
+        val today = clock.now().toLocalDateTime(zone).date
+        if (date < today) return null
+        val names = names()
+        val child = names[data["childId"]] ?: return null
+        val payload = NotificationPayload.Sick(
+            child = child,
+            date = date,
+            tomorrow = date > today,
+            by = names[data["by"]],
+            homeWith = data["homeWith"]?.takeIf { it.isNotEmpty() }?.let { names[it] },
+        )
+        // One notification per child and day: who stays home replaces the first message.
+        return planned("push:sick:${data["sickDayId"]}", NotificationKind.SickDay, payload)
     }
 
     private suspend fun request(data: Map<String, String>): PlannedNotification? {

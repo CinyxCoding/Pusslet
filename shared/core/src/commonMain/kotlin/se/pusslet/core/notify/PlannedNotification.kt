@@ -94,6 +94,25 @@ sealed interface NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Occurrence(eventId, occurrenceDate)
     }
 
+    /**
+     * Push (ADR-047): [child] is home sick on [date] ("Ella är sjuk idag"); [by] reported it and [homeWith] stays home
+     * (null = not decided yet: "Vem stannar hemma?").
+     */
+    data class Sick(val child: String, val date: LocalDate, val tomorrow: Boolean, val by: String?, val homeWith: String?) :
+        NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Today
+    }
+
+    /** "Anmäl frånvaro för Ella" · "Till Björkängsskolan", until it is ticked on Idag (ADR-047). */
+    data class SickAbsence(val child: String, val school: String?) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Today
+    }
+
+    /** "Anmäl VAB för Ella" the evening the child is well again, to the parent who took it (ADR-047). */
+    data class VabReport(val child: String, val days: Double) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Today
+    }
+
     /** Push (ADR-042, ADR-018): [by] added [item] to the list I am shopping from ("Johan lade till mjölk"). */
     data class ShoppingAdded(val by: String?, val item: String) : NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Shopping

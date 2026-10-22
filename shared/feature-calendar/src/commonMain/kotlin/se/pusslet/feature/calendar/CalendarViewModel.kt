@@ -25,6 +25,7 @@ import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.time.startOfWeek
 import se.pusslet.data.repository.CalendarLayer
@@ -123,10 +124,16 @@ class CalendarViewModel(
         Window(view, a, from, to)
     }
 
-    // A caregiver's accepted answer counts at once, before a parent's phone has written it into the event (ADR-030).
+    // A caregiver's accepted answer counts at once, before a parent's phone has written it into the event (ADR-030), and a
+    // sick child is absent that day (ADR-047). The sick days come along for the "Ella sjuk" lines.
     private val occurrences = window.flatMapLatest { w ->
-        combine(calendar.occurrences(w.from, w.to, zone), calendar.handoffRequests) { occ, requests ->
-            EffectiveHandoffs.apply(occ, requests)
+        combine(calendar.occurrences(w.from, w.to, zone), calendar.handoffRequests, calendar.sickDays, family.children) {
+            occ,
+            requests,
+            sick,
+            kids,
+            ->
+            SickDays.apply(EffectiveHandoffs.apply(occ, requests), sick, kids.map { it.id }.toSet()).occurrences to sick
         }
     }
 
@@ -136,9 +143,10 @@ class CalendarViewModel(
         sessions.session,
     ) { f, l, s -> Settings(f, l, s.role, s.memberId) }
 
-    private val content = combine(window, occurrences, family.people, family.custody, settings) { w, occ, people, custody, s ->
+    private val content = combine(window, occurrences, family.people, family.custody, settings) { w, occSick, people, custody, s ->
+        val (occ, sick) = occSick
         val filter = CalendarDays.effectiveFilter(s.filter, people)
-        val days = CalendarDays.build(w.from, w.to, occ, people, custody, filter, s.layers, s.me)
+        val days = CalendarDays.build(w.from, w.to, occ, people, custody, filter, s.layers, s.me, sick)
         val custodyWeek = if (w.view == CalendarView.Week) {
             CalendarDays.custodyWeek(w.from, w.to, custody, people, filter, s.layers)
         } else {

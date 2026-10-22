@@ -21,6 +21,8 @@ import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingRule
+import se.pusslet.core.model.SickDay
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.weather.Forecast
 import se.pusslet.data.repository.CalendarRepository
@@ -44,6 +46,7 @@ internal data class HelperFamilyData(
     val rules: List<PackingRule>,
     val checks: Map<String, PackingChecks>,
     val tasks: List<FamilyTask>,
+    val sickDays: List<SickDay> = emptyList(),
 )
 
 /** Reads and plans the helper view the same way for [HelperViewModel] and [HelperPreviewViewModel]. */
@@ -73,8 +76,16 @@ internal object HelperPlans {
             // What is shared with the caregiver, not what this phone's Kalender filter happens to show.
             combine(calendar.allOccurrences(d, d.plusDays(HelperPlanner.WEEK_DAYS), zone), calendar.handoffRequests) { o, r -> o to r }
         }
-        return combine(household, calendarData, packing.rules, packing.checks, tasks.tasks) { h, cal, rules, checks, t ->
-            HelperFamilyData(h.first, h.second, h.third, cal.first, cal.second, rules, checks, t)
+        return combine(household, calendarData, packing.rules, packing.checks, combine(tasks.tasks, calendar.sickDays, ::Pair)) {
+            h,
+            cal,
+            rules,
+            checks,
+            ts,
+            ->
+            // A sick child stays home: the caregiver's pick-up that day is off (ADR-047).
+            val occurrences = SickDays.apply(cal.first, ts.second, h.second.map { it.id }.toSet()).occurrences
+            HelperFamilyData(h.first, h.second, h.third, occurrences, cal.second, rules, checks, ts.first, ts.second)
         }
     }
 
@@ -95,6 +106,7 @@ internal object HelperPlans {
                 custody = data.custody,
                 tasks = data.tasks,
                 forecast = forecast,
+                sickDays = data.sickDays,
             ),
         )
 }

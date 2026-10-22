@@ -55,12 +55,18 @@ service cloud.firestore {
     function validRecipeCollection() {
       return validNamed('name') && (!('recipeIds' in data()) || data().recipeIds is map);
     }
+    // A child home sick (ADR-047): one per child and day; the rest are flags and who stays home.
+    function validSickDay() {
+      return shortString(data().childId, 100) && shortString(data().date, 10)
+        && (!('vab' in data()) || data().vab is bool) && optString('homeWith', 100);
+    }
 
     function validFor(collection) {
       return collection == 'events' ? validEvent()
         : collection == 'tasks' ? validTask()
         : collection == 'recipes' ? validRecipe()
         : collection == 'recipeCollections' ? validRecipeCollection()
+        : collection == 'sickDays' ? validSickDay()
         : collection == 'children' ? validNamed('firstName')
         : collection == 'members' ? validNamed('displayName')
         : collection == 'shoppingLists' ? validNamed('name')
@@ -74,7 +80,7 @@ service cloud.firestore {
     function caregiverReadable(collection) {
       return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
         'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings',
-        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches', 'recipeCollections'];
+        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches', 'recipeCollections', 'sickDays'];
     }
     function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
 

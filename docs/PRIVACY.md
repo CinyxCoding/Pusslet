@@ -31,6 +31,7 @@ Personuppgiftsansvarig är [namn på ägaren eller företaget], [ort]. Frågor o
 | Allergier och kost för ett barn | Förälder, bara efter ett aktivt val | Varna i matsedel och inköp | **Uttryckligt samtycke** (art. 9.2 a), kan tas tillbaka när som helst |
 | Kalender, uppgifter, sysslor, listor, recept, matsedel, skafferi, butiker | Ni | Själva tjänsten | Avtal |
 | Lämna/hämta-förfrågningar och svar, "Jag handlar nu" (vilken lista och till när) | Ni | Att familjen ska kunna hjälpa varandra | Avtal |
+| Sjukdagar: vilket barn som är sjukt vilken dag, vem som stannar hemma, VAB och om frånvaro och VAB är anmälda (aldrig symtom eller diagnos) | Förälder | Ställa in dagen, säga till de andra och räkna VAB | **Uttryckligt samtycke** (art. 9.2 a), givet när du sjukanmäler; arket säger vad som sparas. [Kontrollera före publicering.] |
 | Väderort: ett ortsnamn och en position avrundad till ungefär 1 km | Du väljer ort, eller telefonens ungefärliga position om du tillåter det | Väder och klädråd på Idag | Avtal |
 | Notis-token och telefonens språk | Telefonen | Skicka förfrågningar, svar och inköp till rätt telefon | Avtal |
 | Inställningar på telefonen (tema, notiser, tysta timmar, vilka kalendrar som visas) | Du | Appens funktion | Avtal; stannar på telefonen |
@@ -64,6 +65,7 @@ Vi säljer inte uppgifter och lämnar inte ut dem till någon annan, utom om lag
   servern och från telefonerna; kvar på servern finns bara en markering med tiden för borttagningen, så att en telefon
   som varit avstängd länge också får veta det. Markeringen raderas efter ett år.
 - Kalenderlänkar och inbjudningar gäller tills de stoppas eller går ut (inbjudningar efter 7 dagar).
+- Sjukdagar sparas för att räkna VAB i år och förra året och tas sedan bort.
 - Notis-token tas bort när Google säger att den inte längre gäller, och när kontot raderas.
 - Säkerhetskopior hos Google rensas enligt Googles rutiner.
 
@@ -111,6 +113,7 @@ The controller is [owner's name or company], [city], Sweden. Privacy questions: 
 | Allergies and diet for a child | A parent, only after an active choice | Warnings in meal plans and shopping | **Explicit consent** (Art. 9(2)(a)), can be withdrawn at any time |
 | Calendar, tasks, chores, lists, recipes, meal plans, pantry, stores | You | The service itself | Contract |
 | Drop-off/pick-up requests and answers, "I'm shopping now" (which list and until when) | You | Letting the family help each other | Contract |
+| Sick days: which child is sick on which day, who stays home, VAB and whether absence and VAB are reported (never symptoms or a diagnosis) | A parent | Cancelling the day, telling the others and counting VAB | **Explicit consent** (Art. 9(2)(a)), given when reporting; the sheet says what is stored. [Check before publishing.] |
 | Weather place: a place name and a position rounded to about 1 km | You pick a place, or the phone's approximate location if you allow it | Weather and clothing advice in Today | Contract |
 | Notification token and the phone's language | The phone | Sending requests, answers and shopping items to the right phone | Contract |
 | Settings on the phone (theme, notifications, quiet hours, which calendars are shown) | You | How the app works | Contract; stays on the phone |
@@ -145,6 +148,7 @@ We do not sell data and do not hand it to anyone else, unless the law requires i
   deleted from the server and from the phones; only a marker with the time of removal stays on the server, so a phone
   that has been switched off for a long time also learns about it. The marker is deleted after a year.
 - Calendar links and invitations last until they are stopped or expire (invitations after 7 days).
+- Sick days are kept to count VAB this year and last year, then removed.
 - A notification token is removed when Google says it is no longer valid, and when the account is deleted.
 - Backups at Google are cleared according to Google's routines.
 

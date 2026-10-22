@@ -68,9 +68,26 @@ internal fun DayContent(
     changeovers: Boolean = true,
 ) {
     day.holidays.forEach { HolidayLine(it) }
+    day.sick.forEach { SickDayLine(it) }
     if (changeovers) day.changeovers.forEach { ChangeoverLine(it) }
     day.routines.forEach { RoutineRow(it, canTake, onOpen, onTake) }
     day.events.filter { timed || it.allDay }.forEach { OccurrenceRow(it, day.date, people, onOpen) }
+}
+
+/** "Ella sjuk · Sara hemma" (ADR-047): quiet, like a holiday; the sick child's activities are already left out. */
+@Composable
+internal fun SickDayLine(line: SickLine) {
+    val home = line.homeWith
+    Text(
+        if (home == null) {
+            stringResource(Res.string.sick_line, line.child.name)
+        } else {
+            stringResource(Res.string.sick_line_home, line.child.name, home.name)
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = Spacing.xs),
+    )
 }
 
 /** "Alla helgons dag": red for public holidays, quiet for the rest ("Vintertid börjar"). */
@@ -167,7 +184,7 @@ internal fun RoutineRow(
  */
 @Composable
 internal fun OccurrenceRow(o: EventOccurrence, onDate: LocalDate, people: Map<String, FamilyPerson>, onOpen: (EventOccurrence) -> Unit) {
-    val participants = o.event.participantIds.mapNotNull { people[it] }
+    val participants = o.attending.mapNotNull { people[it] }
     val extras = PussletThemeExtras.colors
     val bar = participants.firstOrNull()?.let { extras.member(it.color).container } ?: o.sourceColor?.let { extras.member(it).container }
     Row(

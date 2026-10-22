@@ -1340,4 +1340,47 @@
     <string name="widget_problems">To sort out: %1$d</string>
 
     <!-- Placeholders used until a feature is wired up -->
+    <!-- Sjuk dag och VAB (ADR-047) -->
+    <string name="decimal_separator">.</string>
+    <string name="sick_report_action">Sick today?</string>
+    <string name="sick_sheet_title">Who is sick?</string>
+    <string name="sick_sheet_body">Drop-offs, pick-ups and activities are cancelled for them, and the rest of the family is told. Sick days are kept to count VAB this year and next.</string>
+    <string name="sick_report_confirm">Report sick</string>
+    <string name="sick_card_title">%1$s is sick today</string>
+    <string name="sick_card_title_tomorrow">%1$s is sick tomorrow</string>
+    <string name="sick_cancelled">Cancelled: %1$s</string>
+    <string name="sick_home_with">Who stays home?</string>
+    <string name="sick_vab">VAB</string>
+    <string name="sick_vab_whole">Full day</string>
+    <string name="sick_vab_three_quarters">¾ day</string>
+    <string name="sick_vab_half">Half day</string>
+    <string name="sick_vab_quarter">¼ day</string>
+    <string name="sick_vab_eighth">⅛ day</string>
+    <string name="sick_absence_reported">Absence reported to %1$s</string>
+    <string name="sick_absence_reported_school">Absence reported to school</string>
+    <string name="sick_work_told">Told work</string>
+    <string name="sick_vab_reported">VAB reported to Försäkringskassan</string>
+    <string name="sick_vab_year">VAB this year: %1$s</string>
+    <string name="sick_vab_person">%1$s %2$s</string>
+    <string name="sick_still_title">Is %1$s still sick?</string>
+    <string name="sick_still_yes">Sick today too</string>
+    <string name="sick_still_no">Well again</string>
+    <string name="sick_vab_report_title">Report VAB for %1$s</string>
+    <string name="sick_vab_report_one">1 day · %1$s</string>
+    <string name="sick_vab_report_days">%1$s days · %2$s</string>
+    <string name="sick_vab_report_open">Open Försäkringskassan</string>
+    <string name="sick_vab_report_done">Reported</string>
+    <string name="sick_line">%1$s sick</string>
+    <string name="sick_line_home">%1$s sick · %2$s at home</string>
+    <string name="notify_channel_sick">Sick child</string>
+    <string name="notify_channel_sick_desc">When a child is sick and who stays home</string>
+    <string name="notify_sick_title">%1$s is sick today</string>
+    <string name="notify_sick_title_tomorrow">%1$s is sick tomorrow</string>
+    <string name="notify_sick_by">%1$s reported it · Who stays home?</string>
+    <string name="notify_sick_home">%1$s is staying home with %2$s</string>
+    <string name="notify_sick_cancelled">Drop-offs, pick-ups and activities are cancelled</string>
+    <string name="notify_absence_title">Report absence for %1$s</string>
+    <string name="notify_absence_body">To %1$s</string>
+    <string name="notify_vab_title">Report VAB for %1$s</string>
+    <string name="notify_vab_body">To Försäkringskassan, within 90 days</string>
 </resources>

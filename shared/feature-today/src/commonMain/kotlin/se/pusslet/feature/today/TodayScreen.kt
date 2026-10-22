@@ -57,6 +57,7 @@ import se.pusslet.ui.format.relativeDay
 import se.pusslet.ui.format.weekLong
 import se.pusslet.ui.format.weekdayName
 import se.pusslet.ui.format.weekdayShort
+import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_add
 import se.pusslet.ui.resources.action_cancel
@@ -72,6 +73,7 @@ import se.pusslet.ui.resources.card_nobody_pickup
 import se.pusslet.ui.resources.card_unassigned_dropoff
 import se.pusslet.ui.resources.card_unassigned_pickup
 import se.pusslet.ui.resources.error_generic
+import se.pusslet.ui.resources.sick_report_action
 import se.pusslet.ui.resources.today_custody
 import se.pusslet.ui.resources.today_custody_handover
 import se.pusslet.ui.resources.today_customize
@@ -113,6 +115,7 @@ fun TodayRoute(
     viewModel: TodayViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val platform = LocalPlatformActions.current
     // The round + opens quick add, which starts on today. Caregivers cannot save anything there, so they get no + (UX plan 1.13).
     RegisterAddButton(label = stringResource(Res.string.action_add), enabled = state.canEdit) { onQuickAdd(null) }
     TodayScreen(
@@ -136,6 +139,20 @@ fun TodayRoute(
             onHideSetup = viewModel::hideSetup,
             onDismissHint = viewModel::dismissAddHint,
             onLeaveDemo = viewModel::leaveDemo,
+            sick = SickActions(
+                onReport = viewModel::reportSick,
+                onUndo = viewModel::undoSick,
+                onHomeWith = viewModel::setHomeWith,
+                onVab = viewModel::setVab,
+                onVabPart = viewModel::setVabPart,
+                onAbsenceReported = viewModel::setAbsenceReported,
+                onWorkTold = viewModel::setWorkTold,
+                onVabReportedDay = viewModel::setVabReported,
+                onStillSick = viewModel::stillSick,
+                onWellAgain = viewModel::wellAgain,
+                onVabReported = viewModel::vabReported,
+                onOpenForsakringskassan = { platform.openUrl(FORSAKRINGSKASSAN_URL) },
+            ),
         ),
     )
 }
@@ -172,6 +189,8 @@ data class TodayActions(
     val onDismissHint: (() -> Unit)? = null,
     /** "Börja" in the "Börja på riktigt?" dialog of the example family. */
     val onLeaveDemo: () -> Unit = {},
+    /** "Sjuk idag?" and the sick-day cards (ADR-047). */
+    val sick: SickActions = SickActions(),
 )
 
 @Composable
@@ -182,6 +201,19 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         return
     }
     val problems = plan.problems
+    var reportingSick by rememberSaveable { mutableStateOf(false) }
+    val canReportSick = state.canEdit && state.sick.children.isNotEmpty()
+    if (reportingSick) {
+        SickReportSheet(
+            children = state.sick.children,
+            today = plan.date,
+            onReport = { ids, date ->
+                reportingSick = false
+                actions.sick.onReport(ids, date)
+            },
+            onDismiss = { reportingSick = false },
+        )
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -192,7 +224,7 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        item(key = "header") { Header(plan) }
+        item(key = "header") { Header(plan, onReportSick = if (canReportSick) ({ reportingSick = true }) else null) }
         if (state.demo) item(key = "demo") { DemoRow(state.leavingDemo, state.leaveDemoFailed, actions.onLeaveDemo) }
         // "Att lösa" can never be hidden: problems today and tomorrow, then requests to me.
         items(problems.take(TodayModel.MAX_PROBLEMS), key = { problemKey(it) }) { ProblemBanner(it, state, actions) }
@@ -203,6 +235,10 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         }
         items(plan.cannotMake, key = { "cannot-${it.request.id}" }) { CannotMakeBanner(it, state, actions) }
         items(state.requests, key = { "request-${it.request.id}" }) { RequestBanner(it, plan.date, actions.onOpenOccurrence) }
+        // Sick days (ADR-047): today's and tomorrow's, the morning question and VAB left to report.
+        items(state.sick.cards, key = { "sick-${it.day.id}" }) { SickCardView(it, state.sick, actions.sick) }
+        items(state.sick.stillSick, key = { "still-sick-${it.day.id}" }) { StillSickView(it, actions.sick) }
+        items(state.sick.vabToReport, key = { "vab-${it.report.childId}-${it.report.first}" }) { VabReportView(it, actions.sick) }
         // "Kom igång" is what a new family has to sort out; it is the focus surface while it shows (UX plan 4.4).
         val setup = state.setup
         if (setup != null) {
@@ -255,7 +291,7 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
 
 /** "Torsdag 8 oktober" and "Vecka 41 · Hos Ahmed". No greeting (ADR-026); the week is always visible. */
 @Composable
-private fun Header(plan: TodayPlan) {
+private fun Header(plan: TodayPlan, onReportSick: (() -> Unit)? = null) {
     val subtitle = buildList {
         add(weekLong(plan.week.week))
         plan.holidays.forEach { add(stringResource(Labels.holiday(it.id))) }
@@ -269,7 +305,9 @@ private fun Header(plan: TodayPlan) {
             )
         }
     }.joinToString(SEPARATOR)
-    TabHeader(title = formatDateLong(plan.date).replaceFirstChar { it.uppercase() }, subtitle = subtitle)
+    TabHeader(title = formatDateLong(plan.date).replaceFirstChar { it.uppercase() }, subtitle = subtitle) {
+        if (onReportSick != null) TextButton(onClick = onReportSick) { Text(stringResource(Res.string.sick_report_action)) }
+    }
 }
 
 /**

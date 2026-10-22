@@ -22,8 +22,10 @@ import se.pusslet.core.model.PackingItem
 import se.pusslet.core.model.PackingReason
 import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.RequestStatus
+import se.pusslet.core.model.SickDay
 import se.pusslet.core.model.TaskKind
 import se.pusslet.core.packing.PackingPlanner
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.tasks.TaskScheduler
 import se.pusslet.core.time.IsoWeek
@@ -61,6 +63,8 @@ data class HelperInput(
     val tasks: List<FamilyTask> = emptyList(),
     /** Optional; without it there is no weather line (it fails soft). */
     val forecast: Forecast? = null,
+    /** Children home sick (ADR-047); their hand-offs are already gone from [occurrences]. */
+    val sickDays: List<SickDay> = emptyList(),
 )
 
 /** Where a mission is in the day: "Snart" from 60 minutes before, and quietly done 60 minutes after its time. */
@@ -188,6 +192,8 @@ data class HelperPlan(
     val upcoming: List<HelperDay>,
     /** "Hela veckan": [HelperPlanner.WEEK_DAYS] days from today with everything shared. */
     val days: List<HelperWeekDay>,
+    /** "Ella är sjuk idag": so the caregiver knows why a pick-up is gone (ADR-047). */
+    val sickToday: List<FamilyPerson> = emptyList(),
 ) {
     val activeMissions: List<HelperMission> get() = missions.filter { it.state != MissionState.Done }
 
@@ -262,6 +268,7 @@ object HelperPlanner {
             tasks = tasksFor(input, CaregiverVisibility.tasks(input.tasks), byDay),
             upcoming = upcoming,
             days = weekDays(days, byDay, visible, byId, today),
+            sickToday = SickDays.on(input.sickDays, today).mapNotNull { byId[it.childId] },
         )
     }
 
@@ -286,7 +293,7 @@ object HelperPlanner {
     ): List<HelperMission> {
         val childOrder = input.children.withIndex().associate { (i, c) -> c.id to i }
         return visible.filter { it.source != EventSource.Holiday && it.overlapsDate(date) }.flatMap { o ->
-            val kids = o.event.participantIds.mapNotNull { byId[it] }.filter { it.isChild }
+            val kids = o.attending.mapNotNull { byId[it] }.filter { it.isChild }
                 .sortedBy { childOrder[it.id] ?: Int.MAX_VALUE }
             if (kids.isEmpty()) return@flatMap emptyList()
             listOfNotNull(
@@ -361,7 +368,7 @@ object HelperPlanner {
                 !TodayPlanner.isRoutine(o) && o.start.time > m.time && o.start.time < AFTER_UNTIL
         }
         .sortedBy { it.start }
-        .mapNotNull { o -> m.children.firstOrNull { it.id in o.event.participantIds }?.let { HelperAfter(it, o) } }
+        .mapNotNull { o -> m.children.firstOrNull { it.id in o.attending }?.let { HelperAfter(it, o) } }
         .take(MAX_AFTER)
 
     /**
@@ -389,7 +396,7 @@ object HelperPlanner {
                 if (o.handoffPassed(r.kind, LocalDateTime(input.today, input.now))) return@mapNotNull null
                 val date = o.handoffDate(r.kind)
                 val time = if (r.kind == HandoffKind.PickUp) o.pickUpTime() else o.dropOffTime()
-                val kids = o.event.participantIds.mapNotNull { byId[it] }.filter { it.isChild }
+                val kids = o.attending.mapNotNull { byId[it] }.filter { it.isChild }
                 HelperRequest(r, byId[r.fromMemberId], kids, date, time, placeOf(o, kids, input.children), o, answer)
             }
             .groupBy { it.occurrence.key to it.kind }
@@ -412,7 +419,7 @@ object HelperPlanner {
             val o = visible.firstOrNull { r.matches(it) } ?: return@mapNotNull null
             val date = if (r.kind == HandoffKind.PickUp) lastDay(o) else o.start.date
             if (date != input.today) return@mapNotNull null
-            val kids = o.event.participantIds.mapNotNull { byId[it] }.filter { it.isChild }
+            val kids = o.attending.mapNotNull { byId[it] }.filter { it.isChild }
             HelperTakenOver(r.kind, r.respondedBy?.let(byId::get), kids, o)
         }
         .distinctBy { it.occurrence.key to it.kind }
@@ -484,7 +491,7 @@ object HelperPlanner {
             val events = visible
                 .filter { o -> o.source != EventSource.Holiday && maxOf(o.start.date, today) == date && o.key !in covered }
                 .filterNot(TodayPlanner::isRoutine)
-                .map { HelperWeekItem.Event(it, it.event.participantIds.mapNotNull(byId::get)) }
+                .map { HelperWeekItem.Event(it, it.attending.mapNotNull(byId::get)) }
             val items = (missions.map(HelperWeekItem::Mission) + events).sortedWith(compareBy({ it.time != null }, { it.time }))
             val holidays = SwedishHolidays.forDate(date)
             if (items.isEmpty() && holidays.isEmpty()) null else HelperWeekDay(date, null, holidays, items)

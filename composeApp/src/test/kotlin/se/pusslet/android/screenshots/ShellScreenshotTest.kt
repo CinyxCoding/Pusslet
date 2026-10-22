@@ -474,6 +474,22 @@ class ShellScreenshotTest {
         snap("subscriptions")
     }
 
+    /** "Sjuk idag?" on Idag: the sheet, then the card with what is cancelled and who stays home (ADR-047). */
+    @Test
+    fun todaySickChild() {
+        launch()
+        tap("Sjuk idag?")
+        compose.waitUntilAtLeastOneExists(hasText("Vem är sjuk?"), timeoutMillis = 10_000)
+        // The chip in the sheet, not one of Ella's rows on Idag behind it.
+        compose.onNode(hasText("Ella") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)).performClick()
+        snap("today_sick_sheet")
+        tap("Sjukanmäl")
+        compose.waitUntilAtLeastOneExists(hasText("Ella är sjuk idag"), timeoutMillis = 10_000)
+        compose.waitUntilAtLeastOneExists(hasText("Vem stannar hemma?"), timeoutMillis = 10_000)
+        compose.waitForIdle()
+        snap("today_sick_card")
+    }
+
     private fun openMore(item: String) {
         compose.onNodeWithText("Mer").performClick()
         compose.waitUntilAtLeastOneExists(hasText(item) and hasClickAction(), timeoutMillis = 10_000)

@@ -79,6 +79,9 @@ object Collections {
     val IngredientMappings = CollectionSpec("ingredientMappings", RemoteLocation.Flat("ingredientMappings"))
     val SchoolLunches = CollectionSpec("schoolLunches", RemoteLocation.Flat("schoolLunches"), mapFields = setOf("days"))
 
+    /** A child home sick, per child and day (ADR-047); caregivers read it, so they know a pick-up is off. */
+    val SickDays = CollectionSpec("sickDays", RemoteLocation.Flat("sickDays"))
+
     val all: List<CollectionSpec> = listOf(
         Family,
         Members,
@@ -104,6 +107,7 @@ object Collections {
         AisleOverrides,
         IngredientMappings,
         SchoolLunches,
+        SickDays,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

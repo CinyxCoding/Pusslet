@@ -8,7 +8,7 @@ import { onRequest } from "firebase-functions/v2/https";
 export { REGION } from "./setup.js";
 export { deleteAccount, deleteFamily } from "./privacy.js";
 export { familyCalendarFeed } from "./calendarFeed.js";
-export { pushOnAnswer, pushOnRequest, pushOnShoppingItem } from "./push.js";
+export { pushOnAnswer, pushOnRequest, pushOnShoppingItem, pushOnSickDay } from "./push.js";
 export { purgeDeleted } from "./purge.js";
 
 /** Liveness probe used by the app's "Om data / status" view and by uptime checks. */

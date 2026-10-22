@@ -33,8 +33,10 @@ import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.SchoolLunch
+import se.pusslet.core.model.SickDay
 import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.packing.PackingPlanner
+import se.pusslet.core.sick.SickDays
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.tasks.TaskScheduler
 import se.pusslet.core.time.IsoWeek
@@ -75,7 +77,15 @@ data class TodayInput(
     val shopping: TodayShopping? = null,
     /** Hand-off requests; a caregiver's open "Jag kan inte" becomes a problem ([TodayPlan.cannotMake]). */
     val requests: List<HandoffRequest> = emptyList(),
-)
+    /** Children home sick (ADR-047): no clothes, packing or school lunch for them that day. */
+    val sickDays: List<SickDay> = emptyList(),
+) {
+    /** The children who go about their day on [date] (the sick ones stay home). */
+    fun childrenOutOn(date: LocalDate): List<Child> {
+        val home = SickDays.on(sickDays, date).map { it.childId }.toSet()
+        return if (home.isEmpty()) children else children.filter { it.id !in home }
+    }
+}
 
 /**
  * "Bengt kan inte hämta Simon 15:30 · Jag tar det": a caregiver said "Jag kan inte" about a hand-off that is still his, and
@@ -194,21 +204,22 @@ object TodayPlanner {
     fun build(input: TodayInput): TodayPlan {
         val today = input.today
         val byId = input.people.associateBy { it.id }
-        val childPeople = input.children.map(FamilyPerson::of)
+        val out = input.childrenOutOn(today)
+        val childPeople = out.map(FamilyPerson::of)
         val todays = input.occurrences.filter { it.overlapsDate(today) }
 
         val weather = input.forecast?.let { weatherFor(it, input) }
         val clothing = if (weather == null) {
             emptyList()
         } else {
-            input.children.map { c ->
+            input.childrenOutOn(weather.date).map { c ->
                 ChildClothing(FamilyPerson.of(c), ClothingAdvisor.advise(weather, ClothingAdvisor.ageOn(c.birthDate, weather.date)))
             }
         }
 
         val timeline = buildTimeline(todays, byId)
 
-        val packingMap = PackingPlanner.itemsFor(today, input.children, input.packingRules, todays, input.custody, input.packingChecks)
+        val packingMap = PackingPlanner.itemsFor(today, out, input.packingRules, todays, input.custody, input.packingChecks)
         val packing = childPeople.map { ChildPacking(it, packingMap[it.id].orEmpty()) }
 
         val dinner = input.mealWeeks.firstOrNull { it.week == today.isoWeek }?.entry(today, MealSlot.Dinner)
@@ -273,12 +284,12 @@ object TodayPlanner {
             lunchDinnerClash = clash,
             upcoming = upcoming,
             myTasks = myTasks,
-            cards = cards(input, childPeople, problems),
+            cards = cards(input, input.children.map(FamilyPerson::of), problems),
             now = input.now,
             hero = hero,
             problems = problems.sortedWith(compareBy({ it.date }, { it.sortTime })),
             cannotMake = cannotMake,
-            comingUp = comingUp(input, childPeople),
+            comingUp = comingUp(input, input.children.map(FamilyPerson::of)),
             custodyNotes = custodyNotes(custody, input.now),
             hasWeatherPlace = input.hasWeatherPlace,
             shopping = input.shopping,
@@ -300,15 +311,16 @@ object TodayPlanner {
         val tomorrow = input.today.plusDays(1)
         val tomorrows = input.occurrences.filter { it.overlapsDate(tomorrow) }
         val handoffs = handoffsOn(tomorrow, tomorrows, byId)
+        val outTomorrow = input.childrenOutOn(tomorrow)
         val packingMap = PackingPlanner.itemsFor(
             tomorrow,
-            input.children,
+            outTomorrow,
             input.packingRules,
             tomorrows,
             input.custody,
             input.packingChecks,
         )
-        val packing = input.children.map(FamilyPerson::of).map { ChildPacking(it, packingMap[it.id].orEmpty()) }
+        val packing = outTomorrow.map(FamilyPerson::of).map { ChildPacking(it, packingMap[it.id].orEmpty()) }
         val prep = TomorrowPrep(
             date = tomorrow,
             handoffs = heroHandoffs(
@@ -365,7 +377,7 @@ object TodayPlanner {
                 val time = (if (pickUp) o.pickUpTime() else o.dropOffTime()) ?: return@mapNotNull null
                 val date = if (pickUp && !o.allDay) o.end.date else o.start.date
                 if (date < input.today || date > tomorrow || (date == input.today && time < input.now)) return@mapNotNull null
-                val children = o.event.participantIds.filter { byId[it]?.isChild == true }
+                val children = o.attending.filter { byId[it]?.isChild == true }
                 CaregiverCannot(date, o, r.kind, time, r, byId[r.fromMemberId], children)
             }
             .distinctBy { it.occurrence.key to it.kind }
@@ -384,7 +396,7 @@ object TodayPlanner {
     /** Drop-offs on the first day of an occurrence and pick-ups on its last, so a trip over several days counts once. */
     private fun handoffsOn(date: LocalDate, todays: List<EventOccurrence>, byId: Map<String, FamilyPerson>): List<DayHandoff> =
         todays.flatMap { o ->
-            val kids = o.event.participantIds.mapNotNull { byId[it] }.filter { it.isChild }
+            val kids = o.attending.mapNotNull { byId[it] }.filter { it.isChild }
             if (kids.isEmpty()) return@flatMap emptyList()
             listOfNotNull(
                 o.event.dropOff?.takeIf { o.start.date == date }?.let { h ->
@@ -434,7 +446,7 @@ object TodayPlanner {
         val ids = children.mapTo(HashSet()) { it.child.id }
         val lastDropOff = handoffs.filter { h -> h.kind == HandoffKind.DropOff && h.children.any { it.id in ids } }.maxOfOrNull { it.time }
         val leavesAt = lastDropOff ?: todays
-            .filter { o -> !o.allDay && o.start.date == date && o.event.participantIds.any { it in ids } }
+            .filter { o -> !o.allDay && o.start.date == date && o.attending.any { it in ids } }
             .maxOfOrNull { it.start.time }
         return TodayPacking(children, leavesAt)
     }
@@ -468,7 +480,7 @@ object TodayPlanner {
                         carried += o.key
                     }
                 } else if (o.hasTag(EventTags.STUDY_DAY)) {
-                    reminders += DayReminder.StudyDay(o, children.filter { it.id in o.event.participantIds })
+                    reminders += DayReminder.StudyDay(o, children.filter { it.id in o.attending })
                     carried += o.key
                 }
             }
@@ -523,11 +535,11 @@ object TodayPlanner {
     private fun buildTimeline(todays: List<EventOccurrence>, byId: Map<String, FamilyPerson>): List<TimelineItem> {
         val items = ArrayList<TimelineItem>()
         for (o in todays) {
-            val kids = o.event.participantIds.mapNotNull { byId[it] }.filter { it.isChild }
+            val kids = o.attending.mapNotNull { byId[it] }.filter { it.isChild }
             o.event.dropOff?.let { h ->
                 o.dropOffTime()?.let { t -> items += TimelineItem.HandoffItem(HandoffKind.DropOff, t, h.personId?.let(byId::get), kids, o) }
             }
-            if (!isRoutine(o)) items += TimelineItem.EventItem(o, o.event.participantIds.mapNotNull { byId[it] })
+            if (!isRoutine(o)) items += TimelineItem.EventItem(o, o.attending.mapNotNull { byId[it] })
             o.event.pickUp?.let { h ->
                 o.pickUpTime()?.let { t -> items += TimelineItem.HandoffItem(HandoffKind.PickUp, t, h.personId?.let(byId::get), kids, o) }
             }
@@ -548,7 +560,7 @@ object TodayPlanner {
         week.filter { o -> o.event.tags.any { it.equals(EventTags.STUDY_DAY, true) } }
             .distinctBy { it.start.date }
             .forEach { o ->
-                cards += ContextCard.StudyDay(o.start.date, children.filter { it.id in o.event.participantIds }, o.event.title)
+                cards += ContextCard.StudyDay(o.start.date, children.filter { it.id in o.attending }, o.event.title)
             }
         week.filter { o -> o.event.tags.any { it.equals(EventTags.PARTY, true) } }.forEach { o ->
             val giftTasks = giftTasks(o, input)

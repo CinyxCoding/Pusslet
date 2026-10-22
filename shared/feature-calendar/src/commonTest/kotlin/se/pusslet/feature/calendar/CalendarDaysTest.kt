@@ -12,6 +12,8 @@ import se.pusslet.core.model.Handoff
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.Role
+import se.pusslet.core.model.SickDay
+import se.pusslet.core.sick.SickDays
 import se.pusslet.data.repository.CalendarLayer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -114,6 +116,42 @@ class CalendarDaysTest {
         assertTrue(built.routines.isEmpty())
         // All-day first, then by start.
         assertEquals(listOf("lov", "jobb", "fotboll"), built.events.map { it.event.id })
+    }
+
+    /** ADR-047: Ella home sick; her school line is gone, Simon's stays, and the day says why. */
+    @Test
+    fun aSickChildsDayIsAQuietLineWithoutHerSchool() {
+        val ellasSchool = occurrence("skola", LocalTime(8, 15), LocalTime(13, 0), listOf(ella), pickUp = Handoff(sara.id, LocalTime(15, 0)))
+        val simonsPreschool = occurrence("förskola", LocalTime(8, 0), LocalTime(16, 0), listOf(simon), dropOff = Handoff(johan.id))
+        val sick = listOf(SickDay(SickDay.idFor(ella.id, day), ella.id, day, homeWith = sara.id))
+        val occurrences = SickDays.apply(listOf(ellasSchool, simonsPreschool), sick, setOf(ella.id, simon.id)).occurrences
+
+        val built = CalendarDays.build(
+            day,
+            day,
+            occurrences,
+            people,
+            schedules = emptyList(),
+            personFilter = emptySet(),
+            layers = CalendarLayer.entries.toSet(),
+            me = sara.id,
+            sickDays = sick,
+        ).single()
+
+        assertEquals(listOf(SickLine(ella, sara)), built.sick)
+        assertEquals(listOf(listOf(simon)), built.routines.map { it.children })
+        val onlySimon = CalendarDays.build(
+            day,
+            day,
+            occurrences,
+            people,
+            emptyList(),
+            setOf(simon.id),
+            CalendarLayer.entries.toSet(),
+            null,
+            sick,
+        )
+        assertTrue(onlySimon.single().sick.isEmpty(), "the filter on Simon hides Ella's line")
     }
 
     @Test

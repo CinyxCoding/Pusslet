@@ -17,6 +17,8 @@ import kotlinx.datetime.todayIn
 import se.pusslet.core.model.Family
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.Role
+import se.pusslet.core.model.SickDay
+import se.pusslet.core.sick.SickDays
 import se.pusslet.data.remote.AuthRepository
 import se.pusslet.data.remote.FamilyRemote
 import se.pusslet.data.repository.PreferencesRepository
@@ -116,9 +118,17 @@ class AppCoordinator(
         }
     }
 
-    /** What was deleted more than 30 days ago leaves this phone too (ADR-046); counts only in the log. */
+    /**
+     * What was deleted more than 30 days ago leaves this phone too (ADR-046), and a parent's phone removes sick days from
+     * before last year, which no longer count for VAB (ADR-047); the purge then clears them. Counts only in the log.
+     */
     private suspend fun purgeDeleted() {
         try {
+            if (sessions.session.value.role == Role.Parent) {
+                val expired = SickDays.expired(docs.getAll(Collections.SickDays, SickDay.serializer()), clock.todayIn(zone))
+                expired.forEach { docs.delete(Collections.SickDays, it.id) }
+                if (expired.isNotEmpty()) log.i { "Removed ${expired.size} old sick days" }
+            }
             val gone = docs.purgeDeleted()
             if (gone > 0) log.i { "Purged $gone deleted documents" }
         } catch (e: Exception) {

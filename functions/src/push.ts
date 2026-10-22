@@ -2,7 +2,9 @@
  * Push between phones with Firebase Cloud Messaging (BRIEF §4.10, docs/DECISIONS.md ADR-042). Three Firestore triggers:
  * - a new hand-off request (ADR-030) to the one asked, or to everyone but the sender for a request to anyone;
  * - an answer to it (a yes, or a no) to the one who asked;
- * - an item added to a list while someone else is shopping from it (ADR-018) to that shopper.
+ * - an item added to a list while someone else is shopping from it (ADR-018) to that shopper;
+ * - a child reported sick, or who stays home decided (ADR-047), to everyone else in the family, caregivers too (their
+ *   pick-up may be off).
  *
  * Messages are data-only and carry ids and the least needed to say it ("pickup", a date, the item as written): the app words
  * the notification from its own string resources, in the reader's language, and opens what it is about. Tokens live in
@@ -12,7 +14,7 @@
  */
 import * as logger from "firebase-functions/logger";
 import { defineString } from "firebase-functions/params";
-import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { FieldValue, type Firestore, getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import { REGION } from "./setup.js";
@@ -47,6 +49,21 @@ interface ItemDoc {
   addedBy?: string | null;
   checked?: boolean;
   deletedAt?: unknown;
+}
+
+interface SickDoc {
+  childId?: string;
+  date?: string;
+  reportedBy?: string | null;
+  homeWith?: string | null;
+  updatedBy?: string;
+  deletedAt?: unknown;
+}
+
+/** A member and the account behind it, so the one who wrote a change is not told about it. */
+export interface MemberRef {
+  id: string;
+  uid?: string;
 }
 
 export interface PresenceDoc {
@@ -99,6 +116,33 @@ export function requestAnswered(familyId: string, requestId: string, before: Req
   };
 }
 
+/**
+ * A sick day written: a new one ("Ella är sjuk idag") or who stays home changed ("Johan stannar hemma med Ella"). To every
+ * member but the one who wrote it; a removed one ("Ångra") and other changes (the reports ticked) say nothing.
+ */
+export function sickChanged(familyId: string, sickDayId: string, before: SickDoc | undefined, after: SickDoc, members: MemberRef[]): Push | null {
+  if (after.deletedAt || !after.childId || !after.date) return null;
+  const created = !before || !!before.deletedAt;
+  const homeChanged = !created && !!after.homeWith && after.homeWith !== before?.homeWith;
+  if (!created && !homeChanged) return null;
+  const memberIds = members
+    .filter((m) => m.uid !== after.updatedBy && !(created && m.id === after.reportedBy))
+    .map((m) => m.id);
+  if (memberIds.length === 0) return null;
+  return {
+    memberIds,
+    data: {
+      type: "sick",
+      familyId,
+      sickDayId,
+      childId: after.childId,
+      date: after.date,
+      by: after.reportedBy ?? "",
+      homeWith: after.homeWith ?? "",
+    },
+  };
+}
+
 /** An item added to a list: to whoever else is shopping from that list right now. */
 export function itemAdded(familyId: string, itemId: string, item: ItemDoc, presences: PresenceDoc[], now: Date): Push | null {
   if (item.deletedAt || item.checked || !item.listId) return null;
@@ -148,8 +192,12 @@ export async function deliver(db: Firestore, familyId: string, push: Push): Prom
 }
 
 async function memberIds(db: Firestore, familyId: string): Promise<string[]> {
+  return (await memberRefs(db, familyId)).map((m) => m.id);
+}
+
+async function memberRefs(db: Firestore, familyId: string): Promise<MemberRef[]> {
   const members = await db.collection(`families/${familyId}/members`).get();
-  return members.docs.filter((m) => !m.get("deletedAt")).map((m) => m.id);
+  return members.docs.filter((m) => !m.get("deletedAt")).map((m) => ({ id: m.id, uid: m.get("uid") ?? undefined }));
 }
 
 export const pushOnRequest = onDocumentCreated(
@@ -175,11 +223,26 @@ export const pushOnAnswer = onDocumentUpdated(
   },
 );
 
-export const pushOnShoppingItem = onDocumentCreated(
-  { document: "families/{familyId}/shoppingItems/{itemId}", region: TRIGGER_REGION },
+export const pushOnSickDay = onDocumentWritten(
+  { document: "families/{familyId}/sickDays/{sickDayId}", region: TRIGGER_REGION },
   async (event) => {
-    const item = event.data?.data() as ItemDoc | undefined;
-    if (!item) return;
+    const before = event.data?.before.data() as SickDoc | undefined;
+    const after = event.data?.after.data() as SickDoc | undefined;
+    if (!after) return;
+    const db = getFirestore();
+    const { familyId, sickDayId } = event.params;
+    const push = sickChanged(familyId, sickDayId, before, after, await memberRefs(db, familyId));
+    if (push) await deliver(db, familyId, push);
+  },
+);
+
+// Shopping items live under their list (firestore.rules, the app's Collections.ShoppingItems).
+export const pushOnShoppingItem = onDocumentCreated(
+  { document: "families/{familyId}/shoppingLists/{listId}/items/{itemId}", region: TRIGGER_REGION },
+  async (event) => {
+    const data = event.data?.data() as ItemDoc | undefined;
+    if (!data) return;
+    const item: ItemDoc = { ...data, listId: data.listId ?? event.params.listId };
     const db = getFirestore();
     const { familyId, itemId } = event.params;
     const presence = await db.collection(`families/${familyId}/presence`).get();

@@ -120,6 +120,26 @@ class PushMessagesTest {
     }
 
     @Test
+    fun aSickChildIsWordedFromThisPhonesOwnNames() = runTest {
+        val (_, push) = world()
+        val sick = data(
+            "type" to "sick",
+            "sickDayId" to "c-ella_2026-10-21",
+            "childId" to "c-ella",
+            "date" to "2026-10-21",
+            "by" to "m-sara",
+        )
+        val n = push.planned(sick)
+        assertEquals(NotificationKind.SickDay, n?.kind)
+        assertEquals(NotificationPayload.Sick("Ella", LocalDate(2026, 10, 21), tomorrow = false, by = "Sara", homeWith = null), n?.payload)
+        val home = push.planned(sick + ("homeWith" to "m-bengt"))
+        assertEquals("Bengt", (home?.payload as NotificationPayload.Sick).homeWith)
+        assertEquals(n?.key, home.key, "who stays home replaces the first message")
+        assertNull(push.planned(sick + ("date" to "2026-10-20")), "a day that has passed")
+        assertEquals(true, (push.planned(sick + ("date" to "2026-10-22"))?.payload as NotificationPayload.Sick).tomorrow)
+    }
+
+    @Test
     fun anotherFamilyOrAnUnknownEventIsLeftAlone() = runTest {
         val (_, push) = world()
         assertNull(push.planned(mapOf("familyId" to "annan", "type" to "shopping", "item" to "Mjölk")))

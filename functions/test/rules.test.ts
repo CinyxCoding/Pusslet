@@ -13,6 +13,7 @@ import {
   Timestamp,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -219,6 +220,23 @@ describe("writing family data", () => {
   it("allows soft delete but never hard delete", async () => {
     await assertSucceeds(updateDoc(doc(db("sara"), `families/${FID}/events/shared`), { deletedAt: serverTimestamp(), ...stamp("sara") }));
     await assertFails(deleteDoc(doc(db("sara"), `families/${FID}/events/private`)));
+  });
+
+  // ADR-046: the nightly purge leaves a marker (deletedAt, purgedAt); a document made again under the same id clears it,
+  // the way the app writes (mergeFields with the meta fields deleted), and an old edit cannot fill a marker back in.
+  it("lets a new document clear a purged marker, but not an old edit fill an event back in", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      const marker = { deletedAt: Timestamp.fromMillis(0), purgedAt: Timestamp.fromMillis(1), updatedAt: Timestamp.fromMillis(0) };
+      await setDoc(doc(ctx.firestore(), `families/${FID}/mealPlans/2026-W43`), marker);
+      await setDoc(doc(ctx.firestore(), `families/${FID}/events/purged`), marker);
+      await setDoc(doc(ctx.firestore(), `families/${FID}/packingChecks/2026-10-09_ella`), marker);
+    });
+    const again = { week: { weekYear: 2026, week: 43 }, deletedAt: deleteField(), purgedAt: deleteField(), ...stamp("sara") };
+    await assertSucceeds(setDoc(doc(db("sara"), `families/${FID}/mealPlans/2026-W43`), again, { mergeFields: Object.keys(again) }));
+    const check = { date: "2026-10-09", childId: "ella", deletedAt: deleteField(), purgedAt: deleteField(), ...stamp("bengt") };
+    await assertSucceeds(setDoc(doc(db("bengt"), `families/${FID}/packingChecks/2026-10-09_ella`), check, { mergeFields: Object.keys(check) }));
+    const stale = { location: "Folktandvården", ...stamp("sara") };
+    await assertFails(setDoc(doc(db("sara"), `families/${FID}/events/purged`), stale, { mergeFields: Object.keys(stale) }));
   });
 
   it("keeps shopping items inside their list", async () => {

@@ -18,6 +18,8 @@ import se.pusslet.data.db.DocumentEntity
 import se.pusslet.data.db.OutboxEntity
 import se.pusslet.data.session.SessionProvider
 import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
 
 /** JSON used for domain documents: tolerant reads, explicit defaults (queried fields must exist), no nulls. */
 val DomainJson: Json = Json {
@@ -87,6 +89,12 @@ class DocumentStore(
         return next
     }
 
+    /**
+     * Removes what was deleted more than [PURGE_AFTER] ago from this phone (ADR-046), as the server does with its copy.
+     * Documents with changes still waiting to be sent stay until they are sent.
+     */
+    suspend fun purgeDeleted(): Int = local.purgeDeleted((clock.now() - PURGE_AFTER).toEpochMilliseconds())
+
     /** Soft delete: the document is hidden everywhere and the deletion syncs to other devices. */
     suspend fun delete(spec: CollectionSpec, id: String) {
         val fid = sessions.session.value.familyId ?: return
@@ -106,7 +114,12 @@ class DocumentStore(
             val oldJson = existing?.let { runCatching { json.parseToJsonElement(it.json).jsonObject }.getOrNull() }
             val revived = existing?.deletedAt != null
             val diff = JsonPaths.diff(if (revived) null else oldJson, newJson, spec.mapFields).toMutableMap()
-            if (revived) diff[MetaFields.DELETED_AT] = null
+            // A new document clears any deletion the server still has under its id: this phone may have purged the
+            // tombstone (fixed ids such as a week's meal plan come back), and the purge's marker must not keep it deleted.
+            if (revived || existing == null) {
+                diff[MetaFields.DELETED_AT] = null
+                diff[MetaFields.PURGED_AT] = null
+            }
             if (diff.isEmpty() && existing != null) return@transaction
             local.upsert(
                 DocumentEntity(
@@ -152,5 +165,10 @@ class DocumentStore(
         // Never crash the UI on one bad document (e.g. written by a newer app version); log without content.
         log.w { "Skipping undecodable ${row.collection} document: ${e::class.simpleName}" }
         null
+    }
+
+    companion object {
+        /** As `STRIP_AFTER_DAYS` in functions/src/purge.ts: phone and server forget a deletion after the same time. */
+        val PURGE_AFTER: Duration = 30.days
     }
 }

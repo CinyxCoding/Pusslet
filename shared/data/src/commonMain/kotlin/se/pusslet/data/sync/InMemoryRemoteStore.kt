@@ -83,6 +83,20 @@ class InMemoryRemoteStore(private val startTime: Long = 1_000_000L) : RemoteStor
         changes.emit(doc)
     }
 
+    /**
+     * Simulates the nightly purge (functions/src/purge.ts): a deleted document keeps only its deletion, with the time it
+     * was last changed unchanged, so listeners that started after that do not see it again.
+     */
+    suspend fun purge(familyId: String, docPath: String) {
+        val key = fullPath(familyId, docPath)
+        val marker = mutex.withLock {
+            val doc = docs[key] ?: return
+            val kept = doc.data.filterKeys { it in setOf(MetaFields.DELETED_AT, MetaFields.UPDATED_AT, MetaFields.UPDATED_BY) }
+            doc.copy(data = JsonObject(kept + (MetaFields.PURGED_AT to JsonPrimitive(++clock)))).also { docs[key] = it }
+        }
+        changes.emit(marker)
+    }
+
     /** Simulates an admin/function hard delete (e.g. family deletion). */
     suspend fun hardDelete(familyId: String, docPath: String) {
         val key = fullPath(familyId, docPath)

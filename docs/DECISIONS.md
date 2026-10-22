@@ -456,3 +456,24 @@ och testets egen dispatcher i testerna (så att testerna fortsätter att vara de
 mäter öppna, bocka och lägga till med 600 varor med generösa gränser som fångar kvadratisk tillväxt, inte en långsam dag.
 **Konsekvens:** Huvudtråden ritar bara. Samma mönster passar andra skärmar som bygger stora listor (kalendern med många
 prenumerationer) om de blir tunga; de mäts inte än.
+
+## ADR-046 – Det som tas bort försvinner efter 30 dagar
+**Kontext:** Appen tar bara bort mjukt (`deletedAt`) så att borttagningen synkar, men innehållet låg kvar på servern och i
+telefonernas Room tills hela familjen raderades. Integritetspolicyn lovade rensning efter 30 dagar. En vanlig hård
+radering räcker inte: en telefon som varit avstängd i över 30 dagar får aldrig veta att dokumentet är borta (lyssnarna
+läser från en vattenstämpel och ett raderat dokument hörs inte av), så saken ligger kvar där för alltid, och en gammal
+ändring från den telefonen skulle skapa ett halvt dokument på servern.
+**Beslut:** Cloud Function `purgeDeleted` (varje natt 03:30, `functions/src/purge.ts`) ersätter varje dokument som togs
+bort för mer än 30 dagar sedan med en markering som bara har `deletedAt`, `updatedAt`, `updatedBy` och `purgedAt`.
+`updatedAt` lämnas orört, så telefoner som redan vet om borttagningen inte får dokumentet igen, medan en telefon som varit
+borta får markeringen när den synkar och döljer saken. En gammal ändring landar i markeringen och saken förblir borttagen
+(och för händelser, uppgifter, recept m.fl. nekar reglerna en ändring utan titel). Markeringar raderas helt efter ett år.
+Varje körning fortsätter där den förra slutade (`_maintenance/purge`), så ett dokument hanteras en gång. Telefonen tar
+bort sina egna gravstenar äldre än 30 dagar vid start (`DocumentStore.purgeDeleted`), utom dem som har ändringar kvar att
+skicka. Eftersom telefonen glömmer gravstenen skickar ett nytt dokument alltid `deletedAt` och `purgedAt` som borttagna,
+så att ett dokument med fast id (veckans matsedel, inställningar, en persons kostprofil) inte blir kvar som raderat på
+servern när det skapas igen.
+**Konsekvens:** En telefon som varit avstängd i mer än ett år kan visa saker som tagits bort under tiden; ”Ta bort
+familjen från den här telefonen” och att gå med igen ger en ren kopia. Det som tas bort kan inte ångras efter 30 dagar (ångra finns bara några sekunder i appen). En gammal
+ändring i en samling utan fältkontroll (t.ex. matsedeln) kan lämna det ändrade fältet i en markering; saken syns ändå
+inte och raderas med markeringen.

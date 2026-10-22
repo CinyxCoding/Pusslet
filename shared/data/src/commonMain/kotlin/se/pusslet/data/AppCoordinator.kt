@@ -99,6 +99,7 @@ class AppCoordinator(
             }
             _ready.value = true
             processWork.forEach { it.start(scope) }
+            purgeDeleted()
             if (config.mode == BackendMode.Emulator && auth.currentUser.value == null && auth.available) {
                 runCatching { auth.signInAnonymously() }.onFailure { log.i { "Emulator not reachable yet; staying local" } }
             }
@@ -112,6 +113,17 @@ class AppCoordinator(
                         connect(familyId, memberId, uid, role)
                     }
                 }
+        }
+    }
+
+    /** What was deleted more than 30 days ago leaves this phone too (ADR-046); counts only in the log. */
+    private suspend fun purgeDeleted() {
+        try {
+            val gone = docs.purgeDeleted()
+            if (gone > 0) log.i { "Purged $gone deleted documents" }
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            log.w(e) { "Could not purge deleted documents" }
         }
     }
 

@@ -36,6 +36,10 @@ interface DocumentDao {
     @Query("DELETE FROM documents WHERE familyId = :familyId")
     suspend fun deleteFamily(familyId: String)
 
+    /** Deleted documents older than [before] with nothing waiting to be sent (ADR-046). Returns how many went. */
+    @Query("DELETE FROM documents WHERE deletedAt IS NOT NULL AND deletedAt < :before AND pending = 0")
+    suspend fun purgeDeleted(before: Long): Int
+
     @Query("UPDATE documents SET pending = 0 WHERE familyId = :familyId AND collection = :collection AND docId = :docId")
     suspend fun clearPending(familyId: String, collection: String, docId: String)
 

@@ -60,8 +60,9 @@ Vi säljer inte uppgifter och lämnar inte ut dem till någon annan, utom om lag
 ### Hur länge
 - Så länge familjen finns. "Radera familjen för alla" tar bort familjen och allt i den från servern; "Radera mitt konto"
   tar bort ditt konto, dina telefoner och din koppling till familjen (de andra behåller familjen).
-- Det ni tar bort i appen markeras som borttaget och kan ångras en kort stund. Innehållet ligger kvar dolt i familjens
-  data på servern tills familjen raderas. [Planerat: rensas automatiskt efter 30 dagar.]
+- Det ni tar bort i appen markeras som borttaget och kan ångras en kort stund. Efter 30 dagar tas innehållet bort från
+  servern och från telefonerna; kvar på servern finns bara en markering med tiden för borttagningen, så att en telefon
+  som varit avstängd länge också får veta det. Markeringen raderas efter ett år.
 - Kalenderlänkar och inbjudningar gäller tills de stoppas eller går ut (inbjudningar efter 7 dagar).
 - Notis-token tas bort när Google säger att den inte längre gäller, och när kontot raderas.
 - Säkerhetskopior hos Google rensas enligt Googles rutiner.
@@ -140,8 +141,9 @@ We do not sell data and do not hand it to anyone else, unless the law requires i
 ### How long
 - As long as the family exists. "Delete the family for everyone" removes the family and everything in it from the server;
   "Delete my account" removes your account, your phones and your link to the family (the others keep the family).
-- What you remove in the app is marked as removed and can be undone for a short while. The content stays hidden in the
-  family's data on the server until the family is deleted. [Planned: removed automatically after 30 days.]
+- What you remove in the app is marked as removed and can be undone for a short while. After 30 days the content is
+  deleted from the server and from the phones; only a marker with the time of removal stays on the server, so a phone
+  that has been switched off for a long time also learns about it. The marker is deleted after a year.
 - Calendar links and invitations last until they are stopped or expire (invitations after 7 days).
 - A notification token is removed when Google says it is no longer valid, and when the account is deleted.
 - Backups at Google are cleared according to Google's routines.

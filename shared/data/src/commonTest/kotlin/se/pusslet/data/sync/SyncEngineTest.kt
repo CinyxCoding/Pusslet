@@ -20,6 +20,7 @@ import se.pusslet.core.model.Role
 import se.pusslet.core.model.ShoppingItem
 import se.pusslet.core.model.ShoppingList
 import se.pusslet.core.time.IsoWeek
+import se.pusslet.data.db.DocumentEntity
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
 import kotlin.test.Test
@@ -59,7 +60,8 @@ class SyncEngineTest {
         val link = DeviceLink(server)
         val local = InMemorySyncLocalStore()
         val session = FixedSessionProvider(Session(familyId = FAMILY, memberId = "m-$uid", uid = uid, role = role))
-        val docs = DocumentStore(local, session, FakeClock())
+        val clock = FakeClock()
+        val docs = DocumentStore(local, session, clock)
         val engine = SyncEngine(local, link, docs)
 
         fun start(scope: CoroutineScope) = engine.start(scope, FAMILY, session.session.value.uid!!, session.session.value.role)
@@ -318,6 +320,110 @@ class SyncEngineTest {
         c.start(backgroundScope)
         settle()
         assertEquals(5, c.docs.getAll(Collections.Events, Event.serializer()).size)
+    }
+
+    // Purging what was deleted (ADR-046)
+
+    @Test
+    fun aPhoneThatWasAwayLearnsOfADeletionFromThePurgedMarker() = runTest {
+        val server = InMemoryRemoteStore()
+        val a = Device(server, "sara")
+        val c = Device(server, "johan")
+        a.start(backgroundScope)
+        c.start(backgroundScope)
+        a.docs.put(Collections.Events, "e1", event("e1", "Tandläkare"), Event.serializer())
+        settle()
+        assertNotNull(c.docs.get(Collections.Events, "e1", Event.serializer()))
+
+        // Johan's phone is off while Sara deletes it and the server purges it a month later.
+        c.engine.stop()
+        a.docs.delete(Collections.Events, "e1")
+        settle()
+        server.purge(FAMILY, "events/e1")
+        assertNull(server.snapshot(FAMILY, "events/e1")?.get("title"), "the content is gone from the server")
+        assertNotNull(server.snapshot(FAMILY, "events/e1")?.get(MetaFields.DELETED_AT))
+
+        c.start(backgroundScope)
+        settle()
+        assertNull(c.docs.get(Collections.Events, "e1", Event.serializer()), "deleted on the phone that was away too")
+    }
+
+    @Test
+    fun anOldEditOnAPurgedDocumentDoesNotBringItBack() = runTest {
+        val server = InMemoryRemoteStore()
+        val a = Device(server, "sara")
+        val c = Device(server, "johan")
+        a.start(backgroundScope)
+        c.start(backgroundScope)
+        a.docs.put(Collections.Events, "e1", event("e1", "Tandläkare"), Event.serializer())
+        settle()
+
+        c.link.online.value = false
+        c.docs.update(Collections.Events, "e1", Event.serializer()) { it.copy(location = "Folktandvården") }
+        a.docs.delete(Collections.Events, "e1")
+        settle()
+        server.purge(FAMILY, "events/e1")
+
+        c.link.online.value = true
+        settle()
+        assertNull(c.docs.get(Collections.Events, "e1", Event.serializer()))
+        assertNull(a.docs.get(Collections.Events, "e1", Event.serializer()))
+        assertNotNull(server.snapshot(FAMILY, "events/e1")?.get(MetaFields.DELETED_AT), "still deleted after the old edit")
+    }
+
+    @Test
+    fun aPhoneForgetsOldDeletionsButKeepsWhatIsStillToBeSent() = runTest {
+        val local = InMemorySyncLocalStore()
+        val clock = FakeClock()
+        val docs = DocumentStore(local, FixedSessionProvider(Session(familyId = FAMILY, memberId = "m-sara")), clock)
+        val cutoff = clock.now - DocumentStore.PURGE_AFTER.inWholeMilliseconds
+
+        fun row(id: String, deletedAt: Long?, pending: Boolean = false) =
+            DocumentEntity(
+                FAMILY,
+                "events",
+                id,
+                "{}",
+                updatedAt = null,
+                updatedBy = null,
+                deletedAt = deletedAt,
+                pending = pending,
+                localUpdatedAt = 0,
+            )
+        local.upsert(row("old", cutoff - 60_000))
+        local.upsert(row("unsent", cutoff - 60_000, pending = true))
+        local.upsert(row("recent", cutoff + 60_000))
+        local.upsert(row("alive", null))
+
+        assertEquals(1, docs.purgeDeleted())
+        assertNull(local.get(FAMILY, "events", "old"))
+        assertNotNull(local.get(FAMILY, "events", "unsent"), "its deletion is not sent yet")
+        assertNotNull(local.get(FAMILY, "events", "recent"))
+        assertNotNull(local.get(FAMILY, "events", "alive"))
+    }
+
+    @Test
+    fun aDocumentMadeAgainAfterThePurgeIsBackEverywhere() = runTest {
+        val server = InMemoryRemoteStore()
+        val a = Device(server, "sara")
+        val b = Device(server, "johan")
+        a.start(backgroundScope)
+        b.start(backgroundScope)
+        val week = MealPlanWeek(IsoWeek(2026, 43))
+        a.docs.put(Collections.MealPlans, "2026-W43", week, MealPlanWeek.serializer())
+        settle()
+        a.docs.delete(Collections.MealPlans, "2026-W43")
+        settle()
+        server.purge(FAMILY, "mealPlans/2026-W43")
+        a.clock.now += DocumentStore.PURGE_AFTER.inWholeMilliseconds + 60_000
+        a.docs.purgeDeleted()
+        assertNull(a.local.get(FAMILY, "mealPlans", "2026-W43"), "the phone has forgotten it")
+
+        // The same week is planned again: same id, and no tombstone left on the phone to revive.
+        a.docs.put(Collections.MealPlans, "2026-W43", week, MealPlanWeek.serializer())
+        settle()
+        assertNull(server.snapshot(FAMILY, "mealPlans/2026-W43")?.get(MetaFields.DELETED_AT))
+        assertNotNull(b.docs.get(Collections.MealPlans, "2026-W43", MealPlanWeek.serializer()))
     }
 
     private companion object {

@@ -114,7 +114,10 @@ object MetaFields {
     const val UPDATED_AT = "updatedAt"
     const val UPDATED_BY = "updatedBy"
     const val DELETED_AT = "deletedAt"
-    val all = setOf(UPDATED_AT, UPDATED_BY, DELETED_AT)
+
+    /** Set by the nightly purge when a deleted document's content was removed (functions/src/purge.ts, ADR-046). */
+    const val PURGED_AT = "purgedAt"
+    val all = setOf(UPDATED_AT, UPDATED_BY, DELETED_AT, PURGED_AT)
 
     /** Placeholder value the remote store replaces with the server timestamp. */
     const val SERVER_TIMESTAMP = "__serverTimestamp__"

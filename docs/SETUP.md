@@ -92,6 +92,10 @@ konfiguration. Prova efter deploy: Inställningar → Kalendrar → ”Skapa lä
 ner) och lägg till den i Google Kalender under ”Andra kalendrar → Från webbadress”. Google hämtar prenumerationer med
 några timmars mellanrum.
 
+Nattlig rensning (ADR-046): funktionen `purgeDeleted` körs 03:30 varje natt via Cloud Scheduler (aktiveras av sig själv
+vid deploy på Blaze). Den tar bort innehållet i det som raderades för mer än 30 dagar sedan och markeringarna efter ett
+år; var den slutade står i `_maintenance/purge`, som ingen klient kan läsa. Loggen visar bara antal.
+
 Push mellan telefonerna (ADR-042) är triggers på Firestore och måste ligga i databasens region. Med en EU-region
 (`europe-north1`) behövs inget; med multiregionen `eur3`, skriv `TRIGGER_REGION=europe-west1` i `functions/.env` före deploy
 (`functions/.env.local` gäller bara emulatorerna). Push kommer bara i `dev`- och `prod`-flavorn. Prova med två telefoner i

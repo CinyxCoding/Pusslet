@@ -28,6 +28,9 @@ interface SyncLocalStore {
 
     suspend fun hardDelete(familyId: String, collection: String, docId: String)
 
+    /** Removes deleted documents whose deletion is older than [before] (epoch ms) and that have nothing to send. */
+    suspend fun purgeDeleted(before: Long): Int
+
     suspend fun clearPending(familyId: String, collection: String, docId: String)
 
     suspend fun appendOutbox(entity: OutboxEntity): Long
@@ -72,6 +75,8 @@ class RoomSyncLocalStore(private val db: PussletDatabase) : SyncLocalStore {
     override suspend fun upsert(entity: DocumentEntity) = docs.upsert(entity)
 
     override suspend fun hardDelete(familyId: String, collection: String, docId: String) = docs.hardDelete(familyId, collection, docId)
+
+    override suspend fun purgeDeleted(before: Long) = docs.purgeDeleted(before)
 
     override suspend fun clearPending(familyId: String, collection: String, docId: String) = docs.clearPending(familyId, collection, docId)
 
@@ -137,6 +142,12 @@ class InMemorySyncLocalStore : SyncLocalStore {
 
     override suspend fun hardDelete(familyId: String, collection: String, docId: String) {
         docs.value = docs.value - Key(familyId, collection, docId)
+    }
+
+    override suspend fun purgeDeleted(before: Long): Int {
+        val gone = docs.value.filterValues { it.deletedAt != null && it.deletedAt < before && !it.pending }.keys
+        docs.value = docs.value - gone
+        return gone.size
     }
 
     override suspend fun clearPending(familyId: String, collection: String, docId: String) {

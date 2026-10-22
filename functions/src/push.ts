@@ -4,7 +4,8 @@
  * - an answer to it (a yes, or a no) to the one who asked;
  * - an item added to a list while someone else is shopping from it (ADR-018) to that shopper;
  * - a child reported sick, or who stays home decided (ADR-047), to everyone else in the family, caregivers too (their
- *   pick-up may be off).
+ *   pick-up may be off);
+ * - a child picked up ("Hämtad", ADR-048), to everyone else in the family.
  *
  * Messages are data-only and carry ids and the least needed to say it ("pickup", a date, the item as written): the app words
  * the notification from its own string resources, in the reader's language, and opens what it is about. Tokens live in
@@ -56,6 +57,15 @@ interface SickDoc {
   date?: string;
   reportedBy?: string | null;
   homeWith?: string | null;
+  updatedBy?: string;
+  deletedAt?: unknown;
+}
+
+interface ReceiptDoc {
+  kind?: string;
+  childIds?: string[];
+  doneBy?: string | null;
+  doneAt?: string | null;
   updatedBy?: string;
   deletedAt?: unknown;
 }
@@ -140,6 +150,17 @@ export function sickChanged(familyId: string, sickDayId: string, before: SickDoc
       by: after.reportedBy ?? "",
       homeWith: after.homeWith ?? "",
     },
+  };
+}
+
+/** "Ella är hämtad": a ticked-off pick-up, to every member but the one who ticked it off. */
+export function pickedUp(familyId: string, receiptId: string, r: ReceiptDoc, members: MemberRef[]): Push | null {
+  if (r.deletedAt || (r.kind ?? "pickup") !== "pickup" || !r.childIds?.length) return null;
+  const memberIds = members.filter((m) => m.uid !== r.updatedBy && m.id !== r.doneBy).map((m) => m.id);
+  if (memberIds.length === 0) return null;
+  return {
+    memberIds,
+    data: { type: "pickedUp", familyId, receiptId, childIds: r.childIds.join(","), by: r.doneBy ?? "", at: r.doneAt ?? "" },
   };
 }
 
@@ -232,6 +253,18 @@ export const pushOnSickDay = onDocumentWritten(
     const db = getFirestore();
     const { familyId, sickDayId } = event.params;
     const push = sickChanged(familyId, sickDayId, before, after, await memberRefs(db, familyId));
+    if (push) await deliver(db, familyId, push);
+  },
+);
+
+export const pushOnPickedUp = onDocumentCreated(
+  { document: "families/{familyId}/handoffReceipts/{receiptId}", region: TRIGGER_REGION },
+  async (event) => {
+    const r = event.data?.data() as ReceiptDoc | undefined;
+    if (!r) return;
+    const db = getFirestore();
+    const { familyId, receiptId } = event.params;
+    const push = pickedUp(familyId, receiptId, r, await memberRefs(db, familyId));
     if (push) await deliver(db, familyId, push);
   },
 );

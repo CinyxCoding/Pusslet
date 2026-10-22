@@ -14,6 +14,7 @@ import se.pusslet.core.model.CustodySchedule
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
+import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.PackingChecks
@@ -75,6 +76,7 @@ class TodayInputSource(
         val lunches: Map<String, List<SchoolLunch>>,
         val tasks: List<FamilyTask>,
         val sickDays: List<SickDay> = emptyList(),
+        val receipts: List<HandoffReceipt> = emptyList(),
     )
 
     val household: Flow<Household> = combine(
@@ -92,7 +94,8 @@ class TodayInputSource(
     val extras: Flow<Extras> = combine(
         combine(packing.rules, packing.checks, meals.weeks, lunches.lunches, tasks.tasks) { r, c, w, l, t -> Extras(r, c, w, l, t) },
         sickDays,
-    ) { ex, s -> ex.copy(sickDays = s) }
+        calendar.handoffReceipts,
+    ) { ex, s, r -> ex.copy(sickDays = s, receipts = r) }
 
     val requests: Flow<List<HandoffRequest>> get() = calendar.handoffRequests
 
@@ -151,6 +154,7 @@ class TodayInputSource(
             shopping = shopping,
             requests = requests,
             sickDays = extras.sickDays,
+            receipts = extras.receipts,
         )
     }
 

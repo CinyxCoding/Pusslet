@@ -95,6 +95,11 @@
             android:theme="@style/Theme.Pusslet.QuickAdd"
             android:windowSoftInputMode="stateAlwaysVisible|adjustResize" />
 
+        <!-- "Hämtad" on a pick-up notification (ADR-048). -->
+        <receiver
+            android:name=".notify.PickupDoneReceiver"
+            android:exported="false" />
+
         <!-- Push from other phones (ADR-042). FCM is switched on in code, and only with a real Firebase project. -->
         <service
             android:name=".push.PussletMessagingService"

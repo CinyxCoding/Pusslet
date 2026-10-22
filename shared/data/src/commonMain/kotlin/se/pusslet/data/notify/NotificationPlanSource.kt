@@ -94,14 +94,15 @@ class NotificationPlanSource(
         return ReminderPlanner.schedule(reminderInput(input, session, settings().first(), now))
     }
 
-    private data class Settings(val morning: Boolean, val morningAt: LocalTime, val quiet: QuietSettings)
+    private data class Settings(val morning: Boolean, val morningAt: LocalTime, val quiet: QuietSettings, val pickupWarnings: Boolean)
 
     private fun settings(): Flow<Settings> = combine(
         prefs.observe(Prefs.Morning),
         prefs.observe(Prefs.QuietHours),
         prefs.observe(Prefs.QuietHoursEnabled),
-    ) { morning, window, enabled ->
-        Settings(morning.enabled, morning.time, QuietSettings(window, enabled))
+        prefs.observe(Prefs.PickupWarnings),
+    ) { morning, window, enabled, pickups ->
+        Settings(morning.enabled, morning.time, QuietSettings(window, enabled), pickups)
     }
 
     private fun reminderInput(base: TodayInput, session: Session, s: Settings, now: Instant) = ReminderInput(
@@ -110,6 +111,7 @@ class NotificationPlanSource(
         role = session.role,
         morningAt = s.morningAt.takeIf { s.morning },
         quiet = s.quiet,
+        pickupWarnings = s.pickupWarnings,
     )
 
     companion object {

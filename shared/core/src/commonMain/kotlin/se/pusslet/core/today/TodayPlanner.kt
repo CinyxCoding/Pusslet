@@ -22,6 +22,7 @@ import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.Household
 import se.pusslet.core.model.MealEntry
@@ -79,6 +80,8 @@ data class TodayInput(
     val requests: List<HandoffRequest> = emptyList(),
     /** Children home sick (ADR-047): no clothes, packing or school lunch for them that day. */
     val sickDays: List<SickDay> = emptyList(),
+    /** "Hämtad ✓" (ADR-048): a done pick-up leaves Morgonkollen and is never warned about. */
+    val receipts: List<HandoffReceipt> = emptyList(),
 ) {
     /** The children who go about their day on [date] (the sick ones stay home). */
     fun childrenOutOn(date: LocalDate): List<Child> {
@@ -184,6 +187,10 @@ data class TodayPlan(
     val shopping: TodayShopping? = null,
     /** Kvällskollen: tomorrow made ready, from [TodayInput.tomorrowWeatherFrom]; null earlier or when tomorrow has nothing. */
     val tomorrow: TomorrowPrep? = null,
+    /** Somebody else's pick-up today that nobody has ticked off [Pickups.GRACE] after its time (ADR-048). */
+    val unconfirmedPickups: List<UnconfirmedPickup> = emptyList(),
+    /** Today's ticked-off pick-ups: "Ella hämtad 15:52 · Bengt". */
+    val pickedUp: List<PickedUp> = emptyList(),
 ) {
     val isQuiet: Boolean get() = timeline.isEmpty() && packing.all { it.items.isEmpty() }
 
@@ -294,8 +301,25 @@ object TodayPlanner {
             hasWeatherPlace = input.hasWeatherPlace,
             shopping = input.shopping,
             tomorrow = tomorrowPrep(input, byId, problems, cannotMake),
+            unconfirmedPickups = Pickups.unconfirmed(today, input.now, input.occurrences, byId, input.receipts)
+                .filter { it.pickup.personId != input.me },
+            pickedUp = pickedUp(input, byId),
         )
     }
+
+    /** Today's receipts of pick-ups, newest first (ADR-048). */
+    private fun pickedUp(input: TodayInput, byId: Map<String, FamilyPerson>): List<PickedUp> = input.receipts
+        .filter { it.occurrenceDate == input.today && it.kind == HandoffKind.PickUp }
+        .sortedByDescending { it.doneAt }
+        .map { r ->
+            PickedUp(
+                r,
+                r.childIds.mapNotNull { byId[it] },
+                r.doneBy?.let { byId[it] },
+                byMe =
+                    r.doneBy != null && r.doneBy == input.me,
+            )
+        }
 
     /**
      * Kvällskollen: from [TodayInput.tomorrowWeatherFrom], tomorrow's hand-offs (those with a problem are under "Att lösa"),
@@ -423,14 +447,23 @@ object TodayPlanner {
         from: LocalTime?,
     ): List<HandoffLine> {
         val childOrder = input.children.withIndex().associate { (i, c) -> c.id to i }
+
+        // My own pick-up stays after its time until it is ticked off ("Hämtad", ADR-048); a done one is gone.
+        fun mineToConfirm(h: DayHandoff) = from != null && h.kind == HandoffKind.PickUp && h.personId == input.me
         return handoffs
-            .filter { (from == null || it.time >= from) && it.personId != null && handoffKey(it.occurrence, it.kind) !in blocked }
+            .filter {
+                (from == null || it.time >= from || mineToConfirm(it)) && it.personId != null &&
+                    handoffKey(it.occurrence, it.kind) !in blocked
+            }
+            .filter { Pickups.receiptFor(input.receipts, it.occurrence, it.kind) == null }
             .groupBy { it.kind to it.personId }
             .map { (key, list) ->
                 val (kind, personId) = key
                 val stops = list.flatMap { h -> h.children.map { HandoffStop(it, h.time, h.occurrence) } }
                     .sortedWith(compareBy({ it.time }, { childOrder[it.child.id] ?: Int.MAX_VALUE }))
-                HandoffLine(kind, personId?.let(byId::get), isMe = personId != null && personId == input.me, stops = stops)
+                val isMe = personId != null && personId == input.me
+                val confirmable = from != null && isMe && kind == HandoffKind.PickUp && Pickups.confirmable(stops.first().time, from)
+                HandoffLine(kind, personId?.let(byId::get), isMe = isMe, stops = stops, confirmable = confirmable)
             }
             .sortedWith(compareBy({ it.firstTime }, { it.kind.ordinal }))
     }

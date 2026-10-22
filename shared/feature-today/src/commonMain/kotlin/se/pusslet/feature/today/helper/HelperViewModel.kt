@@ -26,6 +26,7 @@ import se.pusslet.core.helper.HelperPlan
 import se.pusslet.core.helper.HelperRequest
 import se.pusslet.core.model.Completion
 import se.pusslet.core.model.FamilyPerson
+import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.model.Place
@@ -51,6 +52,7 @@ import se.pusslet.data.sync.waitsForNetwork
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.HintIds
+import se.pusslet.data.usecase.PickupReceipts
 import se.pusslet.feature.today.ShoppingSnapshot
 import se.pusslet.feature.today.TodayModel
 import kotlin.time.Clock
@@ -100,6 +102,7 @@ class HelperViewModel(
     syncStatus: Flow<SyncStatus>,
     private val clock: Clock,
     private val zone: TimeZone,
+    private val receipts: PickupReceipts,
 ) : ViewModel() {
     private val log = Logger.withTag("Helper")
 
@@ -250,5 +253,10 @@ class HelperViewModel(
                 }
             }
         }
+    }
+
+    /** "Hämtad" (ADR-048): the family is told, and the warning to the parents does not come. */
+    fun pickedUp(mission: HelperMission) {
+        viewModelScope.launch { receipts.confirm(mission.occurrence, HandoffKind.PickUp, mission.children.map { it.id }) }
     }
 }

@@ -37,6 +37,7 @@ import se.pusslet.data.sync.SyncStatus
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.HintIds
+import se.pusslet.data.usecase.PickupReceipts
 import se.pusslet.feature.today.FakeCacheDao
 import se.pusslet.feature.today.NoWeather
 import se.pusslet.feature.today.TestWorld
@@ -245,6 +246,7 @@ class HelperPreviewViewModelTest {
             flowOf(SyncStatus()),
             w.clock,
             w.zone,
+            PickupReceipts(phone.calendar, bengt, w.clock),
         )
         CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler)).launch { helper.state.collect {} }
 

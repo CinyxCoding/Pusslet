@@ -14,8 +14,10 @@ import co.touchlab.kermit.Logger
 import se.pusslet.android.MainActivity
 import se.pusslet.android.R
 import se.pusslet.android.platform.useAppLanguage
+import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.notify.NotificationImportance
 import se.pusslet.core.notify.NotificationKind
+import se.pusslet.core.notify.NotificationPayload
 import se.pusslet.core.notify.PlannedNotification
 import se.pusslet.ui.notify.NotificationText
 import se.pusslet.ui.notify.NotificationTexts
@@ -49,6 +51,7 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
             .setCategory(category(n.kind))
             .setWhen(n.at.toEpochMilliseconds())
             .setShowWhen(true)
+            .apply { pickupAction(n)?.let { addAction(0, texts.pickedUpAction(), it) } }
             .build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -77,6 +80,14 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
 
     private fun allowed(): Boolean = manager.areNotificationsEnabled()
 
+    /** "Hämtad" on my own pick-up and on "Är Ella hämtad?" (ADR-048). */
+    private fun pickupAction(n: PlannedNotification): PendingIntent? = when (val p = n.payload) {
+        is NotificationPayload.Handoff ->
+            if (p.kind == HandoffKind.PickUp) PickupDoneReceiver.intent(context, p.eventId, p.occurrenceDate, n.notificationId) else null
+        is NotificationPayload.PickupUnconfirmed -> PickupDoneReceiver.intent(context, p.eventId, p.occurrenceDate, n.notificationId)
+        else -> null
+    }
+
     private fun style(text: NotificationText): NotificationCompat.Style = if (text.lines.isEmpty()) {
         NotificationCompat.BigTextStyle().bigText(text.body)
     } else {
@@ -97,7 +108,9 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
     }
 
     private fun category(kind: NotificationKind): String = when (kind) {
-        NotificationKind.Reminder, NotificationKind.HandoffSoon, NotificationKind.Morning, NotificationKind.Evening ->
+        NotificationKind.Reminder, NotificationKind.HandoffSoon, NotificationKind.Morning, NotificationKind.Evening,
+        NotificationKind.Pickups,
+        ->
             NotificationCompat.CATEGORY_REMINDER
         NotificationKind.Requests, NotificationKind.Shopping, NotificationKind.Conflicts, NotificationKind.SickDay ->
             NotificationCompat.CATEGORY_MESSAGE

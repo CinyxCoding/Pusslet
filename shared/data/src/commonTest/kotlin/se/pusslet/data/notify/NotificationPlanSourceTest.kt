@@ -143,9 +143,12 @@ class NotificationPlanSourceTest {
                 "morning:2026-10-21",
                 "event:e-dent@2026-10-21:30",
                 "handoff:e-school@2026-10-21:PickUp",
+                // Nobody has ticked the pick-up off a quarter after it (ADR-048).
+                "pickup-check:e-school@2026-10-21/PickUp",
                 "task:t-gift:2026-10-21",
                 "morning:2026-10-22",
                 "handoff:e-school@2026-10-22:PickUp",
+                "pickup-check:e-school@2026-10-22/PickUp",
             ),
             list.map { it.key },
         )
@@ -184,7 +187,10 @@ class NotificationPlanSourceTest {
                 respondedAt = time,
             ),
         )
-        assertEquals(listOf("handoff:e-school@2026-10-22:PickUp"), bengt.plan.planNow().map { it.key })
+        assertEquals(
+            listOf("handoff:e-school@2026-10-22:PickUp", "pickup-check:e-school@2026-10-22/PickUp"),
+            bengt.plan.planNow().map { it.key },
+        )
         assertTrue(sara.plan.planNow().none { it.key == "handoff:e-school@2026-10-22:PickUp" })
     }
 

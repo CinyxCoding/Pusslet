@@ -87,9 +87,11 @@ data class SettingsUiState(
     val version: String = "",
     /** Weather place and calendar export write what the family shares; caregivers cannot (firestore.rules). */
     val canEditFamily: Boolean = true,
-    /** Demo and dev builds: the developer rows ("Visa första start igen"). */
+    /** Demo and dev builds: the developer rows ("Radera och börja om"). */
     val developerTools: Boolean = false,
     val replayFailed: Boolean = false,
+    /** "Varna om en hämtning inte bockas av" (ADR-048). */
+    val pickupWarnings: Boolean = true,
 )
 
 class SettingsViewModel(
@@ -132,7 +134,13 @@ class SettingsViewModel(
 
     private val access = combine(sessions.session, replayFailed) { s, failed -> (s.role == Role.Parent) to failed }
 
-    val state: StateFlow<SettingsUiState> = combine(appearance, notify, cal, access) { a, n, c, x ->
+    val state: StateFlow<SettingsUiState> = combine(appearance, notify, cal, access, prefs.observe(Prefs.PickupWarnings)) {
+        a,
+        n,
+        c,
+        x,
+        pw,
+        ->
         SettingsUiState(
             a.first,
             a.second,
@@ -147,6 +155,7 @@ class SettingsViewModel(
             canEditFamily = x.first,
             developerTools = config.developerTools,
             replayFailed = x.second,
+            pickupWarnings = pw,
         )
     }.stateIn(
         viewModelScope,
@@ -171,6 +180,8 @@ class SettingsViewModel(
     fun setMorning(m: MorningBrief) = launch { prefs.set(Prefs.Morning, m) }
 
     fun setQuietEnabled(v: Boolean) = launch { prefs.set(Prefs.QuietHoursEnabled, v) }
+
+    fun setPickupWarnings(v: Boolean) = launch { prefs.set(Prefs.PickupWarnings, v) }
 
     fun setQuiet(w: TimeWindow) = launch { prefs.set(Prefs.QuietHours, w) }
 
@@ -346,6 +357,12 @@ fun SettingsRoute(
                     })
                     TimeField(stringResource(Res.string.field_end), state.quiet.end, { viewModel.setQuiet(state.quiet.copy(end = it)) })
                 }
+                SwitchRow(
+                    stringResource(Res.string.settings_pickup_warnings),
+                    state.pickupWarnings,
+                    viewModel::setPickupWarnings,
+                    supporting = stringResource(Res.string.settings_pickup_warnings_body),
+                )
             }
             Section(stringResource(Res.string.settings_calendars)) {
                 if (onSubscriptions != null && state.canEditFamily) NavRow(stringResource(Res.string.subs_title), onClick = onSubscriptions)

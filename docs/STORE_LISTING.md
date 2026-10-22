@@ -29,6 +29,7 @@ KALENDER
 
 LÄMNA OCH HÄMTA
 • Fråga om någon kan hämta, och få svar som notis
+• ”Hämtad” med ett tryck, så att de andra vet – och en varning om ingen har bockat av
 • Hjälpare, som morfar eller barnvakten, ser bara det ni delar och kan svara ja eller nej
 • Sjukt barn? Ett tryck ställer in lämning, hämtning och aktiviteter, säger till de andra och håller koll på VAB
 
@@ -78,6 +79,7 @@ CALENDAR
 
 DROP-OFF AND PICK-UP
 • Ask if someone can pick up, and get the answer as a notification
+• "Picked up" with one tap so the others know – and a warning if nobody has ticked it off
 • Helpers, like grandpa or the babysitter, only see what you share and can answer yes or no
 • Sick child? One tap cancels drop-offs, pick-ups and activities, tells the others and keeps track of VAB
 

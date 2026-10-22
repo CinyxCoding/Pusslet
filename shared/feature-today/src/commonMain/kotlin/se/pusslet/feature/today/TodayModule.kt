@@ -30,10 +30,11 @@ val todayModule: Module = module {
             get(),
             get(),
             get(),
+            get(),
         )
     }
     viewModel {
-        HelperViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get<SyncEngine>().status, get(), get())
+        HelperViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get<SyncEngine>().status, get(), get(), get())
     }
     viewModel { HelperPreviewViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }

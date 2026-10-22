@@ -498,3 +498,18 @@ dem inte. Sjukdagar från före förra året tas bort från föräldrarnas telef
 **Konsekvens:** Sjukdagar är hälsouppgifter; bara att barnet är sjukt sparas, aldrig symtom eller diagnos, och arket
 säger vad som sparas och varför (PRIVACY.md). Händelser över flera dagar (läger) ställs inte in av en sjukdag. Att
 sjukanmäla via snabbinmatningen (”Ella sjuk”) är inte byggt än.
+
+## ADR-048 – Kvitto på hämtning
+**Kontext:** Hämtningen planeras i appen men ingen bekräftar att den har skett, så den som inte hämtar vet inte om barnet
+är hämtat, och en glömd hämtning märks först när förskolan ringer.
+**Beslut:** Ett tryck på ”Hämtad” sparar ett kvitto per tillfälle och slag (`handoffReceipts/{serie}_{datum}_pickup`: vem,
+när, vilka barn); en serie heter efter sitt eget id, så ett flyttat tillfälle hittar samma kvitto. Knappen finns på min
+egen hämtning i Morgonkollen från en halvtimme före tiden, och raden står kvar efter tiden tills den är avbockad; på
+hjälparens uppdrag; och i notisen ”Du hämtar Ella 15:45” (låsskärmen). Den som bockade av kan ångra. Kvittot skickas som
+push till resten av familjen (”Ella är hämtad · Bengt · 15:52”). En kvart efter tiden utan kvitto kommer en varning till
+den som skulle hämta och till föräldrarna, både som notis (”Är Ella hämtad?”, med Hämtad-knapp) och på Idag (”Ella hämtad?
+Bengt skulle hämta 15:45 · Hämtad”), där en förälder också kan bocka av åt någon annan. Varningen kommer även under tysta
+timmar (ett barn som väntar), och kan stängas av per telefon (”Varna om en hämtning inte bockas av”). Hjälpare får skriva
+sina egna kvitton men inte i någon annans namn. En sjuk dag (ADR-047) har ingen hämtning och därmed ingen varning.
+**Konsekvens:** Familjer som inte vill bocka av kan stänga av varningen; kvittona sparas tills den vanliga rensningen tar
+borttagna (ADR-046). Lämning har samma datamodell men ingen knapp eller varning än.

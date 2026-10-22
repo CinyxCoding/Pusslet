@@ -56,6 +56,7 @@ import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HandoffRequests
 import se.pusslet.data.usecase.MealShopping
+import se.pusslet.data.usecase.PickupReceipts
 import se.pusslet.data.usecase.QuickAddExecutor
 import se.pusslet.data.usecase.RecipeImporter
 import se.pusslet.data.usecase.RecipeNutrition
@@ -98,6 +99,7 @@ val dataModule: Module = module {
     single { ShoppingRepository(get(), get(), get(), get()) }
     single { TaskRepository(get()) }
     single { SickDayRepository(get(), get()) }
+    single { PickupReceipts(get(), get(), get()) }
     single { LunchRepository(get(), get(), get()) }
     single { HandoffAssigner(get()) }
     single { HandoffRequests(get(), get(), get(), get()) }

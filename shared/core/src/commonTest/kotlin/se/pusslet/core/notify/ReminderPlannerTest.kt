@@ -218,8 +218,15 @@ class ReminderPlannerTest {
             respondedBy = bengt.id,
             respondedAt = Instant.parse("2026-10-20T18:00:00Z"),
         )
-        val bengts = plan(input(me = bengt.id, role = Role.Caregiver, requests = listOf(answer))).map { it.key }
-        assertEquals(listOf("handoff:e-school@2026-10-22:PickUp"), bengts)
+        val bengts = plan(input(me = bengt.id, role = Role.Caregiver, requests = listOf(answer)))
+        assertEquals(listOf("handoff:e-school@2026-10-22:PickUp"), bengts.of(NotificationKind.HandoffSoon).map { it.key })
+        assertEquals(
+            listOf("pickup-check:e-school@2026-10-22/PickUp"),
+            bengts.of(NotificationKind.Pickups).map {
+                it.key
+            },
+            "his to tick off",
+        )
         val saras = plan(input(requests = listOf(answer))).of(NotificationKind.HandoffSoon).map { it.key }
         assertTrue("handoff:e-school@2026-10-22:PickUp" !in saras)
         assertTrue("handoff:e-school@2026-10-21:PickUp" in saras)

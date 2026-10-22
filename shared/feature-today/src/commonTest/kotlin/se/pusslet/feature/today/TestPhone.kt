@@ -14,6 +14,7 @@ import se.pusslet.data.session.SessionRepository
 import se.pusslet.data.sync.InMemoryRemoteStore
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.usecase.FirstTimeHints
+import se.pusslet.data.usecase.PickupReceipts
 
 /** A production build: no developer tools, no demo seeding. */
 val ProductionBuild = BackendConfig(BackendMode.LocalOnly, seedDemoData = false, versionName = "test")
@@ -72,5 +73,6 @@ class TestPhone(val world: TestWorld, scope: CoroutineScope, config: BackendConf
         world.clock,
         world.zone,
         SickDayRepository(world.docs, world.sessions),
+        PickupReceipts(world.calendar, world.sessions, world.clock),
     )
 }

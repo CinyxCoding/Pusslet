@@ -103,6 +103,23 @@ sealed interface NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today
     }
 
+    /** Push (ADR-048): "Ella är hämtad" · "Bengt · 15:52". */
+    data class PickedUp(val children: List<String>, val by: String?, val time: LocalTime?) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Today
+    }
+
+    /** "Är Ella hämtad?" · "Bengt skulle hämta 15:45" [Pickups.GRACE] after a pick-up nobody ticked off (ADR-048). */
+    data class PickupUnconfirmed(
+        val eventId: String,
+        val occurrenceDate: LocalDate,
+        val children: List<String>,
+        val by: String?,
+        val isMe: Boolean,
+        val time: LocalTime,
+    ) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Occurrence(eventId, occurrenceDate)
+    }
+
     /** "Anmäl frånvaro för Ella" · "Till Björkängsskolan", until it is ticked on Idag (ADR-047). */
     data class SickAbsence(val child: String, val school: String?) : NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today

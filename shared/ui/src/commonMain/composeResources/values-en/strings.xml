@@ -1383,4 +1383,18 @@
     <string name="notify_absence_body">To %1$s</string>
     <string name="notify_vab_title">Report VAB for %1$s</string>
     <string name="notify_vab_body">To Försäkringskassan, within 90 days</string>
+    <!-- Hämtad ✓ (ADR-048) -->
+    <string name="pickup_done_action">Picked up</string>
+    <string name="pickup_unconfirmed">%1$s picked up? %2$s was to pick up at %3$s</string>
+    <string name="pickup_unconfirmed_nobody">%1$s picked up? Pick-up %2$s</string>
+    <string name="pickup_done_line">%1$s picked up %2$s · %3$s</string>
+    <string name="settings_pickup_warnings">Warn if a pick-up isn't ticked off</string>
+    <string name="settings_pickup_warnings_body">If nobody taps Picked up a quarter of an hour after the time</string>
+    <string name="notify_channel_pickups">Pick-ups</string>
+    <string name="notify_channel_pickups_desc">When a child is picked up, and when nobody has ticked off a pick-up</string>
+    <string name="notify_picked_up_title">%1$s is picked up</string>
+    <string name="notify_picked_up_body">%1$s · %2$s</string>
+    <string name="notify_pickup_unconfirmed_title">Is %1$s picked up?</string>
+    <string name="notify_pickup_unconfirmed_body">%1$s was to pick up at %2$s</string>
+    <string name="notify_pickup_unconfirmed_mine">Tap Picked up when you have</string>
 </resources>

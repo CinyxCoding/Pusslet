@@ -108,7 +108,8 @@ internal object TodayModel {
             }
         }
         val handoffs = if (TodayBlock.Handoffs in visible) {
-            plan.hero.handoffs.filter { line -> line.stops.any { it.time >= plan.now } }
+            // My own pick-up stays until "Hämtad" (ADR-048).
+            plan.hero.handoffs.filter { line -> line.confirmable || line.stops.any { it.time >= plan.now } }
         } else {
             emptyList()
         }

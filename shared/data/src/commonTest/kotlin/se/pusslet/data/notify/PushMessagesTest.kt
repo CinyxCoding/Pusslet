@@ -140,6 +140,17 @@ class PushMessagesTest {
     }
 
     @Test
+    fun aPickUpIsWordedWithThisPhonesNamesAndClock() = runTest {
+        val (_, push) = world()
+        val n = push.planned(
+            data("type" to "pickedUp", "receiptId" to "r1", "childIds" to "c-ella", "by" to "m-bengt", "at" to "2026-10-21T13:52:00Z"),
+        )
+        assertEquals(NotificationKind.Pickups, n?.kind)
+        assertEquals(NotificationPayload.PickedUp(listOf("Ella"), "Bengt", LocalTime(15, 52)), n?.payload)
+        assertNull(push.planned(data("type" to "pickedUp", "receiptId" to "r2", "childIds" to "", "by" to "m-bengt")))
+    }
+
+    @Test
     fun anotherFamilyOrAnUnknownEventIsLeftAlone() = runTest {
         val (_, push) = world()
         assertNull(push.planned(mapOf("familyId" to "annan", "type" to "shopping", "item" to "Mjölk")))

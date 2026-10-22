@@ -34,6 +34,7 @@ import se.pusslet.data.sync.SyncStatus
 import se.pusslet.data.sync.waitsForNetwork
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffRequests
+import se.pusslet.data.usecase.PickupReceipts
 import se.pusslet.feature.today.NoWeather
 import se.pusslet.feature.today.TestWorld
 import kotlin.test.AfterTest
@@ -120,6 +121,7 @@ class HelperViewModelTest {
             flowOf(sync),
             world.clock,
             world.zone,
+            PickupReceipts(world.calendar, world.sessions, world.clock),
         )
         val eager = CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler))
         eager.launch { vm.state.collect {} }

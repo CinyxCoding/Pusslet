@@ -333,6 +333,16 @@ describe("caregivers (morfar)", () => {
     await assertFails(updateDoc(doc(db("bengt"), `families/${FID}/sickDays/ella_2026-10-22`), { homeWith: "m-bengt", ...stamp("bengt") }));
   });
 
+  it("can tick off his own pick-up, not one in someone else's name", async () => {
+    const f = db("bengt");
+    const receipt = { eventId: "shared", occurrenceDate: "2026-10-08", kind: "pickup", childIds: ["ella"], doneBy: "m-bengt", ...stamp("bengt") };
+    await assertSucceeds(setDoc(doc(f, `families/${FID}/handoffReceipts/shared_2026-10-08_pickup`), receipt));
+    await assertSucceeds(getDoc(doc(f, `families/${FID}/handoffReceipts/shared_2026-10-08_pickup`)));
+    await assertFails(
+      setDoc(doc(f, `families/${FID}/handoffReceipts/shared_2026-10-09_pickup`), { ...receipt, occurrenceDate: "2026-10-09", doneBy: "m-sara" }),
+    );
+  });
+
   it("cannot read allergies and diets", async () => {
     await assertFails(getDoc(doc(db("bengt"), `families/${FID}/dietProfiles/ella`)));
     await assertSucceeds(getDoc(doc(db("sara"), `families/${FID}/dietProfiles/ella`)));

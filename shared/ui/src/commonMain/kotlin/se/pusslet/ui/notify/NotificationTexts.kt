@@ -45,6 +45,8 @@ import se.pusslet.ui.resources.notify_channel_handoffs
 import se.pusslet.ui.resources.notify_channel_handoffs_desc
 import se.pusslet.ui.resources.notify_channel_morning
 import se.pusslet.ui.resources.notify_channel_morning_desc
+import se.pusslet.ui.resources.notify_channel_pickups
+import se.pusslet.ui.resources.notify_channel_pickups_desc
 import se.pusslet.ui.resources.notify_channel_reminders
 import se.pusslet.ui.resources.notify_channel_reminders_desc
 import se.pusslet.ui.resources.notify_channel_requests
@@ -63,6 +65,10 @@ import se.pusslet.ui.resources.notify_event_now
 import se.pusslet.ui.resources.notify_event_tomorrow_at
 import se.pusslet.ui.resources.notify_event_who
 import se.pusslet.ui.resources.notify_item_for
+import se.pusslet.ui.resources.notify_picked_up_title
+import se.pusslet.ui.resources.notify_pickup_unconfirmed_body
+import se.pusslet.ui.resources.notify_pickup_unconfirmed_mine
+import se.pusslet.ui.resources.notify_pickup_unconfirmed_title
 import se.pusslet.ui.resources.notify_request_dropoff
 import se.pusslet.ui.resources.notify_request_from
 import se.pusslet.ui.resources.notify_request_pickup
@@ -81,6 +87,7 @@ import se.pusslet.ui.resources.notify_vab_body
 import se.pusslet.ui.resources.notify_vab_title
 import se.pusslet.ui.resources.notify_you_dropoff
 import se.pusslet.ui.resources.notify_you_pickup
+import se.pusslet.ui.resources.pickup_done_action
 import se.pusslet.ui.resources.time_range
 
 /** Between the parts of one line ("Tandläkare · 14:30"), as on Idag. */
@@ -140,6 +147,15 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
                 ?: p.by?.let { str(Res.string.notify_sick_by, it) }
                 ?: str(Res.string.notify_sick_cancelled),
         )
+        is NotificationPayload.PickedUp -> NotificationText(
+            str(Res.string.notify_picked_up_title, joinNames(p.children)),
+            listOfNotNull(p.by, p.time?.let(::formatTime)).joinToString(SEPARATOR),
+        )
+        is NotificationPayload.PickupUnconfirmed -> NotificationText(
+            str(Res.string.notify_pickup_unconfirmed_title, joinNames(p.children)),
+            p.by?.takeUnless { p.isMe }?.let { str(Res.string.notify_pickup_unconfirmed_body, it, formatTime(p.time)) }
+                ?: str(Res.string.notify_pickup_unconfirmed_mine),
+        )
         is NotificationPayload.SickAbsence -> NotificationText(
             str(Res.string.notify_absence_title, p.child),
             p.school?.let { str(Res.string.notify_absence_body, it) }.orEmpty(),
@@ -172,6 +188,9 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
         return NotificationText(title, p.title)
     }
 
+    /** The "Hämtad" button on a pick-up notification (ADR-048). */
+    suspend fun pickedUpAction(): String = str(Res.string.pickup_done_action)
+
     suspend fun channel(kind: NotificationKind): ChannelText = when (kind) {
         NotificationKind.Reminder -> channel(Res.string.notify_channel_reminders, Res.string.notify_channel_reminders_desc)
         NotificationKind.HandoffSoon -> channel(Res.string.notify_channel_handoffs, Res.string.notify_channel_handoffs_desc)
@@ -181,6 +200,7 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
         NotificationKind.Shopping -> channel(Res.string.notify_channel_shopping, Res.string.notify_channel_shopping_desc)
         NotificationKind.Conflicts -> channel(Res.string.notify_channel_conflicts, Res.string.notify_channel_conflicts_desc)
         NotificationKind.SickDay -> channel(Res.string.notify_channel_sick, Res.string.notify_channel_sick_desc)
+        NotificationKind.Pickups -> channel(Res.string.notify_channel_pickups, Res.string.notify_channel_pickups_desc)
     }
 
     private suspend fun channel(name: StringResource, description: StringResource) = ChannelText(str(name), str(description))

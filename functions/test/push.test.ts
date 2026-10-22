@@ -3,7 +3,7 @@
 import { type App, deleteApp, initializeApp } from "firebase-admin/app";
 import { type Firestore, getFirestore } from "firebase-admin/firestore";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { itemAdded, requestAnswered, requestCreated, sickChanged } from "../src/push.js";
+import { itemAdded, pickedUp, requestAnswered, requestCreated, sickChanged } from "../src/push.js";
 
 const PROJECT = process.env.GCLOUD_PROJECT ?? "demo-pusslet";
 const RUN = Math.random().toString(36).slice(2, 8);
@@ -76,6 +76,21 @@ describe("who hears about a sick child", () => {
   });
 });
 
+describe("who hears that a child is picked up", () => {
+  const members = [{ id: "sara", uid: "u-sara" }, { id: "johan", uid: "u-johan" }, { id: "bengt", uid: "u-bengt" }];
+
+  it("everyone but the one who ticked it off", () => {
+    const receipt = { kind: "pickup", childIds: ["ella", "simon"], doneBy: "bengt", doneAt: "2026-10-22T13:52:00Z", updatedBy: "u-bengt" };
+    const push = pickedUp("f", "e-school_2026-10-22_pickup", receipt, members);
+    expect(push?.memberIds).toEqual(["sara", "johan"]);
+    expect(push?.data).toEqual({
+      type: "pickedUp", familyId: "f", receiptId: "e-school_2026-10-22_pickup", childIds: "ella,simon", by: "bengt", at: "2026-10-22T13:52:00Z",
+    });
+    expect(pickedUp("f", "r", { ...receipt, kind: "dropoff" }, members)).toBeNull();
+    expect(pickedUp("f", "r", { ...receipt, deletedAt: "now" }, members)).toBeNull();
+  });
+});
+
 describe("the push triggers", () => {
   let app: App;
   let db: Firestore;
@@ -130,5 +145,11 @@ describe("the push triggers", () => {
     const sick = await outbox(fid, "sick");
     expect(sick?.memberIds).toEqual(["bengt"]);
     expect(sick?.data.childId).toBe("ella");
+
+    await db.doc(`families/${fid}/handoffReceipts/e1_2026-10-22_pickup`).set({
+      eventId: "e1", occurrenceDate: "2026-10-22", kind: "pickup", childIds: ["ella"], doneBy: "bengt", updatedBy: `u-bengt-${RUN}`,
+    });
+    const picked = await outbox(fid, "pickedUp");
+    expect(picked?.memberIds).toEqual(["sara"]);
   });
 });

@@ -20,6 +20,7 @@ import se.pusslet.core.time.minusDays
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.ChildPacking
 import se.pusslet.core.today.HandoffLine
+import se.pusslet.core.today.Pickups
 import se.pusslet.core.today.TimelineItem
 import se.pusslet.core.today.TodayInput
 import se.pusslet.core.today.TodayPlanner
@@ -44,6 +45,8 @@ data class ReminderInput(
     val morningAt: LocalTime? = null,
     val quiet: QuietSettings? = null,
     val horizon: Duration = ReminderPlanner.HORIZON,
+    /** "Varna om en hämtning inte bockas av" (`Prefs.PickupWarnings`, ADR-048). */
+    val pickupWarnings: Boolean = true,
 )
 
 /**
@@ -117,7 +120,8 @@ object ReminderPlanner {
             occurrences = EffectiveHandoffs.apply(input.base.occurrences, input.base.requests),
             days = from.toLocalDateTime(zone).date.datesUntil(until.toLocalDateTime(zone).date),
         )
-        val all = eventReminders(ctx) + handoffs(ctx) + tasks(ctx) + mornings(ctx) + evenings(ctx) + sickReminders(ctx)
+        val all = eventReminders(ctx) + handoffs(ctx) + tasks(ctx) + mornings(ctx) + evenings(ctx) + sickReminders(ctx) +
+            pickupChecks(ctx)
         return all.filter { it.at > from && it.at <= until }
             .distinctBy { it.key }
             .sortedWith(compareBy({ it.at }, { it.key }))
@@ -268,6 +272,33 @@ object ReminderPlanner {
             }
         }
         return absence + vab
+    }
+
+    /**
+     * "Är Ella hämtad?" [Pickups.GRACE] after a pick-up that nobody has ticked off (ADR-048), to the one who was to do it and
+     * to the parents. Planned again when a receipt arrives, so a ticked-off pick-up never warns.
+     */
+    private fun pickupChecks(ctx: Context): List<PlannedNotification> {
+        val me = ctx.me ?: return emptyList()
+        if (!ctx.input.pickupWarnings) return emptyList()
+        val parent = ctx.input.role == Role.Parent
+        return ctx.days.flatMap { day ->
+            Pickups.on(day, ctx.occurrences, ctx.people)
+                .filter { p -> p.personId != null && (p.personId == me || parent) }
+                .filter { p -> Pickups.receiptFor(ctx.input.base.receipts, p.occurrence) == null }
+                .map { p ->
+                    val at = LocalDateTime(day, p.time).toInstant(ctx.zone) + Pickups.GRACE
+                    val payload = NotificationPayload.PickupUnconfirmed(
+                        eventId = p.occurrence.event.id,
+                        occurrenceDate = p.occurrence.occurrenceDate,
+                        children = p.children.map { it.name },
+                        by = p.personId?.let { ctx.people[it]?.name },
+                        isMe = p.personId == me,
+                        time = p.time,
+                    )
+                    PlannedNotification("pickup-check:${p.key}", at, NotificationKind.Pickups, payload, userTimed = true)
+                }
+        }
     }
 
     private fun mornings(ctx: Context): List<PlannedNotification> {

@@ -16,6 +16,7 @@ import se.pusslet.core.model.CalendarSubscription
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
+import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.SickDay
 import se.pusslet.core.recurrence.EventExpander
@@ -99,6 +100,14 @@ class CalendarRepository(
 
     /** Children home sick (ADR-047); [se.pusslet.core.sick.SickDays] applies them to the day's occurrences. */
     val sickDays: Flow<List<SickDay>> = docs.observeAll(Collections.SickDays, SickDay.serializer())
+
+    /** "Hämtad ✓" (ADR-048). */
+    val handoffReceipts: Flow<List<HandoffReceipt>> = docs.observeAll(Collections.HandoffReceipts, HandoffReceipt.serializer())
+
+    suspend fun saveHandoffReceipt(receipt: HandoffReceipt) =
+        docs.put(Collections.HandoffReceipts, receipt.id, receipt, HandoffReceipt.serializer())
+
+    suspend fun deleteHandoffReceipt(id: String) = docs.delete(Collections.HandoffReceipts, id)
 
     suspend fun saveEvent(event: Event) = docs.put(Collections.Events, event.id, event, Event.serializer())
 

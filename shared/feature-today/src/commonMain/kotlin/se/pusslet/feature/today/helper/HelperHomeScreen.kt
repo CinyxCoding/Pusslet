@@ -97,6 +97,7 @@ import se.pusslet.ui.resources.helper_taken_pickup
 import se.pusslet.ui.resources.helper_week
 import se.pusslet.ui.resources.helper_yes_dropoff
 import se.pusslet.ui.resources.helper_yes_pickup
+import se.pusslet.ui.resources.pickup_done_action
 import se.pusslet.ui.resources.sick_card_title
 import se.pusslet.ui.resources.today
 import se.pusslet.ui.resources.today_block_packing
@@ -133,6 +134,7 @@ fun HelperHomeRoute(
             onDecline = viewModel::decline,
             onChangeAnswer = viewModel::changeAnswer,
             onCannotMake = viewModel::cannotMake,
+            onPickedUp = viewModel::pickedUp,
             onTogglePacking = viewModel::setPacked,
             onToggleTask = viewModel::setTaskDone,
             onOpenOccurrence = onOpenOccurrence,
@@ -166,6 +168,8 @@ data class HelperActions(
      * shows nor dismisses Bengt's hint.
      */
     val onDismissHint: (() -> Unit)? = null,
+    /** "Hämtad" on a pick-up (ADR-048); null in the parents' preview, where nothing is saved. */
+    val onPickedUp: ((HelperMission) -> Unit)? = null,
 )
 
 /** [footer] is a last row below everything, e.g. the preview's "Bengt ser inte 2 händelser den här veckan." */
@@ -351,6 +355,12 @@ private fun TodayCard(state: HelperUiState, plan: HelperPlan, actions: HelperAct
                 weather = if (index == 0 && state.showWeather) plan.weather?.let { weatherText(it) } else null,
                 onOpen = open?.let { { it(m.occurrence) } },
             )
+            val pickedUp = actions.onPickedUp
+            if (m.confirmable && pickedUp != null) {
+                Button(onClick = { pickedUp(m) }, modifier = Modifier.fillMaxWidth().heightIn(min = HelperDimens.button)) {
+                    Text(stringResource(Res.string.pickup_done_action))
+                }
+            }
         }
         plan.takenOver.forEach { TakenOverLine(it) }
         when {

@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,17 +29,24 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.conflicts.Conflict
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.today.CaregiverCannot
 import se.pusslet.core.today.CustodyNote
+import se.pusslet.core.today.HandoffStop
+import se.pusslet.core.today.PickedUp
+import se.pusslet.core.today.Pickup
 import se.pusslet.core.today.TodayBlock
 import se.pusslet.core.today.TodayPlan
+import se.pusslet.core.today.UnconfirmedPickup
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.FirstTimeHint
@@ -61,6 +70,7 @@ import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_add
 import se.pusslet.ui.resources.action_cancel
+import se.pusslet.ui.resources.action_undo
 import se.pusslet.ui.resources.card_action_open
 import se.pusslet.ui.resources.card_action_take
 import se.pusslet.ui.resources.card_busy_dropoff
@@ -73,6 +83,10 @@ import se.pusslet.ui.resources.card_nobody_pickup
 import se.pusslet.ui.resources.card_unassigned_dropoff
 import se.pusslet.ui.resources.card_unassigned_pickup
 import se.pusslet.ui.resources.error_generic
+import se.pusslet.ui.resources.pickup_done_action
+import se.pusslet.ui.resources.pickup_done_line
+import se.pusslet.ui.resources.pickup_unconfirmed
+import se.pusslet.ui.resources.pickup_unconfirmed_nobody
 import se.pusslet.ui.resources.sick_report_action
 import se.pusslet.ui.resources.today_custody
 import se.pusslet.ui.resources.today_custody_handover
@@ -153,6 +167,9 @@ fun TodayRoute(
                 onVabReported = viewModel::vabReported,
                 onOpenForsakringskassan = { platform.openUrl(FORSAKRINGSKASSAN_URL) },
             ),
+            onPickedUp = viewModel::pickedUp,
+            onConfirmPickup = viewModel::confirmPickup,
+            onUndoPickup = viewModel::undoPickup,
         ),
     )
 }
@@ -191,6 +208,12 @@ data class TodayActions(
     val onLeaveDemo: () -> Unit = {},
     /** "Sjuk idag?" and the sick-day cards (ADR-047). */
     val sick: SickActions = SickActions(),
+    /** "Hämtad" on my own pick-up line (ADR-048). */
+    val onPickedUp: (List<HandoffStop>) -> Unit = {},
+    /** "Hämtad" on somebody else's pick-up that nobody ticked off. */
+    val onConfirmPickup: (Pickup) -> Unit = {},
+    /** "Ångra" on my own "Du hämtade Ella 15:52". */
+    val onUndoPickup: (HandoffReceipt) -> Unit = {},
 )
 
 @Composable
@@ -239,6 +262,9 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         items(state.sick.cards, key = { "sick-${it.day.id}" }) { SickCardView(it, state.sick, actions.sick) }
         items(state.sick.stillSick, key = { "still-sick-${it.day.id}" }) { StillSickView(it, actions.sick) }
         items(state.sick.vabToReport, key = { "vab-${it.report.childId}-${it.report.first}" }) { VabReportView(it, actions.sick) }
+        // "Hämtad ✓" (ADR-048): somebody else's pick-up nobody ticked off, then today's done ones.
+        items(state.unconfirmedPickups, key = { "unconfirmed-${it.pickup.key}" }) { UnconfirmedPickupBanner(it, actions) }
+        items(state.pickedUp, key = { "picked-${it.receipt.id}" }) { PickedUpLine(it, actions) }
         // "Kom igång" is what a new family has to sort out; it is the focus surface while it shows (UX plan 4.4).
         val setup = state.setup
         if (setup != null) {
@@ -437,6 +463,36 @@ private fun CannotMakeBanner(c: CaregiverCannot, state: TodayUiState, actions: T
         if (state.canEdit) SmallAction(stringResource(Res.string.card_action_take)) { actions.onTakeHandoff(c.occurrence, c.kind) }
         SmallAction(stringResource(Res.string.card_action_open)) { actions.onOpenOccurrence(c.occurrence) }
     })
+}
+
+/** "Ella hämtad? Bengt skulle hämta 15:45 · Hämtad" (ADR-048). */
+@Composable
+private fun UnconfirmedPickupBanner(u: UnconfirmedPickup, actions: TodayActions) {
+    val children = joinNames(u.pickup.children.map { it.name })
+    val time = formatTime(u.pickup.time)
+    val text = u.person?.let { stringResource(Res.string.pickup_unconfirmed, children, it.name, time) }
+        ?: stringResource(Res.string.pickup_unconfirmed_nobody, children, time)
+    Banner(text, kind = BannerKind.Problem, actions = {
+        TextButton(onClick = { actions.onConfirmPickup(u.pickup) }) { Text(stringResource(Res.string.pickup_done_action)) }
+    })
+}
+
+/** "Ella hämtad 15:52 · Bengt": who ticked it off (Sara may do it for Johan); "Ångra" on my own. */
+@Composable
+private fun PickedUpLine(p: PickedUp, actions: TodayActions) {
+    val children = joinNames(p.children.map { it.name })
+    val at = p.receipt.doneAt?.let { formatTime(it.toLocalDateTime(TimeZone.currentSystemDefault()).time) }.orEmpty()
+    val text = stringResource(Res.string.pickup_done_line, children, at, p.by?.name ?: stringResource(Res.string.today_request_someone))
+    Banner(
+        text,
+        kind = BannerKind.Info,
+        icon = Icons.Filled.Check,
+        actions = if (p.byMe) {
+            { TextButton(onClick = { actions.onUndoPickup(p.receipt) }) { Text(stringResource(Res.string.action_undo)) } }
+        } else {
+            null
+        },
+    )
 }
 
 /** "Sara frågar om du kan hämta Ella fre 15:45 · Svara". A reminder to act on, so unfilled with a terracotta icon. */

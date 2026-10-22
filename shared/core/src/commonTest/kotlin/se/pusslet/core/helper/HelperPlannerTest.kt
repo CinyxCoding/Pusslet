@@ -14,6 +14,7 @@ import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.Handoff
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.PackingChecks
@@ -508,5 +509,24 @@ class HelperPlannerTest {
         const val BENGT = "m-bengt"
         const val ELLA = "c-ella"
         const val SIMON = "c-simon"
+    }
+
+    /** "Hämtad" (ADR-048): offered from half an hour before his pick-up; once ticked off the mission is done. */
+    @Test
+    fun hisPickUpCanBeTickedOffAndIsThenDone() {
+        val early = plan(input(now = LocalTime(14, 50))).missions.single { it.children.any { c -> c.id == SIMON } }
+        assertTrue(!early.confirmable)
+        val soon = plan(input(now = LocalTime(15, 10))).missions.single { it.children.any { c -> c.id == SIMON } }
+        assertTrue(soon.confirmable)
+        val receipt = HandoffReceipt(
+            id = HandoffReceipt.idFor(soon.occurrence, HandoffKind.PickUp),
+            eventId = HandoffReceipt.seriesOf(soon.occurrence),
+            occurrenceDate = thursday,
+            childIds = listOf(SIMON),
+            doneBy = BENGT,
+        )
+        val done = plan(input(now = LocalTime(15, 10)).copy(receipts = listOf(receipt)))
+        assertEquals(MissionState.Done, done.missions.single { it.children.any { c -> c.id == SIMON } }.state)
+        assertTrue(done.activeMissions.none { it.children.any { c -> c.id == SIMON } }, "Ella's pick-up is still to come")
     }
 }

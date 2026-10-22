@@ -172,7 +172,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   regler, med skärmdumpstest och tillgänglighetskontroll av arket och kortet
   - [ ] Sjukanmälan via snabbinmatningen (”Ella sjuk”)
 - [ ] Medicin och feber: delad logg och påminnelser för kurer
-- [ ] Kvitto på hämtning (”Hämtad ✓”) och varning när ingen bockat av
+- [x] Kvitto på hämtning (ADR-048): ”Hämtad” på min hämtning på Idag, i hjälparvyn och i notisen, push till de andra
+  (”Ella är hämtad · Bengt · 15:52”), varning en kvart efter tiden till den som skulle hämta och föräldrarna, som notis och
+  på Idag där en förälder kan bocka av åt någon annan, och en inställning för att stänga av varningen
 - [ ] Lov och vistelsetider
 - [ ] Delade kostnader mellan hemmen
 

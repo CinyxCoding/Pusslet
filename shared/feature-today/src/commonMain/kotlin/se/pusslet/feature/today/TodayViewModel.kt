@@ -31,6 +31,7 @@ import se.pusslet.core.model.Family
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.PackingItem
@@ -43,6 +44,10 @@ import se.pusslet.core.model.VabPart
 import se.pusslet.core.sick.SickDays
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.time.plusDays
+import se.pusslet.core.today.HandoffStop
+import se.pusslet.core.today.PickedUp
+import se.pusslet.core.today.Pickup
+import se.pusslet.core.today.Pickups
 import se.pusslet.core.today.SetupChecklist
 import se.pusslet.core.today.SetupInput
 import se.pusslet.core.today.SetupProgress
@@ -51,6 +56,7 @@ import se.pusslet.core.today.TodayLayout
 import se.pusslet.core.today.TodayLayouts
 import se.pusslet.core.today.TodayPlan
 import se.pusslet.core.today.TodayPlanner
+import se.pusslet.core.today.UnconfirmedPickup
 import se.pusslet.core.util.IdGenerator
 import se.pusslet.core.weather.Forecast
 import se.pusslet.data.AppCoordinator
@@ -73,6 +79,7 @@ import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HintIds
+import se.pusslet.data.usecase.PickupReceipts
 import se.pusslet.data.usecase.TodayInputSource
 import kotlin.time.Clock
 
@@ -130,6 +137,10 @@ data class TodayUiState(
     val leaveDemoFailed: Boolean = false,
     /** Sick days (ADR-047): "Ella är sjuk idag", "Fortfarande sjuk?", VAB to report. Parents only. */
     val sick: SickToday = SickToday(),
+    /** Somebody else's pick-up nobody ticked off (ADR-048); empty when the warning is switched off. */
+    val unconfirmedPickups: List<UnconfirmedPickup> = emptyList(),
+    /** Today's ticked-off pick-ups. */
+    val pickedUp: List<PickedUp> = emptyList(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -153,6 +164,7 @@ class TodayViewModel(
     private val clock: Clock,
     private val zone: TimeZone,
     private val sick: SickDayRepository,
+    private val receipts: PickupReceipts,
 ) : ViewModel() {
     private val log = Logger.withTag("Today")
 
@@ -244,6 +256,7 @@ class TodayViewModel(
     }
 
     private data class View(
+        val pickupWarnings: Boolean,
         val layout: TodayLayout,
         val shopping: ShoppingSnapshot?,
         val requests: List<HandoffRequest>,
@@ -254,13 +267,13 @@ class TodayViewModel(
     )
 
     private val view: Flow<View> = combine(
-        layout,
+        combine(layout, prefs.observe(Prefs.PickupWarnings), ::Pair),
         shoppingSnapshot,
         calendar.handoffRequests,
         family.settings.map { it.weatherPlace != null }.distinctUntilChanged(),
         combine(forecast, weatherState, weatherLoader, firstUse) { f, w, _, u -> Triple(f, w, u) },
-    ) { l, s, r, place, fwu ->
-        View(l, s, r, place, fwu.first, fwu.second, fwu.third)
+    ) { lw, s, r, place, fwu ->
+        View(lw.second, lw.first, s, r, place, fwu.first, fwu.second, fwu.third)
     }
 
     val state: StateFlow<TodayUiState> = combine(now, household, day, extras, view) { n, h, d, ex, v ->
@@ -339,6 +352,8 @@ class TodayViewModel(
             leavingDemo = v.firstUse.demoExit == DemoExit.Leaving,
             leaveDemoFailed = v.firstUse.demoExit == DemoExit.Failed,
             sick = if (canEdit) SickModel.build(n.date, me, ex.sickDays, day.cancelled, people, h.children) else SickToday(),
+            unconfirmedPickups = if (v.pickupWarnings) plan.unconfirmedPickups else emptyList(),
+            pickedUp = plan.pickedUp,
         )
     }
 
@@ -424,6 +439,28 @@ class TodayViewModel(
             demoExit.value = if (left) DemoExit.Idle else DemoExit.Failed
         }
     }
+
+    // region Pick-up receipts (ADR-048)
+
+    /** "Hämtad" on my own line: the stops that are due, one receipt per occurrence. */
+    fun pickedUp(stops: List<HandoffStop>) {
+        val now = clock.now().toLocalDateTime(zone).time
+        val due = stops.filter { Pickups.confirmable(it.time, now) }.groupBy { it.occurrence.key }
+        viewModelScope.launch {
+            due.values.forEach { group -> receipts.confirm(group.first().occurrence, HandoffKind.PickUp, group.map { it.child.id }) }
+        }
+    }
+
+    /** "Hämtad" on somebody else's pick-up: e.g. Sara has spoken to Bengt. */
+    fun confirmPickup(pickup: Pickup) {
+        viewModelScope.launch { receipts.confirm(pickup.occurrence, HandoffKind.PickUp, pickup.children.map { it.id }) }
+    }
+
+    fun undoPickup(receipt: HandoffReceipt) {
+        viewModelScope.launch { receipts.undo(receipt) }
+    }
+
+    // endregion
 
     // region Sick days (ADR-047)
 

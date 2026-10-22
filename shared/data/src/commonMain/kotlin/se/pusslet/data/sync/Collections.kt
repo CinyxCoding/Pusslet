@@ -82,6 +82,9 @@ object Collections {
     /** A child home sick, per child and day (ADR-047); caregivers read it, so they know a pick-up is off. */
     val SickDays = CollectionSpec("sickDays", RemoteLocation.Flat("sickDays"))
 
+    /** "Hämtad ✓" per occurrence and kind (ADR-048); caregivers write their own. */
+    val HandoffReceipts = CollectionSpec("handoffReceipts", RemoteLocation.Flat("handoffReceipts"))
+
     val all: List<CollectionSpec> = listOf(
         Family,
         Members,
@@ -108,6 +111,7 @@ object Collections {
         IngredientMappings,
         SchoolLunches,
         SickDays,
+        HandoffReceipts,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

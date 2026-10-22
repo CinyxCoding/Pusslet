@@ -103,6 +103,10 @@ class QuietHoursTest {
     @Test
     fun whichKindsPass() {
         val passing = NotificationKind.entries.filter { QuietHours.passes(it, userTimed = false) }
-        assertEquals(listOf(NotificationKind.HandoffSoon, NotificationKind.Morning, NotificationKind.Shopping), passing)
+        assertEquals(
+            listOf(NotificationKind.HandoffSoon, NotificationKind.Morning, NotificationKind.Shopping, NotificationKind.Pickups),
+            passing,
+            "a child waiting to be picked up never waits for the quiet hours",
+        )
     }
 }

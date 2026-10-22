@@ -18,6 +18,7 @@ import se.pusslet.core.model.CustodySchedule
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
+import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingRule
@@ -47,6 +48,7 @@ internal data class HelperFamilyData(
     val checks: Map<String, PackingChecks>,
     val tasks: List<FamilyTask>,
     val sickDays: List<SickDay> = emptyList(),
+    val receipts: List<HandoffReceipt> = emptyList(),
 )
 
 /** Reads and plans the helper view the same way for [HelperViewModel] and [HelperPreviewViewModel]. */
@@ -76,16 +78,11 @@ internal object HelperPlans {
             // What is shared with the caregiver, not what this phone's Kalender filter happens to show.
             combine(calendar.allOccurrences(d, d.plusDays(HelperPlanner.WEEK_DAYS), zone), calendar.handoffRequests) { o, r -> o to r }
         }
-        return combine(household, calendarData, packing.rules, packing.checks, combine(tasks.tasks, calendar.sickDays, ::Pair)) {
-            h,
-            cal,
-            rules,
-            checks,
-            ts,
-            ->
+        val extra = combine(tasks.tasks, calendar.sickDays, calendar.handoffReceipts, ::Triple)
+        return combine(household, calendarData, packing.rules, packing.checks, extra) { h, cal, rules, checks, ts ->
             // A sick child stays home: the caregiver's pick-up that day is off (ADR-047).
             val occurrences = SickDays.apply(cal.first, ts.second, h.second.map { it.id }.toSet()).occurrences
-            HelperFamilyData(h.first, h.second, h.third, occurrences, cal.second, rules, checks, ts.first, ts.second)
+            HelperFamilyData(h.first, h.second, h.third, occurrences, cal.second, rules, checks, ts.first, ts.second, ts.third)
         }
     }
 
@@ -107,6 +104,7 @@ internal object HelperPlans {
                 tasks = data.tasks,
                 forecast = forecast,
                 sickDays = data.sickDays,
+                receipts = data.receipts,
             ),
         )
 }

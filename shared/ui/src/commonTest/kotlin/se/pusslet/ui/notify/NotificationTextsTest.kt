@@ -73,6 +73,10 @@ class NotificationTextsTest {
         "notify_absence_body" to "Till %1\$s",
         "notify_vab_title" to "Anmäl VAB för %1\$s",
         "notify_vab_body" to "Till Försäkringskassan, inom 90 dagar",
+        "notify_picked_up_title" to "%1\$s är hämtad",
+        "notify_pickup_unconfirmed_title" to "Är %1\$s hämtad?",
+        "notify_pickup_unconfirmed_body" to "%1\$s skulle hämta %2\$s",
+        "notify_pickup_unconfirmed_mine" to "Tryck Hämtad när du har hämtat",
     )
 
     private val texts = NotificationTexts { res, args ->
@@ -238,6 +242,18 @@ class NotificationTextsTest {
         assertEquals(
             NotificationText("Anmäl VAB för Ella", "Till Försäkringskassan, inom 90 dagar"),
             texts.text(n(NotificationPayload.VabReport("Ella", 1.5))),
+        )
+    }
+
+    @Test
+    fun pickUps() = runTest {
+        val picked = NotificationPayload.PickedUp(listOf("Ella", "Simon"), "Bengt", LocalTime(15, 52))
+        assertEquals(NotificationText("Ella och Simon är hämtad", "Bengt · 15:52"), texts.text(n(picked, NotificationKind.Pickups)))
+        val bengts = NotificationPayload.PickupUnconfirmed("e", day, listOf("Ella"), "Bengt", isMe = false, time = LocalTime(15, 45))
+        assertEquals(NotificationText("Är Ella hämtad?", "Bengt skulle hämta 15:45"), texts.text(n(bengts, NotificationKind.Pickups)))
+        assertEquals(
+            NotificationText("Är Ella hämtad?", "Tryck Hämtad när du har hämtat"),
+            texts.text(n(bengts.copy(isMe = true), NotificationKind.Pickups)),
         )
     }
 

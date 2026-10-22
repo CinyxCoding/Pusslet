@@ -31,6 +31,7 @@ Personuppgiftsansvarig är [namn på ägaren eller företaget], [ort]. Frågor o
 | Allergier och kost för ett barn | Förälder, bara efter ett aktivt val | Varna i matsedel och inköp | **Uttryckligt samtycke** (art. 9.2 a), kan tas tillbaka när som helst |
 | Kalender, uppgifter, sysslor, listor, recept, matsedel, skafferi, butiker | Ni | Själva tjänsten | Avtal |
 | Lämna/hämta-förfrågningar och svar, "Jag handlar nu" (vilken lista och till när) | Ni | Att familjen ska kunna hjälpa varandra | Avtal |
+| Kvitto på hämtning: vem som bockade av att ett barn är hämtat, och när | Den som hämtar | Att de andra ska veta att barnet är hämtat, och varna om ingen har bockat av | Avtal |
 | Sjukdagar: vilket barn som är sjukt vilken dag, vem som stannar hemma, VAB och om frånvaro och VAB är anmälda (aldrig symtom eller diagnos) | Förälder | Ställa in dagen, säga till de andra och räkna VAB | **Uttryckligt samtycke** (art. 9.2 a), givet när du sjukanmäler; arket säger vad som sparas. [Kontrollera före publicering.] |
 | Väderort: ett ortsnamn och en position avrundad till ungefär 1 km | Du väljer ort, eller telefonens ungefärliga position om du tillåter det | Väder och klädråd på Idag | Avtal |
 | Notis-token och telefonens språk | Telefonen | Skicka förfrågningar, svar och inköp till rätt telefon | Avtal |
@@ -113,6 +114,7 @@ The controller is [owner's name or company], [city], Sweden. Privacy questions: 
 | Allergies and diet for a child | A parent, only after an active choice | Warnings in meal plans and shopping | **Explicit consent** (Art. 9(2)(a)), can be withdrawn at any time |
 | Calendar, tasks, chores, lists, recipes, meal plans, pantry, stores | You | The service itself | Contract |
 | Drop-off/pick-up requests and answers, "I'm shopping now" (which list and until when) | You | Letting the family help each other | Contract |
+| Pick-up receipts: who ticked off that a child is picked up, and when | The one picking up | Letting the others know the child is picked up, and warning when nobody has | Contract |
 | Sick days: which child is sick on which day, who stays home, VAB and whether absence and VAB are reported (never symptoms or a diagnosis) | A parent | Cancelling the day, telling the others and counting VAB | **Explicit consent** (Art. 9(2)(a)), given when reporting; the sheet says what is stored. [Check before publishing.] |
 | Weather place: a place name and a position rounded to about 1 km | You pick a place, or the phone's approximate location if you allow it | Weather and clothing advice in Today | Contract |
 | Notification token and the phone's language | The phone | Sending requests, answers and shopping items to the right phone | Contract |

@@ -33,6 +33,8 @@ data class HandoffLine(
     val isMe: Boolean,
     /** Never empty, sorted by time. */
     val stops: List<HandoffStop>,
+    /** My own pick-up from [Pickups.CONFIRM_FROM] before its time: "Hämtad" is offered (ADR-048). */
+    val confirmable: Boolean = false,
 ) {
     val firstTime: LocalTime get() = stops.first().time
 }

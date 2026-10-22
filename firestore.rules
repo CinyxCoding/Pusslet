@@ -55,6 +55,12 @@ service cloud.firestore {
     function validRecipeCollection() {
       return validNamed('name') && (!('recipeIds' in data()) || data().recipeIds is map);
     }
+    // "Hämtad ✓" (ADR-048): who ticked off which hand-off, for which children.
+    function validReceipt() {
+      return shortString(data().eventId, 200) && shortString(data().occurrenceDate, 10)
+        && data().kind in ['pickup', 'dropoff'] && data().doneBy is string
+        && (!('childIds' in data()) || data().childIds is list);
+    }
     // A child home sick (ADR-047): one per child and day; the rest are flags and who stays home.
     function validSickDay() {
       return shortString(data().childId, 100) && shortString(data().date, 10)
@@ -67,6 +73,7 @@ service cloud.firestore {
         : collection == 'recipes' ? validRecipe()
         : collection == 'recipeCollections' ? validRecipeCollection()
         : collection == 'sickDays' ? validSickDay()
+        : collection == 'handoffReceipts' ? validReceipt()
         : collection == 'children' ? validNamed('firstName')
         : collection == 'members' ? validNamed('displayName')
         : collection == 'shoppingLists' ? validNamed('name')
@@ -80,7 +87,8 @@ service cloud.firestore {
     function caregiverReadable(collection) {
       return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
         'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings',
-        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches', 'recipeCollections', 'sickDays'];
+        'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches', 'recipeCollections', 'sickDays',
+        'handoffReceipts'];
     }
     function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
 
@@ -211,6 +219,8 @@ service cloud.firestore {
           return collection == 'packingChecks'
             || (collection == 'handoffRequests' && (caregiverAnswer() || caregiverChangeAnswer() || caregiverAsk()))
             || (collection == 'presence' && docId == myMemberId(fid))
+            // "Hämtad" (ADR-048): his own receipt, and taking it back.
+            || (collection == 'handoffReceipts' && data().doneBy == myMemberId(fid) && (validReceipt() || softDeleteOnly()))
             || (collection == 'tasks' && resource != null && sharedWithCaregivers()
                 && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']));
         }

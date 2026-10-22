@@ -22,7 +22,7 @@ import kotlin.time.Instant
 object QuietHours {
     /** Whether a notification keeps its time inside quiet hours. */
     fun passes(kind: NotificationKind, userTimed: Boolean): Boolean = when (kind) {
-        NotificationKind.HandoffSoon, NotificationKind.Morning, NotificationKind.Shopping -> true
+        NotificationKind.HandoffSoon, NotificationKind.Morning, NotificationKind.Shopping, NotificationKind.Pickups -> true
         NotificationKind.Reminder -> userTimed
         NotificationKind.Evening, NotificationKind.Requests, NotificationKind.Conflicts, NotificationKind.SickDay -> false
     }

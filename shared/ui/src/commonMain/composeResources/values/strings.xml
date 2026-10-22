@@ -1384,4 +1384,18 @@
     <string name="notify_absence_body">Till %1$s</string>
     <string name="notify_vab_title">Anmäl VAB för %1$s</string>
     <string name="notify_vab_body">Till Försäkringskassan, inom 90 dagar</string>
+    <!-- Hämtad ✓ (ADR-048) -->
+    <string name="pickup_done_action">Hämtad</string>
+    <string name="pickup_unconfirmed">%1$s hämtad? %2$s skulle hämta %3$s</string>
+    <string name="pickup_unconfirmed_nobody">%1$s hämtad? Hämtning %2$s</string>
+    <string name="pickup_done_line">%1$s hämtad %2$s · %3$s</string>
+    <string name="settings_pickup_warnings">Varna om en hämtning inte bockas av</string>
+    <string name="settings_pickup_warnings_body">Om ingen trycker Hämtad en kvart efter tiden</string>
+    <string name="notify_channel_pickups">Hämtningar</string>
+    <string name="notify_channel_pickups_desc">När ett barn är hämtat, och när ingen har bockat av en hämtning</string>
+    <string name="notify_picked_up_title">%1$s är hämtad</string>
+    <string name="notify_picked_up_body">%1$s · %2$s</string>
+    <string name="notify_pickup_unconfirmed_title">Är %1$s hämtad?</string>
+    <string name="notify_pickup_unconfirmed_body">%1$s skulle hämta %2$s</string>
+    <string name="notify_pickup_unconfirmed_mine">Tryck Hämtad när du har hämtat</string>
 </resources>

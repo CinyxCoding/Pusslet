@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,7 @@ import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.list_separator
 import se.pusslet.ui.resources.meals_cook_person
 import se.pusslet.ui.resources.meals_cook_you
+import se.pusslet.ui.resources.pickup_done_action
 import se.pusslet.ui.resources.state_collapsed
 import se.pusslet.ui.resources.state_expanded
 import se.pusslet.ui.resources.today_clash
@@ -141,6 +143,11 @@ private fun HandoffRow(line: HandoffLine, now: LocalTime, actions: TodayActions)
         handoffSentence(line.kind, line.person, line.isMe, stopsText(line.stops)),
         emphasized = line.isMe,
         onClick = { actions.onOpenOccurrence(next.occurrence) },
+        trailing = if (line.confirmable) {
+            { TextButton(onClick = { actions.onPickedUp(line.stops) }) { Text(stringResource(Res.string.pickup_done_action)) } }
+        } else {
+            null
+        },
     )
 }
 

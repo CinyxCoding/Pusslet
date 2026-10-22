@@ -20,6 +20,7 @@ import se.pusslet.data.repository.Prefs
 import se.pusslet.data.session.SessionProvider
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 
 /**
  * A push from another phone (ADR-042) as a notification on this one. The message carries ids (and a shopping item as it
@@ -47,8 +48,19 @@ class PushMessages(
             "answer" -> answer(data)
             "shopping" -> shopping(data)
             "sick" -> sick(data)
+            "pickedUp" -> pickedUp(data)
             else -> null
         }
+    }
+
+    /** "Ella är hämtad" · "Bengt · 15:52" (ADR-048); the names from this phone, the time in its zone. */
+    private suspend fun pickedUp(data: Map<String, String>): PlannedNotification? {
+        val names = names()
+        val children = data["childIds"].orEmpty().split(',').filter { it.isNotBlank() }.mapNotNull { names[it] }
+        if (children.isEmpty()) return null
+        val at = data["at"]?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        val payload = NotificationPayload.PickedUp(children, names[data["by"]], at?.toLocalDateTime(zone)?.time)
+        return planned("push:pickedup:${data["receiptId"]}", NotificationKind.Pickups, payload)
     }
 
     /** "Ella är sjuk idag" · "Sara sjukanmälde · Vem stannar hemma?" or "Johan stannar hemma med Ella" (ADR-047). */

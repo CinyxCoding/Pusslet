@@ -16,6 +16,7 @@ import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffKind
+import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingItem
@@ -33,6 +34,7 @@ import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.today.ChildPacking
 import se.pusslet.core.today.Greeting
+import se.pusslet.core.today.Pickups
 import se.pusslet.core.today.TodayPlanner
 import se.pusslet.core.weather.Forecast
 import se.pusslet.core.weather.WeatherMath
@@ -65,6 +67,8 @@ data class HelperInput(
     val forecast: Forecast? = null,
     /** Children home sick (ADR-047); their hand-offs are already gone from [occurrences]. */
     val sickDays: List<SickDay> = emptyList(),
+    /** "Hämtad ✓" (ADR-048): a ticked-off pick-up is done. */
+    val receipts: List<HandoffReceipt> = emptyList(),
 )
 
 /** Where a mission is in the day: "Snart" from 60 minutes before, and quietly done 60 minutes after its time. */
@@ -102,6 +106,8 @@ data class HelperMission(
     val state: MissionState = MissionState.Upcoming,
     /** "Jag kan inte" was said for this one and nobody has taken it over yet. */
     val waitingForTakeover: Boolean = false,
+    /** "Hämtad" is offered: a pick-up from [Pickups.CONFIRM_FROM] before its time until it is ticked off (ADR-048). */
+    val confirmable: Boolean = false,
 ) {
     val key: String get() = "${occurrence.key}/${kind.name}"
 }
@@ -350,7 +356,9 @@ object HelperPlanner {
             bring = bring.take(MAX_BRING),
             moreToBring = (bring.size - MAX_BRING).coerceAtLeast(0),
             after = if (m.kind == HandoffKind.PickUp) afterPickUp(m, visible, input.today) else emptyList(),
-            state = stateAt(m.time, input.now),
+            state = if (Pickups.receiptFor(input.receipts, m.occurrence, m.kind) != null) MissionState.Done else stateAt(m.time, input.now),
+            confirmable = m.kind == HandoffKind.PickUp && Pickups.receiptFor(input.receipts, m.occurrence, m.kind) == null &&
+                Pickups.confirmable(m.time, input.now),
         )
     }
 

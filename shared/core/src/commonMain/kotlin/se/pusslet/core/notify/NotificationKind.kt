@@ -43,6 +43,9 @@ enum class NotificationKind(val channelId: String, val importance: NotificationI
 
     /** "Ella är sjuk idag" and who stays home, from another phone (ADR-047). */
     SickDay("pusslet.sick", NotificationImportance.High),
+
+    /** "Ella är hämtad" from another phone, and "Är Ella hämtad?" when nobody ticked it off (ADR-048). */
+    Pickups("pusslet.pickups", NotificationImportance.High),
     ;
 
     /** The Android notification group, so the system can stack a kind's notifications. */

@@ -83,6 +83,31 @@ describe("familyCalendarFeed", () => {
     expect(body).not.toContain("SUMMARY:Dans");
   });
 
+  it("includes what the family shares with the other home, and nothing a space does not confirm (ADR-030)", async () => {
+    const fid = `feed-${RUN}-s`;
+    const token = `tok${RUN}sssssssssssssssssssssssssss`;
+    const space = `feed-${RUN}-space`;
+    const stranger = `feed-${RUN}-stranger`;
+    await seed(fid, token);
+    await db.doc(`families/${fid}`).set({ sharedSpaces: [space, stranger] }, { merge: true });
+    await db.doc(`families/${space}`).set({ name: "Ella", shared: true, familyIds: [fid] });
+    await db.doc(`families/${space}/members/m-lina`).set({ displayName: "Lina" });
+    await db.doc(`families/${space}/events/e-sim`).set({
+      title: "Simning",
+      start: "2026-10-21T17:00",
+      end: "2026-10-21T18:00",
+      timeZoneId: "Europe/Stockholm",
+      participantIds: ["ella"],
+    });
+    // Listed by the home but not listing it back: never read.
+    await db.doc(`families/${stranger}`).set({ name: "Annan", shared: true, familyIds: ["someone"] });
+    await db.doc(`families/${stranger}/events/x`).set({ title: "Hemligt", start: "2026-10-22T10:00", end: "2026-10-22T11:00" });
+    const body = await (await fetch(`${feedUrl}/${token}.ics`)).text();
+    expect(body).toContain("SUMMARY:Simning");
+    expect(body).toContain("SUMMARY:Dans");
+    expect(body).not.toContain("Hemligt");
+  });
+
   it("says nothing for an unknown, revoked or malformed token, or a deleted family", async () => {
     const fid = `feed-${RUN}-c`;
     const token = `tok${RUN}ccccccccccccccccccccccccccc`;

@@ -215,6 +215,12 @@ async function deleteMyCalendarFeeds(db: Firestore, uid: string, familyId: strin
  */
 async function purgeFamily(db: Firestore, familyId: string): Promise<PurgeCounts> {
   const family = db.doc(`families/${familyId}`);
+  // First out of the spaces shared with the other home, while we still know who the home's adults are (ADR-030).
+  const spaces = ((await family.get()).get("sharedSpaces") as unknown[] | undefined) ?? [];
+  const home = (await accessDocs(db, familyId)).map((d) => ({ uid: d.id, memberId: String(d.get("memberId") ?? "") }));
+  for (const spaceId of spaces) {
+    if (isFamilyId(spaceId) && spaceId !== familyId) await leaveSpace(db, spaceId, familyId, home);
+  }
   await tombstoneRef(db, familyId)
     .create({ deletedAt: FieldValue.serverTimestamp() })
     .catch((e: unknown) => {
@@ -229,6 +235,27 @@ async function purgeFamily(db: Firestore, familyId: string): Promise<PurgeCounts
   await Promise.all(access.map((d) => d.ref.delete()));
   await db.recursiveDelete(family);
   return counts;
+}
+
+/**
+ * Takes a deleted home out of a space it shared with the other home (ADR-030): the home, its adults and their access
+ * go; the other home keeps the children's things. A space nobody can manage any more is deleted too.
+ */
+async function leaveSpace(db: Firestore, spaceId: string, homeId: string, home: { uid: string; memberId: string }[]): Promise<void> {
+  const space = db.doc(`families/${spaceId}`);
+  const snap = await space.get();
+  // The home's own list is not proof: the space must list the home as well.
+  if (!snap.exists || snap.get("shared") !== true || !((snap.get("familyIds") as unknown[] | undefined) ?? []).includes(homeId)) return;
+  const batch = db.batch();
+  batch.update(space, { familyIds: FieldValue.arrayRemove(homeId) });
+  for (const p of home) {
+    batch.delete(space.collection("access").doc(p.uid));
+    if (p.memberId) batch.delete(space.collection("members").doc(p.memberId));
+  }
+  await batch.commit();
+  await Promise.all(home.map((p) => unlinkUser(db, p.uid, spaceId)));
+  const parentsLeft = await space.collection("access").where("role", "==", "parent").get();
+  if (parentsLeft.empty) await purgeFamily(db, spaceId);
 }
 
 /** Removes [familyId] from `users/{uid}.familyIds` without creating a profile for someone who never had one. */

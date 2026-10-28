@@ -202,6 +202,50 @@ describe("deleteFamily", () => {
   });
 });
 
+describe("deleting a home that shares a space with the other home (ADR-030)", () => {
+  it("takes the home out of the space and leaves the other home's data, but never touches an unconfirmed space", async () => {
+    const w = await seedLind();
+    const space = `space-${w.fid}`;
+    const stranger = `stranger-${w.fid}`;
+    const stamp = { updatedAt: Timestamp.now(), updatedBy: w.sara };
+    const batch = db.batch();
+    batch.set(db.doc(`families/${w.fid}`), { sharedSpaces: [space, stranger] }, { merge: true });
+    batch.set(db.doc(`families/${space}`), { name: "Ella", shared: true, familyIds: [w.fid, "berg-home"], createdBy: w.sara, ...stamp });
+    batch.set(db.doc(`families/${space}/access/${w.sara}`), { memberId: "m-sara", role: "parent" });
+    batch.set(db.doc(`families/${space}/access/lina-${w.fid}`), { memberId: "m-lina", role: "parent" });
+    batch.set(db.doc(`families/${space}/members/m-sara`), { displayName: "Sara", ...stamp });
+    batch.set(db.doc(`families/${space}/events/e1`), { title: "Fotboll", start: "2026-10-20T17:00", end: "2026-10-20T18:00", ...stamp });
+    batch.set(db.doc(`families/${stranger}`), { name: "Annan", shared: true, familyIds: ["someone"], createdBy: "x", ...stamp });
+    batch.set(db.doc(`families/${stranger}/access/${w.sara}`), { memberId: "m-sara", role: "parent" });
+    await batch.commit();
+
+    expect((await call("deleteFamily", { familyId: w.fid }, w.saraToken)).result).toEqual({ status: "deleted" });
+    expect(await exists(`families/${w.fid}`)).toBe(false);
+    expect(await exists(`families/${space}/events/e1`)).toBe(true);
+    expect(await exists(`families/${space}/access/${w.sara}`)).toBe(false);
+    expect(await exists(`families/${space}/members/m-sara`)).toBe(false);
+    expect(await exists(`families/${space}/access/lina-${w.fid}`)).toBe(true);
+    expect((await db.doc(`families/${space}`).get()).get("familyIds")).toEqual(["berg-home"]);
+    expect(await exists(`families/${stranger}/access/${w.sara}`)).toBe(true);
+  });
+
+  it("deletes a space when the leaving home was the only one with parents there", async () => {
+    const w = await seedLind();
+    const space = `space2-${w.fid}`;
+    const stamp = { updatedAt: Timestamp.now(), updatedBy: w.sara };
+    const batch = db.batch();
+    batch.set(db.doc(`families/${w.fid}`), { sharedSpaces: [space] }, { merge: true });
+    batch.set(db.doc(`families/${space}`), { name: "Ella", shared: true, familyIds: [w.fid], createdBy: w.sara, ...stamp });
+    batch.set(db.doc(`families/${space}/access/${w.sara}`), { memberId: "m-sara", role: "parent" });
+    batch.set(db.doc(`families/${space}/events/e1`), { title: "Fotboll", start: "2026-10-20T17:00", end: "2026-10-20T18:00", ...stamp });
+    await batch.commit();
+
+    await call("deleteFamily", { familyId: w.fid }, w.saraToken);
+    expect(await exists(`families/${space}`)).toBe(false);
+    expect(await exists(`families/${space}/events/e1`)).toBe(false);
+  });
+});
+
 describe("deleteAccount", () => {
   it("needs a signed-in caller", async () => {
     expect((await call("deleteAccount", {})).error).toMatchObject({ status: "UNAUTHENTICATED", message: "not-signed-in" });

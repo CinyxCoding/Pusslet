@@ -1487,4 +1487,18 @@
     <string name="stays_total">In total %1$d h %2$s min a week</string>
     <string name="stays_share">Send to the preschool</string>
     <string name="stays_share_title">Preschool hours for %1$s from %2$s</string>
+
+    <!-- Search (ADR-052) -->
+    <string name="search_title">Search</string>
+    <string name="search_hint">Events, recipes, to-dos, items …</string>
+    <string name="search_start">Search the family's calendar, recipes, to-dos, shopping lists and the children's contacts. Everything is searched on the phone.</string>
+    <string name="search_nothing">Nothing found for “%1$s”.</string>
+    <string name="search_events">Events</string>
+    <string name="search_recipes">Recipes</string>
+    <string name="search_tasks">To-dos</string>
+    <string name="search_items">On shopping lists</string>
+    <string name="search_contacts">Contacts</string>
+    <string name="search_line">%1$s · %2$s</string>
+    <string name="search_done">done</string>
+    <string name="search_in_trolley">in the trolley</string>
 </resources>

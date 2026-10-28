@@ -12,7 +12,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -89,6 +92,7 @@ import se.pusslet.ui.resources.pickup_done_action
 import se.pusslet.ui.resources.pickup_done_line
 import se.pusslet.ui.resources.pickup_unconfirmed
 import se.pusslet.ui.resources.pickup_unconfirmed_nobody
+import se.pusslet.ui.resources.search_title
 import se.pusslet.ui.resources.sick_report_action
 import se.pusslet.ui.resources.today_custody
 import se.pusslet.ui.resources.today_custody_handover
@@ -131,6 +135,8 @@ fun TodayRoute(
     onOpenMedicine: (childId: String) -> Unit = {},
     /** "Lov och vistelsetider" (ADR-051). */
     onOpenBreaks: () -> Unit = {},
+    /** "Sök" (ADR-052), from the header. */
+    onSearch: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -176,6 +182,7 @@ fun TodayRoute(
             ),
             onGiveDose = viewModel::giveDose,
             onPlanBreaks = onOpenBreaks,
+            onSearch = onSearch,
             onPickedUp = viewModel::pickedUp,
             onConfirmPickup = viewModel::confirmPickup,
             onUndoPickup = viewModel::undoPickup,
@@ -227,6 +234,7 @@ data class TodayActions(
     val onGiveDose: (MedicineRules.Slot) -> Unit = {},
     /** "Planera" on a coming school break (ADR-051). */
     val onPlanBreaks: () -> Unit = {},
+    val onSearch: () -> Unit = {},
 )
 
 @Composable
@@ -260,7 +268,9 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         ),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
-        item(key = "header") { Header(plan, onReportSick = if (canReportSick) ({ reportingSick = true }) else null) }
+        item(key = "header") {
+            Header(plan, onReportSick = if (canReportSick) ({ reportingSick = true }) else null, onSearch = actions.onSearch)
+        }
         if (state.demo) item(key = "demo") { DemoRow(state.leavingDemo, state.leaveDemoFailed, actions.onLeaveDemo) }
         // "Att lösa" can never be hidden: problems today and tomorrow, then requests to me.
         items(problems.take(TodayModel.MAX_PROBLEMS), key = { problemKey(it) }) { ProblemBanner(it, state, actions) }
@@ -338,7 +348,7 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
 
 /** "Torsdag 8 oktober" and "Vecka 41 · Hos Ahmed". No greeting (ADR-026); the week is always visible. */
 @Composable
-private fun Header(plan: TodayPlan, onReportSick: (() -> Unit)? = null) {
+private fun Header(plan: TodayPlan, onReportSick: (() -> Unit)? = null, onSearch: () -> Unit = {}) {
     val subtitle = buildList {
         add(weekLong(plan.week.week))
         plan.holidays.forEach { add(stringResource(Labels.holiday(it.id))) }
@@ -354,6 +364,7 @@ private fun Header(plan: TodayPlan, onReportSick: (() -> Unit)? = null) {
     }.joinToString(SEPARATOR)
     TabHeader(title = formatDateLong(plan.date).replaceFirstChar { it.uppercase() }, subtitle = subtitle) {
         if (onReportSick != null) TextButton(onClick = onReportSick) { Text(stringResource(Res.string.sick_report_action)) }
+        IconButton(onClick = onSearch) { Icon(Icons.Filled.Search, contentDescription = stringResource(Res.string.search_title)) }
     }
 }
 

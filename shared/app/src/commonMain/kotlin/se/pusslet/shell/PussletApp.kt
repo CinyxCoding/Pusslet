@@ -94,6 +94,8 @@ import se.pusslet.shell.quickadd.QuickAddViewModel
 import se.pusslet.shell.quickadd.ReceiptAction
 import se.pusslet.shell.quickadd.ReceiptContext
 import se.pusslet.shell.quickadd.receiptMessage
+import se.pusslet.shell.search.SearchNavigation
+import se.pusslet.shell.search.SearchRoute
 import se.pusslet.ui.components.AddButtonState
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.LocalAddButton
@@ -292,6 +294,7 @@ private fun AppNavDisplay(
                     onInvite = { navigator.navigate(Route.Invite(claimMemberId = it)) },
                     onOpenMedicine = { navigator.navigate(Route.Medicine(it)) },
                     onOpenBreaks = { navigator.navigate(Route.Breaks()) },
+                    onSearch = { navigator.navigate(Route.Search) },
                     contentPadding = padding,
                 )
             }
@@ -380,6 +383,22 @@ private fun AppNavDisplay(
             }
             entry<Route.Medicine> { r -> MedicineRoute(r.childId, onBack = navigator::goBack) }
             entry<Route.Breaks> { r -> BreaksRoute(r.stays, onBack = navigator::goBack) }
+            entry<Route.Search> {
+                SearchRoute(
+                    onBack = navigator::goBack,
+                    open = object : SearchNavigation {
+                        override fun event(occurrence: EventOccurrence) = openOccurrence(occurrence)
+
+                        override fun recipe(id: String) = navigator.navigate(Route.RecipeDetails(id))
+
+                        override fun task(id: String) = navigator.navigate(Route.TaskEditor(id))
+
+                        override fun list(id: String) = navigator.selectTab(TopLevelTab.Shopping)
+
+                        override fun child(id: String) = navigator.navigate(Route.ChildEditor(id))
+                    },
+                )
+            }
             entry<Route.AttachImage> { r ->
                 AttachImageRoute(r.fileName, onBack = navigator::goBack, onDone = { outcome ->
                     navigator.goBack()
@@ -466,6 +485,7 @@ private fun MoreDestination.route(): Route = when (this) {
     MoreDestination.Privacy -> Route.Privacy
     MoreDestination.Medicine -> Route.Medicine()
     MoreDestination.Breaks -> Route.Breaks()
+    MoreDestination.Search -> Route.Search
 }
 
 private data class TabSpec(val tab: TopLevelTab, val label: StringResource, val icon: ImageVector)

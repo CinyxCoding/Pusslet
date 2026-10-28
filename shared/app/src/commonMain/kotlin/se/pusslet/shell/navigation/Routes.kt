@@ -34,6 +34,9 @@ sealed interface Route {
     /** "Medicin och feber" (ADR-050), on [childId] when it was opened for one child. */
     @Serializable data class Medicine(val childId: String? = null) : Route
 
+    /** "Sök" (ADR-052). */
+    @Serializable data object Search : Route
+
     /** "Lov och vistelsetider" (ADR-051); [stays] opens on the hours. */
     @Serializable data class Breaks(val stays: Boolean = false) : Route
 

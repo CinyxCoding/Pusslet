@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +30,7 @@ import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
 enum class MoreDestination(val parentsOnly: Boolean = false) {
+    Search,
     Family,
     Tasks,
     Medicine(parentsOnly = true),
@@ -52,6 +54,7 @@ private data class MoreItem(val dest: MoreDestination, val title: StringResource
 fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues = PaddingValues(), onSimpleView: (() -> Unit)? = null) {
     val groups = listOf(
         Res.string.more_group_family to listOf(
+            MoreItem(MoreDestination.Search, Res.string.search_title, Icons.Filled.Search),
             MoreItem(MoreDestination.Family, Res.string.more_family, PussletIcons.Family),
             MoreItem(MoreDestination.Tasks, Res.string.more_tasks, PussletIcons.Task),
             MoreItem(MoreDestination.Breaks, Res.string.breaks_title, PussletIcons.Beach),

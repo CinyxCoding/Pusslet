@@ -56,6 +56,7 @@ import se.pusslet.data.sync.SyncLocalStore
 import se.pusslet.data.usecase.AcceptedRequestApplier
 import se.pusslet.data.usecase.CalendarFeedLink
 import se.pusslet.data.usecase.DataPrivacy
+import se.pusslet.data.usecase.FamilySearch
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HandoffRequests
@@ -105,6 +106,7 @@ val dataModule: Module = module {
     single { SickDayRepository(get(), get()) }
     single { MedicineRepository(get(), get(), get(), get()) }
     single { BreakRepository(get(), get(), get(), get()) }
+    single { FamilySearch(get(), get(), get(), get(), get(), get(), get()) }
     single { PickupReceipts(get(), get(), get()) }
     single { LunchRepository(get(), get(), get()) }
     single { HandoffAssigner(get()) }

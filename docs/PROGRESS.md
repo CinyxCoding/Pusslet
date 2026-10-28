@@ -181,7 +181,8 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [ ] Delade kostnader mellan hemmen
 
 ## Fas 5 – V2
-- [ ] Barnvy & veckopeng · kalas/presenter · sök · flerhushållsdelning · fler lunchleverantörer
+- [x] Sök (ADR-052): händelser, recept, att göra, varor och kontakter, med å, ä och ö som egna bokstäver
+- [ ] Barnvy & veckopeng · kalas/presenter · flerhushållsdelning · fler lunchleverantörer
 
 ## Verifiering fas 1 (2026-10-08)
 Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestore):

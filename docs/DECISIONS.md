@@ -560,3 +560,15 @@ veckan och skickas som text till förskolan.
 **Konsekvens:** Inga lovdatum är inbyggda förutom förslaget v. 44. Idag ser bara tio dagar framåt, så ett lov längre bort
 syns i vyn och genom påminnelsen om anmälan, inte på Idag.
 
+## ADR-052 – Sök
+**Kontext:** Briefen har sök över händelser, recept, uppgifter och varor som V2. En tidigare gren hade en sökning som
+vek bort prickarna (”ost” hittade ”Östron”), vilket går emot hur appen annars behandlar å, ä och ö.
+**Beslut:** ”Sök” (från luppen på Idag och överst i Mer) söker på telefonen i familjens, prenumererade och telefonens
+händelser (en serie en gång, vid nästa tillfälle), recept (namn, ingredienser, anteckningar), att göra (anteckning och
+checklista), varor på inköpslistor och barnens kontakter. Varje ord måste börja ett ord i texten, eller finnas inuti ett
+ord från tredje bokstaven (svenska sammansättningar: ”läkare” hittar ”Tandläkare”), och träffar i titeln går före
+träffar i anteckningar. Å, ä och ö är egna bokstäver: ett ord prövas först som det är skrivet och bara om det inte ger
+någon träff med prickarna borttagna, med halva poängen, så ”mjolk” hittar ”Mjölk” men ”ost” visar ”Ostkaka” före
+”Östron”. Regler, inte AI (ADR-001).
+**Konsekvens:** Sökningen läser allt på nytt vid varje fråga (efter 150 ms paus), vilket räcker för en familjs mängd data.
+

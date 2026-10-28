@@ -91,6 +91,9 @@ object Collections {
     val MedicineLog = CollectionSpec("medicineLog", RemoteLocation.Flat("medicineLog"), parentsOnly = true)
     val MedicineCourses = CollectionSpec("medicineCourses", RemoteLocation.Flat("medicineCourses"), parentsOnly = true)
 
+    /** The children's wishlists (ADR-054); caregivers read them and may only mark a wish bought. */
+    val Wishes = CollectionSpec("wishes", RemoteLocation.Flat("wishes"))
+
     /** The plan for each school break (ADR-051), merged per day; caregivers read it (they may be the one at home). */
     val BreakPlans = CollectionSpec("breakPlans", RemoteLocation.Flat("breakPlans"), mapFields = setOf("days"))
 
@@ -131,6 +134,7 @@ object Collections {
         MedicineCourses,
         BreakPlans,
         StaySchedules,
+        Wishes,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

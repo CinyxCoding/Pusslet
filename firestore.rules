@@ -77,6 +77,9 @@ service cloud.firestore {
         && data().times is list && data().times.size() <= 6 && data().days is number && data().days >= 1 && data().days <= 90;
     }
 
+    // A wish on a child's list (ADR-054).
+    function validWish() { return shortString(data().text, 300) && data().childId is string && optString('link', 2000); }
+
     function validFor(collection) {
       return collection == 'events' ? validEvent()
         : collection == 'tasks' ? validTask()
@@ -86,6 +89,7 @@ service cloud.firestore {
         : collection == 'handoffReceipts' ? validReceipt()
         : collection == 'medicineLog' ? validMedicineEntry()
         : collection == 'medicineCourses' ? validMedicineCourse()
+        : collection == 'wishes' ? validWish()
         : collection == 'breakPlans' ? (shortString(data().eventId, 200) && (!('days' in data()) || data().days is map))
         : collection == 'staySchedules' ? (shortString(data().childId, 100) && (!('days' in data()) || data().days is map))
         : collection == 'children' ? validNamed('firstName')
@@ -102,7 +106,7 @@ service cloud.firestore {
       return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
         'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings',
         'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches', 'recipeCollections', 'sickDays',
-        'handoffReceipts', 'breakPlans'];
+        'handoffReceipts', 'breakPlans', 'wishes'];
     }
     function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
 
@@ -236,7 +240,9 @@ service cloud.firestore {
             // "Hämtad" (ADR-048): his own receipt, and taking it back.
             || (collection == 'handoffReceipts' && data().doneBy == myMemberId(fid) && (validReceipt() || softDeleteOnly()))
             || (collection == 'tasks' && resource != null && sharedWithCaregivers()
-                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']));
+                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']))
+            // A grandparent marks a wish as bought (ADR-054), nothing else.
+            || (collection == 'wishes' && resource != null && onlyChanges(['taken', 'takenBy']));
         }
 
         allow read: if collection != 'access' && collection != 'members' && isMember(fid) && (

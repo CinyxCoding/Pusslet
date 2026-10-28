@@ -9,6 +9,7 @@ import se.pusslet.feature.calendar.attachments.AttachImageViewModel
 import se.pusslet.feature.calendar.attachments.AttachmentsViewModel
 import se.pusslet.feature.calendar.breaks.BreaksViewModel
 import se.pusslet.feature.calendar.details.EventDetailsViewModel
+import se.pusslet.feature.calendar.details.PartyViewModel
 import se.pusslet.feature.calendar.editor.EventEditorViewModel
 import se.pusslet.feature.calendar.subscriptions.SubscriptionsViewModel
 
@@ -19,6 +20,7 @@ val calendarModule: Module = module {
     viewModel { EventDetailsViewModel(get(), get(), get(), get(), get(), get<SyncEngine>().status, get(), get()) }
     viewModel { SubscriptionsViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { AttachmentsViewModel(get()) }
+    viewModel { PartyViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { BreaksViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { AttachImageViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(AppScope)) }
 }

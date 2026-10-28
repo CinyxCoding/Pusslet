@@ -63,6 +63,7 @@ import se.pusslet.feature.family.invite.InviteRoute
 import se.pusslet.feature.family.join.JoinRoute
 import se.pusslet.feature.family.member.MemberEditorRoute
 import se.pusslet.feature.family.onboarding.OnboardingRoute
+import se.pusslet.feature.family.wishlist.WishlistRoute
 import se.pusslet.feature.meals.MealsRoute
 import se.pusslet.feature.meals.RecipeDetailsRoute
 import se.pusslet.feature.meals.RecipeEditorRoute
@@ -430,8 +431,10 @@ private fun AppNavDisplay(
                     onHandover = { navigator.navigate(Route.Handover(it)) },
                     onSignIn = { navigator.navigate(Route.Account) },
                     onPreviewHelper = { navigator.navigate(Route.HelperPreview(it)) },
+                    onWishlist = { navigator.navigate(Route.Wishlist(it)) },
                 )
             }
+            entry<Route.Wishlist> { r -> WishlistRoute(r.childId, onBack = navigator::goBack) }
             entry<Route.ChildEditor> { r -> ChildEditorRoute(r.childId, onDone = navigator::goBack) }
             entry<Route.MemberEditor> { r ->
                 MemberEditorRoute(

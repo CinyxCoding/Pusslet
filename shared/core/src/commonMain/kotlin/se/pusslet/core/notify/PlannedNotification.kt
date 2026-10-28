@@ -130,6 +130,17 @@ sealed interface NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today
     }
 
+    /** "Present till Kalas hos Vera" · "Kalaset är på lördag – presenten är inte köpt än." (ADR-054). */
+    data class PartyGift(val eventId: String, val occurrenceDate: LocalDate, val title: String, val partyDate: LocalDate) :
+        NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Occurrence(eventId, occurrenceDate)
+    }
+
+    /** "Dags att OSA: Kalas hos Vera" · "Sista dagen att svara är imorgon." (ADR-054). */
+    data class PartyRsvp(val eventId: String, val occurrenceDate: LocalDate, val title: String) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Occurrence(eventId, occurrenceDate)
+    }
+
     /** "Anmäl lovomsorg: Höstlov" · "Senast fre 9 okt" (ADR-051). */
     data class BreakDeadline(val title: String, val deadline: LocalDate) : NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today

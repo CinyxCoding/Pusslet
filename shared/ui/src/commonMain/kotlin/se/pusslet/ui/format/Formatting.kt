@@ -17,6 +17,9 @@ import se.pusslet.ui.resources.date_short
 import se.pusslet.ui.resources.list_separator
 import se.pusslet.ui.resources.months
 import se.pusslet.ui.resources.months_short
+import se.pusslet.ui.resources.name_possessive
+import se.pusslet.ui.resources.name_possessive_after_ending
+import se.pusslet.ui.resources.name_possessive_endings
 import se.pusslet.ui.resources.time_range
 import se.pusslet.ui.resources.today
 import se.pusslet.ui.resources.tomorrow
@@ -88,4 +91,16 @@ fun joinNames(names: List<String>): String {
         1 -> names.first()
         else -> names.dropLast(1).joinToString(sep) + and + names.last()
     }
+}
+
+/**
+ * A name's possessive in the app's language: "Ellas" and "Ella's", but "Måns" and "Felix" in Swedish and "James'" in English.
+ * The endings that take no extra s are a string, so each language keeps its own rule.
+ */
+@Composable
+fun possessive(name: String): String {
+    val trimmed = name.trim()
+    val endings = stringResource(Res.string.name_possessive_endings)
+    val bare = trimmed.lastOrNull()?.lowercaseChar()?.let { it in endings } == true
+    return stringResource(if (bare) Res.string.name_possessive_after_ending else Res.string.name_possessive, trimmed)
 }

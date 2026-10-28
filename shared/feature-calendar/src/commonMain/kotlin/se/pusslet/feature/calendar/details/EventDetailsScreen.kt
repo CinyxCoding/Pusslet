@@ -50,6 +50,7 @@ import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.Role
+import se.pusslet.core.party.PartyRules
 import se.pusslet.feature.calendar.annotate
 import se.pusslet.feature.calendar.attachments.AttachmentsRoute
 import se.pusslet.feature.calendar.editor.reminderLabel
@@ -113,7 +114,9 @@ fun EventDetailsRoute(
             onDecline = viewModel::decline,
             onChangeAnswer = viewModel::changeAnswer,
         ),
-    ) { o -> AttachmentsRoute(AttachmentOwner.Event, o.event.seriesId ?: o.event.id) }
+        attachments = { o -> AttachmentsRoute(AttachmentOwner.Event, o.event.seriesId ?: o.event.id) },
+        party = { o -> PartySection(o, editable = state.editable) },
+    )
 }
 
 @Composable
@@ -124,6 +127,8 @@ fun EventDetailsScreen(
     actions: HandoffActions = HandoffActions(),
     /** Pictures kept with the event on this phone (ADR-049). */
     attachments: @Composable (EventOccurrence) -> Unit = {},
+    /** The kalas card: OSA, present, or the family's own guests (ADR-054). */
+    party: @Composable (EventOccurrence) -> Unit = {},
 ) {
     val o = state.occurrence
     var askScope by remember { mutableStateOf(false) }
@@ -194,6 +199,7 @@ fun EventDetailsScreen(
             if (o.source == EventSource.Family && !o.allDay && participants.any { it.isChild }) {
                 HandoffSection(state, o, people, actions)
             }
+            if (o.source == EventSource.Family && PartyRules.isParty(o.event)) party(o)
             if (o.event.tags.isNotEmpty()) {
                 // Tags inform; they are not buttons (UX plan 1.6).
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {

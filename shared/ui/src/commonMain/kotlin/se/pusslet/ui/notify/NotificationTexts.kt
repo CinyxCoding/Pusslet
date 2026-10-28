@@ -68,6 +68,10 @@ import se.pusslet.ui.resources.notify_event_tomorrow_at
 import se.pusslet.ui.resources.notify_event_who
 import se.pusslet.ui.resources.notify_item_for
 import se.pusslet.ui.resources.notify_medicine_title
+import se.pusslet.ui.resources.notify_party_gift_text
+import se.pusslet.ui.resources.notify_party_gift_title
+import se.pusslet.ui.resources.notify_party_rsvp_text
+import se.pusslet.ui.resources.notify_party_rsvp_title
 import se.pusslet.ui.resources.notify_picked_up_title
 import se.pusslet.ui.resources.notify_pickup_unconfirmed_body
 import se.pusslet.ui.resources.notify_pickup_unconfirmed_mine
@@ -165,6 +169,14 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
         )
         is NotificationPayload.VabReport -> NotificationText(str(Res.string.notify_vab_title, p.child), str(Res.string.notify_vab_body))
         is NotificationPayload.MedicineDose -> NotificationText(str(Res.string.notify_medicine_title, p.medicine, p.child), p.dose)
+        is NotificationPayload.PartyGift -> NotificationText(
+            str(Res.string.notify_party_gift_title, p.title),
+            str(Res.string.notify_party_gift_text, p.partyDate.day, p.partyDate.month.ordinal + 1),
+        )
+        is NotificationPayload.PartyRsvp -> NotificationText(
+            str(Res.string.notify_party_rsvp_title, p.title),
+            str(Res.string.notify_party_rsvp_text),
+        )
         is NotificationPayload.BreakDeadline -> NotificationText(
             str(Res.string.notify_break_title, p.title),
             str(Res.string.notify_break_body, p.deadline.day, p.deadline.month.ordinal + 1),

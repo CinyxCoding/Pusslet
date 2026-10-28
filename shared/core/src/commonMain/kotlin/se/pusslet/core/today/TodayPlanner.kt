@@ -38,8 +38,8 @@ import se.pusslet.core.model.RequestStatus
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.SchoolLunch
 import se.pusslet.core.model.SickDay
-import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.packing.PackingPlanner
+import se.pusslet.core.party.PartyRules
 import se.pusslet.core.sick.SickDays
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.tasks.TaskScheduler
@@ -153,6 +153,9 @@ sealed interface ContextCard {
     /** "Kalas på lördag – present är inte köpt" */
     data class PartyGift(val date: LocalDate, val eventTitle: String, val taskId: String?) : ContextCard
 
+    /** "Dags att OSA till Kalas hos Vera – senast imorgon" (ADR-054). */
+    data class PartyRsvp(val by: LocalDate, val occurrence: EventOccurrence) : ContextCard
+
     /** "Klämdag nästa vecka" */
     data class SqueezeDay(val date: LocalDate) : ContextCard
 
@@ -216,6 +219,9 @@ data class TodayPlan(
 }
 
 object TodayPlanner {
+    /** "Dags att OSA" shows this many days before the last day to answer. */
+    private const val RSVP_NOTICE_DAYS = 3
+
     fun build(input: TodayInput): TodayPlan {
         val today = input.today
         val byId = input.people.associateBy { it.id }
@@ -513,11 +519,10 @@ object TodayPlanner {
             val reminders = ArrayList<DayReminder>()
             val carried = HashSet<String>()
             for (o in events) {
-                if (o.hasTag(EventTags.PARTY)) {
-                    val gifts = giftTasks(o, input)
-                    // A party whose present is bought is just an event.
-                    if (gifts.none { it.done }) {
-                        reminders += DayReminder.PartyGift(o, gifts.firstOrNull()?.id)
+                if (PartyRules.isParty(o.event)) {
+                    // A party whose present is bought, or that the family said no to or holds itself, is just an event.
+                    if (PartyRules.needsGift(o, input.tasks, today)) {
+                        reminders += DayReminder.PartyGift(o, PartyRules.giftTasks(o, input.tasks, today).firstOrNull()?.id)
                         carried += o.key
                     }
                 } else if (o.hasTag(EventTags.STUDY_DAY)) {
@@ -538,11 +543,6 @@ object TodayPlanner {
         } else {
             c.household?.let { CustodyNote.With(c.schedule, it) }
         }
-    }
-
-    private fun giftTasks(o: EventOccurrence, input: TodayInput): List<FamilyTask> = input.tasks.filter { t ->
-        t.linkedEventId == o.event.id ||
-            (t.category == TaskCategory.Gift && t.due != null && t.due <= o.start.date && t.due >= input.today)
     }
 
     private fun EventOccurrence.hasTag(tag: String): Boolean = event.tags.any { it.equals(tag, ignoreCase = true) }
@@ -603,10 +603,16 @@ object TodayPlanner {
             .forEach { o ->
                 cards += ContextCard.StudyDay(o.start.date, children.filter { it.id in o.attending }, o.event.title)
             }
-        week.filter { o -> o.event.tags.any { it.equals(EventTags.PARTY, true) } }.forEach { o ->
-            val giftTasks = giftTasks(o, input)
-            if (giftTasks.none { it.done }) cards += ContextCard.PartyGift(o.start.date, o.event.title, giftTasks.firstOrNull()?.id)
+        week.filter { PartyRules.needsGift(it, input.tasks, today) }.forEach { o ->
+            cards += ContextCard.PartyGift(o.start.date, o.event.title, PartyRules.giftTasks(o, input.tasks, today).firstOrNull()?.id)
         }
+        // An answer due within three days, whenever the party is.
+        input.occurrences.filter { PartyRules.needsRsvp(it.event, today) }
+            .distinctBy { it.event.seriesId ?: it.event.id }
+            .forEach { o ->
+                val by = PartyRules.details(o.event).rsvpBy ?: return@forEach
+                if (by <= today.plusDays(RSVP_NOTICE_DAYS)) cards += ContextCard.PartyRsvp(by, o)
+            }
 
         // Squeeze days within ten days.
         (1..10).map { today.plusDays(it) }.firstOrNull { SwedishHolidays.isSqueezeDay(it) }?.let { cards += ContextCard.SqueezeDay(it) }

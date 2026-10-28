@@ -31,6 +31,7 @@ import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.repository.SickDayRepository
 import se.pusslet.data.repository.TaskRepository
+import se.pusslet.data.repository.WishRepository
 import se.pusslet.data.seed.DemoSeed
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.session.SessionRepository
@@ -109,6 +110,7 @@ val dataModule: Module = module {
     single { MedicineRepository(get(), get(), get(), get()) }
     single { BreakRepository(get(), get(), get(), get()) }
     single { FamilySearch(get(), get(), get(), get(), get(), get(), get()) }
+    single { WishRepository(get(), get(), get(), get()) }
     single { PickupReceipts(get(), get(), get()) }
     single { LunchRepository(get(), get(), get()) }
     single { HandoffAssigner(get()) }

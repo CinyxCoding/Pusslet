@@ -587,3 +587,15 @@ börjar med versal ("pannbiff med lök & gräddsås" är en rätt) och sätter r
 appversion läser en okänd leverantör som manuell i stället för att tappa barnet.
 **Konsekvens:** Ingen skrapning – bara flödet som Matilda själva erbjuder. Fler leverantörer läggs till som egna
 `LunchMenuProvider` när de har ett öppet flöde; tills dess finns "Egen RSS-länk" och manuell inmatning.
+
+## ADR-054 – Kalas och önskelistor
+**Kontext:** BRIEF §4.8: OSA-status, presentidé, budget, "present köpt", påminnelse tre dagar innan, egna kalas med
+gästlista och inbjudan, önskelista per barn.
+**Beslut:** Kalasuppgifterna ligger på händelsen (`Event.party`: OSA och sista dag, present eller – för eget kalas –
+gäster och inbjudningstext) och synkas som resten av händelsen; ett kalas känns igen på taggen eller på att uppgifterna
+finns. `PartyRules` i kärnan avgör när något behövs: present för ett kalas familjen inte tackat nej till tills den är
+köpt eller presentuppgiften är bockad, och OSA när ett datum finns och ingen svarat. Idag visar presenten i ”Kommande” och ett kort ”Dags att OSA” tre dagar innan sista dagen; notiser kl 19 tre dagar före kalaset och kvällen före OSA-datumet, bara
+till föräldrar. "Köpt" bockar även av presentuppgiften från snabbinmatningen. Önskelistor är en egen samling (`wishes`)
+som även hjälpare kan läsa och där de får markera "köpt" – inget annat (reglerna + regeltest), så två morföräldrar inte
+köper samma sak. Inbjudan delas som text via telefonens delningsmeny; inga gästers kontaktuppgifter sparas.
+**Konsekvens:** Gästlistan är bara namn och svar. Barnläget (ADR-055) visar inte "köpt" på önskelistan.

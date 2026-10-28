@@ -183,7 +183,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 ## Fas 5 – V2
 - [x] Sök (ADR-052): händelser, recept, att göra, varor och kontakter, med å, ä och ö som egna bokstäver
 - [x] Fler lunchleverantörer (ADR-053): Matilda via matsedelns officiella RSS-flöde (kontrollerat live 2026-10-28)
-- [ ] Barnvy & veckopeng · kalas/presenter · flerhushållsdelning
+- [x] Kalas och presenter (ADR-054): OSA med sista dag, presentidé, budget och köpt, eget kalas med gäster och inbjudan,
+  önskelistor där morföräldrar bockar av vad de köpt
+- [ ] Barnvy & veckopeng · flerhushållsdelning
 
 ## Verifiering fas 1 (2026-10-08)
 Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestore):

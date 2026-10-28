@@ -15,6 +15,7 @@ import se.pusslet.core.model.Role
 import se.pusslet.data.BackendConfig
 import se.pusslet.data.BackendMode
 import se.pusslet.data.remote.LocalOnlyAuthRepository
+import se.pusslet.data.repository.WishRepository
 import se.pusslet.data.session.Session
 import se.pusslet.feature.family.invite.InviteViewModel
 import se.pusslet.feature.family.member.MemberEditorViewModel
@@ -53,7 +54,14 @@ class HelperPreviewEntryTest {
     }
 
     private fun kotlinx.coroutines.test.TestScope.familyState(world: TestWorld): FamilyUiState {
-        val vm = FamilyViewModel(world.family, world.sessions, world.clock, world.zone)
+        val vm =
+            FamilyViewModel(
+                world.family,
+                world.sessions,
+                WishRepository(world.docs, world.sessions, world.ids, world.clock),
+                world.clock,
+                world.zone,
+            )
         CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler)).launch { vm.state.collect {} }
         return vm.state.value
     }

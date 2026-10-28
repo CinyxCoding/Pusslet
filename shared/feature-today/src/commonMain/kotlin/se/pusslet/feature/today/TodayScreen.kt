@@ -44,6 +44,7 @@ import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.today.CaregiverCannot
+import se.pusslet.core.today.ContextCard
 import se.pusslet.core.today.CustodyNote
 import se.pusslet.core.today.HandoffStop
 import se.pusslet.core.today.PickedUp
@@ -286,6 +287,10 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         items(state.sick.stillSick, key = { "still-sick-${it.day.id}" }) { StillSickView(it, actions.sick) }
         items(state.sick.vabToReport, key = { "vab-${it.report.childId}-${it.report.first}" }) { VabReportView(it, actions.sick) }
         items(state.breaks, key = { "break-${it.planId}" }) { BreakSoonCard(it, plan.date, actions.onPlanBreaks) }
+        // "Dags att OSA" (ADR-054): an invitation to answer within three days.
+        items(plan.cards.filterIsInstance<ContextCard.PartyRsvp>(), key = { "rsvp-${it.occurrence.key}" }) { card ->
+            RsvpCard(card, plan.date) { actions.onOpenOccurrence(card.occurrence) }
+        }
         if (state.medicine.isNotEmpty()) {
             item(key = "medicine") {
                 MedicineTodayCard(state.medicine, actions.onGiveDose, onOpen = {

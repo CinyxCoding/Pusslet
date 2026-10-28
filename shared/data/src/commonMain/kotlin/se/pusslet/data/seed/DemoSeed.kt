@@ -17,6 +17,7 @@ import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventTags
 import se.pusslet.core.model.FamilySettings
 import se.pusslet.core.model.FamilyTask
+import se.pusslet.core.model.GiftPlan
 import se.pusslet.core.model.Handoff
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.HandoffRequest
@@ -34,11 +35,13 @@ import se.pusslet.core.model.Member
 import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.PackingTrigger
+import se.pusslet.core.model.PartyDetails
 import se.pusslet.core.model.Place
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.RecipeCollection
 import se.pusslet.core.model.RecipeTag
 import se.pusslet.core.model.Role
+import se.pusslet.core.model.Rsvp
 import se.pusslet.core.model.SchoolKind
 import se.pusslet.core.model.SchoolRef
 import se.pusslet.core.model.ShoppingItem
@@ -46,6 +49,7 @@ import se.pusslet.core.model.ShoppingList
 import se.pusslet.core.model.Store
 import se.pusslet.core.model.TaskCategory
 import se.pusslet.core.model.TaskKind
+import se.pusslet.core.model.WishItem
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.time.startOfWeek
@@ -258,6 +262,7 @@ class DemoSeed(private val family: FamilyRepository, private val docs: DocumentS
                 participantIds = listOf(ELLA),
                 tags = listOf(EventTags.PARTY),
                 linkedTaskIds = listOf("t-present"),
+                party = PartyDetails(rsvp = Rsvp.Yes, rsvpBy = d(1), gift = GiftPlan(idea = "Pysselset med pärlor", budget = 150)),
             ),
             Event.serializer(),
         )
@@ -481,6 +486,13 @@ class DemoSeed(private val family: FamilyRepository, private val docs: DocumentS
             ShoppingItem("i7", "l-apotek", "Alvedon barn", aisle = Aisle.Pharmacy, addedBy = sara),
             ShoppingItem("i8", "l-apotek", "Plåster", aisle = Aisle.Pharmacy, addedBy = sara),
         ).forEach { put(Collections.ShoppingItems, it.id, it, ShoppingItem.serializer()) }
+
+        // Ella's wishlist – morfar has already bought one thing.
+        listOf(
+            WishItem("w1", ELLA, "Lego Friends hästgård", addedAt = clock.now()),
+            WishItem("w2", ELLA, "Bok: Sune och Svante", addedAt = clock.now(), taken = true, takenBy = BENGT),
+            WishItem("w3", ELLA, "Rullskridskor, storlek 34", addedAt = clock.now()),
+        ).forEach { put(Collections.Wishes, it.id, it, WishItem.serializer()) }
 
         // Tasks and chores
         listOf(

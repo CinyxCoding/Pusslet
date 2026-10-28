@@ -14,6 +14,7 @@ import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.Role
+import se.pusslet.core.party.PartyRules
 import se.pusslet.core.sick.SickDays
 import se.pusslet.core.tasks.TaskScheduler
 import se.pusslet.core.time.TimeWindow
@@ -123,7 +124,7 @@ object ReminderPlanner {
             days = from.toLocalDateTime(zone).date.datesUntil(until.toLocalDateTime(zone).date),
         )
         val all = eventReminders(ctx) + handoffs(ctx) + tasks(ctx) + mornings(ctx) + evenings(ctx) + sickReminders(ctx) +
-            pickupChecks(ctx) + medicineReminders(ctx) + breakDeadlines(ctx)
+            pickupChecks(ctx) + medicineReminders(ctx) + breakDeadlines(ctx) + partyReminders(ctx)
         return all.filter { it.at > from && it.at <= until }
             .distinctBy { it.key }
             .sortedWith(compareBy({ it.at }, { it.key }))
@@ -296,6 +297,42 @@ object ReminderPlanner {
                 )
             }
         }
+    }
+
+    /**
+     * Kalas (ADR-054), to the parents at [EVENING_TIME]: "Present till Kalas hos Vera" [PartyRules.GIFT_REMINDER_DAYS] days
+     * before a party whose present is not bought, and "Dags att OSA" the evening before the last day to answer.
+     */
+    private fun partyReminders(ctx: Context): List<PlannedNotification> {
+        if (ctx.input.role != Role.Parent) return emptyList()
+        val today = ctx.days.firstOrNull() ?: return emptyList()
+        return ctx.occurrences.filter { it.source == EventSource.Family && PartyRules.isParty(it.event) }
+            .distinctBy { it.event.seriesId ?: it.event.id }
+            .flatMap { o ->
+                val series = o.event.seriesId ?: o.event.id
+                val gift = o.start.date.minusDays(PartyRules.GIFT_REMINDER_DAYS).takeIf {
+                    PartyRules.needsGift(o, ctx.input.base.tasks, today)
+                }
+                val rsvp = PartyRules.details(o.event).rsvpBy?.minusDays(1)?.takeIf { PartyRules.needsRsvp(o.event, today) }
+                listOfNotNull(
+                    gift?.let {
+                        PlannedNotification(
+                            "party:gift:$series",
+                            LocalDateTime(it, EVENING_TIME).toInstant(ctx.zone),
+                            NotificationKind.Reminder,
+                            NotificationPayload.PartyGift(o.event.id, o.occurrenceDate, o.event.title, o.start.date),
+                        )
+                    },
+                    rsvp?.let {
+                        PlannedNotification(
+                            "party:rsvp:$series",
+                            LocalDateTime(it, EVENING_TIME).toInstant(ctx.zone),
+                            NotificationKind.Reminder,
+                            NotificationPayload.PartyRsvp(o.event.id, o.occurrenceDate, o.event.title),
+                        )
+                    },
+                )
+            }
     }
 
     /**

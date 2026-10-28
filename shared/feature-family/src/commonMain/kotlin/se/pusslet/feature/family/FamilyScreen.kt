@@ -36,6 +36,7 @@ import se.pusslet.core.model.Member
 import se.pusslet.core.model.Role
 import se.pusslet.core.weather.ClothingAdvisor
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.WishRepository
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.Labels
@@ -60,20 +61,31 @@ data class FamilyUiState(
     val today: LocalDate? = null,
     /** Not signed in: everything lives only on this phone ("Bara på den här telefonen · Logga in"). */
     val signedIn: Boolean = true,
+    /** Child id -> wishes nobody has bought yet (ADR-054). */
+    val openWishes: Map<String, Int> = emptyMap(),
 ) {
     /** "Så ser Bengt appen": parents only, on the rows of other adults with the caregiver role (UX plan Steg 3). */
     fun canPreviewHelper(member: Member): Boolean = myRole == Role.Parent && member.id != me && member.role == Role.Caregiver
 }
 
-class FamilyViewModel(family: FamilyRepository, sessions: SessionProvider, clock: Clock, zone: TimeZone) : ViewModel() {
-    val state: StateFlow<FamilyUiState> = combine(family.family, family.members, family.children, family.custody, sessions.session) {
+class FamilyViewModel(
+    family: FamilyRepository,
+    sessions: SessionProvider,
+    wishes: WishRepository,
+    clock: Clock,
+    zone: TimeZone,
+) : ViewModel() {
+    private val custodyAndWishes = combine(family.custody, wishes.wishes) { cu, w -> cu to w }
+
+    val state: StateFlow<FamilyUiState> = combine(family.family, family.members, family.children, custodyAndWishes, sessions.session) {
         f,
         m,
         c,
-        cu,
+        (cu, w),
         s,
         ->
-        FamilyUiState(f?.name.orEmpty(), m, c, cu, s.memberId, s.role, clock.todayIn(zone), signedIn = s.uid != null)
+        val open = w.filter { !it.taken }.groupingBy { it.childId }.eachCount()
+        FamilyUiState(f?.name.orEmpty(), m, c, cu, s.memberId, s.role, clock.todayIn(zone), signedIn = s.uid != null, openWishes = open)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FamilyUiState())
 }
 
@@ -87,6 +99,7 @@ fun FamilyRoute(
     onHandover: (String) -> Unit,
     onSignIn: () -> Unit = {},
     onPreviewHelper: (memberId: String) -> Unit = {},
+    onWishlist: (childId: String) -> Unit = {},
     viewModel: FamilyViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -157,6 +170,25 @@ fun FamilyRoute(
                         )
                     }
                     if (parent) OutlinedButton(onClick = { onEditChild(null) }) { Text(stringResource(Res.string.family_add_child)) }
+                }
+            }
+            if (state.children.isNotEmpty()) {
+                item(key = "wishlists") {
+                    SectionCard(stringResource(Res.string.family_wishlists)) {
+                        state.children.forEach { c ->
+                            val open = state.openWishes[c.id] ?: 0
+                            ListRow(
+                                title = c.firstName,
+                                supporting = if (open > 0) {
+                                    stringResource(Res.string.family_wishlist_count, open)
+                                } else {
+                                    stringResource(Res.string.family_wishlist_none)
+                                },
+                                leading = { PersonAvatar(FamilyPerson.of(c), size = 40.dp) },
+                                modifier = Modifier.clickable { onWishlist(c.id) },
+                            )
+                        }
+                    }
                 }
             }
             item {

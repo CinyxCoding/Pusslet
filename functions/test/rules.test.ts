@@ -362,6 +362,19 @@ describe("caregivers (morfar)", () => {
     );
   });
 
+  it("can see the wishlists and mark a wish bought, but not change or add wishes", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), `families/${FID}/wishes/w1`), { childId: "ella", text: "Lego Friends", taken: false });
+    });
+    const f = db("bengt");
+    await assertSucceeds(getDoc(doc(f, `families/${FID}/wishes/w1`)));
+    await assertSucceeds(updateDoc(doc(f, `families/${FID}/wishes/w1`), { taken: true, takenBy: "m-bengt", ...stamp("bengt") }));
+    await assertFails(updateDoc(doc(f, `families/${FID}/wishes/w1`), { text: "Ponny", ...stamp("bengt") }));
+    await assertFails(setDoc(doc(f, `families/${FID}/wishes/w2`), { childId: "ella", text: "Cykel", ...stamp("bengt") }));
+    await assertSucceeds(setDoc(doc(db("sara"), `families/${FID}/wishes/w2`), { childId: "ella", text: "Cykel", ...stamp("sara") }));
+    await assertFails(setDoc(doc(db("sara"), `families/${FID}/wishes/w3`), { childId: "ella", text: "x".repeat(301), ...stamp("sara") }));
+  });
+
   it("can tick off his own pick-up, not one in someone else's name", async () => {
     const f = db("bengt");
     const receipt = { eventId: "shared", occurrenceDate: "2026-10-08", kind: "pickup", childIds: ["ella"], doneBy: "m-bengt", ...stamp("bengt") };

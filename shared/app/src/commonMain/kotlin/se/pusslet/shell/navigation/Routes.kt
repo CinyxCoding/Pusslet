@@ -34,6 +34,9 @@ sealed interface Route {
     /** "Medicin och feber" (ADR-050), on [childId] when it was opened for one child. */
     @Serializable data class Medicine(val childId: String? = null) : Route
 
+    /** A child's wishlist (ADR-054). */
+    @Serializable data class Wishlist(val childId: String) : Route
+
     /** "Sök" (ADR-052). */
     @Serializable data object Search : Route
 

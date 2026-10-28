@@ -39,6 +39,8 @@ data class Event(
     val sharedWithCaregivers: Boolean = true,
     val linkedTaskIds: List<String> = emptyList(),
     val createdBy: String? = null,
+    /** Kalas: RSVP, present or the family's own guest list (BRIEF §4.8, ADR-054). */
+    val party: PartyDetails? = null,
 ) {
     val isRecurring: Boolean get() = !rrule.isNullOrBlank()
     val isOverride: Boolean get() = seriesId != null

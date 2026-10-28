@@ -57,6 +57,7 @@ import se.pusslet.feature.calendar.editor.EventEditorRoute
 import se.pusslet.feature.calendar.subscriptions.SubscriptionsRoute
 import se.pusslet.feature.family.FamilyRoute
 import se.pusslet.feature.family.child.ChildEditorRoute
+import se.pusslet.feature.family.costs.SharedCostsRoute
 import se.pusslet.feature.family.custody.CustodyEditorRoute
 import se.pusslet.feature.family.custody.HandoverRoute
 import se.pusslet.feature.family.invite.InviteRoute
@@ -441,6 +442,7 @@ private fun AppNavDisplay(
                 )
             }
             entry<Route.OtherHome> { OtherHomeRoute(onBack = navigator::goBack, onSignIn = { navigator.navigate(Route.Account) }) }
+            entry<Route.SharedCosts> { SharedCostsRoute(onBack = navigator::goBack, onOtherHome = { navigator.navigate(Route.OtherHome) }) }
             entry<Route.Wishlist> { r -> WishlistRoute(r.childId, onBack = navigator::goBack) }
             entry<Route.KidPicker> {
                 KidPickerRoute(onBack = navigator::goBack, onPick = { id ->
@@ -506,6 +508,7 @@ private fun MoreDestination.route(): Route = when (this) {
     MoreDestination.Search -> Route.Search
     MoreDestination.Kids -> Route.Allowance
     MoreDestination.KidMode -> Route.KidPicker
+    MoreDestination.SharedCosts -> Route.SharedCosts
 }
 
 private data class TabSpec(val tab: TopLevelTab, val label: StringResource, val icon: ImageVector)

@@ -38,6 +38,7 @@ enum class MoreDestination(val parentsOnly: Boolean = false) {
     Kids(parentsOnly = true),
     KidMode(parentsOnly = true),
     Medicine(parentsOnly = true),
+    SharedCosts(parentsOnly = true),
     Breaks(parentsOnly = true),
     Settings,
     Account,
@@ -65,6 +66,7 @@ fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues 
             MoreItem(MoreDestination.KidMode, Res.string.kid_mode, Icons.Filled.Face),
             MoreItem(MoreDestination.Breaks, Res.string.breaks_title, PussletIcons.Beach),
             MoreItem(MoreDestination.Medicine, Res.string.medicine_title, PussletIcons.Medication),
+            MoreItem(MoreDestination.SharedCosts, Res.string.costs_title, PussletIcons.Payments),
             MoreItem(MoreDestination.Account, Res.string.more_account, Icons.Filled.AccountCircle),
         ),
         Res.string.more_group_app to listOf(

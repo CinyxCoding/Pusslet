@@ -43,6 +43,9 @@ sealed interface Route {
     /** "Barnen": ticks to approve and veckopeng (ADR-055). */
     @Serializable data object Allowance : Route
 
+    /** "Delade kostnader" with the other home (ADR-057). */
+    @Serializable data object SharedCosts : Route
+
     /** A child's wishlist (ADR-054). */
     @Serializable data class Wishlist(val childId: String) : Route
 

@@ -548,6 +548,16 @@ describe("sharing with the other home (ADR-056)", () => {
     await assertSucceeds(getDoc(doc(db("johan"), `families/${SPACE}/events/football`)));
   });
 
+  it("keeps shared costs in the space, with a sane amount and split (ADR-057)", async () => {
+    await seedSpace();
+    await linaJoins();
+    const cost = { title: "Vinterjacka", amountOre: 89900, date: "2026-10-20", paidByHome: FID, otherSharePercent: 50, ...stamp("sara") };
+    await assertSucceeds(setDoc(doc(db("sara"), `families/${SPACE}/expenses/x1`), cost));
+    await assertSucceeds(getDoc(doc(db("lina"), `families/${SPACE}/expenses/x1`)));
+    await assertFails(setDoc(doc(db("sara"), `families/${SPACE}/expenses/x2`), { ...cost, amountOre: -5 }));
+    await assertFails(setDoc(doc(db("sara"), `families/${SPACE}/expenses/x3`), { ...cost, otherSharePercent: 150 }));
+  });
+
   it("keeps a space to the children's collections and its flag fixed", async () => {
     await seedSpace();
     const f = db("sara");

@@ -639,3 +639,17 @@ innehålla barnens samlingar (barn, vårdnadsschema, händelser, packning, uppgi
 när ett dokument flyttas kan hamna i hemmets gamla kopia. Att dela med andra hemmet är en premiumkandidat
 (`Feature.SharedCustody`, kontrolleras när man startar); att gå med är alltid gratis.
 
+## ADR-057 – Delade kostnader mellan hemmen
+**Kontext:** Föräldrar i två hem delar på barnens kostnader (kläder, aktiviteter, tandläkare) och för listor i sms eller
+kalkylark. PROGRESS har ”Delade kostnader mellan hemmen” som behov efter fas 4. Andra hemmet (ADR-056) ger redan ett
+utrymme som båda hemmens föräldrar delar.
+**Beslut:** ”Delade kostnader” (Mer) visar per delat utrymme en lista som båda hemmen ser och ändrar: vad, belopp i öre
+(så summor aldrig avrundas), datum, kategori, vilket hem som betalade (och vem, för vårt hem) och hur stor del det andra
+hemmet står för (hälften, allt eller inget). Saldot är summan av det andra hemmets andelar med tecken efter vem som
+betalade: ”Lina är skyldig er 449,50 kr”. Appen flyttar inga pengar; man betalar som vanligt (Swish, bank) och trycker
+”Reglera”, som skriver en reglering: en kostnad som det skyldiga hemmet betalade och som det andra hemmet står för helt,
+så saldot blir noll utan någon särskild regel. Kostnaderna (`expenses`) bor bara i det delade utrymmet, är föräldrarnas
+egna (hjälpare läser dem inte) och reglerna kräver ett positivt belopp under en miljon kronor och en andel 0–100 %.
+**Konsekvens:** Utan delning med andra hemmet visar vyn hur man börjar dela. Slutar ett hem dela får det en egen kopia av
+listan, som de andra barnens saker (ADR-056). Kvitton som bild sparas inte än.
+

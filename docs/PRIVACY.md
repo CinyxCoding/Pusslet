@@ -64,7 +64,8 @@ Vi säljer inte uppgifter och lämnar inte ut dem till någon annan, utom om lag
 ### Andra hemmet
 Bor barnen i två hem kan ni dela dem med det andra hemmet. Då ser föräldrarna i båda hemmen barnens namn och profil,
 vårdnadsschema och det som bara handlar om dem (händelser, packning, läxor och sysslor, önskelistor, skollunch, sjukdagar och vistelsetider).
-Allergier, kost och medicinloggen delas bara om ni slår på det. Resten av er familj – vuxnas händelser, matsedel, inköpslistor,
+Allergier, kost och medicinloggen delas bara om ni slår på det. Delade kostnader för barnen (vad, belopp, vem som
+betalade) förs i samma utrymme och ses av föräldrarna i båda hemmen. Resten av er familj – vuxnas händelser, matsedel, inköpslistor,
 recept, veckopeng och det som också gäller barn ni inte delar – syns aldrig för det andra hemmet. Slutar ni dela behåller
 båda hemmen en egen kopia.
 
@@ -171,7 +172,8 @@ written about the children, and we only ask for a first name.
 ### The other home
 If the children live in two homes, you can share them with the other home. The parents in both homes then see the
 children's names and profiles, their custody schedule and what is only about them (events, packing, homework and chores,
-wishlists, school lunch, sick days and preschool hours). Allergies, diets and the medicine log are only shared if you turn that on. The rest of your family – the adults'
+wishlists, school lunch, sick days and preschool hours). Allergies, diets and the medicine log are only shared if you turn that on. Shared costs for the children (what, amount,
+who paid) are kept in the same space and seen by the parents in both homes. The rest of your family – the adults'
 events, meal plan, shopping lists, recipes, pocket money and anything that also involves children you don't share – is
 never visible to the other home. If you stop sharing, both homes keep their own copy.
 

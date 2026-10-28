@@ -1626,4 +1626,36 @@
     <string name="family_other_home_none">Dela barnens schema med det andra hemmet, utan att dela resten.</string>
     <string name="event_other_home">Delas med andra hemmet</string>
     <string name="event_other_home_body">Båda hemmen ser och kan ändra händelsen.</string>
+
+    <!-- Delade kostnader (ADR-057) -->
+    <string name="costs_title">Delade kostnader</string>
+    <string name="costs_intro">Det ni lägger på barnen ni delar med andra hemmet, och vem som är skyldig vem. Båda hemmen ser samma lista. Betala som vanligt (Swish, bank) och tryck Reglera när det är gjort.</string>
+    <string name="costs_no_share">Delade kostnader förs med det andra hemmet. Börja dela barnen under Andra hemmet först.</string>
+    <string name="costs_parents_only">Delade kostnader ses bara av föräldrarna.</string>
+    <string name="costs_they_owe">%1$s är skyldig er %2$s kr</string>
+    <string name="costs_we_owe">Ni är skyldiga %1$s %2$s kr</string>
+    <string name="costs_even">Ni är kvitt</string>
+    <string name="costs_add">Lägg till kostnad</string>
+    <string name="costs_settle">Reglera</string>
+    <string name="costs_settlement">Reglering</string>
+    <string name="costs_what">Vad (t.ex. vinterjacka)</string>
+    <string name="costs_amount">Belopp (kr)</string>
+    <string name="costs_paid_us">Vi betalade</string>
+    <string name="costs_paid_them">Andra hemmet betalade</string>
+    <string name="costs_paid_by">%1$s betalade</string>
+    <string name="costs_split">Fördelning</string>
+    <string name="costs_split_half">Hälften var</string>
+    <string name="costs_split_all">Den andra betalar allt</string>
+    <string name="costs_split_none">Den som betalade står för det</string>
+    <string name="costs_split_line">%1$d/%2$d</string>
+    <string name="costs_preview_they">Andra hemmet betalar %1$s kr av det</string>
+    <string name="costs_preview_we">Ni betalar %1$s kr av det</string>
+    <string name="costs_delete_confirm">Ta bort ”%1$s” för båda hemmen?</string>
+    <string name="costs_category_clothes">Kläder</string>
+    <string name="costs_category_activities">Aktiviteter</string>
+    <string name="costs_category_school">Skola</string>
+    <string name="costs_category_health">Vård</string>
+    <string name="costs_category_other">Övrigt</string>
+    <string name="costs_category_line">%1$s %2$s kr</string>
+    <string name="costs_expense_line">%1$s · %2$s kr</string>
 </resources>

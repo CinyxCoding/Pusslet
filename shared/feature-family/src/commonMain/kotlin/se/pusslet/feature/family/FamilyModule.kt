@@ -4,6 +4,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import se.pusslet.feature.family.child.ChildEditorViewModel
+import se.pusslet.feature.family.costs.SharedCostsViewModel
 import se.pusslet.feature.family.custody.CustodyEditorViewModel
 import se.pusslet.feature.family.custody.HandoverViewModel
 import se.pusslet.feature.family.invite.InviteViewModel
@@ -21,6 +22,7 @@ val familyModule: Module = module {
     viewModel { FamilyViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { WishlistViewModel(get(), get(), get()) }
     viewModel { OtherHomeViewModel(get(), get(), get(), get(), get()) }
+    viewModel { SharedCostsViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { ChildEditorViewModel(get(), get(), get()) }
     viewModel { MemberEditorViewModel(get(), get()) }
     viewModel { InviteViewModel(get(), get(), get(), get()) }

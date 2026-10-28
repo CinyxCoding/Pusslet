@@ -178,7 +178,8 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   på Idag där en förälder kan bocka av åt någon annan, och en inställning för att stänga av varningen
 - [x] Lov och vistelsetider (ADR-051): vem som är hemma varje lovdag, lovomsorg med påminnelse om anmälan, vistelsetider
   från kalendern som går att skicka till förskolan
-- [ ] Delade kostnader mellan hemmen
+- [x] Delade kostnader mellan hemmen (ADR-057): gemensam lista i det delade utrymmet, fördelning per kostnad, saldo och
+  ”Reglera” när det andra hemmet har swishat
 
 ## Fas 5 – V2
 - [x] Sök (ADR-052): händelser, recept, att göra, varor och kontakter, med å, ä och ö som egna bokstäver

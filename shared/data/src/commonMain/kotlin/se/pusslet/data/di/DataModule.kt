@@ -21,6 +21,7 @@ import se.pusslet.data.repository.AttachmentHousekeeping
 import se.pusslet.data.repository.AttachmentRepository
 import se.pusslet.data.repository.BreakRepository
 import se.pusslet.data.repository.CalendarRepository
+import se.pusslet.data.repository.ExpenseRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
 import se.pusslet.data.repository.MealRepository
@@ -114,6 +115,7 @@ val dataModule: Module = module {
     single { BreakRepository(get(), get(), get(), get()) }
     single { FamilySearch(get(), get(), get(), get(), get(), get(), get()) }
     single { WishRepository(get(), get(), get(), get()) }
+    single { ExpenseRepository(get(), get(), get()) }
     single { KidChoreActions(get(), get()) }
     single { AllowanceRepository(get(), get()) }
     single { PickupReceipts(get(), get(), get()) }

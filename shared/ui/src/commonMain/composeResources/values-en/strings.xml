@@ -1625,4 +1625,36 @@
     <string name="family_other_home_none">Share the children's schedule with the other home without sharing the rest.</string>
     <string name="event_other_home">Shared with the other home</string>
     <string name="event_other_home_body">Both homes see and can change the event.</string>
+
+    <!-- Shared costs (ADR-057) -->
+    <string name="costs_title">Shared costs</string>
+    <string name="costs_intro">What you spend on the children you share with the other home, and who owes whom. Both homes see the same list. Pay as usual (Swish, bank) and tap Settle when it's done.</string>
+    <string name="costs_no_share">Shared costs are kept with the other home. Start sharing the children under The other home first.</string>
+    <string name="costs_parents_only">Only the parents see shared costs.</string>
+    <string name="costs_they_owe">%1$s owes you %2$s kr</string>
+    <string name="costs_we_owe">You owe %1$s %2$s kr</string>
+    <string name="costs_even">You're even</string>
+    <string name="costs_add">Add a cost</string>
+    <string name="costs_settle">Settle</string>
+    <string name="costs_settlement">Settlement</string>
+    <string name="costs_what">What (e.g. winter jacket)</string>
+    <string name="costs_amount">Amount (kr)</string>
+    <string name="costs_paid_us">We paid</string>
+    <string name="costs_paid_them">The other home paid</string>
+    <string name="costs_paid_by">%1$s paid</string>
+    <string name="costs_split">Split</string>
+    <string name="costs_split_half">Half each</string>
+    <string name="costs_split_all">The other pays all</string>
+    <string name="costs_split_none">The payer covers it</string>
+    <string name="costs_split_line">%1$d/%2$d</string>
+    <string name="costs_preview_they">The other home pays %1$s kr of it</string>
+    <string name="costs_preview_we">You pay %1$s kr of it</string>
+    <string name="costs_delete_confirm">Remove “%1$s” for both homes?</string>
+    <string name="costs_category_clothes">Clothes</string>
+    <string name="costs_category_activities">Activities</string>
+    <string name="costs_category_school">School</string>
+    <string name="costs_category_health">Health</string>
+    <string name="costs_category_other">Other</string>
+    <string name="costs_category_line">%1$s %2$s kr</string>
+    <string name="costs_expense_line">%1$s · %2$s kr</string>
 </resources>

@@ -52,6 +52,8 @@ data class SharedSpace(
     val shareDiets: Boolean,
     /** The other home has joined (or is still part of it). */
     val otherHomeJoined: Boolean,
+    /** The homes taking part (family ids), for who paid a shared cost (ADR-057). */
+    val homes: List<String> = emptyList(),
 )
 
 /**
@@ -85,7 +87,14 @@ class OtherHomeSharing(
                     all.mapNotNull { p ->
                         val space = p.family ?: return@mapNotNull null
                         val others = p.members.filter { it.id !in mine }
-                        SharedSpace(p.id, p.children, others, space.shareDiets, others.isNotEmpty() || space.familyIds.size > 1)
+                        SharedSpace(
+                            p.id,
+                            p.children,
+                            others,
+                            space.shareDiets,
+                            others.isNotEmpty() || space.familyIds.size > 1,
+                            space.familyIds,
+                        )
                     }
                 }
             }

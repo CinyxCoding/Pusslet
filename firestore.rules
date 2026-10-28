@@ -37,7 +37,7 @@ service cloud.firestore {
     function spaceCollection(collection) {
       return collection in ['children', 'custodySchedules', 'events', 'packingRules', 'packingChecks', 'tasks',
         'handoffRequests', 'dietProfiles', 'schoolLunches', 'wishes', 'sickDays', 'handoffReceipts', 'medicineLog',
-        'medicineCourses', 'staySchedules'];
+        'medicineCourses', 'staySchedules', 'expenses'];
     }
 
     // ---------- per-collection validation ----------
@@ -86,6 +86,13 @@ service cloud.firestore {
         && data().times is list && data().times.size() <= 6 && data().days is number && data().days >= 1 && data().days <= 90;
     }
 
+    // A cost shared with the other home (ADR-057): a title, an amount in öre and how much the other home pays.
+    function validExpense() {
+      return shortString(data().title, 200) && data().amountOre is int && data().amountOre > 0
+        && data().amountOre <= 100000000 && shortString(data().paidByHome, 128)
+        && (!('otherSharePercent' in data()) || (data().otherSharePercent is int
+          && data().otherSharePercent >= 0 && data().otherSharePercent <= 100));
+    }
     // A wish on a child's list (ADR-054).
     function validWish() { return shortString(data().text, 300) && data().childId is string && optString('link', 2000); }
 
@@ -99,6 +106,7 @@ service cloud.firestore {
         : collection == 'medicineLog' ? validMedicineEntry()
         : collection == 'medicineCourses' ? validMedicineCourse()
         : collection == 'wishes' ? validWish()
+        : collection == 'expenses' ? validExpense()
         : collection == 'breakPlans' ? (shortString(data().eventId, 200) && (!('days' in data()) || data().days is map))
         : collection == 'staySchedules' ? (shortString(data().childId, 100) && (!('days' in data()) || data().days is map))
         : collection == 'children' ? validNamed('firstName')

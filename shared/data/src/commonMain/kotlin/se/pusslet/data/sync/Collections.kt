@@ -144,6 +144,9 @@ object Collections {
     val StaySchedules =
         CollectionSpec("staySchedules", RemoteLocation.Flat("staySchedules"), parentsOnly = true, spaces = SpaceSharing.Merged)
 
+    /** Costs shared with the other home (ADR-057): only ever in a space both homes share. */
+    val Expenses = CollectionSpec("expenses", RemoteLocation.Flat("expenses"), parentsOnly = true, spaces = SpaceSharing.Merged)
+
     /** Pictures attached on this phone (ADR-049). The location is never used. */
     val Attachments = CollectionSpec("attachments", RemoteLocation.Flat("attachments"), localOnly = true)
 
@@ -180,6 +183,7 @@ object Collections {
         StaySchedules,
         Wishes,
         Allowances,
+        Expenses,
     )
 
     /** What a space shared with the other home holds (also enforced by the security rules). */

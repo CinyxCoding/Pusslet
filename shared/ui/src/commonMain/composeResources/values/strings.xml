@@ -1560,12 +1560,12 @@
     <string name="task_stars_less">Färre stjärnor</string>
     <string name="task_stars_more">Fler stjärnor</string>
     <string name="stars_count">%1$d ⭐</string>
-    <string name="kid_hello">Hej %1$s!</string>
+    <string name="kid_hello">Hej %1$s</string>
     <string name="kid_today">Idag</string>
     <string name="kid_nothing_today">Inget särskilt idag.</string>
     <string name="kid_picks_up">%1$s hämtar dig</string>
     <string name="kid_chores">Mina sysslor</string>
-    <string name="kid_no_chores">Inga sysslor just nu!</string>
+    <string name="kid_no_chores">Inga sysslor just nu</string>
     <string name="kid_done">Klar!</string>
     <string name="kid_undo">Ångra</string>
     <string name="kid_well_done">Bra jobbat! ⭐</string>

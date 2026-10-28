@@ -1559,12 +1559,12 @@
     <string name="task_stars_less">Fewer stars</string>
     <string name="task_stars_more">More stars</string>
     <string name="stars_count">%1$d ⭐</string>
-    <string name="kid_hello">Hi %1$s!</string>
+    <string name="kid_hello">Hi %1$s</string>
     <string name="kid_today">Today</string>
     <string name="kid_nothing_today">Nothing special today.</string>
     <string name="kid_picks_up">%1$s picks you up</string>
     <string name="kid_chores">My chores</string>
-    <string name="kid_no_chores">No chores right now!</string>
+    <string name="kid_no_chores">No chores right now</string>
     <string name="kid_done">Done!</string>
     <string name="kid_undo">Undo</string>
     <string name="kid_well_done">Well done! ⭐</string>

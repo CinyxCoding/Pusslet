@@ -11,6 +11,7 @@ import se.pusslet.core.units.Dimension
 import se.pusslet.core.units.MeasureUnit
 import se.pusslet.core.units.Quantity
 import se.pusslet.core.units.Units
+import se.pusslet.core.util.SwedishOrder
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.time.Instant
@@ -291,6 +292,6 @@ object ShoppingListGenerator {
             .groupBy { it.aisle }
             .toList()
             .sortedBy { (aisle, _) -> rank[aisle] ?: Int.MAX_VALUE }
-            .map { (aisle, list) -> AisleGroup(aisle, list.sortedBy { it.name.lowercase() }) }
+            .map { (aisle, list) -> AisleGroup(aisle, list.sortedBy { SwedishOrder.key(it.name) }) }
     }
 }

@@ -8,6 +8,7 @@ import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.PantryItem
 import se.pusslet.core.model.PantryLocation
 import se.pusslet.core.quickadd.ParsedItem
+import se.pusslet.core.util.SwedishOrder
 import kotlin.time.Clock
 
 /** How close an item at home is to its best-before date. */
@@ -50,7 +51,7 @@ object PantryRules {
         if (here.isEmpty()) {
             null
         } else {
-            PantryGroup(location, here.sortedWith(compareBy<PantryItem> { !it.inStock }.thenBy { it.name.lowercase() }))
+            PantryGroup(location, here.sortedWith(compareBy<PantryItem> { !it.inStock }.thenBy { SwedishOrder.key(it.name) }))
         }
     }
 

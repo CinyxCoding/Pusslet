@@ -20,6 +20,7 @@ import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.Role
 import se.pusslet.core.util.IdGenerator
+import se.pusslet.core.util.SwedishOrder
 import se.pusslet.data.premium.Entitlements
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
@@ -129,7 +130,7 @@ class SubscriptionsViewModel(
             val rows = if (!parent) {
                 emptyList()
             } else {
-                subs.sortedBy { it.name.lowercase() }.map { sub ->
+                subs.sortedBy { SwedishOrder.key(it.name) }.map { sub ->
                     val status = statuses[sub.id]
                     SubscriptionRow(
                         subscription = sub,

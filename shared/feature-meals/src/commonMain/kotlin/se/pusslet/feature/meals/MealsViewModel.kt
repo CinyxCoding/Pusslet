@@ -49,6 +49,7 @@ import se.pusslet.core.nutrition.WeekNutritionCalculator
 import se.pusslet.core.time.IsoWeek
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.util.IdGenerator
+import se.pusslet.core.util.SwedishOrder
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -298,7 +299,7 @@ class MealsViewModel(
             days = days,
             slots = MealSlot.entries.filter { it in h.settings.mealSlots }.ifEmpty { listOf(MealSlot.Dinner) },
             recipes = p.recipes,
-            favorites = p.favorites.sortedBy { it.name.lowercase() },
+            favorites = p.favorites.sortedBy { SwedishOrder.key(it.name) },
             children = h.children,
             previousWeekPlanned = p.weeks.any { it.week == p.week.previous() && it.entries.isNotEmpty() },
             canEdit = h.session.role == Role.Parent,

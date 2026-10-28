@@ -17,6 +17,7 @@ import se.pusslet.core.model.ShoppingList
 import se.pusslet.core.model.ShoppingPresence
 import se.pusslet.core.shopping.AisleGroup
 import se.pusslet.core.shopping.ShoppingListGenerator
+import se.pusslet.core.util.SwedishOrder
 import se.pusslet.data.repository.PrefKey
 
 /** Device-local preferences that only Handla reads (stored like `Prefs`, never synced). */
@@ -119,7 +120,7 @@ internal fun withLingering(groups: List<AisleGroup>, lingering: Collection<Shopp
         .groupBy { it.aisle }
         .toList()
         .sortedBy { (aisle, _) -> rank[aisle] ?: Int.MAX_VALUE }
-        .map { (aisle, items) -> AisleGroup(aisle, items.sortedBy { it.name.lowercase() }) }
+        .map { (aisle, items) -> AisleGroup(aisle, items.sortedBy { SwedishOrder.key(it.name) }) }
 }
 
 private const val HANDLED_MEALS_KEEP_DAYS = 7

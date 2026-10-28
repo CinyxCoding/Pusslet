@@ -2,6 +2,7 @@ package se.pusslet.core.meals
 
 import se.pusslet.core.model.Recipe
 import se.pusslet.core.model.RecipeCollection
+import se.pusslet.core.util.SwedishOrder
 
 /**
  * Rules for the family's recipe collections ("Vardagsfavoriter", "Kalas", "Matlådor"): tidy names that are unique
@@ -28,7 +29,7 @@ object RecipeCollectionRules {
 
     /** By name, the way the chips show them. */
     fun sorted(collections: List<RecipeCollection>): List<RecipeCollection> =
-        collections.sortedWith(compareBy<RecipeCollection> { it.name.lowercase() }.thenBy { it.id })
+        collections.sortedWith(compareBy<RecipeCollection> { SwedishOrder.key(it.name) }.thenBy { it.id })
 
     /** The recipes of [collection] that still exist, in the order of [recipes]. */
     fun recipesIn(collection: RecipeCollection, recipes: List<Recipe>): List<Recipe> = recipes.filter { it.id in collection }

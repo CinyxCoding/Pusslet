@@ -51,6 +51,7 @@ import se.pusslet.core.time.IsoWeek
 import se.pusslet.core.time.isoWeek
 import se.pusslet.core.time.plusDays
 import se.pusslet.core.util.IdGenerator
+import se.pusslet.core.util.SwedishOrder
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.MealRepository
 import se.pusslet.data.repository.PreferencesRepository
@@ -341,7 +342,7 @@ class ShoppingViewModel(
             lists = b.lists,
             list = list,
             store = store,
-            stores = b.stores.sortedBy { it.name.lowercase() },
+            stores = b.stores.sortedBy { SwedishOrder.key(it.name) },
             groups = ShoppingListGenerator.groupForStore(open, store?.aisleOrder ?: Aisle.defaultOrder),
             checked = inList.filter { it.checked }.sortedByDescending { it.checkedAt },
             suggestions = suggestions,
@@ -612,7 +613,7 @@ class ShoppingViewModel(
             preview.value = MealPlanPreview(
                 days = days,
                 plan = result.plan,
-                removed = removed.sortedBy { it.name.lowercase() },
+                removed = removed.sortedBy { SwedishOrder.key(it.name) },
                 choices = choices,
                 trimmed = result.plan.update.filter { ShoppingNames.canonical(it.name) !in keys },
                 coveredAtHome = result.coveredAtHome,

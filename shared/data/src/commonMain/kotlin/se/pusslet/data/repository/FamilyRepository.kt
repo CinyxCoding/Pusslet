@@ -14,6 +14,7 @@ import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.Role
 import se.pusslet.core.util.IdGenerator
 import se.pusslet.core.util.InviteCodes
+import se.pusslet.core.util.SwedishOrder
 import se.pusslet.data.remote.AuthRepository
 import se.pusslet.data.remote.BackendUnavailableException
 import se.pusslet.data.remote.FamilyRemote
@@ -35,7 +36,7 @@ class FamilyRepository(
     val family: Flow<Family?> = docs.observeAll(Collections.Family, Family.serializer()).map { it.firstOrNull() }
 
     val members: Flow<List<Member>> = docs.observeAll(Collections.Members, Member.serializer()).map { list ->
-        list.sortedBy { it.displayName }
+        list.sortedBy { SwedishOrder.key(it.displayName) }
     }
 
     val children: Flow<List<Child>> = docs.observeAll(Collections.Children, Child.serializer())

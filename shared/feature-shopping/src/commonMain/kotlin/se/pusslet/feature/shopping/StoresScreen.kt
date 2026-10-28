@@ -53,6 +53,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.Aisle
 import se.pusslet.core.model.Store
 import se.pusslet.core.util.IdGenerator
+import se.pusslet.core.util.SwedishOrder
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.ShoppingRepository
 import se.pusslet.data.session.SessionProvider
@@ -85,7 +86,7 @@ class StoresViewModel(
     val state: StateFlow<StoresUiState> = combine(shopping.stores, family.settings, sessions.session) { stores, settings, session ->
         StoresUiState(
             loading = false,
-            stores = stores.sortedBy { it.name.lowercase() },
+            stores = stores.sortedBy { SwedishOrder.key(it.name) },
             defaultStoreId = settings.defaultStoreId,
             canManage = session.role == FamilyRole.Parent,
         )

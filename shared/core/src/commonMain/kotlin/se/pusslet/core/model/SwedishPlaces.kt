@@ -1,5 +1,7 @@
 package se.pusslet.core.model
 
+import se.pusslet.core.util.SwedishOrder
+
 /**
  * Swedish towns with approximate coordinates (≈ 1 km is plenty for a weather forecast). Offline, no geocoding service.
  * Families in other places can use the phone's coarse location instead.
@@ -93,7 +95,7 @@ object SwedishPlaces {
         Place("Boden", 65.83, 21.69),
         Place("Lycksele", 64.60, 18.67),
         Place("Sälen", 61.16, 13.27),
-    ).sortedBy { it.name }
+    ).sortedBy { SwedishOrder.key(it.name) }
 
     /** Matches for a picker that shows a list without searching: names that start with [query] first. Blank shows [all]. */
     fun search(query: String): List<Place> {

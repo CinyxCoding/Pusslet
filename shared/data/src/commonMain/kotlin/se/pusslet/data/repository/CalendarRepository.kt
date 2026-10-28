@@ -18,6 +18,8 @@ import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
+import se.pusslet.core.model.MedicineCourse
+import se.pusslet.core.model.MedicineEntry
 import se.pusslet.core.model.SickDay
 import se.pusslet.core.recurrence.EventExpander
 import se.pusslet.data.db.CacheDao
@@ -100,6 +102,10 @@ class CalendarRepository(
 
     /** Children home sick (ADR-047); [se.pusslet.core.sick.SickDays] applies them to the day's occurrences. */
     val sickDays: Flow<List<SickDay>> = docs.observeAll(Collections.SickDays, SickDay.serializer())
+
+    /** The medicine log and courses (ADR-050), for Idag and the reminders; [MedicineRepository] writes them. */
+    val medicineLog: Flow<List<MedicineEntry>> = docs.observeAll(Collections.MedicineLog, MedicineEntry.serializer())
+    val medicineCourses: Flow<List<MedicineCourse>> = docs.observeAll(Collections.MedicineCourses, MedicineCourse.serializer())
 
     /** "Hämtad ✓" (ADR-048). */
     val handoffReceipts: Flow<List<HandoffReceipt>> = docs.observeAll(Collections.HandoffReceipts, HandoffReceipt.serializer())

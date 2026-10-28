@@ -530,3 +530,17 @@ FileProvider, en läsrätt i taget. Lämnar man ”Spara bilden” utan att väl
 **Konsekvens:** Bilden finns bara på telefonen som tog emot den; de andra i familjen ser den inte. Det är medvetet tills
 familjen vill ha delade bilder och vi har en lagring för det (Firebase Storage med regler per familj).
 
+## ADR-050 – Medicin och feber
+**Kontext:** När ett barn är sjukt undrar föräldrarna ”när fick hon Alvedon senast?” och ”vem gav kvällsdosen?”, och en
+penicillinkur på tio dagar med tre doser om dagen glöms lätt. Det står i PROGRESS som ett behov efter fas 4.
+**Beslut:** ”Medicin och feber” (från Mer och från sjukkortet på Idag) har per barn en logg med ”Gav medicin” (medicin och
+dos som fritext, tidigare mediciner som ett tryck) och ”Tempade” (34–43 °C, komma eller punkt; från 38,0 står ”feber”),
+och kurer: medicin, dos, 1–4 tider om dagen (förslag som går att ändra), startdag och antal dagar. Varje dos i en kur är
+en påminnelse till föräldrarna på sin tid, även under tysta timmar (som en tid man själv valt), tills någon har bockat av
+den; Idag visar ”Medicin idag” med ”Given” och vem som gav. Loggen (`medicineLog`) och kurerna (`medicineCourses`) är
+föräldrarnas egna: hjälpare läser dem inte (firestore.rules, `parentsOnly`) och Mer visar inte vyn för dem. Rader tas bort
+efter 90 dagar på föräldrarnas telefoner och sedan av rensningen (ADR-046).
+**Konsekvens:** Appen ger inga medicinska råd och föreslår inga doser eller intervall; den visar vad som är givet och när,
+och vyn säger det. Hälsouppgifter: bara det föräldern skriver sparas (PRIVACY.md). Morfar som är hemma med ett sjukt barn
+ser inte loggen; vill familjer det kan en delning med hjälpare läggas till senare.
+

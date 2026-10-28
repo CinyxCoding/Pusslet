@@ -83,6 +83,7 @@ import se.pusslet.feature.tasks.editor.TaskEditorRoute
 import se.pusslet.feature.today.TodayLayoutRoute
 import se.pusslet.feature.today.TodayRoute
 import se.pusslet.feature.today.helper.HelperPreviewRoute
+import se.pusslet.feature.today.medicine.MedicineRoute
 import se.pusslet.shell.navigation.AppNavigator
 import se.pusslet.shell.navigation.Route
 import se.pusslet.shell.navigation.TopLevelTab
@@ -288,6 +289,7 @@ private fun AppNavDisplay(
                     onCustomize = { navigator.navigate(Route.TodayLayout) },
                     onOpenChild = { navigator.navigate(Route.ChildEditor(it)) },
                     onInvite = { navigator.navigate(Route.Invite(claimMemberId = it)) },
+                    onOpenMedicine = { navigator.navigate(Route.Medicine(it)) },
                     contentPadding = padding,
                 )
             }
@@ -374,6 +376,7 @@ private fun AppNavDisplay(
                     r.taskId?.let { AttachmentsRoute(AttachmentOwner.Task, it) }
                 })
             }
+            entry<Route.Medicine> { r -> MedicineRoute(r.childId, onBack = navigator::goBack) }
             entry<Route.AttachImage> { r ->
                 AttachImageRoute(r.fileName, onBack = navigator::goBack, onDone = { outcome ->
                     navigator.goBack()
@@ -458,6 +461,7 @@ private fun MoreDestination.route(): Route = when (this) {
     MoreDestination.Account -> Route.Account
     MoreDestination.AboutData -> Route.AboutData
     MoreDestination.Privacy -> Route.Privacy
+    MoreDestination.Medicine -> Route.Medicine()
 }
 
 private data class TabSpec(val tab: TopLevelTab, val label: StringResource, val icon: ImageVector)

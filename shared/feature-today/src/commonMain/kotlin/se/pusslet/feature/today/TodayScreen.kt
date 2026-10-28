@@ -34,6 +34,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.conflicts.Conflict
+import se.pusslet.core.medicine.MedicineRules
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.HandoffReceipt
@@ -47,6 +48,7 @@ import se.pusslet.core.today.Pickup
 import se.pusslet.core.today.TodayBlock
 import se.pusslet.core.today.TodayPlan
 import se.pusslet.core.today.UnconfirmedPickup
+import se.pusslet.feature.today.medicine.MedicineTodayCard
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.FirstTimeHint
@@ -125,6 +127,8 @@ fun TodayRoute(
     onOpenChild: (childId: String) -> Unit = {},
     /** "Bjud in Johan" on "Kom igång": an invite that claims that member. */
     onInvite: (memberId: String) -> Unit = {},
+    /** "Medicin och feber" (ADR-050), for a child. */
+    onOpenMedicine: (childId: String) -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -166,7 +170,9 @@ fun TodayRoute(
                 onWellAgain = viewModel::wellAgain,
                 onVabReported = viewModel::vabReported,
                 onOpenForsakringskassan = { platform.openUrl(FORSAKRINGSKASSAN_URL) },
+                onOpenMedicine = onOpenMedicine,
             ),
+            onGiveDose = viewModel::giveDose,
             onPickedUp = viewModel::pickedUp,
             onConfirmPickup = viewModel::confirmPickup,
             onUndoPickup = viewModel::undoPickup,
@@ -214,6 +220,8 @@ data class TodayActions(
     val onConfirmPickup: (Pickup) -> Unit = {},
     /** "Ångra" on my own "Du hämtade Ella 15:52". */
     val onUndoPickup: (HandoffReceipt) -> Unit = {},
+    /** "Given" on a planned dose in "Medicin idag" (ADR-050). */
+    val onGiveDose: (MedicineRules.Slot) -> Unit = {},
 )
 
 @Composable
@@ -262,6 +270,13 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         items(state.sick.cards, key = { "sick-${it.day.id}" }) { SickCardView(it, state.sick, actions.sick) }
         items(state.sick.stillSick, key = { "still-sick-${it.day.id}" }) { StillSickView(it, actions.sick) }
         items(state.sick.vabToReport, key = { "vab-${it.report.childId}-${it.report.first}" }) { VabReportView(it, actions.sick) }
+        if (state.medicine.isNotEmpty()) {
+            item(key = "medicine") {
+                MedicineTodayCard(state.medicine, actions.onGiveDose, onOpen = {
+                    actions.sick.onOpenMedicine(state.medicine.first().child.id)
+                })
+            }
+        }
         // "Hämtad ✓" (ADR-048): somebody else's pick-up nobody ticked off, then today's done ones.
         items(state.unconfirmedPickups, key = { "unconfirmed-${it.pickup.key}" }) { UnconfirmedPickupBanner(it, actions) }
         items(state.pickedUp, key = { "picked-${it.receipt.id}" }) { PickedUpLine(it, actions) }

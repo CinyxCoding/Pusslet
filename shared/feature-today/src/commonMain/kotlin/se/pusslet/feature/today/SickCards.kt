@@ -58,6 +58,8 @@ data class SickActions(
     val onWellAgain: (SickDay) -> Unit = {},
     val onVabReported: (SickDays.VabToReport) -> Unit = {},
     val onOpenForsakringskassan: () -> Unit = {},
+    /** "Medicin och feber" for the sick child (ADR-050). */
+    val onOpenMedicine: (childId: String) -> Unit = {},
 )
 
 /** "Vem är sjuk?": the children to report, today or tomorrow, and what that does. */
@@ -171,6 +173,7 @@ fun SickCardView(card: SickCard, sick: SickToday, actions: SickActions) {
             CheckRow(stringResource(Res.string.sick_vab_reported), day.vabReported, { actions.onVabReportedDay(day, it) })
         }
         VabThisYear(sick.vabThisYear)
+        TextButton(onClick = { actions.onOpenMedicine(card.child.id) }) { Text(stringResource(Res.string.medicine_title)) }
     }
 }
 

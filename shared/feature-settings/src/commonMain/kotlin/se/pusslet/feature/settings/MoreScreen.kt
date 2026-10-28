@@ -28,7 +28,15 @@ import se.pusslet.ui.components.SectionHeader
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
-enum class MoreDestination { Family, Tasks, Settings, Account, AboutData, Privacy }
+enum class MoreDestination(val parentsOnly: Boolean = false) {
+    Family,
+    Tasks,
+    Medicine(parentsOnly = true),
+    Settings,
+    Account,
+    AboutData,
+    Privacy,
+}
 
 private data class MoreItem(val dest: MoreDestination, val title: StringResource, val icon: ImageVector)
 
@@ -45,6 +53,7 @@ fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues 
         Res.string.more_group_family to listOf(
             MoreItem(MoreDestination.Family, Res.string.more_family, PussletIcons.Family),
             MoreItem(MoreDestination.Tasks, Res.string.more_tasks, PussletIcons.Task),
+            MoreItem(MoreDestination.Medicine, Res.string.medicine_title, PussletIcons.Medication),
             MoreItem(MoreDestination.Account, Res.string.more_account, Icons.Filled.AccountCircle),
         ),
         Res.string.more_group_app to listOf(
@@ -90,7 +99,8 @@ fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues 
                     Modifier.padding(start = Spacing.screenHorizontal, end = Spacing.screenHorizontal, top = Spacing.lg),
                 )
             }
-            items(rows, key = { it.dest.name }) { row -> MoreRow(row, onOpen) }
+            // A caregiver who chose the full app does not see the parents' own pages (the medicine log, ADR-050).
+            items(rows.filter { !it.dest.parentsOnly || onSimpleView == null }, key = { it.dest.name }) { row -> MoreRow(row, onOpen) }
         }
     }
 }

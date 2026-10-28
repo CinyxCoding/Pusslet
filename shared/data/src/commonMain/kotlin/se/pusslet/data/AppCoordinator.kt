@@ -13,8 +13,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+import se.pusslet.core.medicine.MedicineRules
 import se.pusslet.core.model.Family
+import se.pusslet.core.model.MedicineCourse
+import se.pusslet.core.model.MedicineEntry
 import se.pusslet.core.model.Member
 import se.pusslet.core.model.Role
 import se.pusslet.core.model.SickDay
@@ -31,6 +35,7 @@ import se.pusslet.data.sync.RemotePermissionException
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
 
 enum class BackendMode {
     /** Firebase Local Emulator Suite (demo flavor). */
@@ -120,7 +125,8 @@ class AppCoordinator(
 
     /**
      * What was deleted more than 30 days ago leaves this phone too (ADR-046), and a parent's phone removes sick days from
-     * before last year, which no longer count for VAB (ADR-047); the purge then clears them. Counts only in the log.
+     * before last year, which no longer count for VAB (ADR-047), and the medicine log after [MedicineRules.KEEP_DAYS] days
+     * (ADR-050); the purge then clears them. Counts only in the log.
      */
     private suspend fun purgeDeleted() {
         try {
@@ -128,6 +134,16 @@ class AppCoordinator(
                 val expired = SickDays.expired(docs.getAll(Collections.SickDays, SickDay.serializer()), clock.todayIn(zone))
                 expired.forEach { docs.delete(Collections.SickDays, it.id) }
                 if (expired.isNotEmpty()) log.i { "Removed ${expired.size} old sick days" }
+                // The medicine log is for the illness at hand (ADR-050).
+                val keepFrom = clock.now() - MedicineRules.KEEP_DAYS.days
+                val oldDoses = MedicineRules.expired(docs.getAll(Collections.MedicineLog, MedicineEntry.serializer()), keepFrom)
+                oldDoses.forEach { docs.delete(Collections.MedicineLog, it.id) }
+                val oldCourses = MedicineRules.expiredCourses(
+                    docs.getAll(Collections.MedicineCourses, MedicineCourse.serializer()),
+                    keepFrom.toLocalDateTime(zone).date,
+                )
+                oldCourses.forEach { docs.delete(Collections.MedicineCourses, it.id) }
+                if (oldDoses.size + oldCourses.size > 0) log.i { "Removed ${oldDoses.size + oldCourses.size} old medicine entries" }
             }
             val gone = docs.purgeDeleted()
             if (gone > 0) log.i { "Purged $gone deleted documents" }

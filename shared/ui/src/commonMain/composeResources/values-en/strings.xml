@@ -1383,6 +1383,7 @@
     <string name="notify_sick_cancelled">Drop-offs, pick-ups and activities are cancelled</string>
     <string name="notify_absence_title">Report absence for %1$s</string>
     <string name="notify_absence_body">To %1$s</string>
+    <string name="notify_medicine_title">Time for %1$s for %2$s</string>
     <string name="notify_vab_title">Report VAB for %1$s</string>
     <string name="notify_vab_body">To Försäkringskassan, within 90 days</string>
     <!-- Hämtad ✓ (ADR-048) -->
@@ -1414,4 +1415,38 @@
     <string name="attach_event_when">%1$s · %2$s</string>
     <string name="attach_no_events">No events in the coming weeks.</string>
     <string name="attach_failed">The picture couldn't be read.</string>
+
+    <!-- Medicine and fever (ADR-050) -->
+    <string name="medicine_title">Medicine and fever</string>
+    <string name="medicine_today">Medicine today</string>
+    <string name="medicine_dose_row">%1$s %2$s for %3$s</string>
+    <string name="medicine_given">Given</string>
+    <string name="medicine_given_by">Given by %1$s</string>
+    <string name="medicine_log">Log</string>
+    <string name="medicine_give">Gave medicine</string>
+    <string name="medicine_temp">Took temperature</string>
+    <string name="medicine_field_name">Medicine</string>
+    <string name="medicine_field_dose">Dose (e.g. 5 ml)</string>
+    <string name="medicine_field_temp">Temperature (°C)</string>
+    <string name="medicine_temp_invalid">Enter a temperature between 34 and 43 °C</string>
+    <string name="medicine_courses">Courses</string>
+    <string name="medicine_new_course">New course</string>
+    <string name="medicine_course_per_day">Times a day</string>
+    <string name="medicine_course_time">Dose %1$d</string>
+    <string name="medicine_course_start">Starts</string>
+    <string name="medicine_course_days">Number of days</string>
+    <string name="medicine_course_starts">Starts %1$s</string>
+    <string name="medicine_course_progress">%1$d of %2$d doses</string>
+    <string name="medicine_course_until">until %1$s</string>
+    <string name="medicine_course_stop">Stop</string>
+    <string name="medicine_course_stop_confirm">Stop the course? There will be no more reminders, and what was given stays in the log.</string>
+    <string name="medicine_course_reminders">The parents get a reminder at each dose until someone has ticked it off.</string>
+    <string name="medicine_log_empty">Nothing logged in the last two weeks.</string>
+    <string name="medicine_entry_temp">%1$s °C</string>
+    <string name="medicine_fever">fever</string>
+    <string name="medicine_last_temp">Last temperature: %1$s °C · %2$s</string>
+    <string name="medicine_delete_confirm">Remove the line from the log?</string>
+    <string name="medicine_privacy">Only the family's parents see the log, and it's removed after 90 days. The app gives no medical advice: follow the package, the pharmacy or your care provider.</string>
+    <string name="medicine_no_children">Add the children to the family first.</string>
+    <string name="medicine_parents_only">Only the parents see the medicine log.</string>
 </resources>

@@ -7,6 +7,7 @@ import se.pusslet.data.BackendMode
 import se.pusslet.data.remote.AuthRepository
 import se.pusslet.data.remote.LocalOnlyAuthRepository
 import se.pusslet.data.remote.LocalOnlyFamilyRemote
+import se.pusslet.data.repository.MedicineRepository
 import se.pusslet.data.repository.SickDayRepository
 import se.pusslet.data.seed.DemoSeed
 import se.pusslet.data.session.Session
@@ -74,5 +75,6 @@ class TestPhone(val world: TestWorld, scope: CoroutineScope, config: BackendConf
         world.zone,
         SickDayRepository(world.docs, world.sessions),
         PickupReceipts(world.calendar, world.sessions, world.clock),
+        MedicineRepository(world.docs, world.sessions, world.ids, world.clock),
     )
 }

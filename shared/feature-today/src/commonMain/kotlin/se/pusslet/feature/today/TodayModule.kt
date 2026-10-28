@@ -6,6 +6,7 @@ import org.koin.dsl.module
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.feature.today.helper.HelperPreviewViewModel
 import se.pusslet.feature.today.helper.HelperViewModel
+import se.pusslet.feature.today.medicine.MedicineViewModel
 
 val todayModule: Module = module {
     viewModel { TodayLayoutViewModel(get(), get(), get()) }
@@ -31,8 +32,10 @@ val todayModule: Module = module {
             get(),
             get(),
             get(),
+            get(),
         )
     }
+    viewModel { MedicineViewModel(get(), get(), get(), get(), get()) }
     viewModel {
         HelperViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get<SyncEngine>().status, get(), get(), get())
     }

@@ -33,6 +33,7 @@ Personuppgiftsansvarig är [namn på ägaren eller företaget], [ort]. Frågor o
 | Lämna/hämta-förfrågningar och svar, "Jag handlar nu" (vilken lista och till när) | Ni | Att familjen ska kunna hjälpa varandra | Avtal |
 | Kvitto på hämtning: vem som bockade av att ett barn är hämtat, och när | Den som hämtar | Att de andra ska veta att barnet är hämtat, och varna om ingen har bockat av | Avtal |
 | Sjukdagar: vilket barn som är sjukt vilken dag, vem som stannar hemma, VAB och om frånvaro och VAB är anmälda (aldrig symtom eller diagnos) | Förälder | Ställa in dagen, säga till de andra och räkna VAB | **Uttryckligt samtycke** (art. 9.2 a), givet när du sjukanmäler; arket säger vad som sparas. [Kontrollera före publicering.] |
+| Medicin och feber: vilken medicin och dos som gavs till ett barn och när, temperaturer, och kurer (medicin, dos, tider, antal dagar). Bara det föräldern skriver, aldrig symtom eller diagnos | Förälder | En delad logg så att föräldrarna vet vad som är givet, och påminnelser om kurens doser | **Uttryckligt samtycke** (art. 9.2 a), givet när du loggar; vyn säger vad som sparas. Bara föräldrar ser loggen. [Kontrollera före publicering.] |
 | Väderort: ett ortsnamn och en position avrundad till ungefär 1 km | Du väljer ort, eller telefonens ungefärliga position om du tillåter det | Väder och klädråd på Idag | Avtal |
 | Notis-token och telefonens språk | Telefonen | Skicka förfrågningar, svar och inköp till rätt telefon | Avtal |
 | Inställningar på telefonen (tema, notiser, tysta timmar, vilka kalendrar som visas) | Du | Appens funktion | Avtal; stannar på telefonen |
@@ -68,6 +69,7 @@ Vi säljer inte uppgifter och lämnar inte ut dem till någon annan, utom om lag
   som varit avstängd länge också får veta det. Markeringen raderas efter ett år.
 - Kalenderlänkar och inbjudningar gäller tills de stoppas eller går ut (inbjudningar efter 7 dagar).
 - Sjukdagar sparas för att räkna VAB i år och förra året och tas sedan bort.
+- Medicinloggen och kurerna tas bort 90 dagar efter dosen eller kurens sista dag.
 - Notis-token tas bort när Google säger att den inte längre gäller, och när kontot raderas.
 - Säkerhetskopior hos Google rensas enligt Googles rutiner.
 

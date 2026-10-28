@@ -17,6 +17,8 @@ import se.pusslet.core.model.FamilyTask
 import se.pusslet.core.model.HandoffReceipt
 import se.pusslet.core.model.HandoffRequest
 import se.pusslet.core.model.MealPlanWeek
+import se.pusslet.core.model.MedicineCourse
+import se.pusslet.core.model.MedicineEntry
 import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingRule
 import se.pusslet.core.model.SchoolLunch
@@ -77,6 +79,8 @@ class TodayInputSource(
         val tasks: List<FamilyTask>,
         val sickDays: List<SickDay> = emptyList(),
         val receipts: List<HandoffReceipt> = emptyList(),
+        val medicineCourses: List<MedicineCourse> = emptyList(),
+        val medicineLog: List<MedicineEntry> = emptyList(),
     )
 
     val household: Flow<Household> = combine(
@@ -95,7 +99,9 @@ class TodayInputSource(
         combine(packing.rules, packing.checks, meals.weeks, lunches.lunches, tasks.tasks) { r, c, w, l, t -> Extras(r, c, w, l, t) },
         sickDays,
         calendar.handoffReceipts,
-    ) { ex, s, r -> ex.copy(sickDays = s, receipts = r) }
+        calendar.medicineCourses,
+        calendar.medicineLog,
+    ) { ex, s, r, courses, log -> ex.copy(sickDays = s, receipts = r, medicineCourses = courses, medicineLog = log) }
 
     val requests: Flow<List<HandoffRequest>> get() = calendar.handoffRequests
 
@@ -155,6 +161,8 @@ class TodayInputSource(
             requests = requests,
             sickDays = extras.sickDays,
             receipts = extras.receipts,
+            medicineCourses = extras.medicineCourses,
+            medicineLog = extras.medicineLog,
         )
     }
 

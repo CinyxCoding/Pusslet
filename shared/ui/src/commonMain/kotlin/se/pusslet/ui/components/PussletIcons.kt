@@ -163,6 +163,34 @@ object PussletIcons {
         icon("ChevronRight", "M10,6L8.59,7.41 13.17,12l-4.58,4.59L10,18l6,-6z")
     }
 
+    /** Medicin och feber (ADR-050). */
+    val Medication: ImageVector by lazy {
+        icon(
+            "Medication",
+            "M6,3h12v2H6V3zM17,6H7C5.9,6 5,6.9 5,8v11c0,1.1 0.9,2 2,2h10c1.1,0 2,-0.9 2,-2V8C19,6.9 18.1,6 17,6z" +
+                "M15.5,15.5h-2v2h-3v-2h-2v-3h2v-2h3v2h2V15.5z",
+        )
+    }
+
+    /** Delade kostnader. */
+    val Payments: ImageVector by lazy {
+        icon(
+            "Payments",
+            "M19,14V6c0,-1.1 -0.9,-2 -2,-2H3c-1.1,0 -2,0.9 -2,2v8c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2z" +
+                "M10,13c-1.66,0 -3,-1.34 -3,-3s1.34,-3 3,-3 3,1.34 3,3 -1.34,3 -3,3zM23,7v11c0,1.1 -0.9,2 -2,2H4v-2h17V7h2z",
+        )
+    }
+
+    /** Lov och vistelsetider. */
+    val Beach: ImageVector by lazy {
+        icon(
+            "Beach",
+            "M13.13,14.56l1.43,-1.43 6.44,6.44L19.57,21zM17.42,8.83l2.86,-2.86c-3.95,-3.95 -10.35,-3.96 -14.3,-0.02 " +
+                "3.93,-1.3 8.31,-0.25 11.44,2.88zM5.95,5.98c-3.94,3.95 -3.93,10.35 0.02,14.3l2.86,-2.86C5.7,14.29 4.65,9.91 5.95,5.98z" +
+                "M5.97,5.96l-0.01,0.01c-0.38,3.01 1.17,6.88 4.3,10.02l5.73,-5.73c-3.13,-3.13 -7.01,-4.68 -10.02,-4.3z",
+        )
+    }
+
     private fun icon(name: String, path: String): ImageVector = ImageVector.Builder(
         name = name,
         defaultWidth = 24.dp,

@@ -172,7 +172,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   regler, med skärmdumpstest och tillgänglighetskontroll av arket och kortet
   - [x] Sjukanmälan via snabbinmatningen (”Ella sjuk”, ”Ella och Simon sjuka imorgon”), med Ångra och bara för föräldrar
 - [x] Dela en bild till appen (ADR-049): sparas på telefonen med en händelse eller som anteckning, aldrig i molnet
-- [ ] Medicin och feber: delad logg och påminnelser för kurer
+- [x] Medicin och feber (ADR-050): delad logg för föräldrarna, temperaturer, kurer med påminnelser och ”Medicin idag”
 - [x] Kvitto på hämtning (ADR-048): ”Hämtad” på min hämtning på Idag, i hjälparvyn och i notisen, push till de andra
   (”Ella är hämtad · Bengt · 15:52”), varning en kvart efter tiden till den som skulle hämta och föräldrarna, som notis och
   på Idag där en förälder kan bocka av åt någon annan, och en inställning för att stänga av varningen

@@ -28,6 +28,8 @@ import se.pusslet.core.model.Household
 import se.pusslet.core.model.MealEntry
 import se.pusslet.core.model.MealPlanWeek
 import se.pusslet.core.model.MealSlot
+import se.pusslet.core.model.MedicineCourse
+import se.pusslet.core.model.MedicineEntry
 import se.pusslet.core.model.PackingChecks
 import se.pusslet.core.model.PackingItem
 import se.pusslet.core.model.PackingRule
@@ -82,6 +84,9 @@ data class TodayInput(
     val sickDays: List<SickDay> = emptyList(),
     /** "Hämtad ✓" (ADR-048): a done pick-up leaves Morgonkollen and is never warned about. */
     val receipts: List<HandoffReceipt> = emptyList(),
+    /** Medicine courses and the log (ADR-050): parents are reminded of each planned dose not yet given. */
+    val medicineCourses: List<MedicineCourse> = emptyList(),
+    val medicineLog: List<MedicineEntry> = emptyList(),
 ) {
     /** The children who go about their day on [date] (the sick ones stay home). */
     fun childrenOutOn(date: LocalDate): List<Child> {

@@ -1384,6 +1384,7 @@
     <string name="notify_sick_cancelled">Lämning, hämtning och aktiviteter är inställda</string>
     <string name="notify_absence_title">Anmäl frånvaro för %1$s</string>
     <string name="notify_absence_body">Till %1$s</string>
+    <string name="notify_medicine_title">Dags för %1$s till %2$s</string>
     <string name="notify_vab_title">Anmäl VAB för %1$s</string>
     <string name="notify_vab_body">Till Försäkringskassan, inom 90 dagar</string>
     <!-- Hämtad ✓ (ADR-048) -->
@@ -1415,4 +1416,38 @@
     <string name="attach_event_when">%1$s · %2$s</string>
     <string name="attach_no_events">Inga händelser de närmaste veckorna.</string>
     <string name="attach_failed">Bilden kunde inte läsas.</string>
+
+    <!-- Medicin och feber (ADR-050) -->
+    <string name="medicine_title">Medicin och feber</string>
+    <string name="medicine_today">Medicin idag</string>
+    <string name="medicine_dose_row">%1$s %2$s till %3$s</string>
+    <string name="medicine_given">Given</string>
+    <string name="medicine_given_by">Given av %1$s</string>
+    <string name="medicine_log">Logg</string>
+    <string name="medicine_give">Gav medicin</string>
+    <string name="medicine_temp">Tempade</string>
+    <string name="medicine_field_name">Medicin</string>
+    <string name="medicine_field_dose">Dos (t.ex. 5 ml)</string>
+    <string name="medicine_field_temp">Temperatur (°C)</string>
+    <string name="medicine_temp_invalid">Skriv en temperatur mellan 34 och 43 °C</string>
+    <string name="medicine_courses">Kurer</string>
+    <string name="medicine_new_course">Ny kur</string>
+    <string name="medicine_course_per_day">Gånger om dagen</string>
+    <string name="medicine_course_time">Dos %1$d</string>
+    <string name="medicine_course_start">Börjar</string>
+    <string name="medicine_course_days">Antal dagar</string>
+    <string name="medicine_course_starts">Börjar %1$s</string>
+    <string name="medicine_course_progress">%1$d av %2$d doser</string>
+    <string name="medicine_course_until">till och med %1$s</string>
+    <string name="medicine_course_stop">Avsluta</string>
+    <string name="medicine_course_stop_confirm">Avsluta kuren? Det kommer inga fler påminnelser, och det som är givet står kvar i loggen.</string>
+    <string name="medicine_course_reminders">Föräldrarna får en påminnelse vid varje dos tills någon har bockat av den.</string>
+    <string name="medicine_log_empty">Inget loggat de senaste två veckorna.</string>
+    <string name="medicine_entry_temp">%1$s °C</string>
+    <string name="medicine_fever">feber</string>
+    <string name="medicine_last_temp">Senast tempad: %1$s °C · %2$s</string>
+    <string name="medicine_delete_confirm">Ta bort raden ur loggen?</string>
+    <string name="medicine_privacy">Loggen ses bara av föräldrarna i familjen och tas bort efter 90 dagar. Appen ger inga medicinska råd: följ förpackningen, apoteket eller vården.</string>
+    <string name="medicine_no_children">Lägg till barnen i familjen först.</string>
+    <string name="medicine_parents_only">Medicinloggen ses bara av föräldrarna.</string>
 </resources>

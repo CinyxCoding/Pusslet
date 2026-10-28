@@ -47,7 +47,8 @@ kraschloggar och diagnostik, reklam-id.
 - **Andra uppgifter:** barnens valfria födelsedatum, skola, klass, klädstorlekar, kontaktpersoner (namn, telefon, e-post
   som föräldern skriver in) och anteckningar.
 - **Hälsoinformation:** allergier och kost, bara efter ett aktivt val per barn ("Spara allergier och kost för …"), och
-  sjukdagar (vilket barn som är sjukt vilken dag och vem som stannar hemma, aldrig symtom), när en förälder sjukanmäler.
+  sjukdagar (vilket barn som är sjukt vilken dag och vem som stannar hemma, aldrig symtom), när en förälder sjukanmäler,
+  och medicinloggen (medicin, dos, tid och temperatur som en förälder skriver, bara för föräldrarna, 90 dagar).
 - **Kalenderhändelser:** familjens händelser i appen synkas via Firestore. Telefonens egna kalendrar läses bara på
   telefonen och skickas inte (on-device-åtkomst räknas inte som insamling).
 - **Annat användargenererat innehåll:** listor, recept, matsedlar, uppgifter, sysslor, lämna/hämta-förfrågningar.
@@ -115,7 +116,8 @@ diagnostics, advertising ID.
 - **Other info:** the children's optional birth date, school, class, clothing sizes, contacts (name, phone, email typed
   in by the parent) and notes.
 - **Health info:** allergies and diets, only after an active choice per child ("Save allergies and diet for …"), and
-  sick days (which child is sick on which day and who stays home, never symptoms), when a parent reports one.
+  sick days (which child is sick on which day and who stays home, never symptoms), when a parent reports one, and the
+  medicine log (medicine, dose, time and temperature a parent writes, for the parents only, 90 days).
 - **Calendar events:** the family's events in the app sync through Firestore. The phone's own calendars are only read on
   the phone and never sent (on-device access is not collection).
 - **Other user-generated content:** lists, recipes, meal plans, tasks, chores, drop-off/pick-up requests.

@@ -224,6 +224,18 @@ describe("writing family data", () => {
     await assertFails(setDoc(doc(f, `families/${FID}/sickDays/x`), { childId: "ella", vab: "ja", ...stamp("sara") }));
   });
 
+  it("lets a parent keep the medicine log and courses, with sane values", async () => {
+    const f = db("sara");
+    const dose = { childId: "ella", at: "2026-10-23T06:15:00Z", medicine: "Alvedon", dose: "5 ml", by: "m-sara", ...stamp("sara") };
+    await assertSucceeds(setDoc(doc(f, `families/${FID}/medicineLog/d1`), dose));
+    const temp = { childId: "ella", at: "2026-10-23T06:20:00Z", temperature: 38.4, by: "m-sara", ...stamp("sara") };
+    await assertSucceeds(setDoc(doc(f, `families/${FID}/medicineLog/t1`), temp));
+    await assertFails(setDoc(doc(f, `families/${FID}/medicineLog/t2`), { ...temp, temperature: 380 }));
+    const course = { childId: "ella", medicine: "Kåvepenin", dose: "5 ml", times: ["08:00", "20:00"], start: "2026-10-23", days: 10, ...stamp("sara") };
+    await assertSucceeds(setDoc(doc(f, `families/${FID}/medicineCourses/c1`), course));
+    await assertFails(setDoc(doc(f, `families/${FID}/medicineCourses/c2`), { ...course, days: 400 }));
+  });
+
   it("allows soft delete but never hard delete", async () => {
     await assertSucceeds(updateDoc(doc(db("sara"), `families/${FID}/events/shared`), { deletedAt: serverTimestamp(), ...stamp("sara") }));
     await assertFails(deleteDoc(doc(db("sara"), `families/${FID}/events/private`)));
@@ -331,6 +343,16 @@ describe("caregivers (morfar)", () => {
       setDoc(doc(db("bengt"), `families/${FID}/sickDays/simon_2026-10-22`), { childId: "simon", date: "2026-10-22", ...stamp("bengt") }),
     );
     await assertFails(updateDoc(doc(db("bengt"), `families/${FID}/sickDays/ella_2026-10-22`), { homeWith: "m-bengt", ...stamp("bengt") }));
+  });
+
+  it("neither reads nor writes the medicine log", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), `families/${FID}/medicineLog/d1`), { childId: "ella", medicine: "Alvedon" });
+    });
+    await assertFails(getDoc(doc(db("bengt"), `families/${FID}/medicineLog/d1`)));
+    await assertFails(
+      setDoc(doc(db("bengt"), `families/${FID}/medicineLog/d2`), { childId: "ella", medicine: "Alvedon", ...stamp("bengt") }),
+    );
   });
 
   it("can tick off his own pick-up, not one in someone else's name", async () => {

@@ -125,6 +125,11 @@ sealed interface NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today
     }
 
+    /** "Dags för Kåvepenin till Ella" · "5 ml": a planned dose of a course (ADR-050). */
+    data class MedicineDose(val child: String, val medicine: String, val dose: String) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Today
+    }
+
     /** "Anmäl VAB för Ella" the evening the child is well again, to the parent who took it (ADR-047). */
     data class VabReport(val child: String, val days: Double) : NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today

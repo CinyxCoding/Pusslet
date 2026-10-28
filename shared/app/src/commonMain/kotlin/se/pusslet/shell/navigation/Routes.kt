@@ -31,6 +31,9 @@ sealed interface Route {
     /** One occurrence of an event (family, subscription or device calendar). */
     @Serializable data class EventDetails(val eventId: String, val occurrenceDate: LocalDate) : Route
 
+    /** "Medicin och feber" (ADR-050), on [childId] when it was opened for one child. */
+    @Serializable data class Medicine(val childId: String? = null) : Route
+
     /** A picture shared to the app, already copied to the private attachment folder (ADR-049). */
     @Serializable data class AttachImage(val fileName: String) : Route
 

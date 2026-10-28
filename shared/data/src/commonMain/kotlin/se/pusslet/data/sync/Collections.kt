@@ -87,6 +87,10 @@ object Collections {
     /** "Hämtad ✓" per occurrence and kind (ADR-048); caregivers write their own. */
     val HandoffReceipts = CollectionSpec("handoffReceipts", RemoteLocation.Flat("handoffReceipts"))
 
+    /** The medicine and fever log and courses (ADR-050): health data, parents only (firestore.rules). */
+    val MedicineLog = CollectionSpec("medicineLog", RemoteLocation.Flat("medicineLog"), parentsOnly = true)
+    val MedicineCourses = CollectionSpec("medicineCourses", RemoteLocation.Flat("medicineCourses"), parentsOnly = true)
+
     /** Pictures attached on this phone (ADR-049). The location is never used. */
     val Attachments = CollectionSpec("attachments", RemoteLocation.Flat("attachments"), localOnly = true)
 
@@ -117,6 +121,8 @@ object Collections {
         SchoolLunches,
         SickDays,
         HandoffReceipts,
+        MedicineLog,
+        MedicineCourses,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

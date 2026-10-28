@@ -66,6 +66,16 @@ service cloud.firestore {
       return shortString(data().childId, 100) && shortString(data().date, 10)
         && (!('vab' in data()) || data().vab is bool) && optString('homeWith', 100);
     }
+    // Medicine and fever (ADR-050): parents only (not in caregiverReadable), short texts, a body temperature.
+    function validMedicineEntry() {
+      return shortString(data().childId, 100) && optString('medicine', 200) && optString('dose', 100)
+        && (!('temperature' in data()) || data().temperature == null
+          || (data().temperature is number && data().temperature >= 30 && data().temperature <= 45));
+    }
+    function validMedicineCourse() {
+      return shortString(data().childId, 100) && shortString(data().medicine, 200) && optString('dose', 100)
+        && data().times is list && data().times.size() <= 6 && data().days is number && data().days >= 1 && data().days <= 90;
+    }
 
     function validFor(collection) {
       return collection == 'events' ? validEvent()
@@ -74,6 +84,8 @@ service cloud.firestore {
         : collection == 'recipeCollections' ? validRecipeCollection()
         : collection == 'sickDays' ? validSickDay()
         : collection == 'handoffReceipts' ? validReceipt()
+        : collection == 'medicineLog' ? validMedicineEntry()
+        : collection == 'medicineCourses' ? validMedicineCourse()
         : collection == 'children' ? validNamed('firstName')
         : collection == 'members' ? validNamed('displayName')
         : collection == 'shoppingLists' ? validNamed('name')

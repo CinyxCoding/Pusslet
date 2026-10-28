@@ -7,6 +7,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.calendar.EffectiveHandoffs
+import se.pusslet.core.medicine.MedicineRules
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
@@ -121,7 +122,7 @@ object ReminderPlanner {
             days = from.toLocalDateTime(zone).date.datesUntil(until.toLocalDateTime(zone).date),
         )
         val all = eventReminders(ctx) + handoffs(ctx) + tasks(ctx) + mornings(ctx) + evenings(ctx) + sickReminders(ctx) +
-            pickupChecks(ctx)
+            pickupChecks(ctx) + medicineReminders(ctx)
         return all.filter { it.at > from && it.at <= until }
             .distinctBy { it.key }
             .sortedWith(compareBy({ it.at }, { it.key }))
@@ -272,6 +273,28 @@ object ReminderPlanner {
             }
         }
         return absence + vab
+    }
+
+    /**
+     * "Dags för Kåvepenin till Ella · 5 ml" at each planned dose of a course (ADR-050), to the parents, until someone has
+     * logged it. Given doses are planned away, so the other parent is not reminded of a dose already given.
+     */
+    private fun medicineReminders(ctx: Context): List<PlannedNotification> {
+        if (ctx.input.role != Role.Parent) return emptyList()
+        val base = ctx.input.base
+        if (base.medicineCourses.isEmpty()) return emptyList()
+        return ctx.days.flatMap { day ->
+            MedicineRules.slotsOn(base.medicineCourses, day, base.medicineLog).filter { !it.done }.mapNotNull { slot ->
+                val child = ctx.people[slot.course.childId] ?: return@mapNotNull null
+                PlannedNotification(
+                    "medicine:${slot.course.id}:${slot.at}",
+                    slot.at.toInstant(ctx.zone),
+                    NotificationKind.Reminder,
+                    NotificationPayload.MedicineDose(child.name, slot.course.medicine, slot.course.dose),
+                    userTimed = true,
+                )
+            }
+        }
     }
 
     /**

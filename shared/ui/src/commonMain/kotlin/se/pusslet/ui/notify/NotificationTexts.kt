@@ -65,6 +65,7 @@ import se.pusslet.ui.resources.notify_event_now
 import se.pusslet.ui.resources.notify_event_tomorrow_at
 import se.pusslet.ui.resources.notify_event_who
 import se.pusslet.ui.resources.notify_item_for
+import se.pusslet.ui.resources.notify_medicine_title
 import se.pusslet.ui.resources.notify_picked_up_title
 import se.pusslet.ui.resources.notify_pickup_unconfirmed_body
 import se.pusslet.ui.resources.notify_pickup_unconfirmed_mine
@@ -161,6 +162,7 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
             p.school?.let { str(Res.string.notify_absence_body, it) }.orEmpty(),
         )
         is NotificationPayload.VabReport -> NotificationText(str(Res.string.notify_vab_title, p.child), str(Res.string.notify_vab_body))
+        is NotificationPayload.MedicineDose -> NotificationText(str(Res.string.notify_medicine_title, p.medicine, p.child), p.dose)
         is NotificationPayload.ShoppingAdded -> NotificationText(
             str(Res.string.notify_shopping_added, p.by ?: str(Res.string.notify_someone), p.item),
             str(Res.string.notify_shopping_added_body),

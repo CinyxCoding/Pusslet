@@ -24,6 +24,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.calendar.EffectiveHandoffs.matches
+import se.pusslet.core.medicine.MedicineRules
 import se.pusslet.core.model.Completion
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventOccurrence
@@ -65,6 +66,7 @@ import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
 import se.pusslet.data.repository.MealRepository
+import se.pusslet.data.repository.MedicineRepository
 import se.pusslet.data.repository.PackingRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
@@ -81,6 +83,8 @@ import se.pusslet.data.usecase.HandoffAssigner
 import se.pusslet.data.usecase.HintIds
 import se.pusslet.data.usecase.PickupReceipts
 import se.pusslet.data.usecase.TodayInputSource
+import se.pusslet.feature.today.medicine.MedicineDoseRow
+import se.pusslet.feature.today.medicine.MedicineModel
 import kotlin.time.Clock
 
 sealed interface WeatherState {
@@ -137,6 +141,8 @@ data class TodayUiState(
     val leaveDemoFailed: Boolean = false,
     /** Sick days (ADR-047): "Ella är sjuk idag", "Fortfarande sjuk?", VAB to report. Parents only. */
     val sick: SickToday = SickToday(),
+    /** "Medicin idag" (ADR-050): today's planned doses of every course. Parents only. */
+    val medicine: List<MedicineDoseRow> = emptyList(),
     /** Somebody else's pick-up nobody ticked off (ADR-048); empty when the warning is switched off. */
     val unconfirmedPickups: List<UnconfirmedPickup> = emptyList(),
     /** Today's ticked-off pick-ups. */
@@ -165,6 +171,7 @@ class TodayViewModel(
     private val zone: TimeZone,
     private val sick: SickDayRepository,
     private val receipts: PickupReceipts,
+    private val medicine: MedicineRepository,
 ) : ViewModel() {
     private val log = Logger.withTag("Today")
 
@@ -352,6 +359,7 @@ class TodayViewModel(
             leavingDemo = v.firstUse.demoExit == DemoExit.Leaving,
             leaveDemoFailed = v.firstUse.demoExit == DemoExit.Failed,
             sick = if (canEdit) SickModel.build(n.date, me, ex.sickDays, day.cancelled, people, h.children) else SickToday(),
+            medicine = if (canEdit) MedicineModel.today(n.date, ex.medicineCourses, ex.medicineLog, people) else emptyList(),
             unconfirmedPickups = if (v.pickupWarnings) plan.unconfirmedPickups else emptyList(),
             pickedUp = plan.pickedUp,
         )
@@ -494,6 +502,11 @@ class TodayViewModel(
 
     /** "Anmält" on "Anmäl VAB för Ella". */
     fun vabReported(report: SickDays.VabToReport) = sickWrite { sick.setVabReported(report.days) }
+
+    /** "Given" on a planned dose (ADR-050): logged for the course, so nobody is reminded of it again. */
+    fun giveDose(slot: MedicineRules.Slot) = sickWrite {
+        medicine.logDose(slot.course.childId, slot.course.medicine, slot.course.dose, courseId = slot.course.id, slot = slot.at)
+    }
 
     private fun sickWrite(block: suspend () -> Unit) {
         if (!sessions.session.value.canEdit) return

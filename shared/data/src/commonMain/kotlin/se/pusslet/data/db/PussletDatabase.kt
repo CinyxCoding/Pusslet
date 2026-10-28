@@ -9,7 +9,10 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.room.Upsert
+import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.execSQL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
@@ -51,7 +54,7 @@ interface PreferenceDao {
         FoodNutrientsEntity::class,
         PurchaseLogEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 @ConstructedBy(PussletDatabaseConstructor::class)
@@ -83,7 +86,21 @@ expect object PussletDatabaseConstructor : RoomDatabaseConstructor<PussletDataba
     override fun initialize(): PussletDatabase
 }
 
+/** 1 → 2: the food search index gets the unicode61 tokenizer so words starting with Å, Ä or Ö are found. */
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("DROP TABLE IF EXISTS `foods_fts`")
+        connection.execSQL(
+            "CREATE VIRTUAL TABLE IF NOT EXISTS `foods_fts` USING FTS4(`name` TEXT NOT NULL, " +
+                "tokenize=unicode61 `remove_diacritics=0`, content=`foods`)",
+        )
+        // The content-sync triggers live on `foods` and stay; the new index is filled from the existing rows.
+        connection.execSQL("INSERT INTO `foods_fts`(`foods_fts`) VALUES('rebuild')")
+    }
+}
+
 fun RoomDatabase.Builder<PussletDatabase>.configureCommon(): PussletDatabase = this
+    .addMigrations(MIGRATION_1_2)
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
     .build()

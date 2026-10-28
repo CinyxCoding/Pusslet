@@ -2,6 +2,7 @@ package se.pusslet.data.db
 
 import androidx.room.Entity
 import androidx.room.Fts4
+import androidx.room.FtsOptions
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
@@ -75,7 +76,11 @@ data class FoodEntity(
     val type: String? = null,
 )
 
-@Fts4(contentEntity = FoodEntity::class)
+/**
+ * unicode61, not the default "simple" tokenizer: "simple" only folds ASCII case, so "ägg" never found "Ägg …".
+ * Diacritics are kept because å, ä and ö are letters of their own in Swedish ("ost" must not find "Östron").
+ */
+@Fts4(contentEntity = FoodEntity::class, tokenizer = FtsOptions.TOKENIZER_UNICODE61, tokenizerArgs = ["remove_diacritics=0"])
 @Entity(tableName = "foods_fts")
 data class FoodFtsEntity(
     val name: String,

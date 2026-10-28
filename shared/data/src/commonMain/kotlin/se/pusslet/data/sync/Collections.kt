@@ -19,12 +19,25 @@ sealed interface RemoteLocation {
     ) : RemoteLocation
 }
 
+/** Whether a collection exists in a space shared with the other home (ADR-030). */
+enum class SpaceSharing {
+    /** Only in the home. */
+    None,
+
+    /** Also in shared spaces, and the space's documents show up in the home's own lists (Ella's events). */
+    Merged,
+
+    /** Also in shared spaces, but read on their own (the space document, the other home's adults). */
+    Separate,
+}
+
 /**
  * How one local collection syncs.
  * @param mapFields fields merged per key (per-key last-write-wins) instead of replaced as a whole.
  * @param caregiverFilterField caregivers only read documents where this boolean field is true.
  * @param parentsOnly caregivers do not read this collection at all.
  * @param localOnly kept on this phone only: never queued for upload and not part of [Collections.all].
+ * @param spaces whether (and how) the collection exists in a space shared with the other home.
  */
 data class CollectionSpec(
     val key: String,
@@ -33,18 +46,29 @@ data class CollectionSpec(
     val caregiverFilterField: String? = null,
     val parentsOnly: Boolean = false,
     val localOnly: Boolean = false,
+    val spaces: SpaceSharing = SpaceSharing.None,
 ) {
     fun visibleTo(role: Role): Boolean = role == Role.Parent || !parentsOnly
 }
 
 object Collections {
-    val Family = CollectionSpec("family", RemoteLocation.FamilyRoot)
-    val Members = CollectionSpec("members", RemoteLocation.Flat("members"))
-    val Children = CollectionSpec("children", RemoteLocation.Flat("children"))
-    val Custody = CollectionSpec("custodySchedules", RemoteLocation.Flat("custodySchedules"))
-    val Events = CollectionSpec("events", RemoteLocation.Flat("events"), caregiverFilterField = "sharedWithCaregivers")
-    val PackingRules = CollectionSpec("packingRules", RemoteLocation.Flat("packingRules"))
-    val PackingChecks = CollectionSpec("packingChecks", RemoteLocation.Flat("packingChecks"), mapFields = setOf("checked"))
+    val Family = CollectionSpec("family", RemoteLocation.FamilyRoot, spaces = SpaceSharing.Separate)
+    val Members = CollectionSpec("members", RemoteLocation.Flat("members"), spaces = SpaceSharing.Separate)
+    val Children = CollectionSpec("children", RemoteLocation.Flat("children"), spaces = SpaceSharing.Merged)
+    val Custody = CollectionSpec("custodySchedules", RemoteLocation.Flat("custodySchedules"), spaces = SpaceSharing.Merged)
+    val Events = CollectionSpec(
+        "events",
+        RemoteLocation.Flat("events"),
+        caregiverFilterField = "sharedWithCaregivers",
+        spaces = SpaceSharing.Merged,
+    )
+    val PackingRules = CollectionSpec("packingRules", RemoteLocation.Flat("packingRules"), spaces = SpaceSharing.Merged)
+    val PackingChecks = CollectionSpec(
+        "packingChecks",
+        RemoteLocation.Flat("packingChecks"),
+        mapFields = setOf("checked"),
+        spaces = SpaceSharing.Merged,
+    )
     val MealPlans = CollectionSpec("mealPlans", RemoteLocation.Flat("mealPlans"), mapFields = setOf("entries"))
     val FavoriteWeeks = CollectionSpec("favoriteWeeks", RemoteLocation.Flat("favoriteWeeks"))
     val Recipes = CollectionSpec("recipes", RemoteLocation.Flat("recipes"))
@@ -69,39 +93,56 @@ object Collections {
             RemoteLocation.Flat("tasks"),
             mapFields = setOf("completions", "turnOverrides"),
             caregiverFilterField = "sharedWithCaregivers",
+            spaces = SpaceSharing.Merged,
         )
     val Subscriptions = CollectionSpec("icsSubscriptions", RemoteLocation.Flat("icsSubscriptions"), parentsOnly = true)
-    val HandoffRequests = CollectionSpec("handoffRequests", RemoteLocation.Flat("handoffRequests"), mapFields = setOf("declines"))
+    val HandoffRequests = CollectionSpec(
+        "handoffRequests",
+        RemoteLocation.Flat("handoffRequests"),
+        mapFields = setOf("declines"),
+        spaces = SpaceSharing.Merged,
+    )
     val Presence = CollectionSpec("presence", RemoteLocation.Flat("presence"))
     val Settings = CollectionSpec("settings", RemoteLocation.Flat("settings"))
 
-    /** Allergies and diets are sensitive: parents only (firestore.rules). */
-    val Diets = CollectionSpec("dietProfiles", RemoteLocation.Flat("dietProfiles"), parentsOnly = true)
+    /** Allergies and diets are sensitive: parents only (firestore.rules), and only shared when the parent said so. */
+    val Diets = CollectionSpec("dietProfiles", RemoteLocation.Flat("dietProfiles"), parentsOnly = true, spaces = SpaceSharing.Merged)
     val AisleOverrides = CollectionSpec("aisleOverrides", RemoteLocation.Flat("aisleOverrides"))
     val IngredientMappings = CollectionSpec("ingredientMappings", RemoteLocation.Flat("ingredientMappings"))
-    val SchoolLunches = CollectionSpec("schoolLunches", RemoteLocation.Flat("schoolLunches"), mapFields = setOf("days"))
+    val SchoolLunches = CollectionSpec(
+        "schoolLunches",
+        RemoteLocation.Flat("schoolLunches"),
+        mapFields = setOf("days"),
+        spaces = SpaceSharing.Merged,
+    )
 
     /** A child home sick, per child and day (ADR-047); caregivers read it, so they know a pick-up is off. */
-    val SickDays = CollectionSpec("sickDays", RemoteLocation.Flat("sickDays"))
+    val SickDays = CollectionSpec("sickDays", RemoteLocation.Flat("sickDays"), spaces = SpaceSharing.Merged)
 
     /** "Hämtad ✓" per occurrence and kind (ADR-048); caregivers write their own. */
-    val HandoffReceipts = CollectionSpec("handoffReceipts", RemoteLocation.Flat("handoffReceipts"))
+    val HandoffReceipts = CollectionSpec("handoffReceipts", RemoteLocation.Flat("handoffReceipts"), spaces = SpaceSharing.Merged)
 
     /** The medicine and fever log and courses (ADR-050): health data, parents only (firestore.rules). */
-    val MedicineLog = CollectionSpec("medicineLog", RemoteLocation.Flat("medicineLog"), parentsOnly = true)
-    val MedicineCourses = CollectionSpec("medicineCourses", RemoteLocation.Flat("medicineCourses"), parentsOnly = true)
+    val MedicineLog = CollectionSpec("medicineLog", RemoteLocation.Flat("medicineLog"), parentsOnly = true, spaces = SpaceSharing.Merged)
+    val MedicineCourses = CollectionSpec(
+        "medicineCourses",
+        RemoteLocation.Flat("medicineCourses"),
+        parentsOnly = true,
+        spaces = SpaceSharing.Merged,
+    )
 
     /** Veckopeng settings and paid weeks, one document per child; family money is for parents only (ADR-055). */
     val Allowances = CollectionSpec("allowances", RemoteLocation.Flat("allowances"), mapFields = setOf("paidWeeks"), parentsOnly = true)
 
     /** The children's wishlists (ADR-054); caregivers read them and may only mark a wish bought. */
-    val Wishes = CollectionSpec("wishes", RemoteLocation.Flat("wishes"))
+    val Wishes = CollectionSpec("wishes", RemoteLocation.Flat("wishes"), spaces = SpaceSharing.Merged)
 
     /** The plan for each school break (ADR-051), merged per day; caregivers read it (they may be the one at home). */
     val BreakPlans = CollectionSpec("breakPlans", RemoteLocation.Flat("breakPlans"), mapFields = setOf("days"))
 
     /** Each child's hours at preschool or fritids (ADR-051). */
-    val StaySchedules = CollectionSpec("staySchedules", RemoteLocation.Flat("staySchedules"), parentsOnly = true)
+    val StaySchedules =
+        CollectionSpec("staySchedules", RemoteLocation.Flat("staySchedules"), parentsOnly = true, spaces = SpaceSharing.Merged)
 
     /** Pictures attached on this phone (ADR-049). The location is never used. */
     val Attachments = CollectionSpec("attachments", RemoteLocation.Flat("attachments"), localOnly = true)
@@ -140,6 +181,9 @@ object Collections {
         Wishes,
         Allowances,
     )
+
+    /** What a space shared with the other home holds (also enforced by the security rules). */
+    val inSpaces: List<CollectionSpec> get() = all.filter { it.spaces != SpaceSharing.None }
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }
 }

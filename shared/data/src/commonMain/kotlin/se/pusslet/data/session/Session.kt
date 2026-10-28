@@ -20,6 +20,8 @@ data class Session(
     val uid: String? = null,
     val role: Role = Role.Parent,
     val demo: Boolean = false,
+    /** Spaces shared with another home that this phone syncs next to the family (ADR-030). Parents only. */
+    val spaceIds: List<String> = emptyList(),
 ) {
     val hasFamily: Boolean get() = familyId != null && memberId != null
     val canSync: Boolean get() = hasFamily && uid != null

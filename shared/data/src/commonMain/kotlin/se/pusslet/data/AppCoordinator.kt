@@ -34,6 +34,7 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.RemotePermissionException
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.data.usecase.OtherHomeSharing
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 
@@ -83,6 +84,8 @@ class AppCoordinator(
     private val engine: SyncEngine,
     private val seed: DemoSeed,
     private val prefs: PreferencesRepository,
+    /** Null in tests that do not share with another home. */
+    private val otherHome: OtherHomeSharing? = null,
     private val zone: TimeZone,
     private val clock: Clock = Clock.System,
     private val processWork: List<AppProcessWork> = emptyList(),
@@ -110,14 +113,13 @@ class AppCoordinator(
             if (config.mode == BackendMode.Emulator && auth.currentUser.value == null && auth.available) {
                 runCatching { auth.signInAnonymously() }.onFailure { log.i { "Emulator not reachable yet; staying local" } }
             }
-            combine(sessions.session, auth.currentUser) { s, user -> Triple(s.familyId, s.memberId, user?.uid) to s.role }
+            combine(sessions.session, auth.currentUser) { s, user -> Connection(s.familyId, s.memberId, user?.uid, s.role, s.spaceIds) }
                 .distinctUntilChanged()
-                .collectLatest { (ids, role) ->
-                    val (familyId, memberId, uid) = ids
-                    if (familyId == null || memberId == null || uid == null || !familyRemote.available) {
+                .collectLatest { c ->
+                    if (c.familyId == null || c.memberId == null || c.uid == null || !familyRemote.available) {
                         engine.stop()
                     } else {
-                        connect(familyId, memberId, uid, role)
+                        connect(c.familyId, c.memberId, c.uid, c.role, c.spaces)
                     }
                 }
         }
@@ -153,7 +155,9 @@ class AppCoordinator(
         }
     }
 
-    private suspend fun connect(familyId: String, memberId: String, uid: String, role: Role) {
+    private data class Connection(val familyId: String?, val memberId: String?, val uid: String?, val role: Role, val spaces: List<String>)
+
+    private suspend fun connect(familyId: String, memberId: String, uid: String, role: Role, spaces: List<String>) {
         if (sessions.session.value.uid != uid) sessions.update { it.copy(uid = uid) }
         if (role == Role.Parent) {
             // Claim a family created before sign-in, then register in the access index.
@@ -181,15 +185,26 @@ class AppCoordinator(
                 backoff = minOf(backoff * 2, 5 * 60_000L)
             }
         }
-        engine.start(scope, familyId, uid, role)
+        engine.start(scope, familyId, uid, role, if (role == Role.Parent) spaces else emptyList())
+        if (role == Role.Parent) {
+            // Join spaces the family's other parent started, forget ones the family left (ADR-030).
+            combine(
+                docs.observeAll(Collections.Family, Family.serializer()),
+                docs.observeSpaces(Collections.Family, Family.serializer()),
+            ) { home, shared -> home to shared }
+                .distinctUntilChanged()
+                .collectLatest { otherHome?.reconcile() }
+        }
     }
 
     /** Leaves the current family on this device (data stays for the others). */
     suspend fun forgetFamilyOnDevice(local: SyncLocalStore) {
         val fid = sessions.session.value.familyId ?: return
+        val spaces = sessions.session.value.spaceIds
         engine.stop()
         local.deleteFamily(fid)
-        sessions.update { it.copy(familyId = null, memberId = null, demo = false) }
+        spaces.forEach { local.deleteFamily(it) }
+        sessions.update { it.copy(familyId = null, memberId = null, demo = false, spaceIds = emptyList()) }
     }
 
     /**

@@ -97,12 +97,20 @@ enum class LunchProviderType {
     @SerialName("rss")
     Rss,
 
+    /** Matilda (Matilda Foodtech, formerly FoodIT): the school's menu link on menu.matildaplatform.com (ADR-053). */
+    @SerialName("matilda")
+    Matilda,
+
     @SerialName("manual")
     Manual,
 }
 
 @Serializable
-data class LunchSource(val provider: LunchProviderType, val reference: String = "")
+data class LunchSource(
+    /** Defaults so that an app version that does not know a newer provider reads it as manual instead of failing. */
+    val provider: LunchProviderType = LunchProviderType.Manual,
+    val reference: String = "",
+)
 
 @Serializable
 enum class ClothingCategory {

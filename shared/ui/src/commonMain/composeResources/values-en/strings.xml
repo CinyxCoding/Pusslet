@@ -388,6 +388,12 @@
     <string name="lunch_none">Don't show</string>
     <string name="lunch_skolmaten">skolmaten.se</string>
     <string name="lunch_rss">Other menu link</string>
+    <string name="lunch_matilda">Matilda</string>
+    <string name="lunch_rss_hint">Link to an RSS feed (https://…)</string>
+    <string name="lunch_matilda_hint">The link to the menu on menu.matildaplatform.com</string>
+    <string name="lunch_matilda_invalid">No menu found in the link. Copy the address while the school's menu is showing.</string>
+    <string name="source_matilda">Matilda</string>
+    <string name="source_matilda_body">School lunch from municipalities and kitchens using Matilda, via the menu's open RSS feed.</string>
     <string name="lunch_manual">Enter it myself</string>
     <string name="lunch_reference_hint">The school's page on skolmaten.se or a link</string>
     <string name="child_sizes">Clothing sizes</string>

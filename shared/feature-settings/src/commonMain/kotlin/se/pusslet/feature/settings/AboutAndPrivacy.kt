@@ -86,7 +86,9 @@ class AboutDataViewModel(private val cache: CacheDao) : ViewModel() {
     companion object {
         /** `icsraw:` is the raw feed of a calendar subscription (CalendarRepository.subscriptionRawKey). */
         const val ICS_PREFIX = "icsraw:"
-        val CACHE_PREFIXES = listOf("smhi:", "skolverket:", "off:", "lunch:", ICS_PREFIX)
+        val CACHE_PREFIXES = listOf("smhi:", "skolverket:", "off:", SKOLMATEN_CACHE, MATILDA_CACHE, ICS_PREFIX)
+        const val SKOLMATEN_CACHE = "lunch:https://skolmaten.se"
+        const val MATILDA_CACHE = "lunch:https://menu.matildaplatform.com"
     }
 }
 
@@ -109,7 +111,13 @@ fun AboutDataRoute(onBack: () -> Unit, viewModel: AboutDataViewModel = koinViewM
             "https://www.skolverket.se/om-oss/oppna-data",
         ),
         Source(Res.string.source_off, Res.string.source_off_body, "off:", "https://world.openfoodfacts.org"),
-        Source(Res.string.source_skolmaten, Res.string.source_skolmaten_body, "lunch:", "https://skolmaten.se"),
+        Source(Res.string.source_skolmaten, Res.string.source_skolmaten_body, AboutDataViewModel.SKOLMATEN_CACHE, "https://skolmaten.se"),
+        Source(
+            Res.string.source_matilda,
+            Res.string.source_matilda_body,
+            AboutDataViewModel.MATILDA_CACHE,
+            "https://www.matildafoodtech.com",
+        ),
         // Only once a subscription has been fetched: a family without any has nothing to show here.
         Source(Res.string.source_ics, Res.string.source_ics_body, AboutDataViewModel.ICS_PREFIX, null)
             .takeIf { AboutDataViewModel.ICS_PREFIX in fetched },

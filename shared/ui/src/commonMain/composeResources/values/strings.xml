@@ -389,6 +389,12 @@
     <string name="lunch_none">Visa inte</string>
     <string name="lunch_skolmaten">skolmaten.se</string>
     <string name="lunch_rss">Annan länk till matsedeln</string>
+    <string name="lunch_matilda">Matilda</string>
+    <string name="lunch_rss_hint">Länk till ett RSS-flöde (https://…)</string>
+    <string name="lunch_matilda_hint">Länken till matsedeln på menu.matildaplatform.com</string>
+    <string name="lunch_matilda_invalid">Hittar ingen matsedel i länken. Kopiera adressen när skolans matsedel visas.</string>
+    <string name="source_matilda">Matilda</string>
+    <string name="source_matilda_body">Skollunch från kommuner och kök som använder Matilda, via matsedelns öppna RSS-flöde.</string>
     <string name="lunch_manual">Skriv in själv</string>
     <string name="lunch_reference_hint">Skolans sida på skolmaten.se eller länk</string>
     <string name="child_sizes">Klädstorlekar</string>

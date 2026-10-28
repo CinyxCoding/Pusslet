@@ -218,16 +218,37 @@ fun QuickAddContent(
     }
 }
 
-/** The field keeps its own cursor, so text filled in from outside (a chip, shared text) puts the cursor at the end. */
+/**
+ * The field keeps its own cursor, so text filled in from outside (a chip, shared text) puts the cursor at the end.
+ *
+ * [text] reaches the field one collection later than the keystroke. A [text] that is only an older echo of what the field
+ * sent itself must not replace what is typed: that threw away the keyboard's composing word (where å, ä and ö are often
+ * typed) and moved the cursor to the end mid-sentence.
+ */
 @Composable
 private fun QuickAddField(text: String, hintName: String?, onTextChange: (String) -> Unit, modifier: Modifier, onDone: () -> Unit) {
     var field by remember { mutableStateOf(TextFieldValue(text, TextRange(text.length))) }
-    val shown = if (field.text == text) field else TextFieldValue(text, TextRange(text.length))
+    // Plain set, not state: the text both sides last agreed on plus everything sent since, i.e. every [text] that can still
+    // arrive as an echo. Starts over each time the view model has caught up.
+    val echoes = remember { mutableSetOf(text) }
+    val agreed = text == field.text || text !in echoes
+    if (agreed) {
+        echoes.clear()
+        echoes += text
+    }
+    val shown = when {
+        text == field.text -> field
+        agreed -> TextFieldValue(text, TextRange(text.length))
+        else -> field
+    }
     OutlinedTextField(
         value = shown,
         onValueChange = { next ->
             field = next
-            if (next.text != text) onTextChange(next.text)
+            if (next.text != shown.text) {
+                echoes += next.text
+                onTextChange(next.text)
+            }
         },
         modifier = modifier.fillMaxWidth(),
         placeholder = {

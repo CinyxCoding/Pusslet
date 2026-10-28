@@ -50,7 +50,7 @@ import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Instant
 
-/** Ahmed and Sara (home A) share Ella with Lina (home B); Noah is Ahmed's and Sara's alone (ADR-030). */
+/** Ahmed and Sara (home A) share Ella with Lina (home B); Noah is Ahmed's and Sara's alone (ADR-056). */
 @OptIn(ExperimentalCoroutinesApi::class)
 class OtherHomeSharingTest {
     private class FakeClock(var now: Long = 1_760_000_000_000) : Clock {

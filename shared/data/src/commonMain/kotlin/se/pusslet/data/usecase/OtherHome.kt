@@ -55,7 +55,7 @@ data class SharedSpace(
 )
 
 /**
- * Sharing the children's schedule with the other home (ADR-030). The family keeps its own data; the shared children,
+ * Sharing the children's schedule with the other home (ADR-056). The family keeps its own data; the shared children,
  * their custody schedule and everything about only them live in a space both homes' parents belong to. Starting,
  * joining and leaving need the network; using the space afterwards works offline like everything else.
  */

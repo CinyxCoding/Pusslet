@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
 /**
- * A family (one home), or – with [shared] – the space two homes share for the children they have together (ADR-030).
+ * A family (one home), or – with [shared] – the space two homes share for the children they have together (ADR-056).
  * A shared space only holds what is about those children; each home keeps everything else to itself.
  */
 @Serializable

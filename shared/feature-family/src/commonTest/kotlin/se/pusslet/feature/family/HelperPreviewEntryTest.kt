@@ -59,6 +59,7 @@ class HelperPreviewEntryTest {
                 world.family,
                 world.sessions,
                 WishRepository(world.docs, world.sessions, world.ids, world.clock),
+                world.otherHome,
                 world.clock,
                 world.zone,
             )

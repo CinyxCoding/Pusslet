@@ -198,7 +198,16 @@ fun EventEditorScreen(
             }
             WhenSection(state, d, onEdit, onStartDate, onStartTime)
             val children = state.people.filter { it.isChild && it.id in d.participants }
-            if (!d.allDay && children.isNotEmpty()) HandoffSection(state.adults, children, d, onEdit)
+            if (!d.allDay && children.isNotEmpty()) HandoffSection(state.handoffAdults(d), children, d, onEdit)
+            // "Delas med andra hemmet" (ADR-056): for events about a child shared with the other home.
+            if (state.canShare(d)) {
+                SwitchRow(
+                    stringResource(Res.string.event_other_home),
+                    state.shares(d),
+                    { v -> onEdit { it.copy(shareWithOtherHome = v) } },
+                    supporting = stringResource(Res.string.event_other_home_body),
+                )
+            }
             MoreDetails(d, onEdit, onToggleTag, onAddPacking, onRemovePacking)
         }
     }

@@ -187,7 +187,7 @@ class AppCoordinator(
         }
         engine.start(scope, familyId, uid, role, if (role == Role.Parent) spaces else emptyList())
         if (role == Role.Parent) {
-            // Join spaces the family's other parent started, forget ones the family left (ADR-030).
+            // Join spaces the family's other parent started, forget ones the family left (ADR-056).
             combine(
                 docs.observeAll(Collections.Family, Family.serializer()),
                 docs.observeSpaces(Collections.Family, Family.serializer()),

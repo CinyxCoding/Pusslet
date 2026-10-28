@@ -61,6 +61,13 @@ sagt ja i appen, och policyn uppdateras först.
 
 Vi säljer inte uppgifter och lämnar inte ut dem till någon annan, utom om lag kräver det.
 
+### Andra hemmet
+Bor barnen i två hem kan ni dela dem med det andra hemmet. Då ser föräldrarna i båda hemmen barnens namn och profil,
+vårdnadsschema och det som bara handlar om dem (händelser, packning, läxor och sysslor, önskelistor, skollunch, sjukdagar och vistelsetider).
+Allergier, kost och medicinloggen delas bara om ni slår på det. Resten av er familj – vuxnas händelser, matsedel, inköpslistor,
+recept, veckopeng och det som också gäller barn ni inte delar – syns aldrig för det andra hemmet. Slutar ni dela behåller
+båda hemmen en egen kopia.
+
 ### Hur länge
 - Så länge familjen finns. "Radera familjen för alla" tar bort familjen och allt i den från servern; "Radera mitt konto"
   tar bort ditt konto, dina telefoner och din koppling till familjen (de andra behåller familjen).
@@ -160,6 +167,13 @@ We do not sell data and do not hand it to anyone else, unless the law requires i
 ### Children
 The app is made for adults planning for their children. Children have no accounts of their own. Parents decide what is
 written about the children, and we only ask for a first name.
+
+### The other home
+If the children live in two homes, you can share them with the other home. The parents in both homes then see the
+children's names and profiles, their custody schedule and what is only about them (events, packing, homework and chores,
+wishlists, school lunch, sick days and preschool hours). Allergies, diets and the medicine log are only shared if you turn that on. The rest of your family – the adults'
+events, meal plan, shopping lists, recipes, pocket money and anything that also involves children you don't share – is
+never visible to the other home. If you stop sharing, both homes keep their own copy.
 
 ### Your rights
 You have the right to access, correct, delete and move your data, to restrict or object to processing and to withdraw

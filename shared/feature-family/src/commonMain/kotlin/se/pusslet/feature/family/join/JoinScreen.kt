@@ -49,7 +49,7 @@ import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 import kotlin.time.Clock
 
-enum class JoinError { NotFound, Network, Unavailable }
+enum class JoinError { NotFound, Network, Unavailable, OtherHome }
 
 data class JoinUiState(
     val code: String = "",
@@ -86,8 +86,15 @@ class JoinViewModel(
         _state.update { it.copy(code = InviteCodes.format(code), busy = true, error = null) }
         viewModelScope.launch {
             try {
-                val invite = family.lookupInvite(code)?.takeIf { it.expiresAt > clock.now() }
-                _state.update { it.copy(invite = invite, busy = false, error = if (invite == null) JoinError.NotFound else null) }
+                val found = family.lookupInvite(code)?.takeIf { it.expiresAt > clock.now() }
+                // A code from the other home is answered under Family → The other home, never by joining the space.
+                val invite = found?.takeIf { !it.shared }
+                val error = when {
+                    found == null -> JoinError.NotFound
+                    invite == null -> JoinError.OtherHome
+                    else -> null
+                }
+                _state.update { it.copy(invite = invite, busy = false, error = error) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -153,6 +160,7 @@ fun JoinRoute(
                 JoinError.NotFound -> Banner(stringResource(Res.string.join_invalid), kind = BannerKind.Problem)
                 JoinError.Network -> Banner(stringResource(Res.string.join_needs_network), kind = BannerKind.Problem)
                 JoinError.Unavailable -> Banner(stringResource(Res.string.join_unavailable), kind = BannerKind.Warning)
+                JoinError.OtherHome -> Banner(stringResource(Res.string.other_home_from_join), kind = BannerKind.Info)
                 null -> Unit
             }
             val invite = state.invite

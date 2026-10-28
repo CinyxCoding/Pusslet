@@ -492,7 +492,7 @@ describe("deleted families (tombstones from deleteFamily/deleteAccount)", () => 
   });
 });
 
-describe("sharing with the other home (ADR-030)", () => {
+describe("sharing with the other home (ADR-056)", () => {
   const SPACE = "space-ella";
 
   /** Sara's home (lind) shares Ella with Lina's home (berg). Johan is Sara's partner, Bengt their helper. */

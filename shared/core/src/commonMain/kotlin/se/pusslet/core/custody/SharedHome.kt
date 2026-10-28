@@ -16,7 +16,7 @@ import se.pusslet.core.model.StaySchedule
 import se.pusslet.core.model.WishItem
 
 /**
- * What belongs in the space a home shares with the other home (ADR-030): things about the shared children and nothing
+ * What belongs in the space a home shares with the other home (ADR-056): things about the shared children and nothing
  * else. Something that is also about a child who is not shared (a half-sibling) stays in this home.
  *
  * @param shared the children both homes have.

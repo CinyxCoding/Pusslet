@@ -16,7 +16,7 @@ const TOKEN = /^[A-Za-z0-9_-]{24,128}$/;
 const FAMILY_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
 /**
- * The spaces a home shares with the other home (ADR-030). A home lists them itself, so a space only counts when it also
+ * The spaces a home shares with the other home (ADR-056). A home lists them itself, so a space only counts when it also
  * lists the home – a parent can never pull a stranger's events into the feed.
  */
 async function sharedSpaces(db: Firestore, familyId: string, listed: unknown): Promise<string[]> {
@@ -64,7 +64,7 @@ export const familyCalendarFeed = onRequest(
       res.status(404).send("Not found");
       return;
     }
-    // The children's events in spaces shared with the other home, and the names there (ADR-030).
+    // The children's events in spaces shared with the other home, and the names there (ADR-056).
     const spaces = await sharedSpaces(db, familyId, family.get("sharedSpaces"));
     const shared = await Promise.all(
       spaces.map((id) => Promise.all(["members", "children", "events"].map((c) => db.collection(`families/${id}/${c}`).get()))),

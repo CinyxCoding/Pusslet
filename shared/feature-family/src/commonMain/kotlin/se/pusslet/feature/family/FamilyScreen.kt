@@ -38,6 +38,8 @@ import se.pusslet.core.weather.ClothingAdvisor
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.WishRepository
 import se.pusslet.data.session.SessionProvider
+import se.pusslet.data.usecase.OtherHomeSharing
+import se.pusslet.data.usecase.SharedSpace
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.Labels
 import se.pusslet.ui.components.ListRow
@@ -47,6 +49,7 @@ import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.components.SmallAction
 import se.pusslet.ui.format.formatDateShort
+import se.pusslet.ui.format.joinNames
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 import kotlin.time.Clock
@@ -63,6 +66,8 @@ data class FamilyUiState(
     val signedIn: Boolean = true,
     /** Child id -> wishes nobody has bought yet (ADR-054). */
     val openWishes: Map<String, Int> = emptyMap(),
+    /** Spaces shared with the other home (ADR-056). */
+    val spaces: List<SharedSpace> = emptyList(),
 ) {
     /** "Så ser Bengt appen": parents only, on the rows of other adults with the caregiver role (UX plan Steg 3). */
     fun canPreviewHelper(member: Member): Boolean = myRole == Role.Parent && member.id != me && member.role == Role.Caregiver
@@ -72,20 +77,32 @@ class FamilyViewModel(
     family: FamilyRepository,
     sessions: SessionProvider,
     wishes: WishRepository,
+    otherHome: OtherHomeSharing,
     clock: Clock,
     zone: TimeZone,
 ) : ViewModel() {
-    private val custodyAndWishes = combine(family.custody, wishes.wishes) { cu, w -> cu to w }
+    private val custodyAndWishes = combine(family.custody, wishes.wishes, otherHome.spaces) { cu, w, sp -> Triple(cu, w, sp) }
 
     val state: StateFlow<FamilyUiState> = combine(family.family, family.members, family.children, custodyAndWishes, sessions.session) {
         f,
         m,
         c,
-        (cu, w),
+        (cu, w, sp),
         s,
         ->
         val open = w.filter { !it.taken }.groupingBy { it.childId }.eachCount()
-        FamilyUiState(f?.name.orEmpty(), m, c, cu, s.memberId, s.role, clock.todayIn(zone), signedIn = s.uid != null, openWishes = open)
+        FamilyUiState(
+            f?.name.orEmpty(),
+            m,
+            c,
+            cu,
+            s.memberId,
+            s.role,
+            clock.todayIn(zone),
+            signedIn = s.uid != null,
+            openWishes = open,
+            spaces = sp,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FamilyUiState())
 }
 
@@ -100,6 +117,7 @@ fun FamilyRoute(
     onSignIn: () -> Unit = {},
     onPreviewHelper: (memberId: String) -> Unit = {},
     onWishlist: (childId: String) -> Unit = {},
+    onOtherHome: () -> Unit = {},
     viewModel: FamilyViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -229,6 +247,34 @@ fun FamilyRoute(
                     }
                 }
             }
+            if (parent) item { OtherHomeSection(state.spaces, onOtherHome) }
+        }
+    }
+}
+
+/** "Andra hemmet": what the family shares with the children's other home, or an invitation to start (ADR-056). */
+@Composable
+private fun OtherHomeSection(spaces: List<SharedSpace>, onOpen: () -> Unit) {
+    SectionCard(stringResource(Res.string.family_other_home), action = {
+        SmallAction(stringResource(Res.string.action_open)) { onOpen() }
+    }) {
+        if (spaces.isEmpty()) {
+            Text(
+                stringResource(Res.string.family_other_home_none),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        spaces.forEach { space ->
+            ListRow(
+                title = joinNames(space.children.map { it.firstName }),
+                supporting = if (space.otherAdults.isEmpty()) {
+                    stringResource(Res.string.other_home_waiting)
+                } else {
+                    stringResource(Res.string.other_home_shared_with, joinNames(space.otherAdults.map { it.displayName }))
+                },
+                modifier = Modifier.clickable { onOpen() },
+            )
         }
     }
 }

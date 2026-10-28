@@ -16,6 +16,7 @@ import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
 import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.InMemorySyncLocalStore
+import se.pusslet.data.usecase.OtherHomeSharing
 import kotlin.time.Clock
 import kotlin.time.Instant
 
@@ -46,9 +47,11 @@ class TestWorld(now: Instant = Instant.parse("2026-10-13T16:00:00Z"), session: S
     }
     val zone = TimeZone.of("Europe/Stockholm")
     val sessions = FixedSessionProvider(session)
-    val docs = DocumentStore(InMemorySyncLocalStore(), sessions, clock)
+    val local = InMemorySyncLocalStore()
+    val docs = DocumentStore(local, sessions, clock)
     val ids = SequentialIdGenerator()
     val prefs = PreferencesRepository(FakePreferenceDao())
     val family = FamilyRepository(docs, sessions, LocalOnlyFamilyRemote, LocalOnlyAuthRepository(), ids, clock)
     val seed = DemoSeed(family, docs, clock)
+    val otherHome = OtherHomeSharing(docs, local, sessions, LocalOnlyFamilyRemote, LocalOnlyAuthRepository(), ids, clock)
 }

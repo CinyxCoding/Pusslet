@@ -87,9 +87,13 @@ data class EventDetailsState(
     val now: LocalDateTime? = null,
     /** "Skickas när du har nät" under a caregiver's answer. */
     val waitingForNetwork: Boolean = false,
+    /** The event lives in a space shared with the other home (ADR-056). */
+    val sharedWithOtherHome: Boolean = false,
 ) {
     val editable: Boolean get() = occurrence?.source == EventSource.Family && role == Role.Parent
-    val adults: List<FamilyPerson> get() = people.filter { !it.isChild }
+
+    /** Who can drop off or pick up: the other home's adults only for a shared event. */
+    val adults: List<FamilyPerson> get() = people.filter { !it.isChild && (!it.otherHome || sharedWithOtherHome) }
 
     /** "Bengt ser inte den här händelsen." for an event only parents see. */
     val caregivers: List<FamilyPerson> get() = people.filter { !it.isChild && it.role == Role.Caregiver }
@@ -205,7 +209,7 @@ class EventDetailsViewModel(
 
     val state: StateFlow<EventDetailsState> = combine(
         occurrence,
-        family.people,
+        family.everyone,
         sessions.session,
         calendar.handoffRequests,
         waitingForNetwork,
@@ -221,6 +225,7 @@ class EventDetailsViewModel(
             requests = effective?.let { latestPerKind(requests, it) }.orEmpty(),
             now = clock.now().toLocalDateTime(zone),
             waitingForNetwork = waiting,
+            sharedWithOtherHome = o?.source == EventSource.Family && calendar.sharedSpaceOf(o.event.seriesId ?: o.event.id) != null,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), EventDetailsState())
 

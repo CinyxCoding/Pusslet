@@ -215,7 +215,7 @@ async function deleteMyCalendarFeeds(db: Firestore, uid: string, familyId: strin
  */
 async function purgeFamily(db: Firestore, familyId: string): Promise<PurgeCounts> {
   const family = db.doc(`families/${familyId}`);
-  // First out of the spaces shared with the other home, while we still know who the home's adults are (ADR-030).
+  // First out of the spaces shared with the other home, while we still know who the home's adults are (ADR-056).
   const spaces = ((await family.get()).get("sharedSpaces") as unknown[] | undefined) ?? [];
   const home = (await accessDocs(db, familyId)).map((d) => ({ uid: d.id, memberId: String(d.get("memberId") ?? "") }));
   for (const spaceId of spaces) {
@@ -238,7 +238,7 @@ async function purgeFamily(db: Firestore, familyId: string): Promise<PurgeCounts
 }
 
 /**
- * Takes a deleted home out of a space it shared with the other home (ADR-030): the home, its adults and their access
+ * Takes a deleted home out of a space it shared with the other home (ADR-056): the home, its adults and their access
  * go; the other home keeps the children's things. A space nobody can manage any more is deleted too.
  */
 async function leaveSpace(db: Firestore, spaceId: string, homeId: string, home: { uid: string; memberId: string }[]): Promise<void> {

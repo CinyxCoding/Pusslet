@@ -220,6 +220,13 @@ fun EventDetailsScreen(
                 Section(stringResource(Res.string.event_note)) { Text(o.event.note, style = MaterialTheme.typography.bodyLarge) }
             }
             attachments(o)
+            if (state.sharedWithOtherHome) {
+                Text(
+                    stringResource(Res.string.event_other_home) + ". " + stringResource(Res.string.event_other_home_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (o.source == EventSource.Family && !o.event.sharedWithCaregivers) {
                 val caregivers = state.caregivers.map { it.name }
                 Text(

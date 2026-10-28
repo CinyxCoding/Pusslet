@@ -35,7 +35,7 @@ val DomainJson: Json = Json {
  * The repositories' gateway to local data. Reads come from Room; writes go to Room immediately (the UI updates
  * instantly, offline or not) and queue a field-level change in the outbox for the sync engine.
  *
- * A family may share spaces with another home (ADR-030). For [SpaceSharing.Merged] collections the spaces' documents
+ * A family may share spaces with another home (ADR-056). For [SpaceSharing.Merged] collections the spaces' documents
  * appear next to the family's own, writes go back to wherever the document lives, and a new document about a shared
  * child is placed in that child's space.
  */

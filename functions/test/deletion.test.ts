@@ -202,7 +202,7 @@ describe("deleteFamily", () => {
   });
 });
 
-describe("deleting a home that shares a space with the other home (ADR-030)", () => {
+describe("deleting a home that shares a space with the other home (ADR-056)", () => {
   it("takes the home out of the space and leaves the other home's data, but never touches an unconfirmed space", async () => {
     const w = await seedLind();
     const space = `space-${w.fid}`;

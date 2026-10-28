@@ -19,7 +19,7 @@ sealed interface RemoteLocation {
     ) : RemoteLocation
 }
 
-/** Whether a collection exists in a space shared with the other home (ADR-030). */
+/** Whether a collection exists in a space shared with the other home (ADR-056). */
 enum class SpaceSharing {
     /** Only in the home. */
     None,

@@ -123,6 +123,18 @@ class CalendarRepository(
 
     suspend fun event(id: String): Event? = docs.get(Collections.Events, id, Event.serializer())
 
+    /** The space shared with the other home that the event lives in, or null when it is the family's own (ADR-056). */
+    suspend fun sharedSpaceOf(id: String): String? = docs.rootOf(Collections.Events, id)?.takeIf { it != sessions.session.value.familyId }
+
+    /** Moves an event and its changed occurrences into a shared space, or back to the family ([spaceId] = null). */
+    suspend fun moveEvent(id: String, spaceId: String?) {
+        val target = spaceId ?: sessions.session.value.familyId ?: return
+        docs.getAll(Collections.Events, Event.serializer()).filter {
+            it.seriesId == id
+        }.forEach { docs.move(Collections.Events, it.id, target) }
+        docs.move(Collections.Events, id, target)
+    }
+
     suspend fun deleteEvent(id: String) {
         // Deleting a series also removes its per-occurrence overrides.
         docs.getAll(Collections.Events, Event.serializer()).filter { it.seriesId == id }.forEach { docs.delete(Collections.Events, it.id) }

@@ -19,7 +19,7 @@ import se.pusslet.core.model.StaySchedule
 import se.pusslet.core.model.WishItem
 
 /**
- * Where a new document goes when the family shares spaces with other homes (ADR-030): the space whose children it is
+ * Where a new document goes when the family shares spaces with other homes (ADR-056): the space whose children it is
  * about ([SharedHome]), otherwise nowhere special (the family). A new child is always the family's own.
  */
 internal class SpacePlacement(private val local: SyncLocalStore, private val json: Json) {

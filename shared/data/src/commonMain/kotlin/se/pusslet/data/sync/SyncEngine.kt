@@ -55,7 +55,7 @@ fun SyncStatus.waitsForNetwork(): Boolean =
  * - **Outgoing:** the outbox is pushed oldest-first; each entry contains only changed fields, so concurrent edits of
  *   different fields both survive and the same field resolves last-write-wins by server time.
  * - **Deletes** are soft (`deletedAt`), so they sync like any other change.
- * - **Shared spaces** (ADR-030) sync next to the family: the same listeners and outbox per space, limited to the
+ * - **Shared spaces** (ADR-056) sync next to the family: the same listeners and outbox per space, limited to the
  *   collections a space holds. In a space everyone is a parent.
  */
 class SyncEngine(

@@ -186,7 +186,9 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Kalas och presenter (ADR-054): OSA med sista dag, presentidé, budget och köpt, eget kalas med gäster och inbjudan,
   önskelistor där morföräldrar bockar av vad de köpt
 - [x] Barnläge och veckopeng (ADR-055): barnets dag, sysslor med stjärnor och ”Klar!”, föräldern godkänner, veckopeng per vecka
-- [ ] Flerhushållsdelning
+- [x] Flerhushållsdelning (ADR-056): ”Andra hemmet” – barnen man delar, deras vårdnadsschema och det som bara handlar om
+  dem bor i ett delat utrymme som båda hemmens föräldrar synkar; starta med kod, gå med och para ihop barnen, sluta dela
+  med egen kopia; ”Delas med andra hemmet” i händelseredigeraren; regler och kalenderflöde
 
 ## Verifiering fas 1 (2026-10-08)
 Demo-APK på emulator `pusslet_api36` mot Firebase-emulatorerna (auth + firestore):

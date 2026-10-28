@@ -13,7 +13,7 @@ data class InviteInfo(
     /** When set, accepting the invite claims this existing person ("Morfar Bengt") instead of creating a new one. */
     val memberId: String?,
     val expiresAt: Instant,
-    /** An invite from the other home to a space shared for [children] (ADR-030), not to join the family. */
+    /** An invite from the other home to a space shared for [children] (ADR-056), not to join the family. */
     val shared: Boolean = false,
     val children: List<SharedChildRef> = emptyList(),
     /** First name of the parent who invited ("Ahmed vill dela …"). */

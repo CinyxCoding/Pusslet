@@ -5,7 +5,7 @@ rules_version = '2';
 // - Parents can write everything; caregivers (e.g. a grandparent) see what is shared with them and can check things off.
 // - Every client write is stamped: updatedBy == caller and updatedAt == server time (the sync engine always does this).
 // - Clients never hard-delete family data; deletion is soft (deletedAt) or done by a Cloud Function.
-// - A family document with shared == true is a space two homes share for their children (ADR-030): it only holds the
+// - A family document with shared == true is a space two homes share for their children (ADR-056): it only holds the
 //   children's collections, and the parents of its homes may join it without an invite.
 // Tests: functions/test/rules.test.ts (run against the emulator in CI).
 service cloud.firestore {

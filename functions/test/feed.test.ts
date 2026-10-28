@@ -83,7 +83,7 @@ describe("familyCalendarFeed", () => {
     expect(body).not.toContain("SUMMARY:Dans");
   });
 
-  it("includes what the family shares with the other home, and nothing a space does not confirm (ADR-030)", async () => {
+  it("includes what the family shares with the other home, and nothing a space does not confirm (ADR-056)", async () => {
     const fid = `feed-${RUN}-s`;
     const token = `tok${RUN}sssssssssssssssssssssssssss`;
     const space = `feed-${RUN}-space`;

@@ -47,7 +47,7 @@ class FamilyRepository(
         m.sortedBy { it.role.ordinal }.map(FamilyPerson::of) + c.map(FamilyPerson::of)
     }
 
-    /** Adults of the other home, from the spaces this family shares (ADR-030). */
+    /** Adults of the other home, from the spaces this family shares (ADR-056). */
     val otherHomeAdults: Flow<List<Member>> =
         combine(members, docs.observeSpaces(Collections.Members, Member.serializer())) { ours, shared ->
             val mine = ours.map { it.id }.toSet()

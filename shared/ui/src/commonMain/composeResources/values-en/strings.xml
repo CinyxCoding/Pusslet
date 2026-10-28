@@ -1399,4 +1399,19 @@
     <string name="notify_pickup_unconfirmed_title">Is %1$s picked up?</string>
     <string name="notify_pickup_unconfirmed_body">%1$s was to pick up at %2$s</string>
     <string name="notify_pickup_unconfirmed_mine">Tap Picked up when you have</string>
+
+    <!-- Pictures shared to the app, kept on this phone only (ADR-049) -->
+    <string name="attachments_title">Pictures</string>
+    <string name="attachments_only_here">Pictures are kept on this phone only.</string>
+    <string name="attachment_open">Open the picture</string>
+    <string name="attachment_remove">Remove the picture</string>
+    <string name="attachment_remove_confirm">Remove the picture from this phone?</string>
+    <string name="attach_title">Save the picture</string>
+    <string name="attach_note_title">As a note</string>
+    <string name="attach_note_hint">What is it? E.g. Weekly letter wk 41</string>
+    <string name="attach_note_default">Picture</string>
+    <string name="attach_to_event">To an event</string>
+    <string name="attach_event_when">%1$s · %2$s</string>
+    <string name="attach_no_events">No events in the coming weeks.</string>
+    <string name="attach_failed">The picture couldn't be read.</string>
 </resources>

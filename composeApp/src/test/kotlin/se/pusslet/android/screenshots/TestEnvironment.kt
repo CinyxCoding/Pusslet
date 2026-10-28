@@ -75,6 +75,7 @@ object TestEnvironment {
             }
             single { httpClient() }
             single<DeviceCalendarSource> { NoDeviceCalendars }
+            single<se.pusslet.data.repository.AttachmentFiles> { se.pusslet.data.repository.NoAttachmentFiles }
             single<RemoteStore> { OfflineRemoteStore }
             single<FamilyRemote> { LocalOnlyFamilyRemote }
             single<AuthRepository> { LocalOnlyAuthRepository() }

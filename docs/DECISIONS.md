@@ -515,3 +515,18 @@ timmar (ett barn som väntar), och kan stängas av per telefon (”Varna om en h
 sina egna kvitton men inte i någon annans namn. En sjuk dag (ADR-047) har ingen hämtning och därmed ingen varning.
 **Konsekvens:** Familjer som inte vill bocka av kan stänga av varningen; kvittona sparas tills den vanliga rensningen tar
 borttagna (ADR-046). Lämning har samma datamodell men ingen knapp eller varning än.
+
+## ADR-049 – Delade bilder stannar på telefonen
+**Kontext:** Briefen vill kunna dela en bild till appen (ett fotat veckobrev) och ha den med en händelse eller anteckning.
+Bilder kan visa barn, namn och adresser, och Firestore är inte gjort för filer.
+**Beslut:** En bild som delas till appen kopieras direkt (medan den delande appen ger oss läsrätt) till appens privata mapp
+`files/attachments`, som JPEG högst 2048 px med kamerans rotation och en liten miniatyr; originalet lämnar aldrig sin app.
+Sedan väljer man ”Som anteckning” (en uppgift utan datum som bär bilden) eller en kommande händelse (en serie visas en gång,
+vid nästa tillfälle). Vem bilden hör till sparas i en egen samling som är `localOnly`: den köas aldrig för uppladdning och
+finns inte i `Collections.all`. Mappen är undantagen från säkerhetskopiering, raderas med ”Glöm familjen på telefonen”, och
+vid start tas bilder bort vars händelse eller anteckning är borta, liksom filer som ingenting pekat på på ett dygn (en
+delning som avbröts). Bilden visas som miniatyr på händelsen och anteckningen och öppnas i telefonens bildvisare via en
+FileProvider, en läsrätt i taget. Lämnar man ”Spara bilden” utan att välja tas kopian bort.
+**Konsekvens:** Bilden finns bara på telefonen som tog emot den; de andra i familjen ser den inte. Det är medvetet tills
+familjen vill ha delade bilder och vi har en lagring för det (Firebase Storage med regler per familj).
+

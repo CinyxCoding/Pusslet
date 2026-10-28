@@ -44,12 +44,14 @@ import kotlinx.datetime.LocalTime
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.helper.HelperAnswer
+import se.pusslet.core.model.AttachmentOwner
 import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.HandoffKind
 import se.pusslet.core.model.Role
 import se.pusslet.feature.calendar.annotate
+import se.pusslet.feature.calendar.attachments.AttachmentsRoute
 import se.pusslet.feature.calendar.editor.reminderLabel
 import se.pusslet.feature.calendar.handoffSegment
 import se.pusslet.ui.components.AvatarStack
@@ -111,7 +113,7 @@ fun EventDetailsRoute(
             onDecline = viewModel::decline,
             onChangeAnswer = viewModel::changeAnswer,
         ),
-    )
+    ) { o -> AttachmentsRoute(AttachmentOwner.Event, o.event.seriesId ?: o.event.id) }
 }
 
 @Composable
@@ -120,6 +122,8 @@ fun EventDetailsScreen(
     onBack: () -> Unit,
     onEdit: (eventId: String, occurrenceDate: LocalDate?) -> Unit,
     actions: HandoffActions = HandoffActions(),
+    /** Pictures kept with the event on this phone (ADR-049). */
+    attachments: @Composable (EventOccurrence) -> Unit = {},
 ) {
     val o = state.occurrence
     var askScope by remember { mutableStateOf(false) }
@@ -209,6 +213,7 @@ fun EventDetailsScreen(
             if (o.event.note.isNotBlank()) {
                 Section(stringResource(Res.string.event_note)) { Text(o.event.note, style = MaterialTheme.typography.bodyLarge) }
             }
+            attachments(o)
             if (o.source == EventSource.Family && !o.event.sharedWithCaregivers) {
                 val caregivers = state.caregivers.map { it.name }
                 Text(

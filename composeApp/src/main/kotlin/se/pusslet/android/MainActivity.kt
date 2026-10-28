@@ -10,7 +10,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.IntentCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
+import se.pusslet.android.attachments.AndroidAttachmentFiles
 import se.pusslet.android.notify.AndroidNotifier
 import se.pusslet.android.platform.AndroidPlatformActions
 import se.pusslet.core.notify.NotificationTarget
@@ -25,13 +30,14 @@ import se.pusslet.ui.platform.LocalPlatformActions
  */
 class MainActivity : AppCompatActivity() {
     private var incoming by mutableStateOf<IncomingIntent?>(null)
+    private val attachments: AndroidAttachmentFiles by inject()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val platform = AndroidPlatformActions(this)
-        if (savedInstanceState == null) incoming = parse(intent)
+        val platform = AndroidPlatformActions(this, attachments)
+        if (savedInstanceState == null) receive(intent)
         setContent {
             CompositionLocalProvider(LocalPlatformActions provides platform) {
                 PussletApp(incoming = incoming, onIncomingHandled = { incoming = null })
@@ -41,7 +47,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        parse(intent)?.let { incoming = it }
+        receive(intent)
+    }
+
+    private fun receive(intent: Intent?) {
+        val image = sharedImage(intent)
+        if (image == null) {
+            parse(intent)?.let { incoming = it }
+        } else {
+            // Read while the sharing app's permission lasts; the copy is ours from then on (ADR-049).
+            lifecycleScope.launch { incoming = IncomingIntent.SharedImage(attachments.import(image)) }
+        }
+    }
+
+    private fun sharedImage(intent: Intent?): Uri? {
+        if (intent?.action != Intent.ACTION_SEND || intent.type?.startsWith("image/") != true) return null
+        return IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
     }
 
     private fun parse(intent: Intent?): IncomingIntent? = when (intent?.action) {

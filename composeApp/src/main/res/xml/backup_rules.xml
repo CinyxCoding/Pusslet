@@ -2,4 +2,6 @@
 <!-- Android 11 and lower. The local database is a cache of the family's cloud data; no secrets are backed up. -->
 <full-backup-content>
     <exclude domain="sharedpref" path="." />
+    <!-- Pictures can show children and addresses; they stay on the phone (ADR-049). -->
+    <exclude domain="file" path="attachments/" />
 </full-backup-content>

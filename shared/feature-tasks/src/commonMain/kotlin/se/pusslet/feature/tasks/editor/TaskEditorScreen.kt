@@ -131,7 +131,13 @@ import se.pusslet.ui.resources.tasks_whose_turn
 import se.pusslet.ui.theme.Spacing
 
 @Composable
-fun TaskEditorRoute(taskId: String?, onDone: () -> Unit, viewModel: TaskEditorViewModel = koinViewModel()) {
+fun TaskEditorRoute(
+    taskId: String?,
+    onDone: () -> Unit,
+    /** Pictures kept with the note on this phone (filled in by the app shell, ADR-049). */
+    attachments: @Composable () -> Unit = {},
+    viewModel: TaskEditorViewModel = koinViewModel(),
+) {
     LaunchedEffect(taskId) { viewModel.load(taskId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.done) { if (state.done) onDone() }
@@ -161,6 +167,7 @@ fun TaskEditorRoute(taskId: String?, onDone: () -> Unit, viewModel: TaskEditorVi
             onSave = viewModel::save,
             onDelete = viewModel::delete,
         ),
+        attachments = attachments,
     )
     if (confirmDiscard) {
         AlertDialog(
@@ -206,7 +213,12 @@ data class TaskEditorActions(
  * on the list instead of "Är du säker?").
  */
 @Composable
-fun TaskEditorScreen(state: TaskEditorState, preview: (TaskDraft) -> FamilyTask, actions: TaskEditorActions) {
+fun TaskEditorScreen(
+    state: TaskEditorState,
+    preview: (TaskDraft) -> FamilyTask,
+    actions: TaskEditorActions,
+    attachments: @Composable () -> Unit = {},
+) {
     Scaffold(
         topBar = {
             PussletTopBar(
@@ -265,6 +277,7 @@ fun TaskEditorScreen(state: TaskEditorState, preview: (TaskDraft) -> FamilyTask,
                 minLines = 2,
                 modifier = Modifier.fillMaxWidth(),
             )
+            attachments()
             SwitchRow(stringResource(Res.string.tasks_shared_helpers), d.sharedWithCaregivers, { v ->
                 actions.onEdit { it.copy(sharedWithCaregivers = v) }
             })

@@ -17,6 +17,8 @@ import se.pusslet.data.notify.PushMessages
 import se.pusslet.data.notify.PushRegistration
 import se.pusslet.data.premium.AllUnlocked
 import se.pusslet.data.premium.Entitlements
+import se.pusslet.data.repository.AttachmentHousekeeping
+import se.pusslet.data.repository.AttachmentRepository
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -113,7 +115,9 @@ val dataModule: Module = module {
     single { PushRegistration(get(), get(), get(), get()) }
     // The home-screen widgets' data (ADR-039); Glance lives in composeApp.
     single { WidgetSource(get(), get(), get(), get(), get(), get(), get()) }
-    single { DataPrivacy(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { DataPrivacy(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), attachments = get()) }
+    single { AttachmentRepository(get(), get(), get(), get()) }
+    single { AttachmentHousekeeping(get(), get(), get(), get()) }
     // The family's own calendar feed link (ADR-041).
     single { CalendarFeedLink(get(), get(), get(), get()) }
     single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

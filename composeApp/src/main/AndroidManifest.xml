@@ -51,13 +51,30 @@
                 <data android:scheme="pusslet" android:host="join" />
             </intent-filter>
 
-            <!-- Share to the app: text goes to quick add (images and recipe links come with phase 2). -->
+            <!-- Share to the app: text goes to quick add, a recipe link to the recipe import. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>
+            <!-- A picture (e.g. a photographed weekly letter) is kept on the phone with an event or a note (ADR-049). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
         </activity>
+
+        <!-- Lets the phone's picture viewer open an attached picture, one grant at a time. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <activity
             android:name=".scanner.ScannerActivity"

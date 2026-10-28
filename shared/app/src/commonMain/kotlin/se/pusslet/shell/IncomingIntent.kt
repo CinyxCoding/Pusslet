@@ -11,6 +11,9 @@ sealed interface IncomingIntent {
     /** Text shared to Pusslet (e.g. a message from school) opens quick add with the text filled in. */
     data class SharedText(val text: String) : IncomingIntent
 
+    /** A picture shared to Pusslet (e.g. a photographed weekly letter), already copied in. Null when it could not be read. */
+    data class SharedImage(val fileName: String?) : IncomingIntent
+
     /** A tapped notification (ADR-036) opens what it is about. */
     data class Open(val target: NotificationTarget) : IncomingIntent
 }

@@ -29,7 +29,9 @@ import se.pusslet.data.remote.BackendUnavailableException
 import se.pusslet.data.remote.DeletionRefusal
 import se.pusslet.data.remote.DeletionRefusedException
 import se.pusslet.data.remote.FamilyRemote
+import se.pusslet.data.repository.AttachmentFiles
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.NoAttachmentFiles
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.session.Session
@@ -99,6 +101,7 @@ class DataPrivacy(
     private val prefDao: PreferenceDao,
     private val zone: TimeZone,
     private val clock: Clock = Clock.System,
+    private val attachments: AttachmentFiles = NoAttachmentFiles,
 ) {
     private val log = Logger.withTag("Privacy")
     private val json = Json { prettyPrint = true }
@@ -172,7 +175,8 @@ class DataPrivacy(
 
     /**
      * Removes the family from this phone only; the others in it keep everything. Besides the synced documents this clears
-     * the purchase history (never synced, ADR-019) and the preferences that point into the family.
+     * the purchase history (never synced, ADR-019), the preferences that point into the family and the pictures kept on
+     * this phone (ADR-049).
      */
     suspend fun forgetOnDevice() = withContext(NonCancellable) {
         val familyId = sessions.session.value.familyId ?: return@withContext
@@ -180,6 +184,7 @@ class DataPrivacy(
         purchases.deleteFamily(familyId)
         FAMILY_PREFERENCES.forEach { prefDao.remove(it) }
         prefs.update(Prefs.SetupHidden) { it - familyId }
+        attachments.deleteAll()
         // Last: the session change closes the screen that asked (and with it the caller's scope).
         coordinator.forgetFamilyOnDevice(local)
     }

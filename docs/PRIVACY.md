@@ -38,7 +38,8 @@ Personuppgiftsansvarig är [namn på ägaren eller företaget], [ort]. Frågor o
 | Inställningar på telefonen (tema, notiser, tysta timmar, vilka kalendrar som visas) | Du | Appens funktion | Avtal; stannar på telefonen |
 
 **Stannar på telefonen och skickas aldrig till oss:** telefonens egna kalendrar (läses för att visa krockar), kamerabilden
-vid streckkods- och QR-skanning (tolkas på telefonen), köphistoriken som ger förslag på basvaror, och inställningarna ovan.
+vid streckkods- och QR-skanning (tolkas på telefonen), köphistoriken som ger förslag på basvaror, bilder du delar till appen
+(till exempel ett fotat veckobrev; de säkerhetskopieras inte heller) och inställningarna ovan.
 Familjens händelser kan du själv välja att skriva till telefonens kalender.
 
 **Inga kraschrapporter eller analysdata** samlas in i den här versionen. Om det läggs till sker det bara efter att du har

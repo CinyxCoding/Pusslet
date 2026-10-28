@@ -31,6 +31,9 @@ sealed interface Route {
     /** One occurrence of an event (family, subscription or device calendar). */
     @Serializable data class EventDetails(val eventId: String, val occurrenceDate: LocalDate) : Route
 
+    /** A picture shared to the app, already copied to the private attachment folder (ADR-049). */
+    @Serializable data class AttachImage(val fileName: String) : Route
+
     /** One day of the calendar as its own screen, opened from a day header (ADR-033). */
     @Serializable data class CalendarDay(val date: LocalDate) : Route
 

@@ -171,6 +171,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   friskt och VAB per förälder i år. Påminnelser för frånvaroanmälan och VAB. Testat i kärnan, Idag, kalendern, push och
   regler, med skärmdumpstest och tillgänglighetskontroll av arket och kortet
   - [x] Sjukanmälan via snabbinmatningen (”Ella sjuk”, ”Ella och Simon sjuka imorgon”), med Ångra och bara för föräldrar
+- [x] Dela en bild till appen (ADR-049): sparas på telefonen med en händelse eller som anteckning, aldrig i molnet
 - [ ] Medicin och feber: delad logg och påminnelser för kurer
 - [x] Kvitto på hämtning (ADR-048): ”Hämtad” på min hämtning på Idag, i hjälparvyn och i notisen, push till de andra
   (”Ella är hämtad · Bengt · 15:52”), varning en kvart efter tiden till den som skulle hämta och föräldrarna, som notis och
@@ -203,7 +204,6 @@ Nästa steg: kör fas 2 på emulator (`installDemoDebug`), spela in skärmdumpar
 - iOS kan inte kompileras på Windows; verifieras i CI (macOS-runner).
 - Hjälpare (t.ex. morfar) kan inte ändra lämning/hämtning direkt, bara svara på förfrågningar (ADR-015).
 - Redigeras en händelse på en telefon i annan tidszon visas händelsens egna klockslag i redigeraren (kalendern visar omräknat).
-- Delade bilder (SEND image/*) tas inte emot än (receptlänkar gör det sedan fas 2).
 - CI hade aldrig gått igenom: `gradlew` saknade körbarhetsbiten i git. Rättat 2026-10-13; sedan dess grönt (Android, iOS,
   Firestore-regler).
 - Molnsessionerna kan inte bygga Android (Googles Maven är blockerad), men en egen JVM-kompilering av alla delade moduler

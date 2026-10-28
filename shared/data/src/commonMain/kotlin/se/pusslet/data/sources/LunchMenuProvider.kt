@@ -36,15 +36,24 @@ class SkolmatenRssProvider(private val fetcher: CachedFetcher, private val zone:
     }
 
     companion object {
-        /** "https://skolmaten.se/vasaskolan/rss/weeks" -> "vasaskolan"; "Vasaskolan" -> "vasaskolan". */
+        /**
+         * "https://skolmaten.se/vasaskolan/rss/weeks" -> "vasaskolan"; "Vasaskolan" -> "vasaskolan";
+         * "Söderskolan" -> "soderskolan" (skolmaten's slugs are ASCII, "söderskolan" answers 500).
+         */
         fun slugOf(input: String): String? {
             val t = input.trim()
             if (t.isEmpty()) return null
             val path = if ("skolmaten.se" in t) t.substringAfter("skolmaten.se").trim('/') else t
             val segments = path.split('/').filter { it.isNotBlank() && it !in setOf("api", "4", "rss", "week", "weeks", "day") }
             val slug = segments.firstOrNull()?.substringBefore('?')?.lowercase() ?: return null
-            return slug.replace(' ', '-').filter { it.isLetterOrDigit() || it == '-' }.ifEmpty { null }
+            return slug.replace(' ', '-')
+                .map { SLUG_LETTERS[it] ?: it }
+                .filter { it in 'a'..'z' || it in '0'..'9' || it == '-' }
+                .joinToString("")
+                .ifEmpty { null }
         }
+
+        private val SLUG_LETTERS = mapOf('å' to 'a', 'ä' to 'a', 'ö' to 'o', 'é' to 'e', 'è' to 'e', 'ü' to 'u', 'æ' to 'a', 'ø' to 'o')
     }
 }
 

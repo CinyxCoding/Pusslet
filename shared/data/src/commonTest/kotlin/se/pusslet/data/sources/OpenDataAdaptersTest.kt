@@ -119,6 +119,10 @@ class OpenDataAdaptersTest {
         assertEquals("vasaskolan", SkolmatenRssProvider.slugOf("https://skolmaten.se/vasaskolan/rss/weeks"))
         assertEquals("vasaskolan", SkolmatenRssProvider.slugOf("https://skolmaten.se/api/4/rss/week/vasaskolan?locale=sv"))
         assertEquals("vasaskolan", SkolmatenRssProvider.slugOf("Vasaskolan"))
+        // skolmaten's slugs have no å, ä or ö (checked against skolmaten.se 2026-10-28).
+        assertEquals("soderskolan", SkolmatenRssProvider.slugOf("Söderskolan"))
+        assertEquals("angskolan", SkolmatenRssProvider.slugOf("ÄNGSKOLAN"))
+        assertEquals("aby-skola", SkolmatenRssProvider.slugOf("Åby skola"))
         assertNull(SkolmatenRssProvider.slugOf("  "))
     }
 

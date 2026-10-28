@@ -368,6 +368,7 @@ private fun sentenceWords(): SentenceWords = SentenceWords(
     due = stringResource(Res.string.quickadd_preview_due),
     pickUp = stringResource(Res.string.quickadd_handoff_pickup),
     dropOff = stringResource(Res.string.quickadd_handoff_dropoff),
+    sick = stringResource(Res.string.quickadd_sick),
     range = stringResource(Res.string.time_range),
     allChildren = stringResource(Res.string.quickadd_handoff_all_children),
     today = stringResource(Res.string.today),
@@ -407,7 +408,7 @@ private fun ActionFields(
     onRemove: (() -> Unit)?,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        if (primary && action !is QuickAddAction.AssignHandoff) {
+        if (primary && action !is QuickAddAction.AssignHandoff && action !is QuickAddAction.ReportSick) {
             KindChips(QuickAddEdits.kindOf(action), highlight = UncertainField.Kind in uncertain, modifier = Modifier.weight(1f)) {
                 onConvert(index, it)
             }
@@ -466,6 +467,17 @@ private fun ActionFields(
             )
             val dateUncertain = UncertainField.Date in uncertain
             DateField(stringResource(Res.string.field_date), action.date, { onDate(index, it) }, highlight = dateUncertain)
+            PeopleField(people.filter { it.isChild }, action.childIds.toSet(), false) { onTogglePerson(index, it) }
+        }
+        is QuickAddAction.ReportSick -> {
+            Text(stringResource(Res.string.sick_sheet_body), style = MaterialTheme.typography.bodySmall)
+            DateField(
+                stringResource(Res.string.field_date),
+                action.date,
+                { onDate(index, it) },
+                highlight =
+                    UncertainField.Date in uncertain,
+            )
             PeopleField(people.filter { it.isChild }, action.childIds.toSet(), false) { onTogglePerson(index, it) }
         }
     }
@@ -597,6 +609,7 @@ private fun kindLabel(kind: ActionKind): String = stringResource(
         ActionKind.Shopping -> Res.string.quickadd_kind_shopping
         ActionKind.Meal -> Res.string.quickadd_kind_meal
         ActionKind.Handoff -> Res.string.quickadd_kind_handoff
+        ActionKind.Sick -> Res.string.quickadd_kind_sick
     },
 )
 

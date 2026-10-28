@@ -646,4 +646,37 @@ class SwedishQuickAddParserTest {
     }
 
     // endregion
+
+    // region sick (ADR-047)
+
+    @Test
+    fun aChildNamedSickIsASickReportForToday() {
+        listOf("Ella sjuk", "Ella är sjuk", "ella är hemma sjuk idag", "Ella har feber", "Ella magsjuk", "ELLA SJUK").forEach {
+            assertEquals(QuickAddAction.ReportSick(listOf("ella"), today), parse(it).primary, it)
+        }
+    }
+
+    @Test
+    fun severalChildrenAndTomorrow() {
+        assertEquals(QuickAddAction.ReportSick(listOf("ella", "simon"), d("2026-10-09")), parse("Ella och Simon sjuka imorgon").primary)
+        assertEquals(QuickAddAction.ReportSick(listOf("simon"), d("2026-10-09")), parse("Simon vab imorgon").primary)
+    }
+
+    @Test
+    fun sickNeedsAChildAndNothingElse() {
+        // No child: a to-do, not a sick day.
+        assertIs<QuickAddAction.CreateTask>(parse("Sara sjuk").primary)
+        // A time makes it an event ("sjukgymnast" is not "sjuk").
+        assertIs<QuickAddAction.CreateEvent>(parse("Ella sjukgymnast tis 15:00").primary)
+        assertIs<QuickAddAction.CreateEvent>(parse("Ella läkare sjuk tis 15:00").primary)
+        // Something to do about it stays a task.
+        assertIs<QuickAddAction.CreateTask>(parse("Ella sjuk, ring förskolan").actions[1])
+    }
+
+    @Test
+    fun onlyAParentReportsSick() {
+        assertIs<QuickAddAction.CreateTask>(parse("Ella sjuk", ctx.copy(currentUserId = "bengt", canReportSick = false)).primary)
+    }
+
+    // endregion
 }

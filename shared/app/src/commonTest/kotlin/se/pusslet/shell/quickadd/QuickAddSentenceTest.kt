@@ -37,6 +37,7 @@ class QuickAddSentenceTest {
         due = "senast %1\$s",
         pickUp = "%1\$s hämtar %2\$s",
         dropOff = "%1\$s lämnar %2\$s",
+        sick = "%1\$s sjuk %2\$s",
         range = "%1\$s–%2\$s",
         allChildren = "barnen",
         today = "Idag",
@@ -189,5 +190,10 @@ class QuickAddSentenceTest {
         assertEquals("idag", QuickAddSentence.inSentence("Idag"))
         assertEquals("varje tisdag", QuickAddSentence.inSentence("Varje tisdag"))
         assertEquals("IKEA", QuickAddSentence.inSentence("IKEA"))
+    }
+
+    @Test
+    fun aSickReportNamesTheChildrenAndTheDay() {
+        assertEquals("Ella och Simon sjuk imorgon", sentence("Ella och Simon sjuka imorgon").plain())
     }
 }

@@ -228,6 +228,8 @@
     <string name="quickadd_kind_shopping">Till inköpslistan</string>
     <string name="quickadd_kind_meal">Till matsedeln</string>
     <string name="quickadd_kind_handoff">Hämta/lämna</string>
+    <string name="quickadd_kind_sick">Sjuk</string>
+    <string name="quickadd_sick">%1$s sjuk %2$s</string>
     <string name="quickadd_save">Spara</string>
     <string name="quickadd_save_all">Spara %1$d saker</string>
     <string name="quickadd_saved">Sparat</string>

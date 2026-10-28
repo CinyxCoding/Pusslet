@@ -30,6 +30,7 @@ import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.repository.ShoppingRepository
+import se.pusslet.data.repository.SickDayRepository
 import se.pusslet.data.repository.TaskRepository
 import se.pusslet.data.session.SessionProvider
 import kotlin.time.Clock
@@ -62,6 +63,10 @@ data class QuickAddOutcome(
     val firstEvent: SavedSlot? = null,
     /** The last single-day hand-off that was changed or created. */
     val handoff: AssignedHandoff? = null,
+    /** Sick days this input reported for the first time (undo deletes them); a day already reported is not among them. */
+    val sickDayIds: List<String> = emptyList(),
+    /** The children reported sick and the day ("Ella sjuk idag"). */
+    val sick: Pair<List<String>, LocalDate>? = null,
 ) {
     /** What the confirmation says: what happened and where, and whether "Ångra" really restores (UX plan 1.8). */
     val receipt: QuickAddReceipt
@@ -69,7 +74,10 @@ data class QuickAddOutcome(
             val created = eventIds.size + taskIds.size + itemIds.size + meals.size
             val assigned = handoff
             val first = firstEvent
+            val sickReport = sick
             return when {
+                sickReport != null && created == 0 && modifiedEventIds.isEmpty() ->
+                    QuickAddReceipt.Sick(sickReport.first, sickReport.second, undo = sickDayIds.isNotEmpty())
                 created == 0 && assigned != null && !assigned.created -> QuickAddReceipt.HandoffChanged(assigned)
                 created == 0 -> QuickAddReceipt.Saved(undo = false)
                 itemIds.size == created && modifiedEventIds.isEmpty() -> QuickAddReceipt.Items(itemIds.size)
@@ -116,6 +124,9 @@ sealed interface QuickAddReceipt {
         override val undo: Boolean get() = true
     }
 
+    /** Only a sick report: "Ella sjuk idag · Ångra" (no Ångra when the day was already reported). */
+    data class Sick(val childIds: List<String>, val date: LocalDate, override val undo: Boolean) : QuickAddReceipt
+
     /** Anything else: "Sparat". */
     data class Saved(override val undo: Boolean) : QuickAddReceipt
 }
@@ -129,6 +140,7 @@ class QuickAddExecutor(
     private val recipes: RecipeRepository,
     private val family: FamilyRepository,
     private val handoffs: HandoffAssigner,
+    private val sickDays: SickDayRepository,
     private val prefs: PreferencesRepository,
     private val sessions: SessionProvider,
     private val ids: IdGenerator,
@@ -199,6 +211,14 @@ class QuickAddExecutor(
                     outcome = outcome.copy(meals = outcome.meals + (action.date to action.slot))
                 }
                 is QuickAddAction.AssignHandoff -> outcome = assignHandoff(action, outcome)
+                is QuickAddAction.ReportSick -> {
+                    val before = sickDays.days.first().map { it.id }.toSet()
+                    val days = sickDays.report(action.childIds, action.date)
+                    outcome = outcome.copy(
+                        sickDayIds = outcome.sickDayIds + days.map { it.id }.filter { it !in before },
+                        sick = action.childIds to action.date,
+                    )
+                }
             }
         }
         if (result.input.isNotBlank()) {
@@ -213,6 +233,7 @@ class QuickAddExecutor(
         outcome.taskIds.forEach { tasks.delete(it) }
         outcome.itemIds.forEach { shopping.deleteItem(it) }
         outcome.meals.forEach { (date, slot) -> meals.clearEntry(date, slot) }
+        outcome.sickDayIds.forEach { sickDays.undo(it) }
     }
 
     private suspend fun assignHandoff(action: QuickAddAction.AssignHandoff, outcome: QuickAddOutcome): QuickAddOutcome {

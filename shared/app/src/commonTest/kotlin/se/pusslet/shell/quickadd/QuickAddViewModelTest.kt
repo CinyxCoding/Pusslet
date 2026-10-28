@@ -39,6 +39,7 @@ import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.repository.ShoppingRepository
+import se.pusslet.data.repository.SickDayRepository
 import se.pusslet.data.repository.TaskRepository
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
@@ -130,6 +131,7 @@ class QuickAddViewModelTest {
             recipes = RecipeRepository(docs),
             family = family,
             handoffs = HandoffAssigner(calendar),
+            sickDays = SickDayRepository(docs, sessions),
             prefs = prefs,
             sessions = sessions,
             ids = ids,

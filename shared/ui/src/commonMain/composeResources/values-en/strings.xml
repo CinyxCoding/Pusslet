@@ -227,6 +227,8 @@
     <string name="quickadd_kind_shopping">To the shopping list</string>
     <string name="quickadd_kind_meal">To the meal plan</string>
     <string name="quickadd_kind_handoff">Pick-up/drop-off</string>
+    <string name="quickadd_kind_sick">Sick</string>
+    <string name="quickadd_sick">%1$s home sick %2$s</string>
     <string name="quickadd_save">Save</string>
     <string name="quickadd_save_all">Save %1$d things</string>
     <string name="quickadd_saved">Saved</string>

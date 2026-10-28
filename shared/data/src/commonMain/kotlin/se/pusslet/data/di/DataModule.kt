@@ -116,7 +116,7 @@ val dataModule: Module = module {
     single { DataPrivacy(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     // The family's own calendar feed link (ADR-041).
     single { CalendarFeedLink(get(), get(), get(), get()) }
-    single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    single { QuickAddExecutor(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeImporter(get(), get()) }
     single { MealShopping(get(), get(), get(), get(), get(), get(), get()) }
     single { RecipeNutrition(get(), get()) }

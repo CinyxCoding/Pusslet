@@ -24,7 +24,7 @@ import se.pusslet.core.units.QuantityParser
  * so the preview can highlight it.
  *
  * Examples: "Simon fotboll tis 17:30 varje vecka", "Ella kalas lör 14-16 hos Vera, köp present",
- * "mjölk, 2 gurka, pasta", "Johan hämtar imorgon", "tacos fredag".
+ * "mjölk, 2 gurka, pasta", "Johan hämtar imorgon", "tacos fredag", "Ella sjuk".
  */
 class SwedishQuickAddParser {
     fun parse(input: String, ctx: QuickAddContext): QuickAddResult {
@@ -105,6 +105,7 @@ class SwedishQuickAddParser {
         if (lower.split(' ').size > 5) return false
         if (DATE_OR_TIME_HINT.containsMatchIn(lower)) return false
         if (startsWithTaskVerb(lower)) return false
+        if (SICK.containsMatchIn(lower)) return false
         if (lower.split(' ').any {
                 it in SwedishLexicon.activityTags || it in SwedishLexicon.pickupVerbs ||
                     it in SwedishLexicon.dropoffVerbs
@@ -126,7 +127,7 @@ class SwedishQuickAddParser {
         text.split(Regex("""(?<!\d),|,(?!\d)|;|\n""")).map { it.trim() }.filter { it.isNotEmpty() }
 
     // Rule table: one branch per kind of phrase, each covered by SwedishQuickAddParserTest.
-    @Suppress("CyclomaticComplexMethod")
+    @Suppress("CyclomaticComplexMethod", "ReturnCount")
     private fun parseClause(clause: String, ctx: QuickAddContext, uncertain: MutableSet<UncertainField>): QuickAddAction {
         val scan = Scan(clause)
 
@@ -137,6 +138,18 @@ class SwedishQuickAddParser {
         val dateInfo = extractDate(scan, ctx, recurrence)
         val times = extractTimes(scan, hasDateContext = dateInfo != null || recurrence != null)
         if (times?.uncertain == true) uncertain += UncertainField.Time
+
+        // Sick: "Ella sjuk", "Simon och Ella är sjuka imorgon" (ADR-047). Only a child named and nothing else to do.
+        val children = persons.filter { it.person.isChild }.map { it.person.id }
+        if (ctx.canReportSick && children.isNotEmpty() && handoff == null && times == null && recurrence == null) {
+            val sick = scan.find(SICK)
+            if (sick != null) {
+                val rest = scan.remainingLower().replace(sick.value, " ").split(' ').filter { it.isNotBlank() }
+                if (rest.all { it in SICK_FILLER }) {
+                    return QuickAddAction.ReportSick(children, dateInfo?.date ?: ctx.today)
+                }
+            }
+        }
 
         val remainingLower = scan.remainingLower()
         val tags = remainingLower.split(' ').mapNotNull { SwedishLexicon.activityTags[it.trimEnd('s')] ?: SwedishLexicon.activityTags[it] }
@@ -692,6 +705,14 @@ class SwedishQuickAddParser {
             """$B(idag|i dag|imorgon|i morgon|övermorgon|ikväll|i kväll|helgen|kl|klockan|v\.?\s*\d|vecka|nästa|varje|varannan|$WD)$E""" +
                 """|\d{1,2}[:.]\d{2}|\d{1,2}/\d{1,2}""",
         )
+
+        val SICK = Regex(
+            """$B(är\s+)?(hemma\s+)?(sjuk|sjuka|magsjuk|magsjuka|förkyld|förkylda|febrig|febriga|har feber|feber|kräks|spyr|""" +
+                """vinterkräksjukan|vabbar|vabba|vabb|vab|sick|ill)$E""",
+        )
+
+        /** Words that may stand next to a sick child without making it anything else ("Ella är hemma sjuk idag igen"). */
+        val SICK_FILLER = setOf("är", "hemma", "idag", "fortfarande", "igen", "också", "med", "nu", "blev", "har", "och", "is", "home")
 
         val PICKUP = Regex("""$B(hämtar|hämtning(?:en)?|picks up)$E""")
         val DROPOFF = Regex("""$B(lämnar|lämning(?:en)?|drops off)$E""")

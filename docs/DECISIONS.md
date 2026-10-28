@@ -496,8 +496,10 @@ stannar hemma skickas som push till alla andra i familjen, hjälpare också (`pu
 frånvaroanmälan 07:45 till den som är hemma, VAB kvällen barnet är friskt igen. Hjälpare läser sjukdagarna men skriver
 dem inte. Sjukdagar från före förra året tas bort från föräldrarnas telefoner och sedan av rensningen (ADR-046).
 **Konsekvens:** Sjukdagar är hälsouppgifter; bara att barnet är sjukt sparas, aldrig symtom eller diagnos, och arket
-säger vad som sparas och varför (PRIVACY.md). Händelser över flera dagar (läger) ställs inte in av en sjukdag. Att
-sjukanmäla via snabbinmatningen (”Ella sjuk”) är inte byggt än.
+säger vad som sparas och varför (PRIVACY.md). Händelser över flera dagar (läger) ställs inte in av en sjukdag.
+Snabbinmatningen förstår ”Ella sjuk”, ”Ella och Simon är sjuka imorgon”, ”Simon har feber” och ”Ella vab” när ett barn
+nämns och inget annat står i meningen (en tid eller något att göra gör det till en händelse eller uppgift). Det sparas
+som ”Sjuk idag?” och bara för en förälder; för andra blir raden en uppgift.
 
 ## ADR-048 – Kvitto på hämtning
 **Kontext:** Hämtningen planeras i appen men ingen bekräftar att den har skett, så den som inte hämtar vet inte om barnet

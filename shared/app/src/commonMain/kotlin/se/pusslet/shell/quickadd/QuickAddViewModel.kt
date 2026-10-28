@@ -15,6 +15,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.model.FamilyPerson
+import se.pusslet.core.model.Role
 import se.pusslet.core.quickadd.ActionKind
 import se.pusslet.core.quickadd.EventPrefill
 import se.pusslet.core.quickadd.QuickAddAction
@@ -53,6 +54,7 @@ data class QuickAddUiState(
             is QuickAddAction.PlanMeal -> a.title.isNotBlank()
             is QuickAddAction.AddShoppingItems -> a.items.isNotEmpty()
             is QuickAddAction.AssignHandoff -> true
+            is QuickAddAction.ReportSick -> a.childIds.isNotEmpty()
         }
     }
 }
@@ -111,7 +113,8 @@ class QuickAddViewModel(
 
     private fun parseNow(text: String) {
         val now = clock.now().toLocalDateTime(zone)
-        val ctx = QuickAddContext(now.date, now.time, _state.value.people, sessions.session.value.memberId)
+        val session = sessions.session.value
+        val ctx = QuickAddContext(now.date, now.time, _state.value.people, session.memberId, canReportSick = session.role == Role.Parent)
         val parsed = parser.parse(text, ctx)
         val preset = presetDate
         val result = if (preset != null) QuickAddPresetDate.apply(parser, parsed, ctx, preset) else parsed

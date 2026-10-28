@@ -170,7 +170,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
   bockar för frånvaroanmälan, jobbet och Försäkringskassan, ”Fortfarande sjuk?” nästa morgon, ”Anmäl VAB” när barnet är
   friskt och VAB per förälder i år. Påminnelser för frånvaroanmälan och VAB. Testat i kärnan, Idag, kalendern, push och
   regler, med skärmdumpstest och tillgänglighetskontroll av arket och kortet
-  - [ ] Sjukanmälan via snabbinmatningen (”Ella sjuk”)
+  - [x] Sjukanmälan via snabbinmatningen (”Ella sjuk”, ”Ella och Simon sjuka imorgon”), med Ångra och bara för föräldrar
 - [ ] Medicin och feber: delad logg och påminnelser för kurer
 - [x] Kvitto på hämtning (ADR-048): ”Hämtad” på min hämtning på Idag, i hjälparvyn och i notisen, push till de andra
   (”Ella är hämtad · Bengt · 15:52”), varning en kvart efter tiden till den som skulle hämta och föräldrarna, som notis och

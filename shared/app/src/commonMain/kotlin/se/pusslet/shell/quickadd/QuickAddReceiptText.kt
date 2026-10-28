@@ -60,6 +60,15 @@ internal suspend fun receiptMessage(receipt: QuickAddReceipt, ctx: ReceiptContex
                 else -> getString(Res.string.quickadd_no_dropoff_found, formatTime(time))
             }
         }
+        is QuickAddReceipt.Sick -> {
+            val names = receipt.childIds.mapNotNull { id -> ctx.people.firstOrNull { it.id == id }?.name }
+            val day = when (receipt.date.toEpochDays() - ctx.today.toEpochDays()) {
+                0L -> getString(Res.string.today).lowercase()
+                1L -> getString(Res.string.tomorrow).lowercase()
+                else -> ctx.day(receipt.date, null)
+            }
+            getString(Res.string.quickadd_sick, names.joinToString(getString(Res.string.and_separator)), day)
+        }
         is QuickAddReceipt.Saved -> getString(Res.string.quickadd_saved)
     }
     return ReceiptMessage(text, action)

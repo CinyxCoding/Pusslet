@@ -15,6 +15,8 @@ data class QuickAddContext(
     val now: LocalTime,
     val people: List<FamilyPerson>,
     val currentUserId: String? = null,
+    /** Only a parent reports a child sick (ADR-047); for others "Ella sjuk" stays a to-do. */
+    val canReportSick: Boolean = true,
 )
 
 /** Fields the preview highlights so the user can correct them with one tap. */
@@ -61,6 +63,9 @@ sealed interface QuickAddAction {
         val time: LocalTime? = null,
         val recurringDays: Set<DayOfWeek> = emptySet(),
     ) : QuickAddAction
+
+    /** "Ella sjuk": the children are home sick on [date] (ADR-047), as "Sjuk idag?" on Idag. */
+    data class ReportSick(val childIds: List<String>, val date: LocalDate) : QuickAddAction
 }
 
 data class QuickAddResult(

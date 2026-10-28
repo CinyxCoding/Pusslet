@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import se.pusslet.core.units.QuantityParser
 
-enum class ActionKind { Event, Task, Shopping, Meal, Handoff }
+enum class ActionKind { Event, Task, Shopping, Meal, Handoff, Sick }
 
 /** One-tap corrections in the quick-add preview. Pure, so the preview behaves predictably and is unit tested. */
 object QuickAddEdits {
@@ -14,6 +14,7 @@ object QuickAddEdits {
         is QuickAddAction.AddShoppingItems -> ActionKind.Shopping
         is QuickAddAction.PlanMeal -> ActionKind.Meal
         is QuickAddAction.AssignHandoff -> ActionKind.Handoff
+        is QuickAddAction.ReportSick -> ActionKind.Sick
     }
 
     fun titleOf(action: QuickAddAction): String = when (action) {
@@ -22,6 +23,7 @@ object QuickAddEdits {
         is QuickAddAction.AddShoppingItems -> action.items.joinToString(", ") { it.name }
         is QuickAddAction.PlanMeal -> action.title
         is QuickAddAction.AssignHandoff -> ""
+        is QuickAddAction.ReportSick -> ""
     }
 
     fun dateOf(action: QuickAddAction): LocalDate? = when (action) {
@@ -30,6 +32,7 @@ object QuickAddEdits {
         is QuickAddAction.AddShoppingItems -> null
         is QuickAddAction.PlanMeal -> action.date
         is QuickAddAction.AssignHandoff -> action.date
+        is QuickAddAction.ReportSick -> action.date
     }
 
     /** Converts the parser's guess to the kind the user picked, keeping title, date and people where it makes sense. */
@@ -41,6 +44,7 @@ object QuickAddEdits {
             is QuickAddAction.CreateEvent -> action.participantIds
             is QuickAddAction.CreateTask -> listOfNotNull(action.assigneeId) + action.relatedPersonIds
             is QuickAddAction.AssignHandoff -> action.childIds
+            is QuickAddAction.ReportSick -> action.childIds
             else -> emptyList()
         }
         return when (to) {
@@ -53,7 +57,7 @@ object QuickAddEdits {
                 },
             )
             ActionKind.Meal -> QuickAddAction.PlanMeal(date = date, title = title)
-            ActionKind.Handoff -> action
+            ActionKind.Handoff, ActionKind.Sick -> action
         }
     }
 
@@ -63,6 +67,7 @@ object QuickAddEdits {
         is QuickAddAction.PlanMeal -> action.copy(title = title)
         is QuickAddAction.AddShoppingItems -> convert(QuickAddAction.CreateTask(title), ActionKind.Shopping, LocalDate(2000, 1, 1))
         is QuickAddAction.AssignHandoff -> action
+        is QuickAddAction.ReportSick -> action
     }
 
     fun withDate(action: QuickAddAction, date: LocalDate): QuickAddAction = when (action) {
@@ -77,6 +82,7 @@ object QuickAddEdits {
         is QuickAddAction.CreateTask -> action.copy(due = date)
         is QuickAddAction.PlanMeal -> action.copy(date = date)
         is QuickAddAction.AssignHandoff -> action.copy(date = date)
+        is QuickAddAction.ReportSick -> action.copy(date = date)
         is QuickAddAction.AddShoppingItems -> action
     }
 
@@ -96,6 +102,7 @@ object QuickAddEdits {
         is QuickAddAction.CreateEvent -> action.copy(participantIds = toggle(action.participantIds, personId))
         is QuickAddAction.CreateTask -> action.copy(assigneeId = if (action.assigneeId == personId) null else personId)
         is QuickAddAction.AssignHandoff -> action.copy(childIds = toggle(action.childIds, personId))
+        is QuickAddAction.ReportSick -> action.copy(childIds = toggle(action.childIds, personId))
         else -> action
     }
 

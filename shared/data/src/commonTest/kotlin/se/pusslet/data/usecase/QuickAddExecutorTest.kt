@@ -1,5 +1,6 @@
 package se.pusslet.data.usecase
 
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -27,6 +28,7 @@ import se.pusslet.data.repository.NoDeviceCalendars
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.RecipeRepository
 import se.pusslet.data.repository.ShoppingRepository
+import se.pusslet.data.repository.SickDayRepository
 import se.pusslet.data.repository.TaskRepository
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
@@ -69,6 +71,7 @@ class QuickAddExecutorTest {
         recipes = RecipeRepository(docs),
         family = FamilyRepository(docs, sessions, LocalOnlyFamilyRemote, LocalOnlyAuthRepository(), ids, FixedClock),
         handoffs = HandoffAssigner(calendar),
+        sickDays = SickDayRepository(docs, sessions),
         prefs = prefs,
         sessions = sessions,
         ids = ids,
@@ -157,5 +160,17 @@ class QuickAddExecutorTest {
         assertEquals(QuickAddReceipt.Saved(undo = false), QuickAddOutcome().receipt)
         val mixed = QuickAddOutcome(taskIds = listOf("t"), itemIds = listOf("i"))
         assertEquals(QuickAddReceipt.Saved(undo = true), mixed.receipt)
+    }
+
+    @Test
+    fun aSickReportIsSavedOnceAndUndone() = runTest {
+        val sick = SickDayRepository(docs, sessions)
+        val outcome = run(QuickAddAction.ReportSick(listOf("c-ella"), thursday))
+        assertEquals(QuickAddReceipt.Sick(listOf("c-ella"), thursday, undo = true), outcome.receipt)
+        assertEquals("m-sara", sick.days.first().single().reportedBy)
+        // The same day again is not a second day, and undoing it would remove the first report: no Ångra.
+        assertFalse(run(QuickAddAction.ReportSick(listOf("c-ella"), thursday)).receipt.undo)
+        executor.undo(outcome)
+        assertTrue(sick.days.first().isEmpty())
     }
 }

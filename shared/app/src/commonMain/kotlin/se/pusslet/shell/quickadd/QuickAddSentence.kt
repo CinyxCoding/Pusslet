@@ -31,6 +31,8 @@ class SentenceWords(
     val dropOff: String,
     /** "%1$s–%2$s", for times and days. */
     val range: String,
+    /** "%1$s sjuk %2$s": the children, then the day. */
+    val sick: String,
     /** "barnen", when a hand-off names no child. */
     val allChildren: String,
     val today: String,
@@ -72,6 +74,7 @@ internal object QuickAddSentence {
             is QuickAddAction.AddShoppingItems -> b.labeled(ActionKind.Shopping, b.items(action))
             is QuickAddAction.PlanMeal -> b.meal(action, today)
             is QuickAddAction.AssignHandoff -> b.handoff(action, people, today, repeat)
+            is QuickAddAction.ReportSick -> b.sick(action, people, today)
         }
         return normalize(parts)
     }
@@ -203,6 +206,12 @@ internal object QuickAddSentence {
                 part(day(h.date, today), UncertainField.Date)
             }
             return fill(template, part(person, UncertainField.Person), part(children)) + space() + dayPart + time
+        }
+
+        /** "Ella och Simon sjuk idag". */
+        fun sick(s: QuickAddAction.ReportSick, people: List<FamilyPerson>, today: LocalDate): List<SentencePart> {
+            val children = names(s.childIds.mapNotNull { id -> people.firstOrNull { it.id == id }?.name })
+            return fill(words.sick, part(children, UncertainField.Person), part(day(s.date, today), UncertainField.Date))
         }
 
         fun labeled(kind: ActionKind, rest: List<SentencePart>): List<SentencePart> =

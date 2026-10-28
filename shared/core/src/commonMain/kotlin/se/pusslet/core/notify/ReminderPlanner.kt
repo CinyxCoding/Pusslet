@@ -6,6 +6,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
+import se.pusslet.core.breaks.Breaks
 import se.pusslet.core.calendar.EffectiveHandoffs
 import se.pusslet.core.medicine.MedicineRules
 import se.pusslet.core.model.EventOccurrence
@@ -122,7 +123,7 @@ object ReminderPlanner {
             days = from.toLocalDateTime(zone).date.datesUntil(until.toLocalDateTime(zone).date),
         )
         val all = eventReminders(ctx) + handoffs(ctx) + tasks(ctx) + mornings(ctx) + evenings(ctx) + sickReminders(ctx) +
-            pickupChecks(ctx) + medicineReminders(ctx)
+            pickupChecks(ctx) + medicineReminders(ctx) + breakDeadlines(ctx)
         return all.filter { it.at > from && it.at <= until }
             .distinctBy { it.key }
             .sortedWith(compareBy({ it.at }, { it.key }))
@@ -294,6 +295,32 @@ object ReminderPlanner {
                     userTimed = true,
                 )
             }
+        }
+    }
+
+    /**
+     * "Anmäl lovomsorg: Höstlov" (ADR-051) to the parents, [Breaks.DEADLINE_LEAD_DAYS] days before the plan's deadline at
+     * [EVENING_TIME] and on the day at [TASK_DEFAULT_TIME], until it is ticked as booked.
+     */
+    private fun breakDeadlines(ctx: Context): List<PlannedNotification> {
+        if (ctx.input.role != Role.Parent) return emptyList()
+        return ctx.input.base.breakPlans.filter { !it.reported }.flatMap { p ->
+            val deadline = p.deadline ?: return@flatMap emptyList()
+            val payload = NotificationPayload.BreakDeadline(p.title, deadline)
+            listOf(
+                PlannedNotification(
+                    "break:${p.id}:before",
+                    LocalDateTime(deadline.minusDays(Breaks.DEADLINE_LEAD_DAYS), EVENING_TIME).toInstant(ctx.zone),
+                    NotificationKind.Reminder,
+                    payload,
+                ),
+                PlannedNotification(
+                    "break:${p.id}:day",
+                    LocalDateTime(deadline, TASK_DEFAULT_TIME).toInstant(ctx.zone),
+                    NotificationKind.Reminder,
+                    payload,
+                ),
+            )
         }
     }
 

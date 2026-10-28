@@ -86,6 +86,8 @@ service cloud.firestore {
         : collection == 'handoffReceipts' ? validReceipt()
         : collection == 'medicineLog' ? validMedicineEntry()
         : collection == 'medicineCourses' ? validMedicineCourse()
+        : collection == 'breakPlans' ? (shortString(data().eventId, 200) && (!('days' in data()) || data().days is map))
+        : collection == 'staySchedules' ? (shortString(data().childId, 100) && (!('days' in data()) || data().days is map))
         : collection == 'children' ? validNamed('firstName')
         : collection == 'members' ? validNamed('displayName')
         : collection == 'shoppingLists' ? validNamed('name')
@@ -100,7 +102,7 @@ service cloud.firestore {
       return collection in ['members', 'children', 'custodySchedules', 'packingRules', 'packingChecks', 'mealPlans',
         'recipes', 'shoppingLists', 'stores', 'pantry', 'handoffRequests', 'presence', 'settings',
         'aisleOverrides', 'ingredientMappings', 'favoriteWeeks', 'schoolLunches', 'recipeCollections', 'sickDays',
-        'handoffReceipts'];
+        'handoffReceipts', 'breakPlans'];
     }
     function caregiverFiltered(collection) { return collection in ['events', 'tasks']; }
 

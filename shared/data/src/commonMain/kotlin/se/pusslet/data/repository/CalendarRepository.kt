@@ -12,6 +12,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import se.pusslet.core.model.BreakPlan
 import se.pusslet.core.model.CalendarSubscription
 import se.pusslet.core.model.Event
 import se.pusslet.core.model.EventOccurrence
@@ -106,6 +107,9 @@ class CalendarRepository(
     /** The medicine log and courses (ADR-050), for Idag and the reminders; [MedicineRepository] writes them. */
     val medicineLog: Flow<List<MedicineEntry>> = docs.observeAll(Collections.MedicineLog, MedicineEntry.serializer())
     val medicineCourses: Flow<List<MedicineCourse>> = docs.observeAll(Collections.MedicineCourses, MedicineCourse.serializer())
+
+    /** The plans for school breaks (ADR-051), for Idag and the reminders; [BreakRepository] writes them. */
+    val breakPlans: Flow<List<BreakPlan>> = docs.observeAll(Collections.BreakPlans, BreakPlan.serializer())
 
     /** "Hämtad ✓" (ADR-048). */
     val handoffReceipts: Flow<List<HandoffReceipt>> = docs.observeAll(Collections.HandoffReceipts, HandoffReceipt.serializer())

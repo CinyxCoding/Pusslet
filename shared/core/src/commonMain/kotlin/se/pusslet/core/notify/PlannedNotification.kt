@@ -130,6 +130,11 @@ sealed interface NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today
     }
 
+    /** "Anmäl lovomsorg: Höstlov" · "Senast fre 9 okt" (ADR-051). */
+    data class BreakDeadline(val title: String, val deadline: LocalDate) : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Today
+    }
+
     /** "Anmäl VAB för Ella" the evening the child is well again, to the parent who took it (ADR-047). */
     data class VabReport(val child: String, val days: Double) : NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today

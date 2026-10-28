@@ -9,6 +9,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import se.pusslet.core.calendar.EffectiveHandoffs
+import se.pusslet.core.model.BreakPlan
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.CustodySchedule
 import se.pusslet.core.model.EventOccurrence
@@ -81,6 +82,7 @@ class TodayInputSource(
         val receipts: List<HandoffReceipt> = emptyList(),
         val medicineCourses: List<MedicineCourse> = emptyList(),
         val medicineLog: List<MedicineEntry> = emptyList(),
+        val breakPlans: List<BreakPlan> = emptyList(),
     )
 
     val household: Flow<Household> = combine(
@@ -97,11 +99,13 @@ class TodayInputSource(
 
     val extras: Flow<Extras> = combine(
         combine(packing.rules, packing.checks, meals.weeks, lunches.lunches, tasks.tasks) { r, c, w, l, t -> Extras(r, c, w, l, t) },
-        sickDays,
-        calendar.handoffReceipts,
+        combine(sickDays, calendar.handoffReceipts) { s, r -> s to r },
         calendar.medicineCourses,
         calendar.medicineLog,
-    ) { ex, s, r, courses, log -> ex.copy(sickDays = s, receipts = r, medicineCourses = courses, medicineLog = log) }
+        calendar.breakPlans,
+    ) { ex, (s, r), courses, log, breaks ->
+        ex.copy(sickDays = s, receipts = r, medicineCourses = courses, medicineLog = log, breakPlans = breaks)
+    }
 
     val requests: Flow<List<HandoffRequest>> get() = calendar.handoffRequests
 
@@ -163,6 +167,7 @@ class TodayInputSource(
             receipts = extras.receipts,
             medicineCourses = extras.medicineCourses,
             medicineLog = extras.medicineLog,
+            breakPlans = extras.breakPlans,
         )
     }
 

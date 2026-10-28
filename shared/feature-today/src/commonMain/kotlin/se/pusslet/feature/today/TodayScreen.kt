@@ -129,6 +129,8 @@ fun TodayRoute(
     onInvite: (memberId: String) -> Unit = {},
     /** "Medicin och feber" (ADR-050), for a child. */
     onOpenMedicine: (childId: String) -> Unit = {},
+    /** "Lov och vistelsetider" (ADR-051). */
+    onOpenBreaks: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -173,6 +175,7 @@ fun TodayRoute(
                 onOpenMedicine = onOpenMedicine,
             ),
             onGiveDose = viewModel::giveDose,
+            onPlanBreaks = onOpenBreaks,
             onPickedUp = viewModel::pickedUp,
             onConfirmPickup = viewModel::confirmPickup,
             onUndoPickup = viewModel::undoPickup,
@@ -222,6 +225,8 @@ data class TodayActions(
     val onUndoPickup: (HandoffReceipt) -> Unit = {},
     /** "Given" on a planned dose in "Medicin idag" (ADR-050). */
     val onGiveDose: (MedicineRules.Slot) -> Unit = {},
+    /** "Planera" on a coming school break (ADR-051). */
+    val onPlanBreaks: () -> Unit = {},
 )
 
 @Composable
@@ -270,6 +275,7 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         items(state.sick.cards, key = { "sick-${it.day.id}" }) { SickCardView(it, state.sick, actions.sick) }
         items(state.sick.stillSick, key = { "still-sick-${it.day.id}" }) { StillSickView(it, actions.sick) }
         items(state.sick.vabToReport, key = { "vab-${it.report.childId}-${it.report.first}" }) { VabReportView(it, actions.sick) }
+        items(state.breaks, key = { "break-${it.planId}" }) { BreakSoonCard(it, plan.date, actions.onPlanBreaks) }
         if (state.medicine.isNotEmpty()) {
             item(key = "medicine") {
                 MedicineTodayCard(state.medicine, actions.onGiveDose, onOpen = {

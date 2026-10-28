@@ -1385,6 +1385,8 @@
     <string name="notify_absence_title">Anmäl frånvaro för %1$s</string>
     <string name="notify_absence_body">Till %1$s</string>
     <string name="notify_medicine_title">Dags för %1$s till %2$s</string>
+    <string name="notify_break_title">Anmäl lovomsorg: %1$s</string>
+    <string name="notify_break_body">Senast %1$d/%2$d</string>
     <string name="notify_vab_title">Anmäl VAB för %1$s</string>
     <string name="notify_vab_body">Till Försäkringskassan, inom 90 dagar</string>
     <!-- Hämtad ✓ (ADR-048) -->
@@ -1450,4 +1452,40 @@
     <string name="medicine_privacy">Loggen ses bara av föräldrarna i familjen och tas bort efter 90 dagar. Appen ger inga medicinska råd: följ förpackningen, apoteket eller vården.</string>
     <string name="medicine_no_children">Lägg till barnen i familjen först.</string>
     <string name="medicine_parents_only">Medicinloggen ses bara av föräldrarna.</string>
+
+    <!-- Lov och vistelsetider (ADR-051) -->
+    <string name="breaks_title">Lov och vistelsetider</string>
+    <string name="breaks_tab_breaks">Lov</string>
+    <string name="breaks_tab_stays">Vistelsetider</string>
+    <string name="breaks_add">Lägg till lov</string>
+    <string name="breaks_add_hint">Lovet hamnar i kalendern för hela familjen. Lov från skolans kalenderlänk syns här också.</string>
+    <string name="breaks_empty">Inga lov i kalendern det närmaste året. Lägg till ett, skriv ”höstlov v 44” i +, eller prenumerera på skolans kalender.</string>
+    <string name="breaks_no_weekdays">Inga vardagar att planera.</string>
+    <string name="breaks_care">Lovomsorg</string>
+    <string name="breaks_other">Annat</string>
+    <string name="breaks_unplanned">%1$d dagar utan plan</string>
+    <string name="breaks_set_deadline">Sista dag att anmäla lovomsorg …</string>
+    <string name="breaks_deadline">Anmäl lovomsorg senast</string>
+    <string name="breaks_reported">Lovomsorgen är anmäld (eller behövs inte)</string>
+    <string name="breaks_first_day">Första dagen</string>
+    <string name="breaks_last_day">Sista dagen</string>
+    <string name="breaks_preset_autumn">Höstlov</string>
+    <string name="breaks_preset_christmas">Jullov</string>
+    <string name="breaks_preset_winter">Sportlov</string>
+    <string name="breaks_preset_easter">Påsklov</string>
+    <string name="breaks_preset_summer">Sommarlov</string>
+    <string name="breaks_plan">Planera</string>
+    <string name="breaks_from">från %1$s</string>
+    <string name="breaks_until">till och med %1$s</string>
+    <string name="breaks_book_by">anmäl lovomsorg senast %1$s</string>
+    <string name="breaks_parents_only">Lov och vistelsetider planeras av föräldrarna.</string>
+    <string name="stays_from_calendar">Hämta tiderna från kalendern</string>
+    <string name="stays_off">Ledig</string>
+    <string name="stays_from">Från</string>
+    <string name="stays_to">Till</string>
+    <string name="stays_clear">Ledig</string>
+    <string name="stays_valid_from">Gäller från</string>
+    <string name="stays_total">Totalt %1$d tim %2$s min i veckan</string>
+    <string name="stays_share">Skicka till förskolan</string>
+    <string name="stays_share_title">Vistelsetider för %1$s från %2$s</string>
 </resources>

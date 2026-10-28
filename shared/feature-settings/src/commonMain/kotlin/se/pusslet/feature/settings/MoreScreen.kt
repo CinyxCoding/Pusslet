@@ -32,6 +32,7 @@ enum class MoreDestination(val parentsOnly: Boolean = false) {
     Family,
     Tasks,
     Medicine(parentsOnly = true),
+    Breaks(parentsOnly = true),
     Settings,
     Account,
     AboutData,
@@ -53,6 +54,7 @@ fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues 
         Res.string.more_group_family to listOf(
             MoreItem(MoreDestination.Family, Res.string.more_family, PussletIcons.Family),
             MoreItem(MoreDestination.Tasks, Res.string.more_tasks, PussletIcons.Task),
+            MoreItem(MoreDestination.Breaks, Res.string.breaks_title, PussletIcons.Beach),
             MoreItem(MoreDestination.Medicine, Res.string.medicine_title, PussletIcons.Medication),
             MoreItem(MoreDestination.Account, Res.string.more_account, Icons.Filled.AccountCircle),
         ),

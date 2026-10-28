@@ -544,3 +544,19 @@ efter 90 dagar på föräldrarnas telefoner och sedan av rensningen (ADR-046).
 och vyn säger det. Hälsouppgifter: bara det föräldern skriver sparas (PRIVACY.md). Morfar som är hemma med ett sjukt barn
 ser inte loggen; vill familjer det kan en delning med hjälpare läggas till senare.
 
+## ADR-051 – Lov och vistelsetider
+**Kontext:** Inför varje lov ska familjen bestämma vem som är hemma vilka dagar och anmäla lovomsorg till fritids eller
+förskolan före ett datum, och förskolan vill ha barnets vistelsetider. Lovdatum skiljer sig mellan kommuner (sportlov
+v. 7–10), så appen kan inte räkna ut dem.
+**Beslut:** Ett lov är en heldagshändelse taggad `lov` i kalendern: skriven i + (”höstlov v 44”), tillagd i ”Lov och
+vistelsetider” (förval för höstlov v. 44) eller från skolans kalenderlänk. För varje lov visas vardagarna som inte är röda
+dagar, och per dag väljer man en vuxen som är hemma (hjälpare också), ”Lovomsorg” eller ”Annat”. Planen sparas per lov
+och första dag (`breakPlans/{händelse}_{datum}`, dagarna sammanfogas per dag) med en valfri sista anmälningsdag och en bock
+”anmäld”. Föräldrarna påminns två dagar före kl. 19 och på dagen kl. 9 tills den är bockad, och Idag visar ett lov som
+börjar inom tio dagar och har dagar utan plan eller en anmälan kvar. Hjälpare läser planen (de kan vara den som är hemma)
+men skriver den inte. Vistelsetider sparas per barn (`staySchedules`, bara föräldrar): måndag–fredag med från- och till-tid,
+fylls med ett tryck från barnets återkommande förskole- eller skoldag i kalendern (lämning till hämtning), visar timmar i
+veckan och skickas som text till förskolan.
+**Konsekvens:** Inga lovdatum är inbyggda förutom förslaget v. 44. Idag ser bara tio dagar framåt, så ett lov längre bort
+syns i vyn och genom påminnelsen om anmälan, inte på Idag.
+

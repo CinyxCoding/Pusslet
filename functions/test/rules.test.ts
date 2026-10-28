@@ -236,6 +236,13 @@ describe("writing family data", () => {
     await assertFails(setDoc(doc(f, `families/${FID}/medicineCourses/c2`), { ...course, days: 400 }));
   });
 
+  it("lets a parent plan a school break per day", async () => {
+    const f = db("sara");
+    const plan = { eventId: "hl", start: "2026-10-26", days: { "2026-10-26": { care: "home", memberId: "m-sara" } }, ...stamp("sara") };
+    await assertSucceeds(setDoc(doc(f, `families/${FID}/breakPlans/hl_2026-10-26`), plan));
+    await assertFails(setDoc(doc(f, `families/${FID}/breakPlans/x`), { eventId: "hl", days: "måndag", ...stamp("sara") }));
+  });
+
   it("allows soft delete but never hard delete", async () => {
     await assertSucceeds(updateDoc(doc(db("sara"), `families/${FID}/events/shared`), { deletedAt: serverTimestamp(), ...stamp("sara") }));
     await assertFails(deleteDoc(doc(db("sara"), `families/${FID}/events/private`)));

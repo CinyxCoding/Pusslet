@@ -19,6 +19,7 @@ import se.pusslet.data.premium.AllUnlocked
 import se.pusslet.data.premium.Entitlements
 import se.pusslet.data.repository.AttachmentHousekeeping
 import se.pusslet.data.repository.AttachmentRepository
+import se.pusslet.data.repository.BreakRepository
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.LunchRepository
@@ -103,6 +104,7 @@ val dataModule: Module = module {
     single { TaskRepository(get()) }
     single { SickDayRepository(get(), get()) }
     single { MedicineRepository(get(), get(), get(), get()) }
+    single { BreakRepository(get(), get(), get(), get()) }
     single { PickupReceipts(get(), get(), get()) }
     single { LunchRepository(get(), get(), get()) }
     single { HandoffAssigner(get()) }

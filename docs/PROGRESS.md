@@ -176,7 +176,8 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Kvitto på hämtning (ADR-048): ”Hämtad” på min hämtning på Idag, i hjälparvyn och i notisen, push till de andra
   (”Ella är hämtad · Bengt · 15:52”), varning en kvart efter tiden till den som skulle hämta och föräldrarna, som notis och
   på Idag där en förälder kan bocka av åt någon annan, och en inställning för att stänga av varningen
-- [ ] Lov och vistelsetider
+- [x] Lov och vistelsetider (ADR-051): vem som är hemma varje lovdag, lovomsorg med påminnelse om anmälan, vistelsetider
+  från kalendern som går att skicka till förskolan
 - [ ] Delade kostnader mellan hemmen
 
 ## Fas 5 – V2

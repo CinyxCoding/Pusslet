@@ -24,6 +24,8 @@ import se.pusslet.ui.resources.notify_absence_title
 import se.pusslet.ui.resources.notify_answer_no
 import se.pusslet.ui.resources.notify_answer_yes_dropoff
 import se.pusslet.ui.resources.notify_answer_yes_pickup
+import se.pusslet.ui.resources.notify_break_body
+import se.pusslet.ui.resources.notify_break_title
 import se.pusslet.ui.resources.notify_brief_empty
 import se.pusslet.ui.resources.notify_brief_first
 import se.pusslet.ui.resources.notify_brief_nobody_dropoff
@@ -163,6 +165,10 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
         )
         is NotificationPayload.VabReport -> NotificationText(str(Res.string.notify_vab_title, p.child), str(Res.string.notify_vab_body))
         is NotificationPayload.MedicineDose -> NotificationText(str(Res.string.notify_medicine_title, p.medicine, p.child), p.dose)
+        is NotificationPayload.BreakDeadline -> NotificationText(
+            str(Res.string.notify_break_title, p.title),
+            str(Res.string.notify_break_body, p.deadline.day, p.deadline.month.ordinal + 1),
+        )
         is NotificationPayload.ShoppingAdded -> NotificationText(
             str(Res.string.notify_shopping_added, p.by ?: str(Res.string.notify_someone), p.item),
             str(Res.string.notify_shopping_added_body),

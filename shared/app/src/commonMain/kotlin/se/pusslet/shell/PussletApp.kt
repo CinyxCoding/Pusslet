@@ -51,6 +51,7 @@ import se.pusslet.feature.calendar.CalendarRoute
 import se.pusslet.feature.calendar.attachments.AttachImageRoute
 import se.pusslet.feature.calendar.attachments.AttachOutcome
 import se.pusslet.feature.calendar.attachments.AttachmentsRoute
+import se.pusslet.feature.calendar.breaks.BreaksRoute
 import se.pusslet.feature.calendar.details.EventDetailsRoute
 import se.pusslet.feature.calendar.editor.EventEditorRoute
 import se.pusslet.feature.calendar.subscriptions.SubscriptionsRoute
@@ -290,6 +291,7 @@ private fun AppNavDisplay(
                     onOpenChild = { navigator.navigate(Route.ChildEditor(it)) },
                     onInvite = { navigator.navigate(Route.Invite(claimMemberId = it)) },
                     onOpenMedicine = { navigator.navigate(Route.Medicine(it)) },
+                    onOpenBreaks = { navigator.navigate(Route.Breaks()) },
                     contentPadding = padding,
                 )
             }
@@ -377,6 +379,7 @@ private fun AppNavDisplay(
                 })
             }
             entry<Route.Medicine> { r -> MedicineRoute(r.childId, onBack = navigator::goBack) }
+            entry<Route.Breaks> { r -> BreaksRoute(r.stays, onBack = navigator::goBack) }
             entry<Route.AttachImage> { r ->
                 AttachImageRoute(r.fileName, onBack = navigator::goBack, onDone = { outcome ->
                     navigator.goBack()
@@ -462,6 +465,7 @@ private fun MoreDestination.route(): Route = when (this) {
     MoreDestination.AboutData -> Route.AboutData
     MoreDestination.Privacy -> Route.Privacy
     MoreDestination.Medicine -> Route.Medicine()
+    MoreDestination.Breaks -> Route.Breaks()
 }
 
 private data class TabSpec(val tab: TopLevelTab, val label: StringResource, val icon: ImageVector)

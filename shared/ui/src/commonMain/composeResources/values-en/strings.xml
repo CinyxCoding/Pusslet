@@ -1384,6 +1384,8 @@
     <string name="notify_absence_title">Report absence for %1$s</string>
     <string name="notify_absence_body">To %1$s</string>
     <string name="notify_medicine_title">Time for %1$s for %2$s</string>
+    <string name="notify_break_title">Book break care: %1$s</string>
+    <string name="notify_break_body">By %1$d/%2$d</string>
     <string name="notify_vab_title">Report VAB for %1$s</string>
     <string name="notify_vab_body">To Försäkringskassan, within 90 days</string>
     <!-- Hämtad ✓ (ADR-048) -->
@@ -1449,4 +1451,40 @@
     <string name="medicine_privacy">Only the family's parents see the log, and it's removed after 90 days. The app gives no medical advice: follow the package, the pharmacy or your care provider.</string>
     <string name="medicine_no_children">Add the children to the family first.</string>
     <string name="medicine_parents_only">Only the parents see the medicine log.</string>
+
+    <!-- School breaks and preschool hours (ADR-051) -->
+    <string name="breaks_title">Breaks and preschool hours</string>
+    <string name="breaks_tab_breaks">Breaks</string>
+    <string name="breaks_tab_stays">Hours</string>
+    <string name="breaks_add">Add a break</string>
+    <string name="breaks_add_hint">The break goes in the calendar for the whole family. Breaks from the school's calendar link show here too.</string>
+    <string name="breaks_empty">No breaks in the calendar for the coming year. Add one, type "autumn break wk 44" in +, or subscribe to the school's calendar.</string>
+    <string name="breaks_no_weekdays">No weekdays to plan.</string>
+    <string name="breaks_care">Break care</string>
+    <string name="breaks_other">Other</string>
+    <string name="breaks_unplanned">%1$d days without a plan</string>
+    <string name="breaks_set_deadline">Last day to book break care …</string>
+    <string name="breaks_deadline">Book break care by</string>
+    <string name="breaks_reported">Break care is booked (or not needed)</string>
+    <string name="breaks_first_day">First day</string>
+    <string name="breaks_last_day">Last day</string>
+    <string name="breaks_preset_autumn">Autumn break</string>
+    <string name="breaks_preset_christmas">Christmas break</string>
+    <string name="breaks_preset_winter">Winter break</string>
+    <string name="breaks_preset_easter">Easter break</string>
+    <string name="breaks_preset_summer">Summer break</string>
+    <string name="breaks_plan">Plan</string>
+    <string name="breaks_from">from %1$s</string>
+    <string name="breaks_until">until %1$s</string>
+    <string name="breaks_book_by">book break care by %1$s</string>
+    <string name="breaks_parents_only">Breaks and preschool hours are planned by the parents.</string>
+    <string name="stays_from_calendar">Take the times from the calendar</string>
+    <string name="stays_off">Off</string>
+    <string name="stays_from">From</string>
+    <string name="stays_to">To</string>
+    <string name="stays_clear">Off</string>
+    <string name="stays_valid_from">Applies from</string>
+    <string name="stays_total">In total %1$d h %2$s min a week</string>
+    <string name="stays_share">Send to the preschool</string>
+    <string name="stays_share_title">Preschool hours for %1$s from %2$s</string>
 </resources>

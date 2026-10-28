@@ -23,6 +23,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import se.pusslet.core.breaks.Breaks
+import se.pusslet.core.breaks.SchoolBreak
 import se.pusslet.core.calendar.EffectiveHandoffs.matches
 import se.pusslet.core.medicine.MedicineRules
 import se.pusslet.core.model.Completion
@@ -143,6 +145,8 @@ data class TodayUiState(
     val sick: SickToday = SickToday(),
     /** "Medicin idag" (ADR-050): today's planned doses of every course. Parents only. */
     val medicine: List<MedicineDoseRow> = emptyList(),
+    /** A school break soon with days or a booking to sort out (ADR-051). Parents only. */
+    val breaks: List<SchoolBreak> = emptyList(),
     /** Somebody else's pick-up nobody ticked off (ADR-048); empty when the warning is switched off. */
     val unconfirmedPickups: List<UnconfirmedPickup> = emptyList(),
     /** Today's ticked-off pick-ups. */
@@ -360,6 +364,7 @@ class TodayViewModel(
             leaveDemoFailed = v.firstUse.demoExit == DemoExit.Failed,
             sick = if (canEdit) SickModel.build(n.date, me, ex.sickDays, day.cancelled, people, h.children) else SickToday(),
             medicine = if (canEdit) MedicineModel.today(n.date, ex.medicineCourses, ex.medicineLog, people) else emptyList(),
+            breaks = if (canEdit) Breaks.breaks(occ, ex.breakPlans, n.date).filter { Breaks.needsPlan(it, n.date) } else emptyList(),
             unconfirmedPickups = if (v.pickupWarnings) plan.unconfirmedPickups else emptyList(),
             pickedUp = plan.pickedUp,
         )

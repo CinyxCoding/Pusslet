@@ -13,6 +13,7 @@ import se.pusslet.core.custody.Handover
 import se.pusslet.core.holidays.Holiday
 import se.pusslet.core.holidays.SwedishHolidays
 import se.pusslet.core.meals.MealClash
+import se.pusslet.core.model.BreakPlan
 import se.pusslet.core.model.Child
 import se.pusslet.core.model.CustodySchedule
 import se.pusslet.core.model.Event
@@ -87,6 +88,8 @@ data class TodayInput(
     /** Medicine courses and the log (ADR-050): parents are reminded of each planned dose not yet given. */
     val medicineCourses: List<MedicineCourse> = emptyList(),
     val medicineLog: List<MedicineEntry> = emptyList(),
+    /** The plans for school breaks (ADR-051): Idag and the booking reminder. */
+    val breakPlans: List<BreakPlan> = emptyList(),
 ) {
     /** The children who go about their day on [date] (the sick ones stay home). */
     fun childrenOutOn(date: LocalDate): List<Child> {

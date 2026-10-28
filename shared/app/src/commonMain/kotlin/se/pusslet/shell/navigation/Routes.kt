@@ -34,6 +34,9 @@ sealed interface Route {
     /** "Medicin och feber" (ADR-050), on [childId] when it was opened for one child. */
     @Serializable data class Medicine(val childId: String? = null) : Route
 
+    /** "Lov och vistelsetider" (ADR-051); [stays] opens on the hours. */
+    @Serializable data class Breaks(val stays: Boolean = false) : Route
+
     /** A picture shared to the app, already copied to the private attachment folder (ADR-049). */
     @Serializable data class AttachImage(val fileName: String) : Route
 

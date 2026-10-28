@@ -102,7 +102,7 @@ class CalendarDayViewModel(
         val occurrences = combine(calendar.occurrences(d, d, zone), calendar.sickDays, family.children) { occ, sick, kids ->
             SickDays.apply(occ, sick, kids.map { it.id }.toSet()).occurrences to sick
         }
-        combine(occurrences, family.people, family.custody, settings, sessions.session) {
+        combine(occurrences, family.everyone, family.custody, settings, sessions.session) {
             occSick,
             people,
             custody,

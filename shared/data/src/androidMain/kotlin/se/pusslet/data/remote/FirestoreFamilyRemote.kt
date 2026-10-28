@@ -197,8 +197,10 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore, private val calls
         space.update(mapOf("familyIds" to FieldValue.arrayRemove(homeId)) + stamp(uid)).await()
         val access = space.collection("access").get().await().documents
         val leaving = access.filter { it.getString("memberId") in memberIds }
+        // Only adults who are in the space: writing a missing member doc would be a create, which the rules refuse.
+        val present = space.collection("members").get().await().documents.map { it.id }.filter { it in memberIds }
         db.runBatch { batch ->
-            memberIds.forEach { id ->
+            present.forEach { id ->
                 batch.set(
                     space.collection("members").document(id),
                     mapOf(MetaFields.DELETED_AT to FieldValue.serverTimestamp()) + stamp(uid),

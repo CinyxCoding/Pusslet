@@ -1603,8 +1603,8 @@
     <string name="other_home_share_diets_body">Känsliga uppgifter – slå bara på om båda hemmen behöver dem.</string>
     <string name="other_home_premium">Att starta en delning med andra hemmet ingår i Premium. Att gå med när det andra hemmet bjuder in är alltid gratis.</string>
     <string name="other_home_start">Dela med andra hemmet</string>
-    <string name="other_home_invite_ready">Ge koden till det andra hemmet. De anger den i appen under Mer → Familj → Andra hemmet.</string>
-    <string name="other_home_share_text">%1$s vill dela %2$s med er i %3$s. Ange koden %4$s under Mer → Familj → Andra hemmet.</string>
+    <string name="other_home_invite_ready">Ge koden till det andra hemmet. De anger den i appen under Mer → Familjen → Andra hemmet.</string>
+    <string name="other_home_share_text">%1$s vill dela %2$s med er i %3$s. Ange koden %4$s under Mer → Familjen → Andra hemmet.</string>
     <string name="other_home_shared_with">Delas med %1$s</string>
     <string name="other_home_waiting">Väntar på att andra hemmet går med</string>
     <string name="other_home_diets_shared">Allergier och kost delas.</string>
@@ -1621,7 +1621,7 @@
     <string name="other_home_join_custody">Det delade vårdnadsschemat ersätter ert eget för de här barnen.</string>
     <string name="other_home_family_invite">Det här är en inbjudan till en familj. Ange den under Gå med i en familj.</string>
     <string name="other_home_already">Ni delar redan med det här hemmet.</string>
-    <string name="other_home_from_join">Koden är från andra hemmet. Skapa först er egen familj och ange sedan koden under Mer → Familj → Andra hemmet.</string>
+    <string name="other_home_from_join">Koden är från andra hemmet. Skapa först er egen familj och ange sedan koden under Mer → Familjen → Andra hemmet.</string>
     <string name="family_other_home">Andra hemmet</string>
     <string name="family_other_home_none">Dela barnens schema med det andra hemmet, utan att dela resten.</string>
     <string name="event_other_home">Delas med andra hemmet</string>

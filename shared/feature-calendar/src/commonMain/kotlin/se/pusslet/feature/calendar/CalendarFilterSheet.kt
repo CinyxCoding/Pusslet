@@ -54,7 +54,8 @@ internal fun CalendarFilterSheet(
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.semantics { heading() },
             )
-            if (state.people.isNotEmpty()) {
+            val filterable = state.people.filter { !it.otherHome }
+            if (filterable.isNotEmpty()) {
                 SheetHeading(stringResource(Res.string.calendar_filter_people))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     FilterChip(
@@ -63,7 +64,7 @@ internal fun CalendarFilterSheet(
                         label = { Text(stringResource(Res.string.calendar_filter_all)) },
                         colors = SelectionColors.filterChip(),
                     )
-                    state.people.sortedBy { !it.isChild }.forEach { p ->
+                    filterable.sortedBy { !it.isChild }.forEach { p ->
                         FilterChip(
                             selected = p.id in state.personFilter,
                             onClick = { onTogglePerson(p.id) },

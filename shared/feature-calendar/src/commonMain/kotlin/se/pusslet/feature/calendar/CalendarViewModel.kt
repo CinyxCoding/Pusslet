@@ -143,9 +143,10 @@ class CalendarViewModel(
         sessions.session,
     ) { f, l, s -> Settings(f, l, s.role, s.memberId) }
 
-    private val content = combine(window, occurrences, family.people, family.custody, settings) { w, occSick, people, custody, s ->
+    // The other home's adults are named on shared events (ADR-056) but are not a filter of this family's calendar.
+    private val content = combine(window, occurrences, family.everyone, family.custody, settings) { w, occSick, people, custody, s ->
         val (occ, sick) = occSick
-        val filter = CalendarDays.effectiveFilter(s.filter, people)
+        val filter = CalendarDays.effectiveFilter(s.filter, people.filter { !it.otherHome })
         val days = CalendarDays.build(w.from, w.to, occ, people, custody, filter, s.layers, s.me, sick)
         val custodyWeek = if (w.view == CalendarView.Week) {
             CalendarDays.custodyWeek(w.from, w.to, custody, people, filter, s.layers)

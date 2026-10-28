@@ -85,8 +85,9 @@ class TodayInputSource(
         val breakPlans: List<BreakPlan> = emptyList(),
     )
 
+    // The other home's adults by name (ADR-056): "Lina hämtar Ella", not an unassigned pick-up.
     val household: Flow<Household> = combine(
-        family.people,
+        family.everyone,
         family.children,
         family.family,
         family.custody,

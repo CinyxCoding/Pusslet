@@ -52,6 +52,8 @@ data class TaskDraft(
     val checklist: List<ChecklistItem> = emptyList(),
     val note: String = "",
     val sharedWithCaregivers: Boolean = false,
+    /** Stars for a child doing it (barnläge, ADR-055). */
+    val stars: Int = 0,
 ) {
     val rotating: Boolean get() = kind == TaskKind.Chore && rotationOn && rotationMembers.isNotEmpty()
 }
@@ -64,8 +66,9 @@ data class TaskEditorState(
     val draft: TaskDraft? = null,
     /** The draft as loaded: Back asks before throwing away anything else. */
     val initial: TaskDraft? = null,
-    /** Who can be responsible or take turns: the adults. */
+    /** Who can be responsible or take turns: the adults, then the children (ADR-055). */
     val adults: List<FamilyPerson> = emptyList(),
+    val children: List<FamilyPerson> = emptyList(),
     val me: String? = null,
     val thisWeek: IsoWeek? = null,
     /** Where the date picker opens when no date is set. */
@@ -77,6 +80,14 @@ data class TaskEditorState(
     val canEdit: Boolean = true,
 ) {
     val hasChanges: Boolean get() = draft != null && draft != initial
+
+    val everyone: List<FamilyPerson> get() = adults + children
+
+    /** Stars only make sense when a child does the task (alone or taking turns). */
+    fun involvesChild(d: TaskDraft): Boolean {
+        val ids = children.map { it.id }.toSet()
+        return d.assigneeId in ids || (d.rotating && d.rotationMembers.any { it in ids })
+    }
 }
 
 /**
@@ -101,10 +112,11 @@ class TaskEditorViewModel(
         viewModelScope.launch {
             val people = family.people.first()
             val adults = people.filter { !it.isChild }
+            val children = people.filter { it.isChild }
             val today = clock.todayIn(zone)
             val existing = taskId?.let { tasks.get(it) }
             original = existing
-            val draft = existing?.let { draftOf(it, today, adults.map(FamilyPerson::id).toSet()) } ?: TaskDraft()
+            val draft = existing?.let { draftOf(it, today, people.map(FamilyPerson::id).toSet()) } ?: TaskDraft()
             val session = sessions.session.value
             _state.value = TaskEditorState(
                 loaded = true,
@@ -112,6 +124,7 @@ class TaskEditorViewModel(
                 draft = draft,
                 initial = draft,
                 adults = adults,
+                children = children,
                 me = session.memberId,
                 thisWeek = today.isoWeek,
                 today = today,
@@ -239,6 +252,7 @@ class TaskEditorViewModel(
             checklist = d.checklist,
             note = d.note.trim(),
             sharedWithCaregivers = d.sharedWithCaregivers,
+            stars = if (_state.value.involvesChild(d)) d.stars.coerceIn(0, MAX_STARS) else 0,
         )
     }
 
@@ -252,11 +266,14 @@ class TaskEditorViewModel(
     companion object {
         const val MAX_EVERY_WEEKS = 4
 
+        /** More than five stars for one chore makes the weekly total meaningless. */
+        const val MAX_STARS = 5
+
         /**
          * The draft for a stored task. A recurring task without a date (made before the editor set one) shows the occurrence
          * it is on now; a rotation keeps its start and only lists people who are still in the family.
          */
-        fun draftOf(task: FamilyTask, today: LocalDate, adults: Set<String>): TaskDraft {
+        fun draftOf(task: FamilyTask, today: LocalDate, people: Set<String>): TaskDraft {
             val due = task.due ?: if (TaskScheduler.isRecurring(task)) TaskScheduler.current(task, today)?.date else null
             val (repeat, custom) = TaskRepeats.repeatOf(task.rrule, due)
             val rotation = task.rotation
@@ -269,13 +286,14 @@ class TaskEditorViewModel(
                 repeat = repeat,
                 customRule = custom,
                 rotationOn = rotation != null && rotation.memberIds.isNotEmpty(),
-                rotationMembers = rotation?.memberIds?.filter { it in adults }.orEmpty(),
+                rotationMembers = rotation?.memberIds?.filter { it in people }.orEmpty(),
                 everyWeeks = rotation?.everyWeeks?.coerceIn(1, MAX_EVERY_WEEKS) ?: 1,
                 anchorWeek = rotation?.anchorWeek,
                 turnOverrides = task.turnOverrides,
                 checklist = task.checklist,
                 note = task.note,
                 sharedWithCaregivers = task.sharedWithCaregivers,
+                stars = task.stars,
             )
         }
 

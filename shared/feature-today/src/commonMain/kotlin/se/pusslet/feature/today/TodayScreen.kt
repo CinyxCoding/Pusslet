@@ -138,6 +138,7 @@ fun TodayRoute(
     onOpenBreaks: () -> Unit = {},
     /** "Sök" (ADR-052), from the header. */
     onSearch: () -> Unit = {},
+    onOpenKids: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     viewModel: TodayViewModel = koinViewModel(),
 ) {
@@ -184,6 +185,7 @@ fun TodayRoute(
             onGiveDose = viewModel::giveDose,
             onPlanBreaks = onOpenBreaks,
             onSearch = onSearch,
+            onOpenKids = onOpenKids,
             onPickedUp = viewModel::pickedUp,
             onConfirmPickup = viewModel::confirmPickup,
             onUndoPickup = viewModel::undoPickup,
@@ -236,6 +238,8 @@ data class TodayActions(
     /** "Planera" on a coming school break (ADR-051). */
     val onPlanBreaks: () -> Unit = {},
     val onSearch: () -> Unit = {},
+    /** "Barnen": ticks to approve and veckopeng (ADR-055). */
+    val onOpenKids: () -> Unit = {},
 )
 
 @Composable
@@ -287,6 +291,12 @@ fun TodayScreen(state: TodayUiState, contentPadding: PaddingValues = PaddingValu
         items(state.sick.stillSick, key = { "still-sick-${it.day.id}" }) { StillSickView(it, actions.sick) }
         items(state.sick.vabToReport, key = { "vab-${it.report.childId}-${it.report.first}" }) { VabReportView(it, actions.sick) }
         items(state.breaks, key = { "break-${it.planId}" }) { BreakSoonCard(it, plan.date, actions.onPlanBreaks) }
+        // Children's "Klar!" waiting for a parent (ADR-055).
+        if (state.canEdit) {
+            items(plan.cards.filterIsInstance<ContextCard.ChoresToApprove>(), key = { "approve" }) { card ->
+                ChoresToApproveCard(card, actions.onOpenKids)
+            }
+        }
         // "Dags att OSA" (ADR-054): an invitation to answer within three days.
         items(plan.cards.filterIsInstance<ContextCard.PartyRsvp>(), key = { "rsvp-${it.occurrence.key}" }) { card ->
             RsvpCard(card, plan.date) { actions.onOpenOccurrence(card.occurrence) }

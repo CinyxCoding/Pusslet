@@ -91,6 +91,9 @@ object Collections {
     val MedicineLog = CollectionSpec("medicineLog", RemoteLocation.Flat("medicineLog"), parentsOnly = true)
     val MedicineCourses = CollectionSpec("medicineCourses", RemoteLocation.Flat("medicineCourses"), parentsOnly = true)
 
+    /** Veckopeng settings and paid weeks, one document per child; family money is for parents only (ADR-055). */
+    val Allowances = CollectionSpec("allowances", RemoteLocation.Flat("allowances"), mapFields = setOf("paidWeeks"), parentsOnly = true)
+
     /** The children's wishlists (ADR-054); caregivers read them and may only mark a wish bought. */
     val Wishes = CollectionSpec("wishes", RemoteLocation.Flat("wishes"))
 
@@ -135,6 +138,7 @@ object Collections {
         BreakPlans,
         StaySchedules,
         Wishes,
+        Allowances,
     )
 
     fun byKey(key: String): CollectionSpec? = all.firstOrNull { it.key == key }

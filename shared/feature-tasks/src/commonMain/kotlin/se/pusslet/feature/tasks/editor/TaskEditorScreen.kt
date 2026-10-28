@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -107,6 +108,10 @@ import se.pusslet.ui.resources.repeat_monthly
 import se.pusslet.ui.resources.repeat_none
 import se.pusslet.ui.resources.repeat_weekly
 import se.pusslet.ui.resources.repeat_weekly_on
+import se.pusslet.ui.resources.stars_count
+import se.pusslet.ui.resources.task_stars
+import se.pusslet.ui.resources.task_stars_less
+import se.pusslet.ui.resources.task_stars_more
 import se.pusslet.ui.resources.tasks_assignee_none
 import se.pusslet.ui.resources.tasks_checklist
 import se.pusslet.ui.resources.tasks_checklist_add
@@ -308,18 +313,38 @@ private fun WhoSection(state: TaskEditorState, d: TaskDraft, preview: (TaskDraft
     if (d.kind == TaskKind.Chore && d.rotationOn) {
         RotationSection(state, d, preview, actions)
     } else {
-        PersonPicker(stringResource(Res.string.field_assignee), state.adults, d.assigneeId, actions.onAssignee)
+        PersonPicker(stringResource(Res.string.field_assignee), state.everyone, d.assigneeId, actions.onAssignee)
+    }
+    if (state.involvesChild(d)) StarsRow(d.stars) { v -> actions.onEdit { it.copy(stars = v) } }
+}
+
+/** "Stjärnor för barnen: 2 ⭐" with − and + (0–5), shown when a child does the chore (ADR-055). */
+@Composable
+private fun StarsRow(stars: Int, onChange: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Text(stringResource(Res.string.task_stars), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        IconButton(onClick = { onChange((stars - 1).coerceAtLeast(0)) }, enabled = stars > 0) {
+            Icon(PussletIcons.Remove, contentDescription = stringResource(Res.string.task_stars_less))
+        }
+        Text(stringResource(Res.string.stars_count, stars), style = MaterialTheme.typography.titleMedium)
+        IconButton(
+            onClick = { onChange((stars + 1).coerceAtMost(TaskEditorViewModel.MAX_STARS)) },
+            enabled =
+                stars < TaskEditorViewModel.MAX_STARS,
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = stringResource(Res.string.task_stars_more))
+        }
     }
 }
 
 /** Who takes turns, in what order and how often, then "Vems tur" with "Byt vecka". */
 @Composable
 private fun RotationSection(state: TaskEditorState, d: TaskDraft, preview: (TaskDraft) -> FamilyTask, actions: TaskEditorActions) {
-    val byId = state.adults.associateBy { it.id }
+    val byId = state.everyone.associateBy { it.id }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         FieldHeading(stringResource(Res.string.tasks_rotation_members))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-            state.adults.forEach { p ->
+            state.everyone.forEach { p ->
                 FilterChip(
                     selected = p.id in d.rotationMembers,
                     onClick = { actions.onToggleMember(p.id) },

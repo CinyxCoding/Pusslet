@@ -24,8 +24,9 @@ import se.pusslet.ui.notify.NotificationTexts
 
 /**
  * Shows a [PlannedNotification] (ADR-036): one channel per [NotificationKind], the texts from the string resources, and a
- * tap that opens what it is about ([MainActivity] reads [EXTRA_TARGET]). Texts hold children's names, so they are private
- * on the lock screen and never logged.
+ * tap that opens what it is about ([MainActivity] reads [EXTRA_TARGET]). Texts hold children's names and can say who is
+ * ill, so they are never logged and are private: a phone set to hide sensitive content on the lock screen shows only
+ * [publicVersion]; with Android's default setting the owner sees them in full there.
  */
 internal class AndroidNotifier(private val context: Context, private val texts: NotificationTexts = NotificationTexts()) {
     private val log = Logger.withTag("Notifier")
@@ -51,7 +52,13 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
             .setCategory(category(n.kind))
             .setWhen(n.at.toEpochMilliseconds())
             .setShowWhen(true)
-            .apply { pickupAction(n)?.let { addAction(0, texts.pickedUpAction(), it) } }
+            .apply {
+                // "Hämtad" tells the whole family that a child is safe: from a locked phone only after unlocking it.
+                pickupAction(n)?.let {
+                    addAction(NotificationCompat.Action.Builder(0, texts.pickedUpAction(), it).setAuthenticationRequired(true).build())
+                }
+            }
+            .setPublicVersion(publicVersion(n))
             .build()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -79,6 +86,15 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
     }
 
     private fun allowed(): Boolean = manager.areNotificationsEnabled()
+
+    /** What a locked phone set to hide sensitive content shows: the kind of notification, no names, no health. */
+    private suspend fun publicVersion(n: PlannedNotification) = NotificationCompat.Builder(context, n.kind.channelId)
+        .setSmallIcon(R.drawable.ic_notification)
+        .setContentTitle(texts.channel(n.kind).name)
+        .setCategory(category(n.kind))
+        .setWhen(n.at.toEpochMilliseconds())
+        .setShowWhen(true)
+        .build()
 
     /** "Hämtad" on my own pick-up and on "Är Ella hämtad?" (ADR-048). */
     private fun pickupAction(n: PlannedNotification): PendingIntent? = when (val p = n.payload) {

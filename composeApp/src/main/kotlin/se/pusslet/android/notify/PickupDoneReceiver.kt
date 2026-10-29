@@ -19,8 +19,9 @@ import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.usecase.PickupReceipts
 
 /**
- * "Hämtad" on a notification (ADR-048): "Du hämtar Ella 15:45" and "Är Ella hämtad?" can be ticked off from the lock
- * screen. The receipt is written like the button on Idag does it, then the notification goes away.
+ * "Hämtad" on a notification (ADR-048): "Du hämtar Ella 15:45" and "Är Ella hämtad?" can be ticked off from the
+ * notification, on a locked phone once it is unlocked (Android 12+). The receipt is written like the button on Idag does it,
+ * then the notification goes away.
  */
 class PickupDoneReceiver :
     BroadcastReceiver(),

@@ -84,9 +84,6 @@ import se.pusslet.feature.shopping.StoresRoute
 import se.pusslet.feature.tasks.TasksRoute
 import se.pusslet.feature.tasks.distribution.TaskDistributionRoute
 import se.pusslet.feature.tasks.editor.TaskEditorRoute
-import se.pusslet.feature.tasks.kid.AllowanceRoute
-import se.pusslet.feature.tasks.kid.KidModeRoute
-import se.pusslet.feature.tasks.kid.KidPickerRoute
 import se.pusslet.feature.today.TodayLayoutRoute
 import se.pusslet.feature.today.TodayRoute
 import se.pusslet.feature.today.helper.HelperPreviewRoute
@@ -301,7 +298,6 @@ private fun AppNavDisplay(
                     onOpenMedicine = { navigator.navigate(Route.Medicine(it)) },
                     onOpenBreaks = { navigator.navigate(Route.Breaks()) },
                     onSearch = { navigator.navigate(Route.Search) },
-                    onOpenKids = { navigator.navigate(Route.Allowance) },
                     contentPadding = padding,
                 )
             }
@@ -444,14 +440,6 @@ private fun AppNavDisplay(
             entry<Route.OtherHome> { OtherHomeRoute(onBack = navigator::goBack, onSignIn = { navigator.navigate(Route.Account) }) }
             entry<Route.SharedCosts> { SharedCostsRoute(onBack = navigator::goBack, onOtherHome = { navigator.navigate(Route.OtherHome) }) }
             entry<Route.Wishlist> { r -> WishlistRoute(r.childId, onBack = navigator::goBack) }
-            entry<Route.KidPicker> {
-                KidPickerRoute(onBack = navigator::goBack, onPick = { id ->
-                    navigator.goBack()
-                    navigator.navigate(Route.KidMode(id))
-                })
-            }
-            entry<Route.KidMode> { r -> KidModeRoute(r.childId, onExit = navigator::goBack) }
-            entry<Route.Allowance> { AllowanceRoute(onBack = navigator::goBack, onKidMode = { navigator.navigate(Route.KidPicker) }) }
             entry<Route.ChildEditor> { r -> ChildEditorRoute(r.childId, onDone = navigator::goBack) }
             entry<Route.MemberEditor> { r ->
                 MemberEditorRoute(
@@ -506,8 +494,6 @@ private fun MoreDestination.route(): Route = when (this) {
     MoreDestination.Medicine -> Route.Medicine()
     MoreDestination.Breaks -> Route.Breaks()
     MoreDestination.Search -> Route.Search
-    MoreDestination.Kids -> Route.Allowance
-    MoreDestination.KidMode -> Route.KidPicker
     MoreDestination.SharedCosts -> Route.SharedCosts
 }
 

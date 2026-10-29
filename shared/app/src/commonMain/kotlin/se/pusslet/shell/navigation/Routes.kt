@@ -34,15 +34,6 @@ sealed interface Route {
     /** "Medicin och feber" (ADR-050), on [childId] when it was opened for one child. */
     @Serializable data class Medicine(val childId: String? = null) : Route
 
-    /** "Vem ska använda telefonen?" before barnläge (ADR-055). */
-    @Serializable data object KidPicker : Route
-
-    /** Barnläge for one child (no bottom bar; leaving takes a long press). */
-    @Serializable data class KidMode(val childId: String) : Route
-
-    /** "Barnen": ticks to approve and veckopeng (ADR-055). */
-    @Serializable data object Allowance : Route
-
     /** "Delade kostnader" with the other home (ADR-057). */
     @Serializable data object SharedCosts : Route
 

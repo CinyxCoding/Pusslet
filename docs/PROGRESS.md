@@ -186,7 +186,7 @@ Status per fas. ✅ klart · 🟡 delvis · ⬜ inte påbörjat. Uppdateras efte
 - [x] Fler lunchleverantörer (ADR-053): Matilda via matsedelns officiella RSS-flöde (kontrollerat live 2026-10-28)
 - [x] Kalas och presenter (ADR-054): OSA med sista dag, presentidé, budget och köpt, eget kalas med gäster och inbjudan,
   önskelistor där morföräldrar bockar av vad de köpt
-- [x] Barnläge och veckopeng (ADR-055): barnets dag, sysslor med stjärnor och ”Klar!”, föräldern godkänner, veckopeng per vecka
+- ~~Barnläge och veckopeng (ADR-055)~~ – borttaget av ägaren 2026-10-29 (ADR-060); sysslor kan fortfarande tilldelas barn
 - [x] Flerhushållsdelning (ADR-056): ”Andra hemmet” – barnen man delar, deras vårdnadsschema och det som bara handlar om
   dem bor i ett delat utrymme som båda hemmens föräldrar synkar; starta med kod, gå med och para ihop barnen, sluta dela
   med egen kopia; ”Delas med andra hemmet” i händelseredigeraren; regler och kalenderflöde
@@ -240,8 +240,9 @@ Status är **CONDITIONAL**: reglerna och funktionerna måste driftsättas, och A
 - Andra hemmet hanterar bara sina egna vuxna och de kostnader det lade in, och varje kostnad visar "inlagd av".
 - En inbjudningskod används en gång.
 - Utloggning frågar om familjen ska ligga kvar på telefonen.
-- Barnläget lämnas med ett långt tryck och telefonens upplåsning.
 - CI körs också på `claude/`-grenar, som slås ihop direkt i `main`.
+
+Barnläget, med stjärnor, godkännanden och veckopeng, togs bort helt samma dag (ADR-060).
 
 Premiumvillkoren står i MONETIZATION.md: 39 kr i månaden eller 349 kr om året, 14 dagars provperiod, och tidiga
 användare får premium i ett år.

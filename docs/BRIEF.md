@@ -140,7 +140,9 @@ Märkning: **[MVP]** = måste finnas i första fullständiga versionen. **[V2]**
 - Uppgifter med ansvarig, deadline, återkommande, checklista, koppling till händelse ("köp present" ↔ kalas).
 - **Hushållssysslor med rotation** (t.ex. dammsugning roterar veckovis).
 - **Fördelningsvy** [MVP]: enkel, icke-dömande visualisering av hur uppgifter/hämtningar/sysslor fördelats mellan vuxna senaste 4 veckorna. Syfte: samtal, inte skuld.
-- **Barnens sysslor & veckopeng** [V2]: stjärnor/poäng, föräldern godkänner, valfri koppling till veckopeng.
+- ~~**Barnens sysslor & veckopeng** [V2]: stjärnor/poäng, föräldern godkänner, valfri koppling till veckopeng.~~
+  **Borttaget av ägaren 2026-10-29 (DECISIONS.md, ADR-060): bygg inte barnvy, stjärnor eller veckopeng igen.** Sysslor kan
+  fortfarande tilldelas barn.
 
 ### 4.8 Kalas, presenter & högtider [V2]
 - Kalas-händelser med OSA-status, presentidéer per barn (önskelista), budget, "present köpt"-status, påminnelse 3 dagar innan.
@@ -246,7 +248,7 @@ Arbeta fas för fas. Committa ofta. Uppdatera `docs/PROGRESS.md` efter varje fas
 - Skriv i `docs/SETUP.md` en checklista för lansering, inklusive att **nya personliga utvecklarkonton på Google Play måste köra ett stängt test med minst 12 testare i 14 dagar i följd** innan produktionsåtkomst kan sökas.
 - ✅ `./gradlew build` grönt, alla tester gröna, lint utan fel, release-AAB bygger, PROGRESS.md visar alla MVP-punkter som klara.
 
-**Fas 5 – V2-funktioner** (endast när fas 0–4 är klara och polerade): barnvy & veckopeng, kalas/presenter, sök, flerhushållsdelning fullt ut, fler lunchleverantörer.
+**Fas 5 – V2-funktioner** (endast när fas 0–4 är klara och polerade): ~~barnvy & veckopeng~~ (borttaget, ADR-060), kalas/presenter, sök, flerhushållsdelning fullt ut, fler lunchleverantörer.
 
 ---
 

@@ -1561,43 +1561,6 @@
     <string name="wish_taken_by">Köpt av %1$s</string>
     <string name="wish_remove">Ta bort %1$s</string>
 
-    <!-- Barnläge, stjärnor och veckopeng (ADR-055) -->
-    <string name="task_stars">Stjärnor för barnen</string>
-    <string name="task_stars_less">Färre stjärnor</string>
-    <string name="task_stars_more">Fler stjärnor</string>
-    <string name="stars_count">%1$d ⭐</string>
-    <string name="kid_hello">Hej %1$s</string>
-    <string name="kid_today">Idag</string>
-    <string name="kid_nothing_today">Inget särskilt idag.</string>
-    <string name="kid_picks_up">%1$s hämtar dig</string>
-    <string name="kid_chores">Mina sysslor</string>
-    <string name="kid_no_chores">Inga sysslor just nu</string>
-    <string name="kid_done">Klar!</string>
-    <string name="kid_undo">Ångra</string>
-    <string name="kid_well_done">Bra jobbat! ⭐</string>
-    <string name="kid_stars_week">%1$d ⭐ den här veckan</string>
-    <string name="kid_waiting">%1$d ⭐ väntar på att en vuxen kollar</string>
-    <string name="kid_allowance">Veckopeng hittills: %1$d kr</string>
-    <string name="kid_exit">Lämna barnläge</string>
-    <string name="kid_exit_hint">Håll inne knappen en stund och lås sedan upp telefonen.</string>
-    <string name="kid_exit_unlock">Lås upp för att lämna barnläget</string>
-    <string name="kid_mode">Barnläge</string>
-    <string name="kid_mode_body">En enkel vy för ett barn: dagen, sysslorna och stjärnorna</string>
-    <string name="kid_mode_pick">Vem ska använda telefonen?</string>
-    <string name="kids_title">Barnen och veckopeng</string>
-    <string name="kids_nothing_to_approve">Inget att godkänna just nu.</string>
-    <string name="kids_done_line">%1$s: %2$s</string>
-    <string name="kids_approve">Godkänn</string>
-    <string name="kids_reject">Inte klart</string>
-    <string name="card_chores_to_approve">%1$s har bockat av sysslor (%2$d) – titta och godkänn</string>
-    <string name="allowance_title">Veckopeng</string>
-    <string name="allowance_body">Ett grundbelopp per vecka plus kronor per godkänd stjärna. Bocka i när veckan är utbetald.</string>
-    <string name="allowance_weekly">Kr per vecka</string>
-    <string name="allowance_per_star">Kr per stjärna</string>
-    <string name="allowance_week_line">%1$d ⭐ · %2$d kr</string>
-    <string name="allowance_paid">Utbetald</string>
-    <string name="kids_to_approve">Att godkänna</string>
-
     <!-- The other home (ADR-030) -->
     <string name="other_home_title">Andra hemmet</string>
     <string name="other_home_intro">Bor barnen i två hem? Dela deras vårdnadsschema, händelser, packning och läxor med det andra hemmet. Allt annat i er familj förblir ert.</string>

@@ -312,7 +312,7 @@ Inga filer har tagits bort. Inga funktioner har tagits bort.
 | R1 | App Check är inte påslaget. Ett eget konto kan skriva godtyckliga samlingar och stora dokument (kostnadsmissbruk, API4) | Medel | **Beslut (ADR-059): vid lanseringen.** App Check (Play Integrity) först i övervakningsläge, sedan krav på Firestore och funktionerna. Budgetlarm. Överväg en lista över tillåtna samlingsnamn i reglerna |
 | R2 | ~~Andra hemmet kunde ta bort varandras kostnader och åtkomst~~ | – | **Åtgärdad (ADR-059):** ett hem hanterar bara sina egna vuxna, sin plats i `familyIds` och de kostnader det lade in, och varje kostnad visar "inlagd av". Kvar: båda hemmen kan ändra barnens delade saker (händelser, packning), vilket är meningen |
 | R3 | ~~En inbjudan kunde användas flera gånger~~ | – | **Åtgärdad (ADR-059):** en kod används en gång och markeras i samma batch som anslutningen |
-| R4 | Hjälparvyn är ingen säkerhetsgräns, och hjälpare kan sätta `approved` på delade uppgifter (ADR-055) | Låg (design) | Barnläget kräver nu telefonens upplåsning för att lämnas (ADR-059). Barnroll i reglerna om det behövs |
+| R4 | Hjälparvyn (den enkla vyn för hjälpare) är ingen säkerhetsgräns; det är reglerna som avgör vad en hjälpare läser och ändrar | Info | Barnläget, med stjärnor och godkännanden, är borttaget (ADR-060), och reglerna låter inte längre hjälpare ändra `approved` |
 | R5 | Push-registreringen ligger kvar efter utloggning | Låg | **Delvis åtgärdad (ADR-059):** utloggningen frågar om familjen ska tas bort från telefonen och förklarar valet. Avregistrera `users/{uid}/devices/{id}` före utloggning |
 | R6 | Tio npm-råd i utvecklingsverktyg (firebase-tools, firebase, rules-unit-testing: grpc-js, uuid, opentelemetry) | Låg | Uppdatera när det finns rättade versioner |
 | R7 | Actions är pinnade på taggar, inte SHA. Ingen Gradle dependency verification | Låg | Pinna på SHA med Dependabot, `--write-verification-metadata sha256` |
@@ -374,7 +374,7 @@ Det betyder inte att appen är garanterat säker.
 | 11 Konto | Klar för appen och funktionerna. Auth-inställningarna i konsolen är inte verifierade |
 | 12 Leverantörskedja | Klar: npm audit, OSV, Lint, Actions, Gradle-repon (innehållsfiltrerade), wrapperns kontrollsumma |
 | 13 Integritet och loggar | Klar: loggar utan personuppgifter, ingen analys eller kraschrapportering |
-| 14 Affärslogik | Klar: betalningar ej aktiva, delade kostnader (R2), godkännanden (R4) |
+| 14 Affärslogik | Klar: betalningar ej aktiva, delade kostnader (R2) |
 | 15 Tillförlitlighet | Delvis: trasiga dokument hoppas över, hämtningar fallerar mjukt, gränser. Inga stresstester på enhet |
 | 16 Release | Klar: R8, flavors, signering och manifest |
 | 17 Automatiska tester | Se D |

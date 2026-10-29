@@ -41,7 +41,6 @@ import se.pusslet.core.model.SickDay
 import se.pusslet.core.packing.PackingPlanner
 import se.pusslet.core.party.PartyRules
 import se.pusslet.core.sick.SickDays
-import se.pusslet.core.tasks.KidChores
 import se.pusslet.core.tasks.TaskOccurrence
 import se.pusslet.core.tasks.TaskScheduler
 import se.pusslet.core.time.IsoWeek
@@ -153,9 +152,6 @@ sealed interface ContextCard {
 
     /** "Kalas på lördag – present är inte köpt" */
     data class PartyGift(val date: LocalDate, val eventTitle: String, val taskId: String?) : ContextCard
-
-    /** "Ella har bockat av 2 sysslor – godkänn" (parents only, ADR-055). */
-    data class ChoresToApprove(val children: List<FamilyPerson>, val count: Int) : ContextCard
 
     /** "Dags att OSA till Kalas hos Vera – senast imorgon" (ADR-054). */
     data class PartyRsvp(val by: LocalDate, val occurrence: EventOccurrence) : ContextCard
@@ -609,11 +605,6 @@ object TodayPlanner {
             }
         week.filter { PartyRules.needsGift(it, input.tasks, today) }.forEach { o ->
             cards += ContextCard.PartyGift(o.start.date, o.event.title, PartyRules.giftTasks(o, input.tasks, today).firstOrNull()?.id)
-        }
-        // Children's chores waiting for a parent (ADR-055).
-        val pending = KidChores.pending(input.tasks, children.map { it.id }.toSet(), input.zone)
-        if (pending.isNotEmpty()) {
-            cards += ContextCard.ChoresToApprove(children.filter { c -> pending.any { it.childId == c.id } }, pending.size)
         }
         // An answer due within three days, whenever the party is.
         input.occurrences.filter { PartyRules.needsRsvp(it.event, today) }

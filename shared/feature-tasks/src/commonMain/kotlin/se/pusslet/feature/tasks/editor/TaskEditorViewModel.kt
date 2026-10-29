@@ -52,8 +52,6 @@ data class TaskDraft(
     val checklist: List<ChecklistItem> = emptyList(),
     val note: String = "",
     val sharedWithCaregivers: Boolean = false,
-    /** Stars for a child doing it (barnläge, ADR-055). */
-    val stars: Int = 0,
 ) {
     val rotating: Boolean get() = kind == TaskKind.Chore && rotationOn && rotationMembers.isNotEmpty()
 }
@@ -66,7 +64,7 @@ data class TaskEditorState(
     val draft: TaskDraft? = null,
     /** The draft as loaded: Back asks before throwing away anything else. */
     val initial: TaskDraft? = null,
-    /** Who can be responsible or take turns: the adults, then the children (ADR-055). */
+    /** Who can be responsible or take turns: the adults, then the children. */
     val adults: List<FamilyPerson> = emptyList(),
     val children: List<FamilyPerson> = emptyList(),
     val me: String? = null,
@@ -82,12 +80,6 @@ data class TaskEditorState(
     val hasChanges: Boolean get() = draft != null && draft != initial
 
     val everyone: List<FamilyPerson> get() = adults + children
-
-    /** Stars only make sense when a child does the task (alone or taking turns). */
-    fun involvesChild(d: TaskDraft): Boolean {
-        val ids = children.map { it.id }.toSet()
-        return d.assigneeId in ids || (d.rotating && d.rotationMembers.any { it in ids })
-    }
 }
 
 /**
@@ -252,7 +244,6 @@ class TaskEditorViewModel(
             checklist = d.checklist,
             note = d.note.trim(),
             sharedWithCaregivers = d.sharedWithCaregivers,
-            stars = if (_state.value.involvesChild(d)) d.stars.coerceIn(0, MAX_STARS) else 0,
         )
     }
 
@@ -265,9 +256,6 @@ class TaskEditorViewModel(
 
     companion object {
         const val MAX_EVERY_WEEKS = 4
-
-        /** More than five stars for one chore makes the weekly total meaningless. */
-        const val MAX_STARS = 5
 
         /**
          * The draft for a stored task. A recurring task without a date (made before the editor set one) shows the occurrence
@@ -293,7 +281,6 @@ class TaskEditorViewModel(
                 checklist = task.checklist,
                 note = task.note,
                 sharedWithCaregivers = task.sharedWithCaregivers,
-                stars = task.stars,
             )
         }
 

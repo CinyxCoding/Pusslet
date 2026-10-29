@@ -131,9 +131,6 @@ object Collections {
         spaces = SpaceSharing.Merged,
     )
 
-    /** Veckopeng settings and paid weeks, one document per child; family money is for parents only (ADR-055). */
-    val Allowances = CollectionSpec("allowances", RemoteLocation.Flat("allowances"), mapFields = setOf("paidWeeks"), parentsOnly = true)
-
     /** The children's wishlists (ADR-054); caregivers read them and may only mark a wish bought. */
     val Wishes = CollectionSpec("wishes", RemoteLocation.Flat("wishes"), spaces = SpaceSharing.Merged)
 
@@ -182,7 +179,6 @@ object Collections {
         BreakPlans,
         StaySchedules,
         Wishes,
-        Allowances,
         Expenses,
     )
 

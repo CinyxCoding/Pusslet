@@ -23,9 +23,6 @@ enum class Feature {
     /** A school break planned day by day, and the preschool hours (ADR-051); the breaks themselves show for everyone. */
     BreakPlanning,
 
-    /** Stars and pocket money (ADR-055); barnläge with the child's day and chores stays free. */
-    KidRewards,
-
     /** The week's nutrition overview from Livsmedelsverket's data; a recipe's own values stay free. */
     NutritionOverview,
 

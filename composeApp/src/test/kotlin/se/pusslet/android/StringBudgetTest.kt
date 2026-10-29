@@ -86,11 +86,10 @@ private val addWithPlus = Regex("""\b(med|with)\s+\+""", RegexOption.IGNORE_CASE
 private val demoNames = Regex("""\b(Sara|Johan|Bengt|Morfar|Ella|Simon|Vera|Ahmed|Karin|Lind)\b""", RegexOption.IGNORE_CASE)
 
 /**
- * Done states may cheer (finished shopping and onboarding, a child's "Klar!" and "Bra jobbat!", and the party invitation
- * the family sends); receipts, errors and everything else may not.
+ * Done states may cheer (finished shopping and onboarding, and the party invitation the family sends); receipts, errors and
+ * everything else may not.
  */
-private val exclamationAllowed =
-    setOf("store_mode_all_done_title", "onboarding_done_title", "kid_done", "kid_well_done", "party_invite_title")
+private val exclamationAllowed = setOf("store_mode_all_done_title", "onboarding_done_title", "party_invite_title")
 
 /** The done screen of the onboarding is the only place where no + is visible yet. */
 private val addWithPlusAllowed = setOf("onboarding_done_body")

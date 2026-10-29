@@ -316,7 +316,7 @@ service cloud.firestore {
             // "Hämtad" (ADR-048): his own receipt, and taking it back.
             || (collection == 'handoffReceipts' && data().doneBy == myMemberId(fid) && (validReceipt() || softDeleteOnly()))
             || (collection == 'tasks' && resource != null && sharedWithCaregivers()
-                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist', 'approved']))
+                && onlyChanges(['done', 'doneAt', 'doneBy', 'completions', 'checklist']))
             // A grandparent marks a wish as bought (ADR-054), nothing else.
             || (collection == 'wishes' && resource != null && onlyChanges(['taken', 'takenBy']));
         }

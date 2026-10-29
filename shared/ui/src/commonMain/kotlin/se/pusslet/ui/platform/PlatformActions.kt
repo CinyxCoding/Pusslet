@@ -47,12 +47,6 @@ interface PlatformActions {
 
     /** Shows an attached picture full screen in the phone's viewer. */
     fun openImage(fileName: String) = Unit
-
-    /**
-     * Asks for the phone's own lock (PIN, pattern, fingerprint or face) before something only an adult should do, such as
-     * leaving barnläge (ADR-059). True when it was given, or when the phone has no lock to ask for.
-     */
-    fun confirmWithScreenLock(title: String, onResult: (Boolean) -> Unit) = onResult(true)
 }
 
 object NoopPlatformActions : PlatformActions {

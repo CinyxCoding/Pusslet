@@ -8,12 +8,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,8 +33,6 @@ enum class MoreDestination(val parentsOnly: Boolean = false) {
     Search,
     Family,
     Tasks,
-    Kids(parentsOnly = true),
-    KidMode(parentsOnly = true),
     Medicine(parentsOnly = true),
     SharedCosts(parentsOnly = true),
     Breaks(parentsOnly = true),
@@ -62,8 +58,6 @@ fun MoreScreen(onOpen: (MoreDestination) -> Unit, contentPadding: PaddingValues 
             MoreItem(MoreDestination.Search, Res.string.search_title, Icons.Filled.Search),
             MoreItem(MoreDestination.Family, Res.string.more_family, PussletIcons.Family),
             MoreItem(MoreDestination.Tasks, Res.string.more_tasks, PussletIcons.Task),
-            MoreItem(MoreDestination.Kids, Res.string.kids_title, Icons.Filled.Star),
-            MoreItem(MoreDestination.KidMode, Res.string.kid_mode, Icons.Filled.Face),
             MoreItem(MoreDestination.Breaks, Res.string.breaks_title, PussletIcons.Beach),
             MoreItem(MoreDestination.Medicine, Res.string.medicine_title, PussletIcons.Medication),
             MoreItem(MoreDestination.SharedCosts, Res.string.costs_title, PussletIcons.Payments),

@@ -53,9 +53,8 @@ data class ChoreRotation(
     val anchorWeek: IsoWeek,
 )
 
-/** [approved] is false while a child's "Klar!" waits for a parent (barnläge, ADR-055). */
 @Serializable
-data class Completion(val doneBy: String?, val doneAt: Instant?, val approved: Boolean = true)
+data class Completion(val doneBy: String?, val doneAt: Instant?)
 
 @Serializable
 data class FamilyTask(
@@ -86,10 +85,6 @@ data class FamilyTask(
      * rotation's. Merged per key (sync `mapFields`), so two parents swapping different weeks do not overwrite each other.
      */
     val turnOverrides: Map<String, String> = emptyMap(),
-    /** Stars a child earns for this chore once a parent has approved it (0 = no stars, ADR-055). */
-    val stars: Int = 0,
-    /** For one-off tasks: false while a child's "Klar!" waits for a parent. */
-    val approved: Boolean = true,
 )
 
 @Serializable

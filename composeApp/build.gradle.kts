@@ -245,7 +245,6 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
     implementation(libs.androidx.exifinterface)
-    implementation(libs.androidx.biometric)
 
     debugImplementation(libs.compose.ui.tooling)
 

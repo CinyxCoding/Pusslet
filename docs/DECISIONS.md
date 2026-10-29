@@ -611,6 +611,7 @@ den som hade turen. Veckopeng (`allowances`, bara föräldrar läser) = grundbel
 per vecka som slås ihop per vecka. Man lämnar barnläge med ett långt tryck. `KidChores` i kärnan bär reglerna.
 **Konsekvens:** Barnet "är" alltid den inloggade vuxna mot servern – godkännandet är en familjeöverenskommelse, inte en
 säkerhetsgräns. Ett eget barnkonto kan läggas till senare med en barnroll i reglerna.
+**Borttaget 2026-10-29 av ägaren (ADR-060).**
 
 ## ADR-056 – Andra hemmet: ett delat utrymme per barn i två hem
 **Kontext:** BRIEF: delad vårdnad, "ett barn tillhör två hushåll" i datamodellen, full flerhushållsdelning i V2. Fas 2 gav
@@ -696,8 +697,7 @@ barnläget är ingen säkerhetsgräns (ADR-055) och App Check är inte påslaget
   reglerna kräver det. En använd kod ger samma svar som en okänd eller utgången.
 - **Utloggning frågar.** Man väljer att behålla familjen på telefonen eller att ta bort den härifrån, och båda valen
   förklaras. Den som är ensam i familjen med konto varnas om att familjen inte går att få tillbaka till telefonen.
-- **Barnläget lämnas med ett långt tryck och sedan telefonens upplåsning** (PIN-kod, mönster, fingeravtryck eller ansikte).
-  Har telefonen inget skärmlås räcker det långa trycket, som förut (ADR-055).
+- ~~Barnläget lämnas med ett långt tryck och sedan telefonens upplåsning.~~ Barnläget togs bort samma dag (ADR-060).
 - **"Hämtad" kräver upplåst telefon**, som ADR-058 införde.
 - **App Check slås på vid lanseringen.** Firebase-projektet skapas när funktionerna är färdiga. Till dess finns ingen
   produktion, och utvecklingen sker mot emulatorerna (demo-flavorn).
@@ -706,4 +706,22 @@ barnläget är ingen säkerhetsgräns (ADR-055) och App Check är inte påslaget
 **Konsekvens:** Reglerna och appen måste följas åt, så att en äldre app inte kan gå med med en kod eller lägga in en
 kostnad. Det spelar ingen roll innan lanseringen eftersom det inte finns någon produktion. En familj med flera
 morföräldrar behöver en kod per person.
+
+## ADR-060 – Barnläget tas bort
+**Kontext:** Barnläget (ADR-055) var barnets egen vy med "Klar!", stjärnor, föräldrarnas godkännanden och veckopeng. Det
+byggdes efter en V2-önskan i BRIEF. Ägaren bedömer det som onödigt (2026-10-29).
+**Beslut:** Allt tas bort:
+- barnvyn och väljaren "Vem ska använda telefonen?"
+- "Barnen och veckopeng" under Mer
+- Idag-kortet om sysslor att godkänna
+- stjärnorna i uppgiftsredigeraren
+- godkännandet på avbockningar (`Completion.approved`, `FamilyTask.approved`) och stjärnorna (`FamilyTask.stars`)
+- veckopengen (`allowances`) och reglerna i `KidChores`
+- telefonens upplåsning, som ADR-059 lade till för att lämna barnläget
+
+Kvar blir att en uppgift eller syssla kan tilldelas ett barn, även i turordning, och kategorin "Barnen".
+**Konsekvens:** Gamla dokument med `stars` eller `approved` läses som förut, eftersom okända fält ignoreras. En avbockning
+som väntade på godkännande räknas som klar. Lokala `allowances`-dokument på en telefon som har provat funktionen ligger
+kvar oanvända tills familjen tas bort från telefonen. Reglerna låter inte längre hjälpare ändra `approved`. Premium:
+`KidRewards` utgår.
 

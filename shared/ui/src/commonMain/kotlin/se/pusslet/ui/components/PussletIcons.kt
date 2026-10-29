@@ -163,9 +163,6 @@ object PussletIcons {
         icon("ChevronRight", "M10,6L8.59,7.41 13.17,12l-4.58,4.59L10,18l6,-6z")
     }
 
-    /** "Färre stjärnor" (−). */
-    val Remove: ImageVector by lazy { icon("Remove", "M19,13H5v-2h14v2z") }
-
     /** Medicin och feber (ADR-050). */
     val Medication: ImageVector by lazy {
         icon(

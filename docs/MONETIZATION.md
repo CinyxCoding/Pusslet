@@ -2,12 +2,12 @@
 
 > Status: **ingen betalning är påslagen.** Varje bygge låser upp allt (`AllUnlocked`, BRIEF §7). Det här är underlaget
 > för en senare Play-lansering med premium, och stegen för att slå på den. Uppdelningen gjordes om 2026-10-29 för appen
-> som den är då (andra hemmet, delade kostnader, lov, barnläge, medicin, bilder, kalas).
+> som den är då (andra hemmet, delade kostnader, lov, medicin, bilder, kalas). Barnläget är borttaget (ADR-060).
 
 ## Principer
 - **Gratisversionen ska räcka för en vanlig familj.** Det som håller ihop vardagen är gratis: kalendern, Idag, listorna,
   matsedeln och att dela med varandra. Premium är för familjer med två hem, många källor eller ett särskilt intresse,
-  till exempel näring eller veckopeng.
+  till exempel näring.
 - **Säkerhet, hälsa, integritet och att gå med är aldrig premium.** Det gäller lämna och hämta, förfrågningar,
   "Hämtad", sjukanmälan och VAB, medicin och feber, export och radering, tillgänglighet och att bli inbjuden – även
   till andra hemmets delade utrymme. Varje vuxen som går med gratis är reklam vi inte betalar för.
@@ -37,7 +37,6 @@
 | Matsedel, recept, receptimport, receptsamlingar, skollunch, väder | Allt | – | Kärnan | – |
 | Näringsvärden | Per recept | Veckans näringsöversikt | Fördjupning; värdet per recept visar vad premium ger | `NutritionOverview` |
 | Uppgifter, sysslor, fördelningsvy | Allt | Hur det delats över tid (nytt) | Det som gör delningen rättvis är gratis | `DistributionHistory` |
-| Barnläge | Barnets dag och sysslor | Stjärnor och veckopeng | Ett tydligt extra för barnfamiljer | `KidRewards` |
 | Lov och vistelsetider | Loven syns i kalendern | Planering dag för dag och vistelsetider | Periodisk planering med stor nytta när den behövs | `BreakPlanning` |
 | Kalas och önskelistor | Allt | – | Önskelistorna når morföräldrar: spridning vi inte betalar för | – |
 | ICS-prenumerationer | 3 kalendrar | Obegränsat | Skola, en förening och förskola räcker för de flesta; den som har fler har störst nytta och kostar mest i hämtningar | `UnlimitedSubscriptions` |
@@ -82,8 +81,7 @@ I den ordning de bör byggas, med insats och värde.
 - **14 dagars gratis provperiod** via Play (en gång per Google-konto).
 - **Den som använder appen före lanseringen** (familjen och testarna) **får premium i ett år** från lanseringsdagen. Det
   skrivs på familjen av servern (`families/{id}/entitlement` med ett slutdatum) och kräver inget köp.
-- **Att starta delning med andra hemmet är premium**, att gå med är gratis. Stjärnor och veckopeng samt lovplaneringen är
-  premium.
+- **Att starta delning med andra hemmet är premium**, att gå med är gratis. Lovplaneringen är premium.
 - Jämförelse i oktober 2026 (priserna skiljer sig mellan källorna):
 
   | App | Pris |
@@ -114,7 +112,7 @@ bestäms.
   allt premium i tabellerna ovan:
   - **Byggt och spärrat:** `UnlimitedSubscriptions` (`SubscriptionsViewModel`) och `OtherHousehold` (`OtherHomeScreen`,
     att starta delning). Båda har test för gratisversionen.
-  - **Byggt men inte spärrat än:** `SharedCosts`, `BreakPlanning`, `KidRewards`, `NutritionOverview` och `ExtraWidgets`.
+  - **Byggt men inte spärrat än:** `SharedCosts`, `BreakPlanning`, `NutritionOverview` och `ExtraWidgets`.
   - **Inte byggt:** övriga, som spärras när de byggs.
 - `Entitlements` finns i `shared/data` (`premium`): `AllUnlocked` är bunden i Koin för alla flavors.
 - `BillingRepository` (gränssnitt), `PremiumProducts` (produkt-id:n) och `BillingEntitlements` (köp → `Entitlement`) är
@@ -136,11 +134,11 @@ bestäms.
    lanseringen får premium i ett år från lanseringsdagen: skript eller funktion som skriver ett slutdatum, utan köp.
 4. **Appen:** en `FamilyEntitlements : Entitlements` läser familjens dokument (så att alla i familjen får premium), med
    `BillingEntitlements` som snabb väg på telefonen som köpte. Bind den bara i `prod`; demo och dev behåller `AllUnlocked`.
-5. **Spärrarna:** koppla `SharedCosts`, `BreakPlanning`, `KidRewards`, `NutritionOverview` och `ExtraWidgets` på samma
+5. **Spärrarna:** koppla `SharedCosts`, `BreakPlanning`, `NutritionOverview` och `ExtraWidgets` på samma
    sätt som prenumerationerna, med test för gratisversionen.
    - Det som kostar på servern kontrolleras också där: molnbilder i Storage-reglerna, personliga länkar i
      kalenderflödet och rapporter som byggs i funktioner.
-   - Lokala spärrar räcker i appen: widgets, teman och barnläge.
+   - Lokala spärrar räcker i appen: widgets och teman.
 6. **Skärmar:** en premiumsida (vad som ingår, pris från `products()`, "Återställ köp", länk till Plays
    abonnemangshantering) och en mjuk hänvisning där en spärr slår till.
 7. **Data safety och butik:** lägg till köphistorik i Data safety (PLAY_DATA_SAFETY.md) och nämn premium i

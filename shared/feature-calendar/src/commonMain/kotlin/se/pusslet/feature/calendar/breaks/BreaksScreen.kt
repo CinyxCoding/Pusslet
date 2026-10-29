@@ -243,7 +243,12 @@ private fun BreakCard(b: SchoolBreak, state: BreaksUiState, today: LocalDate, ac
         b.days.forEach { date ->
             val chosen = b.plan.days[date.toString()]
             Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                Text("${weekdayName(date.dayOfWeek)} ${formatDateShort(date)}", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "${weekdayName(date.dayOfWeek).replaceFirstChar {
+                        it.uppercase()
+                    }} ${formatDateShort(date)}",
+                    style = MaterialTheme.typography.labelLarge,
+                )
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     state.adults.forEach { adult ->
                         val selected = chosen?.care == BreakCare.Home && chosen.memberId == adult.id
@@ -303,7 +308,7 @@ private fun DeadlineRow(b: SchoolBreak, today: LocalDate, actions: BreaksActions
 private fun StayCard(row: StayRow, today: LocalDate, actions: BreaksActions) {
     val schedule = row.schedule
     val shareTitle = stringResource(Res.string.stays_share_title, row.child.name, formatDateShort(schedule.validFrom ?: today))
-    val weekdays = WORKDAYS.associateWith { weekdayName(it) }
+    val weekdays = WORKDAYS.associateWith { weekdayName(it).replaceFirstChar { c -> c.uppercase() } }
     val total = Breaks.minutesPerWeek(schedule)
     val totalText = stringResource(Res.string.stays_total, total / MINUTES, (total % MINUTES).toString().padStart(2, '0'))
     val offText = stringResource(Res.string.stays_off)

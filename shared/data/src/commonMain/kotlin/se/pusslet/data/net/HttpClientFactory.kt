@@ -14,7 +14,7 @@ import io.ktor.http.contentLength
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.charsets.Charsets
 import io.ktor.utils.io.core.readText
-import io.ktor.utils.io.readRemaining
+import io.ktor.utils.io.readBuffer
 import kotlinx.serialization.json.Json
 
 /** A body larger than the caller allows; the rest of it is never downloaded. */
@@ -26,7 +26,7 @@ class ResponseTooLargeException(limit: Long) : Exception("Response larger than $
  */
 suspend fun HttpResponse.bodyAsTextAtMost(maxBytes: Long): String {
     if ((contentLength() ?: 0L) > maxBytes) throw ResponseTooLargeException(maxBytes)
-    val packet = bodyAsChannel().readRemaining(maxBytes + 1)
+    val packet = bodyAsChannel().readBuffer(maxBytes + 1)
     if (packet.request(maxBytes + 1)) throw ResponseTooLargeException(maxBytes)
     return packet.readText(charset() ?: Charsets.UTF_8)
 }

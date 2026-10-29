@@ -9,6 +9,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# The jobs only read the code: the token cannot push, comment or touch releases, whatever the repository's default is.
+permissions:
+  contents: read
+
 jobs:
   android:
     name: Android – lint, unit tests, build

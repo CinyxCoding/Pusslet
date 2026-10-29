@@ -38,7 +38,8 @@ class EntitlementsTest {
         val free = Entitlement.Free
         assertTrue(free.canAddSubscription(FreeLimits.SUBSCRIPTIONS - 1))
         assertFalse(free.canAddSubscription(FreeLimits.SUBSCRIPTIONS))
-        assertFalse(free.has(Feature.NutritionOverview))
+        assertFalse(free.has(Feature.Meals))
+        assertFalse(free.has(Feature.PhoneCalendar))
     }
 
     @Test

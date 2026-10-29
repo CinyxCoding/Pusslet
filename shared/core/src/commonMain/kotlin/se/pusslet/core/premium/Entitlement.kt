@@ -17,17 +17,20 @@ enum class Feature {
 
     // Built, not gated yet.
 
+    /**
+     * Everything about food but the school lunch: the week's menu, recipes and their import, collections, nutrition and
+     * "Från matsedeln" on the shopping list, later also menus suggested from the family's own recipes (ADR-001).
+     */
+    Meals,
+
+    /** The phone's own calendars both ways: shown in Pusslet, and the family's events written to one of them (ADR-040). */
+    PhoneCalendar,
+
     /** Costs shared with the other home (ADR-057), for both homes when one of them has premium. */
     SharedCosts,
 
     /** A school break planned day by day, and the preschool hours (ADR-051); the breaks themselves show for everyone. */
     BreakPlanning,
-
-    /** The week's nutrition overview from Livsmedelsverket's data; a recipe's own values stay free. */
-    NutritionOverview,
-
-    /** Home-screen widgets beyond Idag and Inköpslistan. */
-    ExtraWidgets,
 
     // Not built yet (docs/MONETIZATION.md, "Nytt för premium").
 
@@ -42,9 +45,6 @@ enum class Feature {
 
     /** A family screen for the kitchen tablet: always on, the day and the week. */
     FamilyScreen,
-
-    /** Weekly menus suggested from the family's own recipes, by rules (ADR-001), with the shopping list. */
-    MenuSuggestions,
 
     /** More than one reminder per event. */
     ExtraReminders,
@@ -63,6 +63,9 @@ enum class Feature {
 
     /** A temporary link for the babysitter, without an account (the hand-over card, `handoverShares`). */
     SitterLink,
+
+    /** Home-screen widgets beyond Idag and Inköpslistan, such as the week or the menu. */
+    ExtraWidgets,
 }
 
 /** What this family may use now; [isPremium] for a "Premium" label, [features] for the gates. */

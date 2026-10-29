@@ -68,7 +68,9 @@ jobs:
           java-version: 21
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          # The tests' Firebase SDK and @firebase/rules-unit-testing need Node 24.12+; the deployed functions still run on
+          # Node 22 (package.json "engines"), which firebase-admin and firebase-functions support.
+          node-version: 24
           cache: npm
           cache-dependency-path: functions/package-lock.json
       - run: npm ci

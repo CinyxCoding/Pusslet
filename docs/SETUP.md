@@ -4,7 +4,7 @@ Två delar: (1) så bygger och kör du projektet lokalt – helt utan nycklar, o
 
 ## 1. Lokal utveckling (inga nycklar behövs)
 
-**Krav:** JDK 17+ (Android Studios inbyggda JBR räcker), Android SDK med plattform 37 och 36, Node 22+ för Firebase-emulatorerna.
+**Krav:** JDK 17+ (Android Studios inbyggda JBR räcker), Android SDK med plattform 37 och 36, Node 24.12+ för Firebase-emulatorerna och testerna i `functions/` (Firebase-SDK:n där kräver det; själva funktionerna körs på Node 22 i molnet).
 
 ```bash
 ./gradlew :composeApp:assembleDemoDebug     # bygger demo-appen

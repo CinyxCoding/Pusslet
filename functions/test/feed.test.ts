@@ -54,6 +54,7 @@ async function seed(fid: string, token: string, memberId?: string) {
     end: "2026-10-23T10:00",
     deletedAt: Timestamp.now(),
   });
+  await db.doc(`families/${fid}/access/sara-uid`).set({ memberId: "sara", role: "parent" });
   await db.doc(`calendarFeeds/${token}`).set({ familyId: fid, createdBy: "sara-uid", ...(memberId ? { memberId } : {}) });
 }
 
@@ -106,6 +107,18 @@ describe("familyCalendarFeed", () => {
     expect(body).toContain("SUMMARY:Simning");
     expect(body).toContain("SUMMARY:Dans");
     expect(body).not.toContain("Hemligt");
+  });
+
+  it("stops when the parent who made the link has left the family or is no longer a parent", async () => {
+    const fid = `feed-${RUN}-d`;
+    const token = `tok${RUN}ddddddddddddddddddddddddddd`;
+    await seed(fid, token);
+    expect((await fetch(`${feedUrl}/${token}.ics`)).status).toBe(200);
+    // The other parents cannot see the token to revoke it, so the link has to follow its maker's access.
+    await db.doc(`families/${fid}/access/sara-uid`).set({ memberId: "sara", role: "caregiver" });
+    expect((await fetch(`${feedUrl}/${token}.ics`)).status).toBe(404);
+    await db.doc(`families/${fid}/access/sara-uid`).delete();
+    expect((await fetch(`${feedUrl}/${token}.ics`)).status).toBe(404);
   });
 
   it("says nothing for an unknown, revoked or malformed token, or a deleted family", async () => {

@@ -2,8 +2,9 @@
  * The family's own calendar feed (BRIEF §3, docs/DECISIONS.md ADR-041): `GET /familyCalendarFeed/<token>.ics` (or
  * `?t=<token>`) answers with the family's events as iCalendar, for Google Calendar, Apple Calendar and Outlook to subscribe
  * to. The token is a secret link a parent made in the app (`calendarFeeds/{token}`, never readable by clients, see
- * firestore.rules); an unknown or revoked token, or a deleted family, gets a plain 404 that tells nothing more. A feed with
- * a `memberId` only has that person's events. Logs carry counts only, never names, titles or tokens.
+ * firestore.rules); an unknown or revoked token, a deleted family, or a link whose maker is no longer a parent there gets
+ * a plain 404 that tells nothing more. A feed with a `memberId` only has that person's events. Logs carry counts only,
+ * never names, titles or tokens.
  */
 import * as logger from "firebase-functions/logger";
 import { onRequest } from "firebase-functions/v2/https";
@@ -14,6 +15,8 @@ import { REGION } from "./setup.js";
 /** Tokens the app makes (32 random characters); anything else is refused before a path is built from it. */
 const TOKEN = /^[A-Za-z0-9_-]{24,128}$/;
 const FAMILY_ID = /^[A-Za-z0-9_-]{1,128}$/;
+/** A Firebase uid as a document id. */
+const UID = /^(?!\.\.?$)[^/\s]{1,128}$/;
 
 /**
  * The spaces a home shares with the other home (ADR-056). A home lists them itself, so a space only counts when it also
@@ -49,21 +52,27 @@ export const familyCalendarFeed = onRequest(
     const db = getFirestore();
     const feed = await db.doc(`calendarFeeds/${token}`).get();
     const familyId = feed.get("familyId");
-    if (!feed.exists || typeof familyId !== "string" || !FAMILY_ID.test(familyId)) {
+    const createdBy = feed.get("createdBy");
+    if (!feed.exists || typeof familyId !== "string" || !FAMILY_ID.test(familyId) || typeof createdBy !== "string" || !UID.test(createdBy)) {
       res.status(404).send("Not found");
       return;
     }
-    const [tombstone, family, events, members, children] = await Promise.all([
+    // The link lives as long as its maker is a parent here: the other parents cannot see the token to revoke it, so a
+    // parent who was removed (or made a helper) must not keep reading the family's whole calendar through it.
+    const [tombstone, family, maker] = await Promise.all([
       db.doc(`deletedFamilies/${familyId}`).get(),
       db.doc(`families/${familyId}`).get(),
+      db.doc(`families/${familyId}/access/${createdBy}`).get(),
+    ]);
+    if (tombstone.exists || !family.exists || maker.get("role") !== "parent") {
+      res.status(404).send("Not found");
+      return;
+    }
+    const [events, members, children] = await Promise.all([
       db.collection(`families/${familyId}/events`).get(),
       db.collection(`families/${familyId}/members`).get(),
       db.collection(`families/${familyId}/children`).get(),
     ]);
-    if (tombstone.exists || !family.exists) {
-      res.status(404).send("Not found");
-      return;
-    }
     // The children's events in spaces shared with the other home, and the names there (ADR-056).
     const spaces = await sharedSpaces(db, familyId, family.get("sharedSpaces"));
     const shared = await Promise.all(

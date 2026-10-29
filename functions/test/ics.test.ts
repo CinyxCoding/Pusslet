@@ -84,4 +84,31 @@ describe("the family feed as iCalendar", () => {
     for (const line of folded.split("\r\n")) expect(Buffer.byteLength(line, "utf8")).toBeLessThanOrEqual(75);
     expect(folded.replace(/\r\n /g, "")).toBe(long);
   });
+
+  it("never lets what someone typed into an event add lines or properties to the feed", () => {
+    const evil = "\r\nBEGIN:VALARM\r\nACTION:DISPLAY\r\nEND:VALARM\r\nURL:https://evil.example";
+    const text = buildCalendar({
+      name: "Familjen\rX-EVIL:1",
+      events: [
+        {
+          id: "e-x",
+          title: "Fika\rATTACH:https://evil.example/a",
+          start: "2026-10-19T17:00",
+          end: "2026-10-19T18:00",
+          timeZoneId: `Europe/Stockholm${evil}`,
+          location: "Hemma\u0000\u0007\u001b",
+          rrule: `FREQ=WEEKLY${evil}`,
+        },
+        { id: `e-y${evil}`, title: "Möte", start: "2026-10-20T10:00", end: "2026-10-20T11:00", seriesId: `s${evil}`, originalDate: "2026-10-20" },
+      ],
+      names,
+      now,
+    });
+    const lines = text.replace(/\r\n /g, "").split("\r\n");
+    for (const line of lines) expect(line).not.toMatch(/^(BEGIN:VALARM|ACTION|END:VALARM|URL|ATTACH|X-EVIL)/);
+    expect(text.replace(/\r\n/g, "")).not.toMatch(/[\u0000-\u0008\u000a-\u001f\u007f]/);
+    // A zone that is no zone falls back to Stockholm, a rule that is no rule is left out.
+    expect(lines).toContain("DTSTART;TZID=Europe/Stockholm:20261019T170000");
+    expect(lines.some((l) => l.startsWith("RRULE:FREQ=WEEKLY"))).toBe(false);
+  });
 });

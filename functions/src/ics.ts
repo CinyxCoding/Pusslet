@@ -89,10 +89,33 @@ function utcStamp(t: Date): string {
   )}${pad(t.getUTCSeconds())}Z`;
 }
 
-/** TEXT values: backslash, semicolon, comma and newlines escaped (RFC 5545 §3.3.11). */
+/**
+ * TEXT values: backslash, semicolon, comma and line breaks escaped (RFC 5545 §3.3.11), other control characters dropped,
+ * so nothing typed into an event can start a line of its own (a lone CR too: some calendars break lines on it).
+ */
 export function escapeText(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r\n|\r|\n/g, "\\n")
+    .replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "");
 }
+
+/** An IANA zone id ("Europe/Stockholm", "Etc/GMT+1"); anything else (or nothing) gives null. */
+function zoneOf(value: string | null | undefined): string | null {
+  const zone = value?.trim();
+  return zone && zone.length <= 64 && /^[A-Za-z0-9_+-]+(?:\/[A-Za-z0-9_+-]+)*$/.test(zone) ? zone : null;
+}
+
+/** An RRULE value as the app writes it ("FREQ=WEEKLY;BYDAY=MO;UNTIL=20261231T225959Z"); anything else gives null. */
+function ruleOf(value: string | null | undefined): string | null {
+  const rule = value?.trim().replace(/^RRULE:/i, "");
+  return rule && rule.length <= 500 && /^[A-Za-z0-9=;,+-]+$/.test(rule) ? rule : null;
+}
+
+/** A UID's local part: the document id, with anything that could end the property replaced. */
+const uidOf = (id: string) => id.replace(/[^A-Za-z0-9_.-]/g, "-");
 
 /** Lines longer than 75 octets continue on the next line after a space (RFC 5545 §3.1), never inside a character. */
 export function fold(line: string): string {
@@ -123,8 +146,8 @@ function vevent(e: FeedEvent, series: FeedEvent | undefined, input: CalendarInpu
   const start = parse(e.start);
   if (!start) return null;
   const end = parse(e.end) ?? start;
-  const zone = e.timeZoneId?.trim() || STOCKHOLM;
-  const lines = ["BEGIN:VEVENT", `UID:${e.seriesId ?? e.id}@${UID_DOMAIN}`, `DTSTAMP:${stamp}`];
+  const zone = zoneOf(e.timeZoneId) ?? STOCKHOLM;
+  const lines = ["BEGIN:VEVENT", `UID:${uidOf(e.seriesId ?? e.id)}@${UID_DOMAIN}`, `DTSTAMP:${stamp}`];
   if (e.allDay) {
     const last = date(end) > date(start) ? end : plusDays(start, 1);
     lines.push(`DTSTART;VALUE=DATE:${date(start)}`, `DTEND;VALUE=DATE:${date(last)}`);
@@ -137,10 +160,10 @@ function vevent(e: FeedEvent, series: FeedEvent | undefined, input: CalendarInpu
       const seriesStart = parse(series?.start) ?? start;
       const at: Parts = { ...original, h: seriesStart.h, mi: seriesStart.mi, s: seriesStart.s };
       const allDay = series?.allDay ?? e.allDay;
-      lines.push(allDay ? `RECURRENCE-ID;VALUE=DATE:${date(original)}` : local("RECURRENCE-ID", at, series?.timeZoneId?.trim() || zone));
+      lines.push(allDay ? `RECURRENCE-ID;VALUE=DATE:${date(original)}` : local("RECURRENCE-ID", at, zoneOf(series?.timeZoneId) ?? zone));
     }
-  } else if (e.rrule?.trim()) {
-    lines.push(`RRULE:${e.rrule.trim().replace(/^RRULE:/i, "")}`);
+  } else if (ruleOf(e.rrule)) {
+    lines.push(`RRULE:${ruleOf(e.rrule)}`);
     for (const d of e.exDates ?? []) {
       const p = parse(d);
       if (!p) continue;
@@ -162,7 +185,7 @@ export function buildCalendar(input: CalendarInput): string {
   const events = input.events
     .map((e) => vevent(e, e.seriesId ? byId.get(e.seriesId) : undefined, input, stamp))
     .filter((v): v is string[] => v !== null);
-  const usesStockholm = input.events.some((e) => !e.allDay && (e.timeZoneId?.trim() || STOCKHOLM) === STOCKHOLM);
+  const usesStockholm = input.events.some((e) => !e.allDay && (zoneOf(e.timeZoneId) ?? STOCKHOLM) === STOCKHOLM);
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",

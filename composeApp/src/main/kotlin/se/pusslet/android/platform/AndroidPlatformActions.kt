@@ -76,8 +76,15 @@ class AndroidPlatformActions(
     }
 
     override fun openUrl(url: String) {
+        // A link can come from the family's shared data (a wish from the other home), so only web links, and only to an app
+        // that opens links from a browser: never a file, our own content or another app's own scheme.
+        val uri = Uri.parse(url.trim())
+        if (uri.scheme?.lowercase() !in WEB_SCHEMES || uri.host.isNullOrBlank()) {
+            log.w { "Not a web link; not opened" }
+            return
+        }
         try {
-            activity.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            activity.startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE))
         } catch (e: ActivityNotFoundException) {
             log.w(e) { "No app can open links" }
         }
@@ -223,5 +230,6 @@ class AndroidPlatformActions(
 
     private companion object {
         const val EXPORT_MIME = "application/json"
+        val WEB_SCHEMES = setOf("https", "http")
     }
 }

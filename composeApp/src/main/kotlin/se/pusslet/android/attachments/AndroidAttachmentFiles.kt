@@ -1,5 +1,6 @@
 package se.pusslet.android.attachments
 
+import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -9,11 +10,11 @@ import androidx.core.content.FileProvider
 import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
 import co.touchlab.kermit.Logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import se.pusslet.data.repository.AttachmentFiles
 import java.io.File
-import java.io.IOException
 import kotlin.math.max
 import kotlin.time.Instant
 import kotlin.uuid.Uuid
@@ -27,21 +28,36 @@ class AndroidAttachmentFiles(private val context: Context) : AttachmentFiles {
     private val log = Logger.withTag("Attachments")
     private val dir: File get() = File(context.filesDir, DIR).apply { mkdirs() }
 
-    /** Copies a shared picture in; returns its file name, or null if it could not be read as an image. */
+    /**
+     * Copies a shared picture in; returns its file name, or null if it could not be read as an image. Any app can share to
+     * the app, so only another app's content:// link is read: a file:// path or one of our own providers would let it
+     * point at our private files, and whatever its provider throws is a refused picture, not a crash.
+     */
     suspend fun import(uri: Uri): String? = withContext(Dispatchers.IO) {
+        if (!fromAnotherApp(uri)) {
+            log.w { "Import refused: not another app's content" }
+            return@withContext null
+        }
         try {
             val bitmap = decode(uri, MAX_SIDE) ?: return@withContext null
             val name = "${Uuid.random()}.jpg"
             write(File(dir, name), bitmap)
             write(File(dir, thumbName(name)), scaled(bitmap, THUMB_SIDE))
             name
-        } catch (e: IOException) {
-            log.w { "Import failed: ${e::class.simpleName}" }
-            null
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: SecurityException) {
             log.w { "Import not allowed: ${e::class.simpleName}" }
             null
+        } catch (e: Exception) {
+            log.w { "Import failed: ${e::class.simpleName}" }
+            null
         }
+    }
+
+    private fun fromAnotherApp(uri: Uri): Boolean {
+        val authority = uri.authority ?: return false
+        return ContentResolver.SCHEME_CONTENT.equals(uri.scheme, ignoreCase = true) && !authority.startsWith("${context.packageName}.")
     }
 
     /** Decodes a stored picture for display (off the main thread). */

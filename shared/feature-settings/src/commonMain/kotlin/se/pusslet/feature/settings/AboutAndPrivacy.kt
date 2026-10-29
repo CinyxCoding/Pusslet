@@ -46,6 +46,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.data.BackendConfig
 import se.pusslet.data.db.CacheDao
 import se.pusslet.data.usecase.AccountDeletionPlan
 import se.pusslet.data.usecase.DataPrivacy
@@ -195,8 +196,11 @@ fun confirmsFamilyName(typed: String, familyName: String): Boolean {
  * "Radera familjen för alla" (parents) and "Radera mitt konto". After a server deletion the phone forgets the family and
  * signs out (DataPrivacy).
  */
-class PrivacyViewModel(private val privacy: DataPrivacy) : ViewModel() {
+class PrivacyViewModel(private val privacy: DataPrivacy, config: BackendConfig) : ViewModel() {
     private val log = Logger.withTag("Privacy")
+
+    /** The whole policy as a web page; none without a server. */
+    val policyUrl: String? = config.privacyPolicyUrl
     private val working = MutableStateFlow<PrivacyWork?>(null)
     private val receipt = MutableStateFlow<ExportReceipt?>(null)
     private val problem = MutableStateFlow<PrivacyProblem?>(null)
@@ -278,6 +282,8 @@ fun PrivacyRoute(onBack: () -> Unit, onForgotten: () -> Unit, viewModel: Privacy
         onForget = { viewModel.forget(onForgotten) },
         onDeleteFamily = { viewModel.deleteFamily(onForgotten) },
         onDeleteAccount = { viewModel.deleteAccount(onForgotten) },
+        policyUrl = viewModel.policyUrl,
+        onOpenPolicy = platform::openUrl,
     )
 }
 
@@ -291,6 +297,8 @@ fun PrivacyScreen(
     onForget: () -> Unit,
     onDeleteFamily: () -> Unit,
     onDeleteAccount: () -> Unit,
+    policyUrl: String? = null,
+    onOpenPolicy: (String) -> Unit = {},
 ) {
     var confirm by remember { mutableStateOf<PrivacyConfirm?>(null) }
     val options = state.options
@@ -303,6 +311,9 @@ fun PrivacyScreen(
                 Text(stringResource(Res.string.privacy_summary), style = MaterialTheme.typography.bodyLarge)
                 Text(stringResource(Res.string.privacy_sensitive), style = MaterialTheme.typography.bodyMedium)
                 Banner(stringResource(Res.string.about_no_ai), kind = BannerKind.Info)
+                policyUrl?.let { url ->
+                    TextButton(onClick = { onOpenPolicy(url) }) { Text(stringResource(Res.string.privacy_policy_link)) }
+                }
             }
             Section(stringResource(Res.string.privacy_export)) {
                 Body(stringResource(Res.string.privacy_export_body))

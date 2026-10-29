@@ -580,6 +580,7 @@
     <!-- Privacy -->
     <string name="privacy_title">Privacy</string>
     <string name="privacy_summary">The family's information is stored on the phone and – once you sign in – with Google Firebase within the EU. Children only need a first name. Nothing is sold, no ads, no AI.</string>
+    <string name="privacy_policy_link">Read the full privacy policy</string>
     <string name="privacy_sensitive">Allergies and diet are only stored if you actively choose so, and can be removed at any time.</string>
     <string name="privacy_export">Export all data</string>
     <string name="privacy_export_body">A file (JSON) with what this phone has about the family, your settings and your account. Open data such as weather and school lunches is not included.</string>

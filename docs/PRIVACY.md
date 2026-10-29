@@ -1,7 +1,9 @@
 # Integritetspolicy för Pusslet (utkast)
 
-> **Utkast att granska innan publicering.** Fyll i det som står inom [hakparentes], låt gärna någon med GDPR-kunskap läsa
-> igenom, och publicera policyn på en öppen webbadress (Play kräver en länk). Texten beskriver appen som den är byggd
+> **Utkast att granska innan publicering.** Fyll i det som står inom [hakparentes], och låt gärna någon med GDPR-kunskap
+> läsa igenom. `firebase deploy --only hosting` publicerar avsnitten Svenska och English som
+> `https://<linkHost>/privacy/` (Play kräver en öppen länk), men först när inget står inom hakparentes (SETUP.md 2.4).
+> Texten beskriver appen som den är byggd
 > 2026-10-21; uppdatera den när appen ändras (se "Att hålla policyn sann" sist). English version below.
 
 ---

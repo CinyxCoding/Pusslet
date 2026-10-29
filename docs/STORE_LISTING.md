@@ -116,7 +116,7 @@ Food Facts (ODbL).
 | Taggar | Upp till 5 | Familj, Kalender, Planering, Inköpslista, Recept |
 | Kontakt-e-post | Krävs | [e-postadress] |
 | Webbplats | Valfritt | [webbadress] |
-| Integritetspolicy | Krävs, öppen URL | Publicera PRIVACY.md, t.ex. `https://[din-domän]/integritet` |
+| Integritetspolicy | Krävs, öppen URL | `https://pusslet.web.app/privacy/`, byggs från PRIVACY.md vid `firebase deploy --only hosting` (SETUP.md 2.4) |
 | Innehållsklassificering | Frågeformulär | Ingen våldsam eller sexuell text, inga köp, användare kan dela innehåll med sin familj (ej offentligt) → väntas bli PEGI 3 / Alla |
 | Målgrupp | | 18+ (appen är för föräldrar, se PLAY_DATA_SAFETY.md) |
 | Annonser | | Nej |

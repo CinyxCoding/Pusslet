@@ -130,9 +130,10 @@ class PrivacyViewModelTest {
         val prefs = PreferencesRepository(prefDao)
         val docs = DocumentStore(local, sessions, clock)
         val family = FamilyRepository(docs, sessions, remote, auth, SequentialIdGenerator(), clock)
+        val config = BackendConfig(BackendMode.LocalOnly, seedDemoData = false, versionName = "test")
         val coordinator = AppCoordinator(
             scope = scope,
-            config = BackendConfig(BackendMode.LocalOnly, seedDemoData = false, versionName = "test"),
+            config = config,
             sessions = sessions,
             auth = auth,
             familyRemote = remote,
@@ -154,7 +155,7 @@ class PrivacyViewModelTest {
     }
 
     private fun TestScope.viewModel(phone: Phone): PrivacyViewModel {
-        val vm = PrivacyViewModel(phone.privacy)
+        val vm = PrivacyViewModel(phone.privacy, phone.config)
         CoroutineScope(backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler)).launch { vm.state.collect {} }
         return vm
     }

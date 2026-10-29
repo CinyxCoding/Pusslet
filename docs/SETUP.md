@@ -88,7 +88,14 @@ Cloud Functions kräver **Blaze** (betala per användning). Sätt en **budgetvar
 ```bash
 firebase use --add                       # välj projektet
 firebase deploy --only firestore:rules,firestore:indexes,functions
+firebase deploy --only hosting           # startsidan och integritetspolicyn
 ```
+Integritetspolicyn ligger i Firebase Hosting, eftersom Play kräver en öppen länk. Före varje hosting-deploy gör
+`functions/scripts/privacy-page.mjs` om avsnitten Svenska och English i `docs/PRIVACY.md` till
+`https://<projekt-id>.web.app/privacy/`. Så länge något står inom hakparentes skrivs ingen sida. Appen länkar dit från
+Integritet via `pusslet.linkHost` (standard `pusslet.web.app`), så sätt den i `local.properties` om projekt-id:t inte är
+`pusslet`. Lägg `assetlinks.json` för inbjudningslänkarna i `hosting/.well-known/` (3.2).
+
 Familjens kalenderflöde (ADR-041) är funktionen `familyCalendarFeed`; appen bygger länken
 `https://europe-north1-<projekt-id>.cloudfunctions.net/familyCalendarFeed/<token>.ics`, så den behöver ingen egen
 konfiguration. Prova efter deploy: Inställningar → Kalendrar → ”Skapa länk”, öppna länken i en webbläsare (en `.ics` laddas
@@ -163,6 +170,8 @@ Play App Signing rekommenderas: Google håller appens signeringsnyckel och du si
 - [ ] Firebase `prod`-projekt i EU, `google-services.json` i `composeApp/src/prod/` (2.1).
 - [ ] Auth-metoder, App Check med Play Integrity, Blaze med budgetvarning (2.2–2.3).
 - [ ] Regler, index och funktioner deployade (2.4); `TRIGGER_REGION` satt om databasen ligger i `eur3`.
+- [ ] Integritetspolicyn ifylld och publicerad med `firebase deploy --only hosting` (2.4), och länken inlagd i Play
+      Console (STORE_LISTING.md).
 - [ ] SHA-fingeravtryck för uppladdnings- och appsigneringsnyckeln i Firebase (2.5, 3.2).
 - [ ] `AppConfig.CONTACT` satt (2.6). Länkdomänen (`pusslet.linkHost` i `local.properties`) publicerar
       `/.well-known/assetlinks.json` med appsigneringsnyckelns SHA-256 (t.ex. via Firebase Hosting), annars öppnas

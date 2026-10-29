@@ -43,3 +43,6 @@ emulator-data/
 
 # Roborazzi output (golden images are committed under src/test/snapshots)
 **/build/outputs/roborazzi/
+
+# Built from docs/PRIVACY.md before each hosting deploy (functions/scripts/privacy-page.mjs)
+hosting/privacy/

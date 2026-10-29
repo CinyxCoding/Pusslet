@@ -250,6 +250,12 @@ användare får premium i ett år. Samma dag blev maten, utom skollunchen, och t
 Medicindelen länkar till bipacksedeln på FASS och till 1177:s sida om feber hos barn, och har en knapp för att
 ringa 1177 (ADR-061). Appen hämtar inget därifrån och räknar aldrig ut doser.
 
+Den gamla sidogrenen `claude/continue-ongoing-project-2b256c` (isär från main den 8 oktober) gicks igenom samma dag.
+Två saker togs över: App Check (Play Integrity i release, felsökningstoken i debug) och integritetspolicyn som
+webbsida i Firebase Hosting (`https://<linkHost>/privacy/`, länkad från Integritet). Resten fanns redan i main i
+nyare form eller var barnläget. Grenens flödestest och butiksbilder bygger på dess egna skärmar och skulle behöva
+skrivas om; butiksbilderna görs bäst när utseendet är klart inför det stängda testet.
+
 ## Kända begränsningar / buggar
 - CI hängde en timme 2026-10-14: Idags ViewModel startade en evig `while (true) { delay(1 h) }` i `init`, som fick
   Robolectric-testerna att aldrig bli klara. Vädret laddas nu inuti state-flödet (stannar med skärmen). Regel: inga eviga

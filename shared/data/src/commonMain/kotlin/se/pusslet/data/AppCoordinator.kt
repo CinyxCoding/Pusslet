@@ -60,7 +60,13 @@ data class BackendConfig(
     val developerTools: Boolean = seedDemoData,
     /** Where the familyCalendarFeed function answers (ADR-041); null without a backend, so no feed link is offered. */
     val calendarFeedBase: String? = null,
-)
+) {
+    /**
+     * The public privacy policy, built from docs/PRIVACY.md and published with Firebase Hosting on the invite links' host;
+     * null without a server, where there is no page to show.
+     */
+    val privacyPolicyUrl: String? get() = if (mode == BackendMode.Firebase) "https://$linkHost/privacy/" else null
+}
 
 /**
  * Work that lives as long as the app process, such as keeping ICS subscriptions fresh. [AppCoordinator.start] starts each

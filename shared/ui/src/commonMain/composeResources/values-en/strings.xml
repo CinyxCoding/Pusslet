@@ -535,6 +535,12 @@
     <string name="account_create">Create account</string>
     <string name="account_google">Continue with Google</string>
     <string name="account_sign_out">Sign out</string>
+    <string name="account_sign_out_body">You sign out on this phone. The family's things don't sync until you sign in again.</string>
+    <string name="account_sign_out_keep">Sign out and keep the family here</string>
+    <string name="account_sign_out_keep_body">The calendar, lists and pictures stay on the phone, and whoever uses it can see them.</string>
+    <string name="account_sign_out_forget">Sign out and remove the family from here</string>
+    <string name="account_sign_out_forget_body">Everything about the family is removed from this phone. The others in the family keep it all, and you can join again with a new invite.</string>
+    <string name="account_sign_out_forget_alone">Everything about the family is removed from this phone. You are the only one in the family with an account, so nobody can invite you again: the family cannot be brought back here.</string>
     <string name="account_signed_in_as">Signed in as %1$s</string>
     <string name="account_anonymous">Signed in without an account (demo)</string>
     <string name="account_local_only">This version is not connected to a server. Everything is stored only on the phone.</string>

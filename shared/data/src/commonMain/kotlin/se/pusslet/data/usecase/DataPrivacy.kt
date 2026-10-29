@@ -118,6 +118,20 @@ class DataPrivacy(
             )
         }.distinctUntilChanged()
 
+    /** Whether someone else in the family has an account, who can invite this person back after [signOut] with forget. */
+    val othersHaveAccounts: Flow<Boolean> = combine(sessions.session, family.members) { session, members ->
+        members.any { it.uid != null && it.id != session.memberId }
+    }.distinctUntilChanged()
+
+    /**
+     * "Logga ut" (ADR-059): signs out on this phone and, with [forget], removes the family from it like [forgetOnDevice].
+     * The others in the family keep everything either way. Finishes even if the screen that asked closes.
+     */
+    suspend fun signOut(forget: Boolean) = withContext(NonCancellable) {
+        auth.signOut()
+        if (forget) forgetOnDevice()
+    }
+
     /**
      * Everything this phone has about the family (format 2): the synced collections with a `_deleted` flag (a caregiver's
      * phone only has what is shared with them), the purchase history, this phone's session and personal preferences, and

@@ -536,6 +536,12 @@
     <string name="account_create">Skapa konto</string>
     <string name="account_google">Fortsätt med Google</string>
     <string name="account_sign_out">Logga ut</string>
+    <string name="account_sign_out_body">Du loggar ut på den här telefonen. Familjens saker synkas inte förrän du loggar in igen.</string>
+    <string name="account_sign_out_keep">Logga ut och behåll familjen här</string>
+    <string name="account_sign_out_keep_body">Kalendern, listorna och bilderna ligger kvar på telefonen och syns för den som använder den.</string>
+    <string name="account_sign_out_forget">Logga ut och ta bort familjen härifrån</string>
+    <string name="account_sign_out_forget_body">Allt om familjen tas bort från den här telefonen. De andra i familjen behåller allt, och du kan gå med igen med en ny inbjudan.</string>
+    <string name="account_sign_out_forget_alone">Allt om familjen tas bort från den här telefonen. Du är den enda i familjen med konto, så ingen kan bjuda in dig igen: familjen går inte att få tillbaka hit.</string>
     <string name="account_signed_in_as">Inloggad som %1$s</string>
     <string name="account_anonymous">Inloggad utan konto (demo)</string>
     <string name="account_local_only">Den här versionen är inte kopplad till någon server. Allt sparas bara på telefonen.</string>

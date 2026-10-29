@@ -1578,7 +1578,8 @@
     <string name="kid_waiting">%1$d ⭐ waiting for a grown-up to check</string>
     <string name="kid_allowance">Pocket money so far: %1$d kr</string>
     <string name="kid_exit">Leave child view</string>
-    <string name="kid_exit_hint">Hold the button down for a moment.</string>
+    <string name="kid_exit_hint">Hold the button down for a moment, then unlock the phone.</string>
+    <string name="kid_exit_unlock">Unlock to leave the child view</string>
     <string name="kid_mode">Child view</string>
     <string name="kid_mode_body">A simple view for a child: the day, the chores and the stars</string>
     <string name="kid_mode_pick">Who will use the phone?</string>
@@ -1648,6 +1649,7 @@
     <string name="costs_paid_us">We paid</string>
     <string name="costs_paid_them">The other home paid</string>
     <string name="costs_paid_by">%1$s paid</string>
+    <string name="costs_added_by">added by %1$s</string>
     <string name="costs_split">Split</string>
     <string name="costs_split_half">Half each</string>
     <string name="costs_split_all">The other pays all</string>
@@ -1655,7 +1657,6 @@
     <string name="costs_split_line">%1$d/%2$d</string>
     <string name="costs_preview_they">The other home pays %1$s kr of it</string>
     <string name="costs_preview_we">You pay %1$s kr of it</string>
-    <string name="costs_added_by">added by %1$s</string>
     <string name="costs_delete_confirm">Remove “%1$s” for both homes?</string>
     <string name="costs_category_clothes">Clothes</string>
     <string name="costs_category_activities">Activities</string>

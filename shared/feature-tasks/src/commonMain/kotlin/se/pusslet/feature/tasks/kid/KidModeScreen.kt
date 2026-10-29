@@ -67,12 +67,14 @@ import se.pusslet.ui.components.PersonAvatar
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.relativeDay
+import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.kid_allowance
 import se.pusslet.ui.resources.kid_chores
 import se.pusslet.ui.resources.kid_done
 import se.pusslet.ui.resources.kid_exit
 import se.pusslet.ui.resources.kid_exit_hint
+import se.pusslet.ui.resources.kid_exit_unlock
 import se.pusslet.ui.resources.kid_hello
 import se.pusslet.ui.resources.kid_mode
 import se.pusslet.ui.resources.kid_mode_pick
@@ -171,7 +173,10 @@ class KidModeViewModel(
 fun KidModeRoute(childId: String, onExit: () -> Unit, viewModel: KidModeViewModel = koinViewModel()) {
     LaunchedEffect(childId) { viewModel.load(childId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
-    KidModeScreen(state, viewModel::toggle, onExit)
+    val platform = LocalPlatformActions.current
+    val unlock = stringResource(Res.string.kid_exit_unlock)
+    // A long press, then the phone's own lock (ADR-059): the child cannot wander into the parent's phone.
+    KidModeScreen(state, viewModel::toggle) { platform.confirmWithScreenLock(unlock) { ok -> if (ok) onExit() } }
 }
 
 @Composable

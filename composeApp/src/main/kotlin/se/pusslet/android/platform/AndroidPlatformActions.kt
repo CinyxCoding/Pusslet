@@ -14,6 +14,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+import androidx.biometric.BiometricPrompt
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.content.ContextCompat
@@ -22,6 +26,7 @@ import androidx.core.os.LocaleListCompat
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import co.touchlab.kermit.Logger
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -218,6 +223,22 @@ class AndroidPlatformActions(
         activity.lifecycleScope.launch { onResult(attachments.load(fileName, thumbnail)?.asImageBitmap()) }
     }
 
+    override fun confirmWithScreenLock(title: String, onResult: (Boolean) -> Unit) {
+        val host = activity as? FragmentActivity
+        // Nothing to ask for without a lock (or without a host for the prompt): then it is as before, the long press only.
+        if (host == null || BiometricManager.from(activity).canAuthenticate(SCREEN_LOCK) != BiometricManager.BIOMETRIC_SUCCESS) {
+            onResult(true)
+            return
+        }
+        val callback = object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) = onResult(true)
+
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) = onResult(false)
+        }
+        BiometricPrompt(host, ContextCompat.getMainExecutor(activity), callback)
+            .authenticate(BiometricPrompt.PromptInfo.Builder().setTitle(title).setAllowedAuthenticators(SCREEN_LOCK).build())
+    }
+
     override fun openImage(fileName: String) {
         val uri = attachments.shareableUri(fileName) ?: return
         val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, "image/jpeg").addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -231,5 +252,8 @@ class AndroidPlatformActions(
     private companion object {
         const val EXPORT_MIME = "application/json"
         val WEB_SCHEMES = setOf("https", "http")
+
+        /** The phone's own lock: a PIN, pattern or password, or a fingerprint or face (supported together on every API). */
+        const val SCREEN_LOCK = BIOMETRIC_WEAK or DEVICE_CREDENTIAL
     }
 }

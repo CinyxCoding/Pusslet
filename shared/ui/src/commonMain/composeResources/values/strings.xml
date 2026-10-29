@@ -1579,7 +1579,8 @@
     <string name="kid_waiting">%1$d ⭐ väntar på att en vuxen kollar</string>
     <string name="kid_allowance">Veckopeng hittills: %1$d kr</string>
     <string name="kid_exit">Lämna barnläge</string>
-    <string name="kid_exit_hint">Håll inne knappen en stund.</string>
+    <string name="kid_exit_hint">Håll inne knappen en stund och lås sedan upp telefonen.</string>
+    <string name="kid_exit_unlock">Lås upp för att lämna barnläget</string>
     <string name="kid_mode">Barnläge</string>
     <string name="kid_mode_body">En enkel vy för ett barn: dagen, sysslorna och stjärnorna</string>
     <string name="kid_mode_pick">Vem ska använda telefonen?</string>
@@ -1649,6 +1650,7 @@
     <string name="costs_paid_us">Vi betalade</string>
     <string name="costs_paid_them">Andra hemmet betalade</string>
     <string name="costs_paid_by">%1$s betalade</string>
+    <string name="costs_added_by">inlagd av %1$s</string>
     <string name="costs_split">Fördelning</string>
     <string name="costs_split_half">Hälften var</string>
     <string name="costs_split_all">Den andra betalar allt</string>
@@ -1656,7 +1658,6 @@
     <string name="costs_split_line">%1$d/%2$d</string>
     <string name="costs_preview_they">Andra hemmet betalar %1$s kr av det</string>
     <string name="costs_preview_we">Ni betalar %1$s kr av det</string>
-    <string name="costs_added_by">inlagd av %1$s</string>
     <string name="costs_delete_confirm">Ta bort ”%1$s” för båda hemmen?</string>
     <string name="costs_category_clothes">Kläder</string>
     <string name="costs_category_activities">Aktiviteter</string>

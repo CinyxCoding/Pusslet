@@ -230,6 +230,9 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.messaging)
+    // App Check (docs/SECURITY.md, R1): a debug token in debug builds, Play Integrity in release builds.
+    debugImplementation(libs.firebase.appcheck.debug)
+    releaseImplementation(libs.firebase.appcheck.playintegrity)
     constraints {
         implementation(libs.guava) { because("GHSA-xxph-c9ww-hj94: earlier Guava allocates without limit when deserializing") }
     }

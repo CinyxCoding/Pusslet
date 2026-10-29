@@ -76,6 +76,9 @@ med back-off löser det under en session.
 1. Authentication: aktivera E-post/lösenord, Google och Anonym.
 2. Cloud Messaging: aktiveras automatiskt.
 3. App Check: registrera Play Integrity för Android-apparna, aktivera enforcement för Firestore och Functions efter testperiod.
+   Appen skickar redan tokens. Ett debug-bygge skriver sin felsökningstoken i logcat första gången det startar
+   (`DebugAppCheckProvider`); lägg in den under App Check → Manage debug tokens, annars nekas debug-bygget när kravet
+   är påslaget.
 4. Crashlytics: aktivera (appen samlar bara in efter samtycke).
 
 ### 2.3 Blaze-planen

@@ -340,7 +340,8 @@ Inga filer har tagits bort. Inga funktioner har tagits bort.
 4. Bygg en ny app-version (`./gradlew :composeApp:bundleProdRelease`) med appändringarna och ladda upp den.
 5. Gör följande i Firebase- och Google Cloud-konsolen:
    - App Check med Play Integrity, först i övervakningsläge. När appen skickar App Check-tokens slår du på krav och
-     `enforceAppCheck: true` i `privacy.ts`. Appen har inte App Check-SDK:n än.
+     `enforceAppCheck: true` i `privacy.ts`. Appen skickar App Check-tokens: Play Integrity i release-byggen och en
+     felsökningstoken i debug-byggen (SETUP.md 2.2).
    - Begränsa Androids API-nyckel till paketnamn och SHA-1.
    - Auth: e-postuppräkningsskydd, lösenordspolicy, och stäng av oanvända inloggningsmetoder.
    - Budgetlarm.

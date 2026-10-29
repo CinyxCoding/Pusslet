@@ -24,7 +24,9 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
+import kotlin.time.measureTime
 
 class OpenDataAdaptersTest {
     private val stockholm = TimeZone.of("Europe/Stockholm")
@@ -310,5 +312,36 @@ class OpenDataAdaptersTest {
     fun fetcherReturnsNullWhenNothingCachedAndOffline() = runTest {
         val fetcher = CachedFetcher(MockHttp { respond("", HttpStatusCode.InternalServerError) }.client, FakeCacheDao())
         assertNull(fetcher.get("k", "https://example.com", 1.hours))
+    }
+
+    @Test
+    fun anAnswerLargerThanItsLimitIsNotReadAndTheLastGoodCopyStays() = runTest {
+        val good = "<rss><item>Fisk</item></rss>"
+        var body = good
+        val http = MockHttp { ok(body, "application/rss+xml") }
+        val clock = FixedClock(Instant.parse("2026-10-20T06:00:00Z"))
+        val fetcher = CachedFetcher(http.client, FakeCacheDao(), clock)
+        assertEquals(good, fetcher.get("k", "https://example.se/feed", 1.hours, maxBytes = 1_000)?.value)
+
+        body = "<rss>" + "x".repeat(5_000) + "</rss>"
+        clock.now = clock.now + 2.hours
+        val stale = assertNotNull(fetcher.get("k", "https://example.se/feed", 1.hours, maxBytes = 1_000))
+        assertTrue(stale.stale)
+        assertEquals(good, stale.value)
+        assertNull(CachedFetcher(http.client, FakeCacheDao(), clock).get("k2", "https://example.se/feed", 1.hours, maxBytes = 1_000))
+    }
+
+    @Test
+    fun aHostileLunchFeedIsReadInLinearTime() {
+        // Many items and tags that never close: a lazy regex scans to the end from every one of them (quadratic).
+        val hostile = "<rss>" + "<item><description>" + "<".repeat(200_000) + " &amp; ".repeat(20_000) + "<item>".repeat(100_000)
+        val took = measureTime {
+            assertTrue(RssLunchParser.parse(hostile, stockholm, "x").isEmpty())
+            assertTrue(MatildaLunchParser.parse(hostile, "x").isEmpty())
+        }
+        assertTrue(took < 5.seconds, "took $took")
+        // Still the same menu from a real feed, with the tags inside a dish stripped.
+        val lines = RssText.lines("<p>Pannbiff <b>med</b> lök</p><br/>Sallad &amp; bröd<br>1 < 2")
+        assertEquals(listOf("Pannbiff med lök", "Sallad & bröd", "1 < 2"), lines)
     }
 }

@@ -2,8 +2,7 @@ package se.pusslet.data.sources
 
 import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
-import io.ktor.client.request.get
-import io.ktor.client.statement.bodyAsText
+import io.ktor.client.request.prepareGet
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.TimeZone
@@ -18,6 +17,7 @@ import se.pusslet.core.model.EventOccurrence
 import se.pusslet.core.model.EventSource
 import se.pusslet.core.recurrence.EventExpander
 import se.pusslet.core.time.plusDays
+import se.pusslet.data.net.bodyAsTextAtMost
 import se.pusslet.data.repository.CalendarRepository
 import se.pusslet.data.sync.DomainJson
 import kotlin.time.Clock
@@ -99,6 +99,7 @@ class SubscriptionSync(
             url,
             maxAge = MAX_AGE,
             force = force || linkChanged,
+            maxBytes = MAX_FEED_BYTES,
             validate = ::looksLikeCalendar,
         ) ?: return save(failed(sub.id, kept, now, SubscriptionError.Unreachable, urlKey))
         val parsed = parser.parse(raw.value, "ics:${sub.id}:", zone)
@@ -133,9 +134,9 @@ class SubscriptionSync(
     suspend fun preview(url: String, count: Int = PREVIEW_EVENTS): PreviewResult {
         val target = normalizeUrl(url) ?: return PreviewResult.Failed(SubscriptionError.InvalidUrl)
         val body = try {
-            val response = http.get(target)
-            if (!response.status.isSuccess()) return PreviewResult.Failed(SubscriptionError.Http)
-            response.bodyAsText()
+            http.prepareGet(target).execute { response ->
+                if (response.status.isSuccess()) response.bodyAsTextAtMost(MAX_FEED_BYTES) else null
+            } ?: return PreviewResult.Failed(SubscriptionError.Http)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -167,6 +168,9 @@ class SubscriptionSync(
         /** The limits firestore.rules sets on icsSubscriptions. */
         const val MAX_URL_LENGTH = 2000
         const val MAX_NAME_LENGTH = 200
+
+        /** Years of a busy school calendar fit many times over; a larger answer is not read (the link is the family's). */
+        const val MAX_FEED_BYTES = 10L * 1024 * 1024
 
         private const val PREVIEW_EVENTS = 3
         private const val PREVIEW_DAYS = 366

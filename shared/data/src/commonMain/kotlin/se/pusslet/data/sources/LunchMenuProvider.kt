@@ -37,8 +37,9 @@ class SkolmatenRssProvider(private val fetcher: CachedFetcher, private val zone:
             LunchProviderType.Skolmaten -> slugOf(source.reference)?.let { "https://skolmaten.se/api/4/rss/week/$it?locale=sv" }
             else -> source.reference.trim().takeIf { it.startsWith("https://") }
         } ?: return null
-        val raw =
-            fetcher.get("lunch:$url", url, maxAge = 20.hours, force = force) { it.contains("<rss") || it.contains("<item") } ?: return null
+        val raw = fetcher.get("lunch:$url", url, maxAge = 20.hours, force = force, maxBytes = RssText.MAX_FEED_BYTES) {
+            it.contains("<rss") || it.contains("<item")
+        } ?: return null
         val name = if (source.provider == LunchProviderType.Skolmaten) "skolmaten.se" else url.substringAfter("://").substringBefore('/')
         return Sourced(RssLunchParser.parse(raw.value, zone, name), raw.fetchedAt, raw.stale, raw.error)
     }
@@ -77,7 +78,9 @@ class MatildaRssProvider(private val fetcher: CachedFetcher) : LunchMenuProvider
     override suspend fun lunches(source: LunchSource, force: Boolean): Sourced<List<SchoolLunch>>? {
         val id = distributorIdOf(source.reference) ?: return null
         val url = "https://menu.matildaplatform.com/rss?displayMode=week&distributorId=$id&lang=sv"
-        val raw = fetcher.get("lunch:$url", url, maxAge = 20.hours, force = force) { it.contains("<rss") } ?: return null
+        val raw = fetcher.get("lunch:$url", url, maxAge = 20.hours, force = force, maxBytes = RssText.MAX_FEED_BYTES) {
+            it.contains("<rss")
+        } ?: return null
         return Sourced(MatildaLunchParser.parse(raw.value, SOURCE_NAME), raw.fetchedAt, raw.stale, raw.error)
     }
 
@@ -99,20 +102,15 @@ class MatildaRssProvider(private val fetcher: CachedFetcher) : LunchMenuProvider
  * "Pannbiff med lök & gräddsås" stays one dish while "Fredagsspecial & Gotlandslasagne" is two.
  */
 object MatildaLunchParser {
-    private val item = Regex("""<item>([\s\S]*?)</item>""")
-    private val guid = Regex("""<guid[^>]*>([\s\S]*?)</guid>""")
-    private val link = Regex("""<link>([\s\S]*?)</link>""")
-    private val description = Regex("""<description>([\s\S]*?)</description>""")
     private val isoDate = Regex("""(\d{4})-(\d{2})-(\d{2})""")
     private val dishSplit = Regex("""\s+&\s+(?=\p{Lu})""")
 
     /** Course names that just mean "lunch" and need no label in front of the dish. */
     private val mainCourses = setOf("dagens", "dagens rätt", "dagens lunch", "lunch", "huvudrätt", "huvudrätter")
 
-    fun parse(xml: String, sourceName: String): List<SchoolLunch> = item.findAll(xml).mapNotNull { m ->
-        val body = m.groupValues[1]
-        val date = dateOf(guid.find(body)?.groupValues?.get(1)) ?: dateOf(link.find(body)?.groupValues?.get(1)) ?: return@mapNotNull null
-        val text = description.find(body)?.groupValues?.get(1).orEmpty().removePrefix("<![CDATA[").removeSuffix("]]>")
+    fun parse(xml: String, sourceName: String): List<SchoolLunch> = RssText.elements(xml, "item").mapNotNull { body ->
+        val date = dateOf(RssText.first(body, "guid")) ?: dateOf(RssText.first(body, "link")) ?: return@mapNotNull null
+        val text = RssText.first(body, "description").orEmpty().removePrefix("<![CDATA[").removeSuffix("]]>")
         val lines = RssText.lines(text)
         if (lines.isEmpty()) return@mapNotNull null
         val course = lines.first().takeIf { lines.size > 1 }
@@ -132,7 +130,7 @@ object MatildaLunchParser {
         .sortedBy { it.date }
 
     private fun dateOf(value: String?): LocalDate? {
-        val m = value?.let { v -> isoDate.findAll(v).lastOrNull() } ?: return null
+        val m = value?.let { v -> isoDate.findAll(v.take(RssText.MAX_FIELD)).lastOrNull() } ?: return null
         val (y, mo, d) = m.destructured
         return runCatching { LocalDate(y.toInt(), mo.toInt(), d.toInt()) }.getOrNull()
     }
@@ -140,16 +138,11 @@ object MatildaLunchParser {
 
 /** Minimal RSS 2.0 reader for lunch feeds: one item per school day, dishes in the description. */
 object RssLunchParser {
-    // [\s\S] instead of DOT_MATCHES_ALL, which is JVM-only.
-    private val item = Regex("""<item>([\s\S]*?)</item>""")
-    private val pubDate = Regex("""<pubDate>([\s\S]*?)</pubDate>""")
-    private val description = Regex("""<description>([\s\S]*?)</description>""")
     private val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
-    fun parse(xml: String, zone: TimeZone, sourceName: String): List<SchoolLunch> = item.findAll(xml).mapNotNull { m ->
-        val body = m.groupValues[1]
-        val date = pubDate.find(body)?.groupValues?.get(1)?.let { parseRfc822Date(it, zone) } ?: return@mapNotNull null
-        val desc = description.find(body)?.groupValues?.get(1).orEmpty()
+    fun parse(xml: String, zone: TimeZone, sourceName: String): List<SchoolLunch> = RssText.elements(xml, "item").mapNotNull { body ->
+        val date = RssText.first(body, "pubDate")?.let { parseRfc822Date(it.take(RssText.MAX_FIELD), zone) } ?: return@mapNotNull null
+        val desc = RssText.first(body, "description").orEmpty()
             .removePrefix("<![CDATA[").removeSuffix("]]>")
         val dishes = RssText.lines(desc)
         if (dishes.isEmpty()) null else SchoolLunch(date, dishes, sourceName)
@@ -176,14 +169,75 @@ object RssLunchParser {
     }
 }
 
-/** Text of an RSS description: one entry per line or `<br>`, tags stripped, entities decoded. */
+/**
+ * Reading lunch RSS (ADR-011, ADR-053). A custom feed's address is typed by someone in the family (or the other home), so its
+ * content can be anything: elements and tags are found with plain index scans, which stay linear where a lazy regex such as
+ * `<item>([\s\S]*?)</item>` goes quadratic on a feed that opens many items and closes none, and every text is cut to a
+ * size no menu needs before a regex sees it.
+ */
 internal object RssText {
-    private val breaks = Regex("""<br\s*/?>|\n""", RegexOption.IGNORE_CASE)
-    private val tags = Regex("<[^>]+>")
+    /** A week's menu is a few kilobytes; a feed this large is not read at all. */
+    const val MAX_FEED_BYTES = 1024L * 1024
 
-    fun lines(description: String): List<String> = description.split(breaks)
-        .map { decodeEntities(it.replace(tags, "")).trim().trimEnd(',') }
+    /** A date, guid or link. */
+    const val MAX_FIELD = 500
+
+    /** One day's description, and one dish in it. */
+    private const val MAX_DESCRIPTION = 10_000
+    private const val MAX_LINE = 300
+
+    private val breaks = Regex("""<br\s*/?>|\n""", RegexOption.IGNORE_CASE)
+
+    /** The text inside every `<tag>…</tag>` (attributes allowed) in [xml], in order. */
+    fun elements(xml: String, tag: String): Sequence<String> = sequence {
+        val open = "<$tag"
+        val close = "</$tag>"
+        var start = xml.indexOf(open)
+        while (start >= 0) {
+            val nameEnd = start + open.length
+            // "<item>" or "<guid isPermaLink=…>", but not "<items>"; nothing more once an element is never closed.
+            val isTag = nameEnd < xml.length && (xml[nameEnd] == '>' || xml[nameEnd].isWhitespace())
+            val bodyStart = if (isTag) xml.indexOf('>', nameEnd) else -1
+            val end = if (bodyStart < 0) -1 else xml.indexOf(close, bodyStart + 1)
+            start = when {
+                !isTag -> xml.indexOf(open, nameEnd)
+                end < 0 -> -1
+                else -> {
+                    yield(xml.substring(bodyStart + 1, end))
+                    xml.indexOf(open, end + close.length)
+                }
+            }
+        }
+    }
+
+    fun first(xml: String, tag: String): String? = elements(xml, tag).firstOrNull()
+
+    fun lines(description: String): List<String> = description.take(MAX_DESCRIPTION).split(breaks)
+        .map { decodeEntities(stripTags(it)).trim().trimEnd(',').take(MAX_LINE) }
         .filter { it.isNotEmpty() }
+
+    /** Drops every `<…>` in one pass; a `<` that nothing closes stays text. */
+    private fun stripTags(s: String): String {
+        if ('<' !in s) return s
+        val out = StringBuilder(s.length)
+        var i = 0
+        while (i < s.length) {
+            val end = if (s[i] == '<') s.indexOf('>', i + 1) else -1
+            when {
+                // Nothing closes after here: the rest is text.
+                s[i] == '<' && end < 0 -> {
+                    out.append(s, i, s.length)
+                    i = s.length
+                }
+                end > i + 1 -> i = end + 1
+                else -> {
+                    out.append(s[i])
+                    i++
+                }
+            }
+        }
+        return out.toString()
+    }
 
     // &amp; last, so "&amp;lt;" becomes "&lt;" and not "<".
     private fun decodeEntities(s: String) = s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"")

@@ -2,15 +2,15 @@ package se.pusslet.data.sources
 
 import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
-import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.client.statement.bodyAsText
+import io.ktor.client.request.prepareGet
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
 import se.pusslet.data.db.CacheDao
 import se.pusslet.data.db.CacheEntryEntity
+import se.pusslet.data.net.bodyAsTextAtMost
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
@@ -42,6 +42,8 @@ class CachedFetcher(
         url: String,
         maxAge: Duration,
         force: Boolean = false,
+        /** A larger answer is a failed fetch (the cached copy stays), never a full memory. */
+        maxBytes: Long = DEFAULT_MAX_BYTES,
         validate: (String) -> Boolean = { true },
     ): Sourced<String>? {
         val cached = cache.get(key)
@@ -50,7 +52,7 @@ class CachedFetcher(
             return Sourced(cached.body, Instant.fromEpochMilliseconds(cached.fetchedAt), stale = false, error = cached.lastError)
         }
         return try {
-            download(key, url, cached, validate)
+            download(key, url, cached, maxBytes, validate)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -67,33 +69,40 @@ class CachedFetcher(
     }
 
     /** One HTTP round trip with conditional headers; throws [SourceException] for anything but fresh, valid content. */
-    private suspend fun download(key: String, url: String, cached: CacheEntryEntity?, validate: (String) -> Boolean): Sourced<String> {
+    private suspend fun download(
+        key: String,
+        url: String,
+        cached: CacheEntryEntity?,
+        maxBytes: Long,
+        validate: (String) -> Boolean,
+    ): Sourced<String> {
         val now = clock.now()
-        val response = http.get(url) {
+        // Streamed, so the body is read (and refused) as it comes rather than held whole first.
+        val fresh = http.prepareGet(url) {
             cached?.etag?.let { header(HttpHeaders.IfNoneMatch, it) }
             cached?.lastModified?.let { header(HttpHeaders.IfModifiedSince, it) }
-        }
-        return when {
-            response.status == HttpStatusCode.NotModified && cached != null -> {
-                cache.put(cached.copy(fetchedAt = now.toEpochMilliseconds(), lastError = null))
-                Sourced(cached.body, now)
-            }
-            response.status.isSuccess() -> {
-                val body = response.bodyAsText()
-                if (!validate(body)) throw SourceException("Unexpected content from ${hostOf(url)}")
-                cache.put(
-                    CacheEntryEntity(
-                        key = key,
-                        body = body,
-                        fetchedAt = now.toEpochMilliseconds(),
-                        etag = response.headers[HttpHeaders.ETag],
-                        lastModified = response.headers[HttpHeaders.LastModified],
-                    ),
+        }.execute { response ->
+            when {
+                response.status == HttpStatusCode.NotModified && cached != null -> null
+                response.status.isSuccess() -> CacheEntryEntity(
+                    key = key,
+                    body = response.bodyAsTextAtMost(maxBytes),
+                    fetchedAt = now.toEpochMilliseconds(),
+                    etag = response.headers[HttpHeaders.ETag],
+                    lastModified = response.headers[HttpHeaders.LastModified],
                 )
-                Sourced(body, now)
+                else -> throw SourceException("HTTP ${response.status.value} from ${hostOf(url)}")
             }
-            else -> throw SourceException("HTTP ${response.status.value} from ${hostOf(url)}")
         }
+        if (fresh == null) {
+            // Not modified (only asked with a cached copy): that copy is fresh again.
+            val again = checkNotNull(cached)
+            cache.put(again.copy(fetchedAt = now.toEpochMilliseconds(), lastError = null))
+            return Sourced(again.body, now)
+        }
+        if (!validate(fresh.body)) throw SourceException("Unexpected content from ${hostOf(url)}")
+        cache.put(fresh)
+        return Sourced(fresh.body, now)
     }
 
     suspend fun peek(key: String): Sourced<String>? = cache.get(key)?.let {
@@ -109,4 +118,9 @@ class CachedFetcher(
     }
 
     private fun hostOf(url: String) = url.substringAfter("://").substringBefore('/')
+
+    companion object {
+        /** Well above any forecast, product or school list the app reads; feeds pass their own limit. */
+        const val DEFAULT_MAX_BYTES = 10L * 1024 * 1024
+    }
 }

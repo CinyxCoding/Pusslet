@@ -2,9 +2,8 @@ package se.pusslet.data.usecase
 
 import co.touchlab.kermit.Logger
 import io.ktor.client.HttpClient
-import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.client.statement.bodyAsText
+import io.ktor.client.request.prepareGet
 import io.ktor.http.HttpHeaders
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
@@ -12,6 +11,7 @@ import se.pusslet.core.recipes.ImportedRecipe
 import se.pusslet.core.recipes.RecipeJsonLd
 import se.pusslet.core.recipes.RecipeLinks
 import se.pusslet.core.util.IdGenerator
+import se.pusslet.data.net.bodyAsTextAtMost
 
 sealed interface RecipeImportResult {
     data class Found(val imported: ImportedRecipe) : RecipeImportResult
@@ -73,8 +73,9 @@ class RecipeImporter(private val http: HttpClient, private val ids: IdGenerator)
 
     /** The page's HTML, or null when it cannot be fetched (logged without the address, which a user typed). */
     private suspend fun page(url: String): String? = try {
-        val response = http.get(url) { header(HttpHeaders.Accept, "text/html,application/xhtml+xml") }
-        if (response.status.isSuccess()) response.bodyAsText().take(MAX_PAGE_CHARS) else null
+        http.prepareGet(url) { header(HttpHeaders.Accept, "text/html,application/xhtml+xml") }.execute { response ->
+            if (response.status.isSuccess()) response.bodyAsTextAtMost(MAX_PAGE_BYTES).take(MAX_PAGE_CHARS) else null
+        }
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -86,6 +87,9 @@ class RecipeImporter(private val http: HttpClient, private val ids: IdGenerator)
 
     companion object {
         private const val MAX_PAGE_CHARS = 3_000_000
+
+        /** Recipe pages are well under this; a larger answer is not read at all (the link can come from anywhere). */
+        private const val MAX_PAGE_BYTES = 8L * 1024 * 1024
 
         /**
          * More links than this in one paste are left out, and one import never reads more pages than this (menus included),

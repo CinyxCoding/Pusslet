@@ -54,16 +54,28 @@ interface FamilyRemote {
 
     /**
      * Creates `families/{id}` (createdBy = uid) if missing and registers the caller as parent in the access index.
-     * [shared] marks a new space shared with the other home; the rules never let it change afterwards.
+     * [shared] marks a new space shared with the other home; the rules never let it change afterwards. In a space every
+     * adult says which [home] they belong to, so each home manages only its own (ADR-059).
      */
-    suspend fun bootstrapFamily(familyId: String, name: String, memberId: String, uid: String, shared: Boolean = false)
+    suspend fun bootstrapFamily(
+        familyId: String,
+        name: String,
+        memberId: String,
+        uid: String,
+        shared: Boolean = false,
+        home: String? = null,
+    )
 
     suspend fun createInvite(invite: InviteInfo, createdBy: String)
 
+    /** The invite behind [code], or null when there is none, it has expired or someone has already used it (ADR-059). */
     suspend fun lookupInvite(code: String): InviteInfo?
 
-    /** Writes the caller's access doc and member doc atomically. */
-    suspend fun join(invite: InviteInfo, uid: String, member: Member)
+    /**
+     * Writes the caller's access doc and member doc atomically and uses the code up in the same batch (ADR-059). [home] is
+     * the caller's own family when the invite is to a space shared with the other home.
+     */
+    suspend fun join(invite: InviteInfo, uid: String, member: Member, home: String? = null)
 
     /** Families this account belongs to (for a new device after sign-in). */
     suspend fun familyIdsFor(uid: String): List<String>
@@ -119,13 +131,14 @@ object LocalOnlyFamilyRemote : FamilyRemote {
 
     private fun unavailable(): Nothing = throw BackendUnavailableException("No backend configured")
 
-    override suspend fun bootstrapFamily(familyId: String, name: String, memberId: String, uid: String, shared: Boolean) = unavailable()
+    override suspend fun bootstrapFamily(familyId: String, name: String, memberId: String, uid: String, shared: Boolean, home: String?) =
+        unavailable()
 
     override suspend fun createInvite(invite: InviteInfo, createdBy: String) = unavailable()
 
     override suspend fun lookupInvite(code: String): InviteInfo = unavailable()
 
-    override suspend fun join(invite: InviteInfo, uid: String, member: Member) = unavailable()
+    override suspend fun join(invite: InviteInfo, uid: String, member: Member, home: String?) = unavailable()
 
     override suspend fun familyIdsFor(uid: String): List<String> = emptyList()
 

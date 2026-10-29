@@ -162,7 +162,7 @@ class SharedCostsViewModel(
     }
 
     fun delete(expense: SharedExpense) {
-        if (!state.value.canEdit) return
+        if (!state.value.canEdit || !SharedCosts.canRemove(expense, state.value.myHome)) return
         viewModelScope.launch { expenses.delete(expense.id) }
     }
 
@@ -297,13 +297,18 @@ private fun ExpenseRow(e: SharedExpense, state: SharedCostsUiState, decimal: Cha
                 " · " +
                     stringResource(Res.string.costs_split_line, 100 - e.otherSharePercent, e.otherSharePercent)
             }
+            // Who wrote it down, so both homes see who added what (ADR-059).
+            val added = e.createdBy?.let { state.names[it]?.name }?.let { " · " + stringResource(Res.string.costs_added_by, it) }.orEmpty()
             Text(
-                "${formatDateShort(e.date)} · ${stringResource(Res.string.costs_paid_by, who)}$split",
+                "${formatDateShort(e.date)} · ${stringResource(Res.string.costs_paid_by, who)}$split$added",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        IconButton(onClick = onDelete) { Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.action_delete)) }
+        // Only the home that added a cost removes it (ADR-059).
+        if (SharedCosts.canRemove(e, state.myHome)) {
+            IconButton(onClick = onDelete) { Icon(Icons.Filled.Close, contentDescription = stringResource(Res.string.action_delete)) }
+        }
     }
 }
 

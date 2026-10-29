@@ -339,7 +339,7 @@
     <string name="join_as_parent">Du går med som förälder och ser allt.</string>
     <string name="join_as_caregiver">Du går med som annan vuxen och ser det som delas med dig.</string>
     <string name="join_button">Gå med</string>
-    <string name="join_invalid">Koden hittades inte eller har gått ut.</string>
+    <string name="join_invalid">Koden hittades inte, har gått ut eller har redan använts.</string>
     <string name="join_needs_network">Du behöver vara uppkopplad för att gå med.</string>
     <string name="join_unavailable">Den här versionen av appen är inte kopplad till någon server, så det går inte att gå med i en familj.</string>
 
@@ -364,14 +364,14 @@
 
     <!-- Invite -->
     <string name="invite_title">Bjud in</string>
-    <string name="invite_body">Den du bjuder in får egen inloggning. Inbjudan gäller i 7 dagar.</string>
+    <string name="invite_body">Den du bjuder in får egen inloggning. Inbjudan gäller för en person i 7 dagar; gör en ny för nästa.</string>
     <string name="invite_role_parent">Förälder – ser och ändrar allt</string>
     <string name="invite_role_caregiver">Annan vuxen – ser det som delas och kan bocka av</string>
     <string name="invite_claim">Gäller för %1$s</string>
     <string name="invite_claim_new">En ny person</string>
     <string name="invite_create">Skapa inbjudan</string>
     <string name="invite_code_label">Kod</string>
-    <string name="invite_valid_until">Gäller till %1$s</string>
+    <string name="invite_valid_until">Gäller en gång, till %1$s</string>
     <string name="invite_share_text">Hej, gå med i %1$s i %2$s: %3$s – eller skriv koden %4$s i appen.</string>
     <string name="invite_needs_account">Logga in först, så kan familjen delas mellan era telefoner.</string>
     <string name="invite_qr_description">QR-kod för inbjudan</string>
@@ -1650,6 +1650,7 @@
     <string name="costs_split_line">%1$d/%2$d</string>
     <string name="costs_preview_they">Andra hemmet betalar %1$s kr av det</string>
     <string name="costs_preview_we">Ni betalar %1$s kr av det</string>
+    <string name="costs_added_by">inlagd av %1$s</string>
     <string name="costs_delete_confirm">Ta bort ”%1$s” för båda hemmen?</string>
     <string name="costs_category_clothes">Kläder</string>
     <string name="costs_category_activities">Aktiviteter</string>

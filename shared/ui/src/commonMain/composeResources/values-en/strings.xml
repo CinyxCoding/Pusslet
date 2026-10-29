@@ -338,7 +338,7 @@
     <string name="join_as_parent">You join as a parent and see everything.</string>
     <string name="join_as_caregiver">You join as another adult and see what is shared with you.</string>
     <string name="join_button">Join</string>
-    <string name="join_invalid">The code was not found or has expired.</string>
+    <string name="join_invalid">The code was not found, has expired or has already been used.</string>
     <string name="join_needs_network">You need to be online to join.</string>
     <string name="join_unavailable">This version of the app isn't connected to a server, so you can't join a family.</string>
 
@@ -363,14 +363,14 @@
 
     <!-- Invite -->
     <string name="invite_title">Invite</string>
-    <string name="invite_body">The person you invite gets their own login. The invite is valid for 7 days.</string>
+    <string name="invite_body">The person you invite gets their own login. The invite works for one person for 7 days; make a new one for the next.</string>
     <string name="invite_role_parent">Parent – sees and edits everything</string>
     <string name="invite_role_caregiver">Other adult – sees what is shared and can tick things off</string>
     <string name="invite_claim">For %1$s</string>
     <string name="invite_claim_new">A new person</string>
     <string name="invite_create">Create invite</string>
     <string name="invite_code_label">Code</string>
-    <string name="invite_valid_until">Valid until %1$s</string>
+    <string name="invite_valid_until">Works once, until %1$s</string>
     <string name="invite_share_text">Hi, join %1$s in %2$s: %3$s – or enter the code %4$s in the app.</string>
     <string name="invite_needs_account">Sign in first so the family can be shared between your phones.</string>
     <string name="invite_qr_description">Invite QR code</string>
@@ -1649,6 +1649,7 @@
     <string name="costs_split_line">%1$d/%2$d</string>
     <string name="costs_preview_they">The other home pays %1$s kr of it</string>
     <string name="costs_preview_we">You pay %1$s kr of it</string>
+    <string name="costs_added_by">added by %1$s</string>
     <string name="costs_delete_confirm">Remove “%1$s” for both homes?</string>
     <string name="costs_category_clothes">Clothes</string>
     <string name="costs_category_activities">Activities</string>

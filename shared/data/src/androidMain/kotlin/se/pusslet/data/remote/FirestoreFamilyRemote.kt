@@ -28,18 +28,19 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore, private val calls
 
     private fun stamp(uid: String) = mapOf(MetaFields.UPDATED_AT to FieldValue.serverTimestamp(), MetaFields.UPDATED_BY to uid)
 
-    override suspend fun bootstrapFamily(familyId: String, name: String, memberId: String, uid: String, shared: Boolean) = guard {
-        val familyRef = db.document("families/$familyId")
-        val accessRef = db.document("families/$familyId/access/$uid")
-        val access = runCatching { accessRef.get().await() }.getOrNull()
-        if (access?.exists() == true) return@guard
-        db.runBatch { batch ->
-            val space = if (shared) mapOf("shared" to true) else emptyMap()
-            batch.set(familyRef, mapOf("name" to name, "createdBy" to uid) + space + stamp(uid), SetOptions.merge())
-            batch.set(accessRef, mapOf("memberId" to memberId, "role" to "parent"))
-        }.await()
-        Unit
-    }
+    override suspend fun bootstrapFamily(familyId: String, name: String, memberId: String, uid: String, shared: Boolean, home: String?) =
+        guard {
+            val familyRef = db.document("families/$familyId")
+            val accessRef = db.document("families/$familyId/access/$uid")
+            val access = runCatching { accessRef.get().await() }.getOrNull()
+            if (access?.exists() == true) return@guard
+            db.runBatch { batch ->
+                val space = if (shared) mapOf("shared" to true) else emptyMap()
+                batch.set(familyRef, mapOf("name" to name, "createdBy" to uid) + space + stamp(uid), SetOptions.merge())
+                batch.set(accessRef, mapOf("memberId" to memberId, "role" to "parent") + homeOf(home))
+            }.await()
+            Unit
+        }
 
     override suspend fun createInvite(invite: InviteInfo, createdBy: String) = guard {
         db.document("invites/${invite.code}").set(
@@ -65,7 +66,8 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore, private val calls
 
     override suspend fun lookupInvite(code: String): InviteInfo? = guard {
         val snap = db.document("invites/$code").get().await()
-        if (!snap.exists()) return@guard null
+        // A used code is as good as none (ADR-059): the join screen says "not found, expired or used".
+        if (!snap.exists() || snap.getString("usedBy") != null) return@guard null
         val expires = snap.getTimestamp("expiresAt")?.toDate()?.time ?: return@guard null
         InviteInfo(
             code = code,
@@ -84,14 +86,16 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore, private val calls
         )
     }
 
-    override suspend fun join(invite: InviteInfo, uid: String, member: Member) = guard {
+    override suspend fun join(invite: InviteInfo, uid: String, member: Member, home: String?) = guard {
         val fid = invite.familyId
         val memberJson = DomainJson.encodeToJsonElement(Member.serializer(), member.copy(uid = uid, role = invite.role)).jsonObject
         db.runBatch { batch ->
             batch.set(
                 db.document("families/$fid/access/$uid"),
-                mapOf("memberId" to member.id, "role" to invite.role.wire(), "inviteCode" to invite.code),
+                mapOf("memberId" to member.id, "role" to invite.role.wire(), "inviteCode" to invite.code) + homeOf(home),
             )
+            // A code is used once (ADR-059); the rules want it used up in the same batch as the joining.
+            batch.update(db.document("invites/${invite.code}"), mapOf("usedBy" to uid, "usedAt" to FieldValue.serverTimestamp()))
             batch.set(
                 db.document("families/$fid/members/${member.id}"),
                 FirestoreRemoteStore.toPlain(memberJson) + stamp(uid),
@@ -180,7 +184,9 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore, private val calls
         val exists = runCatching { accessRef.get().await().exists() }.getOrDefault(false)
         val memberJson = DomainJson.encodeToJsonElement(Member.serializer(), member.copy(uid = uid, role = Role.Parent)).jsonObject
         db.runBatch { batch ->
-            if (!exists) batch.set(accessRef, mapOf("memberId" to member.id, "role" to "parent", "viaFamily" to viaFamily))
+            if (!exists) {
+                batch.set(accessRef, mapOf("memberId" to member.id, "role" to "parent", "viaFamily" to viaFamily) + homeOf(viaFamily))
+            }
             batch.set(
                 db.document("families/$spaceId/members/${member.id}"),
                 FirestoreRemoteStore.toPlain(memberJson) + stamp(uid),
@@ -213,6 +219,9 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore, private val calls
         db.document("users/$uid").set(mapOf("familyIds" to FieldValue.arrayRemove(spaceId)), SetOptions.merge()).await()
         Unit
     }
+
+    /** The home an adult in a space comes from (ADR-059); nothing for a family's own access docs. */
+    private fun homeOf(home: String?): Map<String, String> = home?.let { mapOf("home" to it) }.orEmpty()
 
     private fun Role.wire() = when (this) {
         Role.Parent -> "parent"

@@ -24,6 +24,9 @@ object SharedCosts {
         else -> null
     }
 
+    /** Whether [myHome] may remove [e]: the home that added a cost is the one that removes it (ADR-059, as the rules say). */
+    fun canRemove(e: SharedExpense, myHome: String?): Boolean = e.addedByHome == null || e.addedByHome == myHome
+
     /** Spent per category, settlements left out, biggest first ("Kläder 1 450 kr"). */
     fun byCategory(expenses: List<SharedExpense>): List<Pair<ExpenseCategory, Long>> = expenses.filter { !it.settlement }
         .groupBy { it.category }

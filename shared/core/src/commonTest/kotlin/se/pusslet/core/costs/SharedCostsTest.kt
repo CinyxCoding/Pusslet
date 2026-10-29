@@ -5,7 +5,9 @@ import se.pusslet.core.model.ExpenseCategory
 import se.pusslet.core.model.SharedExpense
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /** Delade kostnader (ADR-057): Sara's home ("lind") and Lina's home ("berg") share Ella. */
 class SharedCostsTest {
@@ -39,6 +41,14 @@ class SharedCostsTest {
         assertEquals(0L, SharedCosts.balance(costs + settlement, "lind"))
         assertNull(SharedCosts.settle(0, "lind", "berg"))
         assertEquals(listOf(ExpenseCategory.Other to 89_900L), SharedCosts.byCategory(costs + settlement), "settlements are not spending")
+    }
+
+    @Test
+    fun onlyTheHomeThatAddedACostRemovesIt() {
+        val jacket = cost(899, "lind").copy(addedByHome = "lind")
+        assertTrue(SharedCosts.canRemove(jacket, "lind"))
+        assertFalse(SharedCosts.canRemove(jacket, "berg"), "Lina's home cannot remove Sara's cost")
+        assertTrue(SharedCosts.canRemove(cost(500, "berg"), "lind"), "a cost from before the rule can be removed by either home")
     }
 
     @Test

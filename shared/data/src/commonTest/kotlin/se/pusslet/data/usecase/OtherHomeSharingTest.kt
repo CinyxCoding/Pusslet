@@ -77,7 +77,18 @@ class OtherHomeSharingTest {
         override val available = true
         val invites = mutableMapOf<String, InviteInfo>()
 
-        override suspend fun bootstrapFamily(familyId: String, name: String, memberId: String, uid: String, shared: Boolean) {
+        /** The home each adult said they come from, per "space/uid" (ADR-059). */
+        val homes = mutableMapOf<String, String?>()
+
+        override suspend fun bootstrapFamily(
+            familyId: String,
+            name: String,
+            memberId: String,
+            uid: String,
+            shared: Boolean,
+            home: String?,
+        ) {
+            homes["$familyId/$uid"] = home
             server.write(
                 familyId,
                 "",
@@ -97,9 +108,11 @@ class OtherHomeSharingTest {
 
         override suspend fun lookupInvite(code: String) = invites[code]
 
-        override suspend fun join(invite: InviteInfo, uid: String, member: Member) = joinSpace(invite.familyId, "", uid, member)
+        override suspend fun join(invite: InviteInfo, uid: String, member: Member, home: String?) =
+            joinSpace(invite.familyId, home.orEmpty(), uid, member)
 
         override suspend fun joinSpace(spaceId: String, viaFamily: String, uid: String, member: Member) {
+            homes["$spaceId/$uid"] = viaFamily
             access(spaceId, uid, member.id)
             server.write(spaceId, "members/${member.id}", DomainJson.encodeToJsonElement(Member.serializer(), member).jsonObject, uid)
         }
@@ -242,6 +255,9 @@ class OtherHomeSharingTest {
         settle()
         lina.sharing.reconcile()
         settle()
+        // Each adult says which home they come from, so each home manages only its own (ADR-059).
+        assertEquals("home-a", remote.homes["$space/u-ahmed"])
+        assertEquals("home-b", remote.homes["$space/u-lina"])
         assertEquals(listOf(ella), lina.family.children.first().map { it.id }, "one Ella, with the shared id")
         assertEquals(setOf("Fotboll", "Simning"), lina.titles(), "Ahmed's private events never reach Lina")
         assertEquals(listOf(ella), lina.event("Simning").participantIds)

@@ -31,6 +31,18 @@ const FID = "lind";
 const stamp = (uid: string) => ({ updatedAt: serverTimestamp(), updatedBy: uid });
 const db = (uid: string) => env.authenticatedContext(uid).firestore();
 const future = (days: number) => Timestamp.fromMillis(Date.now() + days * 86_400_000);
+/** What the app does when it joins with a code: it uses the code up in the same batch (ADR-059). */
+const useInvite = (uid: string, code: string) => ({ ref: `invites/${code}`, data: { usedBy: uid, usedAt: serverTimestamp() } });
+
+/** Joins [FID] (or [fid]) with [code]: the access doc and the used-up code in one batch, as the app writes them. */
+function joinWith(uid: string, access: Record<string, unknown>, code: string, fid: string = FID) {
+  const f = db(uid);
+  const batch = writeBatch(f);
+  batch.set(doc(f, `families/${fid}/access/${uid}`), { ...access, inviteCode: code });
+  const used = useInvite(uid, code);
+  batch.update(doc(f, used.ref), used.data);
+  return { f, batch };
+}
 
 /** Seeds Familjen Lind: Sara (parent), Bengt (caregiver), a shared and a private event, a list and a task. */
 async function seed() {
@@ -160,12 +172,21 @@ describe("invites and joining", () => {
   });
 
   it("lets an invited user join with the invited role", async () => {
-    const f = db("johan");
-    const batch = writeBatch(f);
-    batch.set(doc(f, `families/${FID}/access/johan`), { memberId: "m-johan", role: "parent", inviteCode: "ABCDEFGHJK" });
+    const { f, batch } = joinWith("johan", { memberId: "m-johan", role: "parent" }, "ABCDEFGHJK");
     batch.set(doc(f, `families/${FID}/members/m-johan`), { displayName: "Johan", uid: "johan", ...stamp("johan") });
     await assertSucceeds(batch.commit());
     await assertSucceeds(getDocs(collection(f, `families/${FID}/events`)));
+  });
+
+  it("lets a code be used once, and only by someone joining with it (ADR-059)", async () => {
+    // Joining without using the code up, or using it up without joining, is refused.
+    await assertFails(setDoc(doc(db("morfar"), `families/${FID}/access/morfar`), { memberId: "m-morfar", role: "caregiver", inviteCode: "CAREGIVER2" }));
+    const used = useInvite("mallory", "CAREGIVER2");
+    await assertFails(updateDoc(doc(db("mallory"), used.ref), used.data));
+    await assertSucceeds(joinWith("morfar", { memberId: "m-morfar", role: "caregiver" }, "CAREGIVER2").batch.commit());
+    // The same code a second time: refused, also for the one who first sent it on.
+    await assertFails(joinWith("mormor", { memberId: "m-mormor", role: "caregiver" }, "CAREGIVER2").batch.commit());
+    await assertFails(updateDoc(doc(db("mormor"), used.ref), { usedBy: "mormor", usedAt: serverTimestamp() }));
   });
 
   it("lets an invited user claim the member a parent already added", async () => {
@@ -176,9 +197,7 @@ describe("invites and joining", () => {
         familyId: FID, role: "parent", memberId: "m-johan", createdBy: "sara", expiresAt: future(7),
       });
     });
-    const f = db("johan");
-    const batch = writeBatch(f);
-    batch.set(doc(f, `families/${FID}/access/johan`), { memberId: "m-johan", role: "parent", inviteCode: "CLAIMJXHAN" });
+    const { f, batch } = joinWith("johan", { memberId: "m-johan", role: "parent" }, "CLAIMJXHAN");
     batch.set(doc(f, `families/${FID}/members/m-johan`), { uid: "johan", ...stamp("johan") }, { merge: true });
     await assertSucceeds(batch.commit());
   });
@@ -190,9 +209,7 @@ describe("invites and joining", () => {
         familyId: FID, role: "parent", memberId: "m-sara", createdBy: "sara", expiresAt: future(7),
       });
     });
-    const f = db("eve");
-    const batch = writeBatch(f);
-    batch.set(doc(f, `families/${FID}/access/eve`), { memberId: "m-sara", role: "parent", inviteCode: "CLAIMSARAX" });
+    const { f, batch } = joinWith("eve", { memberId: "m-sara", role: "parent" }, "CLAIMSARAX");
     batch.set(doc(f, `families/${FID}/members/m-sara`), { uid: "eve", ...stamp("eve") }, { merge: true });
     await assertFails(batch.commit());
   });
@@ -201,19 +218,16 @@ describe("invites and joining", () => {
     await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
       await setDoc(doc(ctx.firestore(), `families/${FID}/members/m-johan`), { displayName: "Johan", updatedBy: "sara" });
     });
-    const f = db("eve");
     // With Bengt's code Eve may join as herself, not as Sara (her pushes, her name on requests) ...
-    await assertFails(setDoc(doc(f, `families/${FID}/access/eve`), { memberId: "m-sara", role: "caregiver", inviteCode: "CAREGIVER2" }));
+    await assertFails(joinWith("eve", { memberId: "m-sara", role: "caregiver" }, "CAREGIVER2").batch.commit());
     // ... nor as Johan, whom Sara added before he had the app: that takes the invite made for him.
-    await assertFails(setDoc(doc(f, `families/${FID}/access/eve`), { memberId: "m-johan", role: "parent", inviteCode: "ABCDEFGHJK" }));
-    await assertSucceeds(setDoc(doc(f, `families/${FID}/access/eve`), { memberId: "m-eve", role: "caregiver", inviteCode: "CAREGIVER2" }));
+    await assertFails(joinWith("eve", { memberId: "m-johan", role: "parent" }, "ABCDEFGHJK").batch.commit());
+    await assertSucceeds(joinWith("eve", { memberId: "m-eve", role: "caregiver" }, "CAREGIVER2").batch.commit());
   });
 
   it("shows a joiner with the role the invite gives, not one of their own choosing", async () => {
-    const f = db("eve");
     const join = (role: string) => {
-      const batch = writeBatch(f);
-      batch.set(doc(f, `families/${FID}/access/eve`), { memberId: "m-eve", role: "caregiver", inviteCode: "CAREGIVER2" });
+      const { f, batch } = joinWith("eve", { memberId: "m-eve", role: "caregiver" }, "CAREGIVER2");
       batch.set(doc(f, `families/${FID}/members/m-eve`), { displayName: "Eve", uid: "eve", role, ...stamp("eve") });
       return batch.commit();
     };
@@ -225,21 +239,15 @@ describe("invites and joining", () => {
     await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
       await setDoc(doc(ctx.firestore(), `families/${FID}/members/m-johan`), { displayName: "Johan", uid: "johan", updatedBy: "johan" });
     });
-    await assertSucceeds(
-      setDoc(doc(db("johan"), `families/${FID}/access/johan`), { memberId: "m-johan", role: "parent", inviteCode: "ABCDEFGHJK" }),
-    );
+    await assertSucceeds(joinWith("johan", { memberId: "m-johan", role: "parent" }, "ABCDEFGHJK").batch.commit());
   });
 
   it("rejects joining with a different role than invited", async () => {
-    await assertFails(
-      setDoc(doc(db("eve"), `families/${FID}/access/eve`), { memberId: "m-eve", role: "parent", inviteCode: "CAREGIVER2" }),
-    );
+    await assertFails(joinWith("eve", { memberId: "m-eve", role: "parent" }, "CAREGIVER2").batch.commit());
   });
 
   it("rejects expired invites", async () => {
-    await assertFails(
-      setDoc(doc(db("eve"), `families/${FID}/access/eve`), { memberId: "m-eve", role: "parent", inviteCode: "EXPIREDXXX" }),
-    );
+    await assertFails(joinWith("eve", { memberId: "m-eve", role: "parent" }, "EXPIREDXXX").batch.commit());
   });
 });
 
@@ -555,7 +563,7 @@ describe("sharing with the other home (ADR-056)", () => {
       const f = ctx.firestore();
       await setDoc(doc(f, `families/${FID}/access/johan`), { memberId: "m-johan", role: "parent" });
       await setDoc(doc(f, `families/${SPACE}`), { name: "Ella", createdBy: "sara", shared: true, familyIds: [FID] });
-      await setDoc(doc(f, `families/${SPACE}/access/sara`), { memberId: "m-sara", role: "parent" });
+      await setDoc(doc(f, `families/${SPACE}/access/sara`), { memberId: "m-sara", role: "parent", home: FID });
       await setDoc(doc(f, `families/${SPACE}/events/football`), { title: "Fotboll", start: "2026-10-13T17:30", end: "2026-10-13T18:30" });
       await setDoc(doc(f, "families/berg"), { name: "Hos mamma", createdBy: "lina" });
       await setDoc(doc(f, "families/berg/access/lina"), { memberId: "m-lina", role: "parent" });
@@ -564,12 +572,55 @@ describe("sharing with the other home (ADR-056)", () => {
   }
 
   async function linaJoins() {
-    const f = db("lina");
-    const batch = writeBatch(f);
-    batch.set(doc(f, `families/${SPACE}/access/lina`), { memberId: "m-lina", role: "parent", inviteCode: "OTHERHOME1" });
+    const { f, batch } = joinWith("lina", { memberId: "m-lina", role: "parent", home: "berg" }, "OTHERHOME1", SPACE);
     batch.set(doc(f, `families/${SPACE}/members/m-lina`), { displayName: "Lina", uid: "lina", ...stamp("lina") });
     await assertSucceeds(batch.commit());
   }
+
+  it("lets the other home join only from a home where the joiner is a parent (ADR-059)", async () => {
+    await seedSpace();
+    await assertFails(joinWith("lina", { memberId: "m-lina", role: "parent" }, "OTHERHOME1", SPACE).batch.commit());
+    await assertFails(joinWith("lina", { memberId: "m-lina", role: "parent", home: FID }, "OTHERHOME1", SPACE).batch.commit());
+    await assertSucceeds(joinWith("lina", { memberId: "m-lina", role: "parent", home: "berg" }, "OTHERHOME1", SPACE).batch.commit());
+  });
+
+  it("lets each home manage only its own adults and its own place in the space (ADR-059)", async () => {
+    await seedSpace();
+    await linaJoins();
+    const sara = db("sara");
+    const lina = db("lina");
+    await assertSucceeds(updateDoc(doc(lina, `families/${SPACE}`), { familyIds: [FID, "berg"], ...stamp("lina") }));
+    // Sara's home can neither take Lina out, make her a helper nor take her home off the list ...
+    await assertFails(deleteDoc(doc(sara, `families/${SPACE}/access/lina`)));
+    await assertFails(updateDoc(doc(sara, `families/${SPACE}/access/lina`), { role: "caregiver" }));
+    await assertFails(updateDoc(doc(sara, `families/${SPACE}`), { familyIds: [FID], ...stamp("sara") }));
+    await assertFails(updateDoc(doc(lina, `families/${SPACE}`), { familyIds: ["berg"], ...stamp("lina") }));
+    // ... but each home can leave itself.
+    await assertSucceeds(updateDoc(doc(lina, `families/${SPACE}`), { familyIds: [FID], ...stamp("lina") }));
+    await assertSucceeds(deleteDoc(doc(lina, `families/${SPACE}/access/lina`)));
+  });
+
+  it("lets only the home that added a shared cost change or remove it (ADR-059)", async () => {
+    await seedSpace();
+    await linaJoins();
+    const sara = db("sara");
+    const lina = db("lina");
+    const cost = {
+      title: "Vinterjacka", amountOre: 89900, date: "2026-10-20", paidByHome: FID, otherSharePercent: 50,
+      addedByHome: FID, createdBy: "m-sara", ...stamp("sara"),
+    };
+    await assertSucceeds(setDoc(doc(sara, `families/${SPACE}/expenses/x1`), cost));
+    // Lina cannot change or remove Sara's cost, nor add one in Sara's home's or Sara's name ...
+    await assertFails(updateDoc(doc(lina, `families/${SPACE}/expenses/x1`), { amountOre: 100, ...stamp("lina") }));
+    await assertFails(updateDoc(doc(lina, `families/${SPACE}/expenses/x1`), { deletedAt: serverTimestamp(), ...stamp("lina") }));
+    await assertFails(setDoc(doc(lina, `families/${SPACE}/expenses/x2`), { ...cost, createdBy: "m-lina", ...stamp("lina") }));
+    await assertFails(setDoc(doc(lina, `families/${SPACE}/expenses/x3`), { ...cost, addedByHome: "berg", ...stamp("lina") }));
+    // ... while her own is hers to add, and Sara removes hers.
+    await assertSucceeds(
+      setDoc(doc(lina, `families/${SPACE}/expenses/x4`), { ...cost, addedByHome: "berg", createdBy: "m-lina", paidByHome: "berg", ...stamp("lina") }),
+    );
+    await assertSucceeds(updateDoc(doc(sara, `families/${SPACE}/expenses/x1`), { deletedAt: serverTimestamp(), ...stamp("sara") }));
+  });
 
   it("lets the other home join with the invite and work on the children's things, but not see the rest", async () => {
     await seedSpace();
@@ -605,7 +656,10 @@ describe("sharing with the other home (ADR-056)", () => {
   it("keeps shared costs in the space, with a sane amount and split (ADR-057)", async () => {
     await seedSpace();
     await linaJoins();
-    const cost = { title: "Vinterjacka", amountOre: 89900, date: "2026-10-20", paidByHome: FID, otherSharePercent: 50, ...stamp("sara") };
+    const cost = {
+      title: "Vinterjacka", amountOre: 89900, date: "2026-10-20", paidByHome: FID, otherSharePercent: 50,
+      addedByHome: FID, createdBy: "m-sara", ...stamp("sara"),
+    };
     await assertSucceeds(setDoc(doc(db("sara"), `families/${SPACE}/expenses/x1`), cost));
     await assertSucceeds(getDoc(doc(db("lina"), `families/${SPACE}/expenses/x1`)));
     await assertFails(setDoc(doc(db("sara"), `families/${SPACE}/expenses/x2`), { ...cost, amountOre: -5 }));

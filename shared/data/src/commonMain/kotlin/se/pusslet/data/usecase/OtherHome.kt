@@ -119,7 +119,7 @@ class OtherHomeSharing(
         require(children.isNotEmpty()) { "No children to share" }
         val spaceId = ids.newId()
         val name = children.joinToString(", ") { it.firstName }
-        remote.bootstrapFamily(spaceId, name, me.id, uid, shared = true)
+        remote.bootstrapFamily(spaceId, name, me.id, uid, shared = true, home = home)
         remote.rememberFamily(uid, spaceId)
 
         // The home lists the space before the phone syncs it, so the family's other phones join too.
@@ -177,7 +177,7 @@ class OtherHomeSharing(
         require(invite.shared) { "Not an other-home invite" }
         val (home, me, uid) = requireOnline()
         val spaceId = invite.familyId
-        remote.join(invite, uid, me.copy(role = Role.Parent))
+        remote.join(invite, uid, me.copy(role = Role.Parent), home = home)
         updateHome(home) { it.copy(sharedSpaces = (it.sharedSpaces + spaceId).distinct()) }
         sessions.update { it.copy(spaceIds = (it.spaceIds + spaceId).distinct()) }
 

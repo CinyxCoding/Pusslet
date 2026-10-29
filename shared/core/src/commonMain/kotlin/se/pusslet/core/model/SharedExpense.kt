@@ -25,7 +25,10 @@ data class SharedExpense(
     val childIds: List<String> = emptyList(),
     val settlement: Boolean = false,
     val note: String = "",
+    /** The adult who added it, for "inlagd av Lina". */
     val createdBy: String? = null,
+    /** The home that added it: only that home removes it (ADR-059). Null on costs from before that rule. */
+    val addedByHome: String? = null,
 )
 
 @Serializable

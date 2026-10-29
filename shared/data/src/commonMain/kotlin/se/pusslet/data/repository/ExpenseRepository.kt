@@ -44,6 +44,7 @@ class ExpenseRepository(
             category = category,
             childIds = childIds,
             createdBy = me,
+            addedByHome = sessions.session.value.familyId,
         )
         docs.put(Collections.Expenses, expense.id, expense, SharedExpense.serializer(), familyId = spaceId)
         return expense
@@ -63,6 +64,7 @@ class ExpenseRepository(
             otherSharePercent = 100,
             settlement = true,
             createdBy = sessions.session.value.memberId,
+            addedByHome = myHome,
         )
         docs.put(Collections.Expenses, settlement.id, settlement, SharedExpense.serializer(), familyId = spaceId)
         return settlement

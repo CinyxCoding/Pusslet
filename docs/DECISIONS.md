@@ -637,7 +637,7 @@ innehålla barnens samlingar (barn, vårdnadsschema, händelser, packning, uppgi
 - Familjens kalenderflöde tar med utrymmenas händelser, men bara från utrymmen som listar hemmet tillbaka.
 **Konsekvens:** Hjälpare (morfar) ser inte det delade – de är bara med i sitt hem. En ändring som görs offline precis
 när ett dokument flyttas kan hamna i hemmets gamla kopia. Att dela med andra hemmet är en premiumkandidat
-(`Feature.SharedCustody`, kontrolleras när man startar); att gå med är alltid gratis.
+(`Feature.OtherHousehold`, kontrolleras när man startar); att gå med är alltid gratis.
 
 ## ADR-057 – Delade kostnader mellan hemmen
 **Kontext:** Föräldrar i två hem delar på barnens kostnader (kläder, aktiviteter, tandläkare) och för listor i sms eller

@@ -1463,6 +1463,11 @@
     <string name="medicine_last_temp">Senast tempad: %1$s °C · %2$s</string>
     <string name="medicine_delete_confirm">Ta bort raden ur loggen?</string>
     <string name="medicine_privacy">Loggen ses bara av föräldrarna i familjen och tas bort efter 90 dagar. Appen ger inga medicinska råd: följ förpackningen, apoteket eller vården.</string>
+    <string name="medicine_fass">Läs bipacksedeln på FASS</string>
+    <string name="medicine_help_title">Råd och hjälp</string>
+    <string name="medicine_help_body">Osäker på hur barnet mår? Ring 1177 för råd om vård. Är det akut, ring 112.</string>
+    <string name="medicine_call_1177">Ring 1177</string>
+    <string name="medicine_fever_1177">Feber hos barn på 1177</string>
     <string name="medicine_no_children">Lägg till barnen i familjen först.</string>
     <string name="medicine_parents_only">Medicinloggen ses bara av föräldrarna.</string>
 

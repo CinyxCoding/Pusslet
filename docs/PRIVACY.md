@@ -56,6 +56,9 @@ sagt ja i appen, och policyn uppdateras först.
   Livsmedelsverket (livsmedelsdatabasen hämtas till telefonen).
 - **Adresser du själv lägger in**: receptsidor du importerar från och kalenderlänkar (ICS) ni prenumererar på hämtas av
   telefonen, som vilken webbläsare som helst.
+- **FASS och 1177**: trycker du på "Läs bipacksedeln på FASS" öppnas FASS i webbläsaren med medicinens namn som
+  sökord. Sidan om feber hos barn öppnas på samma sätt, och "Ring 1177" öppnar telefonappen. Pusslet skickar inget
+  själv.
 - **Familjens kalenderlänk**: om en förälder skapar den ser den som har länken familjens händelser (titel, tid, plats och
   vilka som deltar). Länken kan stoppas när som helst under Inställningar → Kalendrar.
 
@@ -149,6 +152,9 @@ the app, and this policy will be updated first.
   barcode), Livsmedelsverket (the food database is downloaded to the phone).
 - **Addresses you add yourself**: recipe pages you import from and calendar links (ICS) you subscribe to are fetched by
   the phone, like any web browser.
+- **FASS and 1177**: if you tap "Read the leaflet on FASS", FASS opens in the browser with the medicine's name as
+  the search word. The page on fever in children opens the same way, and "Call 1177" opens the phone app. Pusslet
+  sends nothing itself.
 - **The family's calendar link**: if a parent creates it, anyone with the link sees the family's events (title, time,
   place and who takes part). The link can be stopped at any time under Settings → Calendars.
 

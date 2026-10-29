@@ -1462,6 +1462,11 @@
     <string name="medicine_last_temp">Last temperature: %1$s °C · %2$s</string>
     <string name="medicine_delete_confirm">Remove the line from the log?</string>
     <string name="medicine_privacy">Only the family's parents see the log, and it's removed after 90 days. The app gives no medical advice: follow the package, the pharmacy or your care provider.</string>
+    <string name="medicine_fass">Read the leaflet on FASS</string>
+    <string name="medicine_help_title">Advice and help</string>
+    <string name="medicine_help_body">Unsure how your child is doing? Call 1177 for healthcare advice. In an emergency, call 112.</string>
+    <string name="medicine_call_1177">Call 1177</string>
+    <string name="medicine_fever_1177">Fever in children on 1177</string>
     <string name="medicine_no_children">Add the children to the family first.</string>
     <string name="medicine_parents_only">Only the parents see the medicine log.</string>
 

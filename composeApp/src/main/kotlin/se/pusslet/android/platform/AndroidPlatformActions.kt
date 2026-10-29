@@ -90,6 +90,19 @@ class AndroidPlatformActions(
         }
     }
 
+    override fun dial(number: String) {
+        // Only a plain number such as 1177: the phone app opens with it filled in, and the user decides to call.
+        if (!PHONE_NUMBER.matches(number)) {
+            log.w { "Not a phone number; not dialled" }
+            return
+        }
+        try {
+            activity.startActivity(Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null)))
+        } catch (e: ActivityNotFoundException) {
+            log.w(e) { "No phone app (a tablet without calls)" }
+        }
+    }
+
     override fun scanCode(onResult: (String?) -> Unit) {
         requestPermission(AppPermission.Camera) { granted ->
             if (!granted) {
@@ -231,5 +244,6 @@ class AndroidPlatformActions(
     private companion object {
         const val EXPORT_MIME = "application/json"
         val WEB_SCHEMES = setOf("https", "http")
+        val PHONE_NUMBER = Regex("""\+?\d+""")
     }
 }

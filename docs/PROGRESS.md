@@ -245,7 +245,10 @@ Status är **CONDITIONAL**: reglerna och funktionerna måste driftsättas, och A
 Barnläget, med stjärnor, godkännanden och veckopeng, togs bort helt samma dag (ADR-060).
 
 Premiumvillkoren står i MONETIZATION.md: 39 kr i månaden eller 349 kr om året, 14 dagars provperiod, och tidiga
-användare får premium i ett år.
+användare får premium i ett år. Samma dag blev maten, utom skollunchen, och telefonens kalender premium.
+
+Medicindelen länkar till bipacksedeln på FASS och till 1177:s sida om feber hos barn, och har en knapp för att
+ringa 1177 (ADR-061). Appen hämtar inget därifrån och räknar aldrig ut doser.
 
 ## Kända begränsningar / buggar
 - CI hängde en timme 2026-10-14: Idags ViewModel startade en evig `while (true) { delay(1 h) }` i `init`, som fick

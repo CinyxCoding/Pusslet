@@ -56,6 +56,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.medicine.HealthLinks
 import se.pusslet.core.medicine.MedicineRules
 import se.pusslet.core.model.FamilyPerson
 import se.pusslet.core.model.MedicineCourse
@@ -75,6 +76,7 @@ import se.pusslet.ui.components.TimeField
 import se.pusslet.ui.format.formatDateShort
 import se.pusslet.ui.format.formatTime
 import se.pusslet.ui.format.relativeDay
+import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 import kotlin.time.Clock
@@ -194,6 +196,7 @@ class MedicineViewModel(
 fun MedicineRoute(childId: String? = null, onBack: () -> Unit, viewModel: MedicineViewModel = koinViewModel()) {
     LaunchedEffect(childId) { viewModel.start(childId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val platform = LocalPlatformActions.current
     MedicineScreen(
         state,
         MedicineActions(
@@ -206,6 +209,8 @@ fun MedicineRoute(childId: String? = null, onBack: () -> Unit, viewModel: Medici
             onAddCourse = viewModel::addCourse,
             onStopCourse = viewModel::stopCourse,
             usualDose = viewModel::usualDose,
+            onOpenLink = platform::openUrl,
+            onCall = platform::dial,
         ),
     )
 }
@@ -221,6 +226,10 @@ data class MedicineActions(
     val onAddCourse: (medicine: String, dose: String, times: List<LocalTime>, start: LocalDate, days: Int) -> Unit = { _, _, _, _, _ -> },
     val onStopCourse: (MedicineCourse) -> Unit = {},
     val usualDose: (String) -> String = { "" },
+    /** A page on FASS or 1177 (ADR-061). */
+    val onOpenLink: (String) -> Unit = {},
+    /** The phone app with a number filled in: 1177. */
+    val onCall: (String) -> Unit = {},
 )
 
 private enum class MedicineSheet { Dose, Temperature, Course }
@@ -232,6 +241,7 @@ fun MedicineScreen(state: MedicineUiState, actions: MedicineActions) {
     var deleting by remember { mutableStateOf<MedicineEntry?>(null) }
     var stopping by remember { mutableStateOf<MedicineCourse?>(null) }
     val separator = stringResource(Res.string.decimal_separator).first()
+    val fass: (String) -> Unit = { medicine -> actions.onOpenLink(HealthLinks.fass(medicine)) }
     Scaffold(topBar = { PussletTopBar(stringResource(Res.string.medicine_title), onBack = actions.onBack) }) { padding ->
         val today = state.today
         if (state.loading || today == null) return@Scaffold
@@ -279,9 +289,12 @@ fun MedicineScreen(state: MedicineUiState, actions: MedicineActions) {
                     if (state.courses.isEmpty()) {
                         Text(stringResource(Res.string.medicine_course_reminders), style = MaterialTheme.typography.bodySmall)
                     }
-                    state.courses.forEach { row -> CourseView(row, today, actions.onGive) { stopping = row.course } }
+                    state.courses.forEach { row ->
+                        CourseView(row, today, actions.onGive, onFass = { fass(row.course.medicine) }, onStop = { stopping = row.course })
+                    }
                 }
             }
+            item(key = "help") { HelpCard(actions) }
             item(key = "log-title") {
                 Text(
                     stringResource(Res.string.medicine_log),
@@ -304,12 +317,16 @@ fun MedicineScreen(state: MedicineUiState, actions: MedicineActions) {
             }
         }
         when (sheet) {
-            MedicineSheet.Dose -> DoseSheet(state.usual, actions.usualDose, onDismiss = { sheet = null }) { m, d ->
+            MedicineSheet.Dose -> DoseSheet(state.usual, actions.usualDose, fass, onDismiss = { sheet = null }) { m, d ->
                 sheet = null
                 actions.onLogDose(m, d)
             }
-            MedicineSheet.Temperature -> TemperatureSheet(actions.onLogTemperature, onDone = { sheet = null })
-            MedicineSheet.Course -> CourseSheet(today, state.usual, actions.usualDose, onDismiss = {
+            MedicineSheet.Temperature -> TemperatureSheet(
+                actions.onLogTemperature,
+                onFeverAdvice = { actions.onOpenLink(HealthLinks.FEVER_IN_CHILDREN) },
+                onDone = { sheet = null },
+            )
+            MedicineSheet.Course -> CourseSheet(today, state.usual, actions.usualDose, fass, onDismiss = {
                 sheet = null
             }) { m, d, times, start, days ->
                 sheet = null
@@ -339,7 +356,7 @@ fun MedicineScreen(state: MedicineUiState, actions: MedicineActions) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CourseView(row: CourseRow, today: LocalDate, onGive: (MedicineRules.Slot) -> Unit, onStop: () -> Unit) {
+private fun CourseView(row: CourseRow, today: LocalDate, onGive: (MedicineRules.Slot) -> Unit, onFass: () -> Unit, onStop: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -379,6 +396,22 @@ private fun CourseView(row: CourseRow, today: LocalDate, onGive: (MedicineRules.
                 }
             }
         }
+        TextButton(onClick = onFass) { Text(stringResource(Res.string.medicine_fass)) }
+    }
+}
+
+/** Where to turn when the log is not enough (ADR-061): 1177 by phone, and 1177's page on fever in children. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun HelpCard(actions: MedicineActions) {
+    SectionCard(stringResource(Res.string.medicine_help_title)) {
+        Text(stringResource(Res.string.medicine_help_body), style = MaterialTheme.typography.bodyMedium)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+            OutlinedButton(onClick = { actions.onCall(HealthLinks.PHONE_1177) }) { Text(stringResource(Res.string.medicine_call_1177)) }
+            TextButton(onClick = { actions.onOpenLink(HealthLinks.FEVER_IN_CHILDREN) }) {
+                Text(stringResource(Res.string.medicine_fever_1177))
+            }
+        }
     }
 }
 
@@ -410,11 +443,17 @@ private fun LogLine(row: LogRow, today: LocalDate, separator: Char, onDelete: ()
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun DoseSheet(usual: List<String>, usualDose: (String) -> String, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+private fun DoseSheet(
+    usual: List<String>,
+    usualDose: (String) -> String,
+    onFass: (String) -> Unit,
+    onDismiss: () -> Unit,
+    onSave: (String, String) -> Unit,
+) {
     var medicine by rememberSaveable { mutableStateOf("") }
     var dose by rememberSaveable { mutableStateOf("") }
     Sheet(stringResource(Res.string.medicine_give), onDismiss) {
-        MedicineFields(medicine, dose, usual, onMedicine = { m ->
+        MedicineFields(medicine, dose, usual, onFass, onMedicine = { m ->
             medicine = m
             if (dose.isBlank()) dose = usualDose(m)
         }, onDose = { dose = it })
@@ -426,7 +465,14 @@ private fun DoseSheet(usual: List<String>, usualDose: (String) -> String, onDism
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MedicineFields(medicine: String, dose: String, usual: List<String>, onMedicine: (String) -> Unit, onDose: (String) -> Unit) {
+private fun MedicineFields(
+    medicine: String,
+    dose: String,
+    usual: List<String>,
+    onFass: (String) -> Unit,
+    onMedicine: (String) -> Unit,
+    onDose: (String) -> Unit,
+) {
     if (usual.isNotEmpty()) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             usual.forEach { m ->
@@ -447,6 +493,9 @@ private fun MedicineFields(medicine: String, dose: String, usual: List<String>, 
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         modifier = Modifier.fillMaxWidth(),
     )
+    if (medicine.isNotBlank()) {
+        TextButton(onClick = { onFass(medicine) }) { Text(stringResource(Res.string.medicine_fass)) }
+    }
     OutlinedTextField(
         value = dose,
         onValueChange = onDose,
@@ -457,7 +506,7 @@ private fun MedicineFields(medicine: String, dose: String, usual: List<String>, 
 }
 
 @Composable
-private fun TemperatureSheet(onLog: (String) -> Boolean, onDone: () -> Unit) {
+private fun TemperatureSheet(onLog: (String) -> Boolean, onFeverAdvice: () -> Unit, onDone: () -> Unit) {
     var text by rememberSaveable { mutableStateOf("") }
     var invalid by rememberSaveable { mutableStateOf(false) }
     Sheet(stringResource(Res.string.medicine_temp), onDone) {
@@ -474,6 +523,7 @@ private fun TemperatureSheet(onLog: (String) -> Boolean, onDone: () -> Unit) {
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth(),
         )
+        TextButton(onClick = onFeverAdvice) { Text(stringResource(Res.string.medicine_fever_1177)) }
         Button(onClick = {
             if (onLog(text)) onDone() else invalid = true
         }, enabled = text.isNotBlank(), modifier = Modifier.align(Alignment.End)) {
@@ -488,6 +538,7 @@ private fun CourseSheet(
     today: LocalDate,
     usual: List<String>,
     usualDose: (String) -> String,
+    onFass: (String) -> Unit,
     onDismiss: () -> Unit,
     onSave: (String, String, List<LocalTime>, LocalDate, Int) -> Unit,
 ) {
@@ -499,7 +550,7 @@ private fun CourseSheet(
     var daysText by rememberSaveable { mutableStateOf("") }
     val days = daysText.toIntOrNull()?.takeIf { it in 1..MedicineCourse.MAX_DAYS }
     Sheet(stringResource(Res.string.medicine_new_course), onDismiss) {
-        MedicineFields(medicine, dose, usual, onMedicine = { m ->
+        MedicineFields(medicine, dose, usual, onFass, onMedicine = { m ->
             medicine = m
             if (dose.isBlank()) dose = usualDose(m)
         }, onDose = { dose = it })

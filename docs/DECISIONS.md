@@ -725,3 +725,22 @@ som väntade på godkännande räknas som klar. Lokala `allowances`-dokument på
 kvar oanvända tills familjen tas bort från telefonen. Reglerna låter inte längre hjälpare ändra `approved`. Premium:
 `KidRewards` utgår.
 
+## ADR-061 – Länkar till FASS och 1177 i medicindelen, inga doser
+**Kontext:** Ägaren vill att medicindelen (ADR-050) använder uppgifter från FASS och 1177 (2026-10-29).
+- FASS har ett API (Fass API från LIF) med bland annat bipacksedlar, men tillgången kräver avtal (fass@lif.se) och
+  villkoren är inte publicerade.
+- 1177 har inget öppet API för sina texter. Texterna får inte kopieras fritt, och regionerna har ett avtal om varumärket.
+- En app som räknar ut eller föreslår doser blir en medicinteknisk produkt enligt MDR (MDCG 2019-11). En doskalkylator
+  klassas oftast minst som IIa och kräver CE-märkning via ett anmält organ.
+
+**Beslut:** Medicindelen länkar ut i stället för att hämta:
+- "Läs bipacksedeln på FASS" vid varje kur och när man skriver in en medicin. Länken går till FASS sökning för
+  allmänheten med medicinen som sökord (`HealthLinks.fass`).
+- 1177:s sida om feber hos barn, när man tempar och i kortet "Råd och hjälp".
+- "Ring 1177", som öppnar telefonappen med numret ifyllt (`PlatformActions.dial`, `ACTION_DIAL`, ingen behörighet).
+
+Appen hämtar inget från FASS eller 1177 och räknar aldrig ut doser.
+**Konsekvens:** Det krävs inget avtal och ingen ny tjänst får uppgifter: när föräldern trycker skickar webbläsaren
+medicinens namn till FASS, men inget om familjen. Flyttar 1177 sidan måste länken ändras. Ett avtal om Fass API kan
+senare ge förslag på rätt läkemedel och en direktlänk till rätt bipacksedel, men aldrig doser.
+

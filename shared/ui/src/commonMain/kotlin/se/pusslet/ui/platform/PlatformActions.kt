@@ -47,6 +47,9 @@ interface PlatformActions {
 
     /** Shows an attached picture full screen in the phone's viewer. */
     fun openImage(fileName: String) = Unit
+
+    /** Opens the phone app with [number] filled in; the user presses call, so no permission is needed. */
+    fun dial(number: String) = Unit
 }
 
 object NoopPlatformActions : PlatformActions {

@@ -230,6 +230,9 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.messaging)
+    constraints {
+        implementation(libs.guava) { because("GHSA-xxph-c9ww-hj94: earlier Guava allocates without limit when deserializing") }
+    }
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)

@@ -682,3 +682,28 @@ firestore:rules,functions`). Kvar som medvetna val: föräldrarna i båda hemmen
 utrymme (kan ändra delade kostnader och ta bort varandras åtkomst), en inbjudan kan användas flera gånger tills den gått ut,
 barnläget är ingen säkerhetsgräns (ADR-055) och App Check är inte påslaget än (docs/SECURITY.md, "Kvarvarande risker").
 
+## ADR-059 – Ägarens val efter granskningen: varje hem sitt eget, engångskoder, utloggning och barnläget
+**Kontext:** Granskningen (ADR-058) lämnade några val till ägaren. Ägaren valde 2026-10-29.
+**Beslut:**
+- **Andra hemmet hanterar bara sitt eget.**
+  - I ett delat utrymme anger varje vuxen vilket hem den kommer från (`home` på access-dokumentet, eller `viaFamily`).
+    Reglerna kräver att man är förälder i det hemmet.
+  - Ett hem kan bara ta bort eller ändra roll på sina egna vuxna, och bara lägga till eller ta bort sig självt i
+    `familyIds`.
+  - En delad kostnad läggs in i det egna hemmets namn (`addedByHome`, `createdBy` = jag), och bara det hemmet tar bort den.
+  - Varje kostnad visar "inlagd av …". Kostnader från före regeln kan båda hemmen hantera.
+- **En inbjudningskod används en gång.** Den som går med markerar koden som använd (`usedBy`, `usedAt`) i samma batch, och
+  reglerna kräver det. En använd kod ger samma svar som en okänd eller utgången.
+- **Utloggning frågar.** Man väljer att behålla familjen på telefonen eller att ta bort den härifrån, och båda valen
+  förklaras. Den som är ensam i familjen med konto varnas om att familjen inte går att få tillbaka till telefonen.
+- **Barnläget lämnas med ett långt tryck och sedan telefonens upplåsning** (PIN-kod, mönster, fingeravtryck eller ansikte).
+  Har telefonen inget skärmlås räcker det långa trycket, som förut (ADR-055).
+- **"Hämtad" kräver upplåst telefon**, som ADR-058 införde.
+- **App Check slås på vid lanseringen.** Firebase-projektet skapas när funktionerna är färdiga. Till dess finns ingen
+  produktion, och utvecklingen sker mot emulatorerna (demo-flavorn).
+- **Grenen slås ihop direkt i `main`**, utan pull request, efter att CI har gått igenom. CI körs därför också på grenar
+  som börjar med `claude/`.
+**Konsekvens:** Reglerna och appen måste följas åt, så att en äldre app inte kan gå med med en kod eller lägga in en
+kostnad. Det spelar ingen roll innan lanseringen eftersom det inte finns någon produktion. En familj med flera
+morföräldrar behöver en kod per person.
+

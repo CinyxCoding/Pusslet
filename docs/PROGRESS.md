@@ -234,7 +234,17 @@ beslutet i ADR-058.
 - Sårbara npm- och Guava-versioner.
 
 Status är **CONDITIONAL**: reglerna och funktionerna måste driftsättas, och App Check och konsolinställningarna återstår
-(SECURITY.md, E–F).
+(SECURITY.md, E–F). Det görs när Firebase-projektet skapas inför lanseringen.
+
+Ägarens val efter granskningen (ADR-059), byggda samma dag:
+- Andra hemmet hanterar bara sina egna vuxna och de kostnader det lade in, och varje kostnad visar "inlagd av".
+- En inbjudningskod används en gång.
+- Utloggning frågar om familjen ska ligga kvar på telefonen.
+- Barnläget lämnas med ett långt tryck och telefonens upplåsning.
+- CI körs också på `claude/`-grenar, som slås ihop direkt i `main`.
+
+Premiumvillkoren står i MONETIZATION.md: 39 kr i månaden eller 349 kr om året, 14 dagars provperiod, och tidiga
+användare får premium i ett år.
 
 ## Kända begränsningar / buggar
 - CI hängde en timme 2026-10-14: Idags ViewModel startade en evig `while (true) { delay(1 h) }` i `init`, som fick

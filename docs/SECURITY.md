@@ -309,11 +309,11 @@ Inga filer har tagits bort. Inga funktioner har tagits bort.
 
 | ID | Risk | Allvar | Rekommendation |
 |---|---|---|---|
-| R1 | App Check är inte påslaget. Ett eget konto kan skriva godtyckliga samlingar och stora dokument (kostnadsmissbruk, API4) | Medel | App Check (Play Integrity) först i övervakningsläge, sedan krav på Firestore och funktionerna. Budgetlarm. Överväg en lista över tillåtna samlingsnamn i reglerna |
-| R2 | Andra hemmet är fullvärdiga föräldrar i utrymmet (ADR-056/057): kan ändra eller mjukradera varandras kostnader och saker och ta bort varandras åtkomst | Medel (design) | Visa vem som senast ändrade (`updatedBy` finns), låt bara det skapande hemmet ändra sina kostnader, och kräv att man tar bort sitt eget hems vuxna |
-| R3 | En inbjudan kan användas flera gånger tills den går ut (7 dagar i appen, högst 15 i reglerna) | Låg–medel | Engångsinbjudan: låt den som går med radera inbjudan i samma batch |
-| R4 | Barnläget och hjälparvyn är ingen säkerhetsgräns (ADR-055); hjälpare kan sätta `approved` på delade uppgifter | Låg (design) | Barnroll i reglerna om det behövs |
-| R5 | Utloggning lämnar lokal data och push-registreringen kvar (offline först) | Låg | "Radera från den här telefonen" finns. Avregistrera `users/{uid}/devices/{id}` före utloggning |
+| R1 | App Check är inte påslaget. Ett eget konto kan skriva godtyckliga samlingar och stora dokument (kostnadsmissbruk, API4) | Medel | **Beslut (ADR-059): vid lanseringen.** App Check (Play Integrity) först i övervakningsläge, sedan krav på Firestore och funktionerna. Budgetlarm. Överväg en lista över tillåtna samlingsnamn i reglerna |
+| R2 | ~~Andra hemmet kunde ta bort varandras kostnader och åtkomst~~ | – | **Åtgärdad (ADR-059):** ett hem hanterar bara sina egna vuxna, sin plats i `familyIds` och de kostnader det lade in, och varje kostnad visar "inlagd av". Kvar: båda hemmen kan ändra barnens delade saker (händelser, packning), vilket är meningen |
+| R3 | ~~En inbjudan kunde användas flera gånger~~ | – | **Åtgärdad (ADR-059):** en kod används en gång och markeras i samma batch som anslutningen |
+| R4 | Hjälparvyn är ingen säkerhetsgräns, och hjälpare kan sätta `approved` på delade uppgifter (ADR-055) | Låg (design) | Barnläget kräver nu telefonens upplåsning för att lämnas (ADR-059). Barnroll i reglerna om det behövs |
+| R5 | Push-registreringen ligger kvar efter utloggning | Låg | **Delvis åtgärdad (ADR-059):** utloggningen frågar om familjen ska tas bort från telefonen och förklarar valet. Avregistrera `users/{uid}/devices/{id}` före utloggning |
 | R6 | Tio npm-råd i utvecklingsverktyg (firebase-tools, firebase, rules-unit-testing: grpc-js, uuid, opentelemetry) | Låg | Uppdatera när det finns rättade versioner |
 | R7 | Actions är pinnade på taggar, inte SHA. Ingen Gradle dependency verification | Låg | Pinna på SHA med Dependabot, `--write-verification-metadata sha256` |
 | R8 | Token i kalenderlänken syns i Cloud Functions begärandeloggar | Info | Begränsa åtkomsten till loggarna, och överväg kort lagringstid |
@@ -328,6 +328,9 @@ Inga filer har tagits bort. Inga funktioner har tagits bort.
 ---
 
 ## F. Driftsättning
+
+> Firebase-projektet är inte skapat än (ADR-059): det finns ingen produktion som är utsatt, och stegen nedan gäller när
+> projektet skapas inför lanseringen.
 
 1. Granska grenen och slå ihop den.
 2. `cd functions && npm ci && npm test`, som kör regler och funktioner mot emulatorerna.
@@ -347,11 +350,11 @@ Inga filer har tagits bort. Inga funktioner har tagits bort.
 ## G. Bedömning
 
 **CONDITIONAL.** Inga kända kritiska eller höga brister finns kvar inom det granskade området, och alla rättningar har
-verifierats med tester och byggen. Följande återstår:
+verifierats med tester och byggen. Ägaren har valt i R2 och R3 (ADR-059), och båda är åtgärdade. Följande återstår, och
+det görs när Firebase-projektet skapas inför lanseringen:
 - Driftsättning av reglerna och funktionerna.
 - En ny app-version.
-- Konsolinställningar som inte kunnat kontrolleras (R1, R13).
-- De medvetna designvalen R2 och R3, som ägaren bör ta ställning till.
+- Konsolinställningar som inte kunnat kontrolleras (R1, R13), App Check inräknat.
 
 Det betyder inte att appen är garanterat säker.
 

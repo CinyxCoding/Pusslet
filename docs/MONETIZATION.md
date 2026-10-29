@@ -77,10 +77,14 @@ I den ordning de bör byggas, med insats och värde.
 11. **Länk till barnvakten** (`SitterLink`; liten insats). Ett tillfälligt överlämningskort utan konto. Reglerna för
     `handoverShares` finns redan, men ingen funktion visar kortet än.
 
-### Pris (förslag att pröva)
-- **Ett månadsabonnemang för familjen, 39 kr/månad**, med **en månads gratis provperiod** via Play (en gång per
-  Google-konto). 29 kr är i underkant när andra hemmet och delade kostnader ingår.
-- Jämförelse i oktober 2026 (priserna skiljer sig mellan källorna, kontrollera före beslut):
+### Pris och villkor (ägarens val 2026-10-29)
+- **Månad 39 kr och år 349 kr**, för hela familjen. Året motsvarar ungefär tre gratis månader.
+- **14 dagars gratis provperiod** via Play (en gång per Google-konto).
+- **Den som använder appen före lanseringen** (familjen och testarna) **får premium i ett år** från lanseringsdagen. Det
+  skrivs på familjen av servern (`families/{id}/entitlement` med ett slutdatum) och kräver inget köp.
+- **Att starta delning med andra hemmet är premium**, att gå med är gratis. Stjärnor och veckopeng samt lovplaneringen är
+  premium.
+- Jämförelse i oktober 2026 (priserna skiljer sig mellan källorna):
 
   | App | Pris |
   |---|---|
@@ -88,8 +92,7 @@ I den ordning de bör byggas, med insats och värde.
   | FamilyWall Premium | 4,99–7,99 USD/månad eller 44,99 USD/år |
   | 2Houses (två hem) | ungefär 12,50 USD/månad |
   | OurFamilyWizard | 99–179 USD per förälder och år |
-- Ett årsabonnemang (`pusslet_premium_yearly`, förberett i koden) kan läggas till senare för den som vill betala mindre
-  per månad. Priset sätts per land i Play Console och inkluderar moms.
+- Priset sätts per land i Play Console och inkluderar moms.
 - Inget engångsköp för livstid i början: det betalar inte Firebase-kostnaden, som växer med familjens användning.
 
 Källor:
@@ -119,8 +122,9 @@ bestäms.
   och Play visar inte "Köp i appen".
 
 ## Att slå på betalning (när det är dags)
-1. **Play Console:** betalningsprofil (Google-handlarkonto) och skatteuppgifter. Skapa abonnemanget
-   `pusslet_premium_monthly` (och vid behov `pusslet_premium_yearly`) med basplan och provperiod.
+1. **Play Console:** betalningsprofil (Google-handlarkonto) och skatteuppgifter. Skapa abonnemangen
+   `pusslet_premium_monthly` (39 kr) och `pusslet_premium_yearly` (349 kr), var och en med basplan och 14 dagars
+   provperiod.
 2. **Bibliotek:** lägg till Play Billing Library (senaste versionen, verifiera i ADR) i `composeApp` och skriv
    `PlayBillingRepository : BillingRepository`. Den använder `BillingClient` med väntande köp påslagna, bekräftar köp
    inom tre dagar och anropar `queryPurchasesAsync` vid start och när appen kommer tillbaka.
@@ -128,7 +132,8 @@ bestäms.
    `families/{familyId}/entitlement` och samma sak på de delade utrymmen familjen listar, så att ett utrymme har premium
    när något av hemmen har det. Bara servern får skriva dokumentet, och det behövs ett nytt regeltest; annars kan vem som
    helst ge sig själv premium via Firestore-API:t (docs/SECURITY.md). Prenumerera på Real-time developer notifications
-   (Pub/Sub) för förnyelse, återbetalning och utgång, och uppdatera dokumenten därifrån.
+   (Pub/Sub) för förnyelse, återbetalning och utgång, och uppdatera dokumenten därifrån. Familjer som fanns före
+   lanseringen får premium i ett år från lanseringsdagen: skript eller funktion som skriver ett slutdatum, utan köp.
 4. **Appen:** en `FamilyEntitlements : Entitlements` läser familjens dokument (så att alla i familjen får premium), med
    `BillingEntitlements` som snabb väg på telefonen som köpte. Bind den bara i `prod`; demo och dev behåller `AllUnlocked`.
 5. **Spärrarna:** koppla `SharedCosts`, `BreakPlanning`, `KidRewards`, `NutritionOverview` och `ExtraWidgets` på samma

@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # The work branches too: they go straight into main once CI is green, without a pull request (ADR-059).
+    branches: [main, "claude/**"]
   pull_request:
 
 concurrency:

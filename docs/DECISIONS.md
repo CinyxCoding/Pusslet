@@ -653,3 +653,32 @@ egna (hjälpare läser dem inte) och reglerna kräver ett positivt belopp under 
 **Konsekvens:** Utan delning med andra hemmet visar vyn hur man börjar dela. Slutar ett hem dela får det en egen kopia av
 listan, som de andra barnens saker (ADR-056). Kvitton som bild sparas inte än.
 
+## ADR-058 – Säkerhetsgranskning: vem som är vem, länkar och indata utifrån
+**Kontext:** En genomgång av appen och backend (OWASP MASVS/MASTG, API Security Top 10; rapport i docs/SECURITY.md)
+visade att reglerna litade på mer än de behövde: skaparen av en familj kunde lägga tillbaka sin egen åtkomst efter att ha
+tagits bort, en vanlig inbjudan kunde användas för att bli en annan medlem (hennes namn, pushar och förfrågningar), en
+medlem kunde byta konto och roll på sig själv, och en kalenderlänk fortsatte att fungera för en förälder som tagits bort –
+de andra föräldrarna kan inte se token och alltså inte stänga den. Dessutom kunde text i en händelse lägga till rader i
+kalenderflödet, en förälder i ett delat utrymme radera det för båda hemmen, och appen läste länkar, bilder och flöden
+utifrån utan gränser.
+**Beslut:**
+- **Familj och medlemmar (firestore.rules):** skaparens gren gäller bara i samma batch som familjen skapas. En inbjudan
+  utan namngiven person ger en ny medlem eller samma konto som kommer tillbaka, aldrig någon som redan är någon annans; en
+  namngiven inbjudan bara så länge personen inte har ett annat konto. Den som går med visas med inbjudans roll. Den egna
+  medlemmen ändras utan att konto (`uid`) och roll ändras – det gör bara en förälder – och namnet hålls kort.
+- **Kalenderflödet** svarar så länge den som skapade länken är förälder i familjen (annars 404). Text escapas med alla
+  radbrytningar och styrtecken, och zon, upprepningsregel och UID godtas bara i sin form.
+- **deleteFamily** vägrar delade utrymmen (`shared-space`): ett hem lämnar utrymmet, det raderas aldrig för båda.
+  Push bygger bara sökvägar av id som är ett dokument-id.
+- **Appen:** "Hämtad" på en notis kräver upplåst telefon (Android 12+), eftersom det säger till hela familjen att barnet
+  är hämtat. Notiser har en offentlig version (bara typen) för telefoner som döljer känsligt innehåll på låsskärmen.
+  Delade bilder läses bara från andra appars `content://`, och det en annan apps provider kastar blir "ingen bild" i stället
+  för en krasch. Länkar ur familjens data (önskelistan, recept) öppnas bara som webblänkar och bara i appar som öppnar
+  länkar. Svar från nätet läses strömmande med tak (kalenderflöden 10 MB, lunch-RSS 1 MB, receptsidor 8 MB) och lunch-RSS
+  tolkas linjärt.
+- **CI** kör med en token som bara får läsa koden.
+**Konsekvens:** Reglerna och funktionerna skyddar produktionsdata först när de är driftsatta (`firebase deploy --only
+firestore:rules,functions`). Kvar som medvetna val: föräldrarna i båda hemmen är fullvärdiga föräldrar i ett delat
+utrymme (kan ändra delade kostnader och ta bort varandras åtkomst), en inbjudan kan användas flera gånger tills den gått ut,
+barnläget är ingen säkerhetsgräns (ADR-055) och App Check är inte påslaget än (docs/SECURITY.md, "Kvarvarande risker").
+

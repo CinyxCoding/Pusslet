@@ -218,6 +218,24 @@ Demo-APK på emulatorn (Pixel 9 Pro, API 37, utan fönster) mot Firebase-emulato
   hämtar – Idag, kalendern, påminnelser och förfrågningar känner nu igen andra hemmets vuxna. (3) Texterna pekade på
   "Mer → Familj" men menyn heter "Familjen".
 
+## Säkerhetsgranskning (2026-10-29)
+Hela appen och backend granskades mot OWASP MASVS/MASTG och API Security Top 10. Rapporten finns i docs/SECURITY.md och
+beslutet i ADR-058.
+
+16 fynd är rättade och har tester där det går. De tre allvarligaste:
+- En borttagen skapare kunde ge sig själv åtkomst igen.
+- En inbjudan kunde användas för att bli en befintlig medlem.
+- En kalenderlänk fungerade kvar efter att skaparen tagits bort.
+
+Övriga rättningar:
+- ICS-injektion i kalenderflödet.
+- Ett delat utrymme kunde raderas för båda hemmen.
+- Bilddelning, länköppning, "Hämtad" på en låst telefon och storlek och tolkning av svar från nätet.
+- Sårbara npm- och Guava-versioner.
+
+Status är **CONDITIONAL**: reglerna och funktionerna måste driftsättas, och App Check och konsolinställningarna återstår
+(SECURITY.md, E–F).
+
 ## Kända begränsningar / buggar
 - CI hängde en timme 2026-10-14: Idags ViewModel startade en evig `while (true) { delay(1 h) }` i `init`, som fick
   Robolectric-testerna att aldrig bli klara. Vädret laddas nu inuti state-flödet (stannar med skärmen). Regel: inga eviga

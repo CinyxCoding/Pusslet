@@ -3,7 +3,8 @@
 Familjens vardagspussel: a Kotlin Multiplatform (Android first, iOS compiles) family planner for Swedish families.
 The full product brief is in [docs/BRIEF.md](docs/BRIEF.md) – read it before larger changes. Decisions are logged in
 [docs/DECISIONS.md](docs/DECISIONS.md), status per phase in [docs/PROGRESS.md](docs/PROGRESS.md), owner steps in
-[docs/SETUP.md](docs/SETUP.md), design tokens and tone in [docs/DESIGN.md](docs/DESIGN.md).
+[docs/SETUP.md](docs/SETUP.md), design tokens and tone in [docs/DESIGN.md](docs/DESIGN.md), the security review, its
+remaining risks and deployment steps in [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Hard rules (from the owner)
 - **No AI / LLM services.** No external AI APIs, no AI keys anywhere. All "smart" features are rule based and local (ADR-001).

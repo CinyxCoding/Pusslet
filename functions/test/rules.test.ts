@@ -127,6 +127,15 @@ describe("creating a family", () => {
     await assertFails(setDoc(doc(db("anna"), "families/x"), { name: "X", createdBy: "sara", ...stamp("anna") }));
     await assertFails(setDoc(doc(db("johan"), `families/${FID}/access/johan`), { memberId: "m-j", role: "parent" }));
   });
+
+  it("does not let a creator who was removed give themselves their access back", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), `families/${FID}/access/johan`), { memberId: "m-johan", role: "parent" });
+    });
+    await assertSucceeds(deleteDoc(doc(db("johan"), `families/${FID}/access/sara`)));
+    await assertFails(setDoc(doc(db("sara"), `families/${FID}/access/sara`), { memberId: "m-sara", role: "parent" }));
+    await assertFails(getDocs(collection(db("sara"), `families/${FID}/events`)));
+  });
 });
 
 describe("invites and joining", () => {
@@ -186,6 +195,39 @@ describe("invites and joining", () => {
     batch.set(doc(f, `families/${FID}/access/eve`), { memberId: "m-sara", role: "parent", inviteCode: "CLAIMSARAX" });
     batch.set(doc(f, `families/${FID}/members/m-sara`), { uid: "eve", ...stamp("eve") }, { merge: true });
     await assertFails(batch.commit());
+  });
+
+  it("does not let an invite for anyone take over someone already in the family", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), `families/${FID}/members/m-johan`), { displayName: "Johan", updatedBy: "sara" });
+    });
+    const f = db("eve");
+    // With Bengt's code Eve may join as herself, not as Sara (her pushes, her name on requests) ...
+    await assertFails(setDoc(doc(f, `families/${FID}/access/eve`), { memberId: "m-sara", role: "caregiver", inviteCode: "CAREGIVER2" }));
+    // ... nor as Johan, whom Sara added before he had the app: that takes the invite made for him.
+    await assertFails(setDoc(doc(f, `families/${FID}/access/eve`), { memberId: "m-johan", role: "parent", inviteCode: "ABCDEFGHJK" }));
+    await assertSucceeds(setDoc(doc(f, `families/${FID}/access/eve`), { memberId: "m-eve", role: "caregiver", inviteCode: "CAREGIVER2" }));
+  });
+
+  it("shows a joiner with the role the invite gives, not one of their own choosing", async () => {
+    const f = db("eve");
+    const join = (role: string) => {
+      const batch = writeBatch(f);
+      batch.set(doc(f, `families/${FID}/access/eve`), { memberId: "m-eve", role: "caregiver", inviteCode: "CAREGIVER2" });
+      batch.set(doc(f, `families/${FID}/members/m-eve`), { displayName: "Eve", uid: "eve", role, ...stamp("eve") });
+      return batch.commit();
+    };
+    await assertFails(join("parent"));
+    await assertSucceeds(join("caregiver"));
+  });
+
+  it("lets someone who left join again as the same person", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), `families/${FID}/members/m-johan`), { displayName: "Johan", uid: "johan", updatedBy: "johan" });
+    });
+    await assertSucceeds(
+      setDoc(doc(db("johan"), `families/${FID}/access/johan`), { memberId: "m-johan", role: "parent", inviteCode: "ABCDEFGHJK" }),
+    );
   });
 
   it("rejects joining with a different role than invited", async () => {
@@ -272,6 +314,18 @@ describe("writing family data", () => {
     await assertFails(
       setDoc(doc(db("sara"), `families/${FID}/shoppingLists/l1/items/i2`), { name: "Mjölk", listId: "other", ...stamp("sara") }),
     );
+  });
+
+  it("lets members edit their own member, but not hand it to another account or give it another role", async () => {
+    await env.withSecurityRulesDisabled(async (ctx: RulesTestContext) => {
+      await setDoc(doc(ctx.firestore(), `families/${FID}/members/m-bengt`), { displayName: "Bengt", uid: "bengt", role: "caregiver" });
+    });
+    const bengt = doc(db("bengt"), `families/${FID}/members/m-bengt`);
+    await assertSucceeds(updateDoc(bengt, { displayName: "Morfar Bengt", ...stamp("bengt") }));
+    await assertFails(updateDoc(bengt, { uid: "sara", ...stamp("bengt") }));
+    await assertFails(updateDoc(bengt, { role: "parent", ...stamp("bengt") }));
+    await assertFails(updateDoc(bengt, { displayName: "x".repeat(201), ...stamp("bengt") }));
+    await assertSucceeds(updateDoc(doc(db("sara"), `families/${FID}/members/m-bengt`), { role: "parent", ...stamp("sara") }));
   });
 
   it("does not let members tamper with the membership index", async () => {

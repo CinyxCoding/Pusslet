@@ -182,7 +182,16 @@ service cloud.firestore {
       function validInvite(code, role, memberId) {
         let inv = get(/databases/$(database)/documents/invites/$(code)).data;
         return code is string && inv.familyId == fid && inv.role == role && inv.expiresAt > request.time
-          && (inv.get('memberId', null) == null || inv.get('memberId', null) == memberId);
+          && claimable(inv.get('memberId', null), memberId);
+      }
+
+      // Who a joiner becomes: the member the invite names while nobody else has claimed it, or someone new (or the same
+      // account coming back). Never a member who is already someone else's: that would be their name, pushes and requests.
+      function claimable(invited, memberId) {
+        let member = /databases/$(database)/documents/families/$(fid)/members/$(memberId);
+        let owner = exists(member) ? get(member).data.get('uid', null) : null;
+        return (invited == memberId && owner in [null, me()])
+          || (invited == null && (!exists(member) || owner == me()));
       }
 
       // A parent of one of a shared space's homes joins it as the same person they are at home.
@@ -196,7 +205,8 @@ service cloud.firestore {
       match /access/{userId} {
         allow read: if isMember(fid);
         allow create: if signedIn() && userId == me() && data().memberId is string && (
-          (getAfter(famPath(fid)).data.createdBy == me() && data().role == 'parent')
+          // The creator only while the family is created in the same batch: one who was removed later stays out.
+          (!exists(famPath(fid)) && getAfter(famPath(fid)).data.createdBy == me() && data().role == 'parent')
           || ('inviteCode' in data() && validInvite(data().inviteCode, data().role, data().memberId))
           || ('viaFamily' in data() && data().role == 'parent' && joinsViaHome(data().viaFamily, data().memberId))
         );
@@ -214,19 +224,26 @@ service cloud.firestore {
 
       // Members: parents manage everyone; a joining adult creates their own member doc; anyone may edit their own.
       match /members/{memberId} {
+        // My access doc as it is after this write: joining writes it in the same batch, so only getAfter() sees it.
+        function myAccessAfter() { return getAfter(/databases/$(database)/documents/families/$(fid)/access/$(me())).data; }
+        // The role a member shows is the one their access gives them (the app always writes it).
+        function roleOfMyAccess() { return data().get('role', 'parent') == myAccessAfter().role; }
+
         allow read: if isMember(fid);
         allow create: if signedIn() && stamped() && validNamed('displayName') && (
           isParent(fid)
-          || (getAfter(/databases/$(database)/documents/families/$(fid)/access/$(me())).data.memberId == memberId
-              && data().get('uid', '') == me())
+          || (myAccessAfter().memberId == memberId && data().get('uid', '') == me() && roleOfMyAccess())
         );
-        // The last branch is joining through an invite that claims an existing member ("Johan" added by Sara):
-        // the access doc is written in the same batch, so membership is only visible through getAfter().
-        allow update: if stamped() && (
-          (isMember(fid) && (isParent(fid) || myMemberId(fid) == memberId))
+        // The last branch is joining through an invite that claims an existing member ("Johan" added by Sara), or coming
+        // back as the same person. Editing yourself keeps the account and the role: only a parent changes those.
+        allow update: if stamped() && validNamed('displayName') && reasonableSize() && (
+          (isMember(fid) && (isParent(fid) || (myMemberId(fid) == memberId
+            && data().get('uid', null) == resource.data.get('uid', null)
+            && data().get('role', null) == resource.data.get('role', null))))
           || (data().get('uid', '') == me()
               && resource.data.get('uid', null) in [null, me()]
-              && getAfter(/databases/$(database)/documents/families/$(fid)/access/$(me())).data.memberId == memberId)
+              && myAccessAfter().memberId == memberId
+              && roleOfMyAccess())
         );
         allow delete: if false;
       }

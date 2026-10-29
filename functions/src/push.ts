@@ -183,10 +183,14 @@ export function itemAdded(familyId: string, itemId: string, item: ItemDoc, prese
 
 const GONE = new Set(["messaging/registration-token-not-registered", "messaging/invalid-registration-token"]);
 
+/** A member id or uid that is one document id: they come from documents members wrote, so never a path of their own. */
+const DOC_ID = /^(?!\.\.?$)[^/\s]{1,128}$/;
+
 /** Sends [push] to every device of its members (in the emulator: writes it to `_pushOutbox`). */
 export async function deliver(db: Firestore, familyId: string, push: Push): Promise<void> {
-  const members = await Promise.all(push.memberIds.map((id) => db.doc(`families/${familyId}/members/${id}`).get()));
-  const uids = members.map((m) => m.get("uid")).filter((uid): uid is string => typeof uid === "string" && uid.length > 0);
+  const ids = push.memberIds.filter((id) => DOC_ID.test(id));
+  const members = await Promise.all(ids.map((id) => db.doc(`families/${familyId}/members/${id}`).get()));
+  const uids = members.map((m) => m.get("uid")).filter((uid): uid is string => typeof uid === "string" && DOC_ID.test(uid));
   const devices = (await Promise.all(uids.map((uid) => db.collection(`users/${uid}/devices`).get()))).flatMap((s) => s.docs);
   const targets = devices
     .map((d) => ({ ref: d.ref, token: d.get("fcmToken") }))

@@ -2,7 +2,7 @@
  * GDPR deletion (docs/BRIEF.md §4.12 and §6; docs/DECISIONS.md "Radering av familj och konto"). Two callables, both
  * idempotent, called from the app's Integritet screen:
  *
- * - `deleteFamily({familyId})`: a parent deletes the family for everyone in it.
+ * - `deleteFamily({familyId})`: a parent deletes the family for everyone in it (never a space shared with the other home).
  * - `deleteAccount({familyId?})`: anyone deletes their own account. `familyId` is the family on the calling phone, a hint
  *   in case `users/{uid}.familyIds` missed it; membership is always checked against the access index.
  *
@@ -52,6 +52,7 @@ export const Reasons = {
   notAMember: "not-a-member",
   parentsOnly: "parents-only",
   lastParent: "last-parent",
+  sharedSpace: "shared-space",
 } as const;
 
 interface PurgeCounts {
@@ -72,7 +73,11 @@ export const deleteFamily = onCall(OPTIONS, async (request) => {
   const familyId = familyIdFrom(request.data, true);
   if (familyId === undefined) throw new HttpsError("invalid-argument", Reasons.invalidFamilyId);
   const db = getFirestore();
-  const [access, tombstone] = await db.getAll(db.doc(`families/${familyId}/access/${uid}`), tombstoneRef(db, familyId));
+  const [access, tombstone, family] = await db.getAll(
+    db.doc(`families/${familyId}/access/${uid}`),
+    tombstoneRef(db, familyId),
+    db.doc(`families/${familyId}`),
+  );
   if (tombstone.exists) {
     // A parent already asked for this. Finish whatever an interrupted run left behind and say it is done.
     const counts = await purgeFamily(db, familyId);
@@ -81,6 +86,9 @@ export const deleteFamily = onCall(OPTIONS, async (request) => {
   }
   if (!access.exists) throw new HttpsError("permission-denied", Reasons.notAMember);
   if (access.get("role") !== "parent") throw new HttpsError("permission-denied", Reasons.parentsOnly);
+  // A space shared with the other home (ADR-056) holds both homes' things about the children: one home leaves it (the app's
+  // "Sluta dela", or deleting the home), it is never deleted for both. The app never asks for this; refuse it anyway.
+  if (family.get("shared") === true) throw new HttpsError("failed-precondition", Reasons.sharedSpace);
   const counts = await purgeFamily(db, familyId);
   logger.info("deleteFamily", { familyId, uid, ...counts });
   return { status: "deleted" };

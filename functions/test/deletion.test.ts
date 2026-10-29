@@ -244,6 +244,24 @@ describe("deleting a home that shares a space with the other home (ADR-056)", ()
     expect(await exists(`families/${space}`)).toBe(false);
     expect(await exists(`families/${space}/events/e1`)).toBe(false);
   });
+
+  it("never lets one home delete the space for both: a home leaves it instead", async () => {
+    const w = await seedLind();
+    const space = `space3-${w.fid}`;
+    const stamp = { updatedAt: Timestamp.now(), updatedBy: w.sara };
+    const batch = db.batch();
+    batch.set(db.doc(`families/${space}`), { name: "Ella", shared: true, familyIds: [w.fid, "berg-home"], createdBy: w.sara, ...stamp });
+    batch.set(db.doc(`families/${space}/access/${w.sara}`), { memberId: "m-sara", role: "parent" });
+    batch.set(db.doc(`families/${space}/expenses/x1`), { title: "Vinterjacka", amountOre: 89900, paidByHome: "berg-home", ...stamp });
+    await batch.commit();
+
+    expect((await call("deleteFamily", { familyId: space }, w.saraToken)).error).toMatchObject({
+      status: "FAILED_PRECONDITION",
+      message: "shared-space",
+    });
+    expect(await exists(`families/${space}/expenses/x1`)).toBe(true);
+    expect(await exists(`deletedFamilies/${space}`)).toBe(false);
+  });
 });
 
 describe("deleteAccount", () => {

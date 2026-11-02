@@ -41,6 +41,7 @@ import se.pusslet.data.remote.InviteInfo
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
+import se.pusslet.data.usecase.AppGuide
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.PussletTopBar
@@ -112,6 +113,8 @@ class JoinViewModel(
         viewModelScope.launch {
             try {
                 family.join(invite, s.myName, s.color)
+                // Joining from the welcome screen is this phone's first start: the guide opens next (ADR-062).
+                if (!prefs.get(Prefs.OnboardingDone)) AppGuide(prefs).firstStartDone()
                 prefs.set(Prefs.OnboardingDone, true)
                 onJoined()
             } catch (e: CancellationException) {

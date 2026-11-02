@@ -102,6 +102,12 @@ sealed interface Route {
     /** "Så har vi delat": how tasks, chores and hand-offs were shared over the last four weeks (parents). */
     @Serializable data object TaskDistribution : Route
 
+    /** "Visa guiden": the guide through the app, opened from Hjälp (ADR-062). */
+    @Serializable data object Guide : Route
+
+    /** "Vanliga frågor" (ADR-062). */
+    @Serializable data object Faq : Route
+
     /** Butiksläge for the active shopping list. */
     @Serializable data object StoreMode : Route
 

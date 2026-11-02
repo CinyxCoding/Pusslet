@@ -17,6 +17,7 @@ import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
+import se.pusslet.data.usecase.AppGuide
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -64,6 +65,9 @@ class ShellViewModelTest {
         return ShellViewModel(flowOf(true), prefs, sessions) to prefs
     }
 
+    private fun parentShell(prefs: PreferencesRepository) =
+        ShellViewModel(flowOf(true), prefs, FixedSessionProvider(Session(familyId = "f", memberId = "m-sara", role = Role.Parent)))
+
     @Test
     fun aCaregiverGetsTheHelperView() = runTest {
         val (vm, _) = shell(Role.Caregiver)
@@ -95,5 +99,38 @@ class ShellViewModelTest {
 
         vm.setHelperFullView(false)
         assertEquals(ShellMode.Helper, vm.state.value.mode)
+    }
+
+    /** "Stäng" closes the guide until the next start; "Klar" and "Visa inte igen" close it for good (ADR-062). */
+    @Test
+    fun theGuideOpensFirstUntilItIsDone() = runTest {
+        val (vm, prefs) = shell(Role.Parent)
+        assertFalse(vm.state.value.guide, "A phone that used the app before the guide never gets it by itself")
+
+        AppGuide(prefs).firstStartDone()
+        assertTrue(vm.state.value.guide)
+
+        vm.closeGuideForNow()
+        assertFalse(vm.state.value.guide)
+
+        // The next start of the app is a new shell on the same storage.
+        val restarted = parentShell(prefs)
+        assertTrue(restarted.state.value.guide)
+
+        AppGuide(prefs).done()
+        assertFalse(restarted.state.value.guide)
+    }
+
+    @Test
+    fun theGuideWaitsForOnboarding() = runTest {
+        val prefs = PreferencesRepository(MemoryPreferences())
+        AppGuide(prefs).firstStartDone()
+        val vm = parentShell(prefs)
+
+        assertFalse(vm.state.value.onboarded)
+        assertFalse(vm.state.value.guide)
+
+        prefs.set(Prefs.OnboardingDone, true)
+        assertTrue(vm.state.value.guide)
     }
 }

@@ -23,6 +23,8 @@ import se.pusslet.feature.calendar.details.EventDetailsRoute
 import se.pusslet.feature.family.join.JoinRoute
 import se.pusslet.feature.settings.AboutDataRoute
 import se.pusslet.feature.settings.AccountRoute
+import se.pusslet.feature.settings.FaqRoute
+import se.pusslet.feature.settings.GuideRoute
 import se.pusslet.feature.settings.PrivacyRoute
 import se.pusslet.feature.shopping.ShoppingRoute
 import se.pusslet.feature.shopping.StoreModeRoute
@@ -122,6 +124,10 @@ private fun HelperNavDisplay(navigator: HelperNavigator, addButton: AddButtonSta
             entry<Route.AboutData> { AboutDataRoute(onBack = navigator::goBack) }
             entry<Route.Privacy> { PrivacyRoute(onBack = navigator::goBack, onForgotten = navigator::reset) }
             entry<Route.Join> { r -> JoinRoute(initialCode = r.code, onBack = navigator::goBack, onJoined = navigator::reset) }
+            entry<Route.Guide> { GuideRoute(onClose = navigator::goBack) }
+            entry<Route.Faq> {
+                FaqRoute(onBack = navigator::goBack, onOpenGuide = { navigator.navigate(Route.Guide) }, rowHeight = HelperDimens.row)
+            }
         },
     )
 }
@@ -162,4 +168,6 @@ private fun HelperSettingsDestination.route(): Route = when (this) {
     HelperSettingsDestination.Account -> Route.Account
     HelperSettingsDestination.Privacy -> Route.Privacy
     HelperSettingsDestination.AboutData -> Route.AboutData
+    HelperSettingsDestination.Guide -> Route.Guide
+    HelperSettingsDestination.Faq -> Route.Faq
 }

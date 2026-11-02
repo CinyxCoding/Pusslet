@@ -744,3 +744,37 @@ Appen hämtar inget från FASS eller 1177 och räknar aldrig ut doser.
 medicinens namn till FASS, men inget om familjen. Flyttar 1177 sidan måste länken ändras. Ett avtal om Fass API kan
 senare ge förslag på rätt läkemedel och en direktlänk till rätt bipacksedel, men aldrig doser.
 
+## ADR-062 – Guide genom appen och vanliga frågor
+**Kontext:** Ägaren vill ha en guide för förstagångsanvändare som går igenom alla funktioner (2026-11-02):
+- Man ska kunna gå fram och tillbaka och välja att stänga och aldrig se den igen.
+- Guiden ska gå att visa igen från Inställningar.
+- Vanliga frågor ska beskriva typiska problem i appen.
+
+Första användningen hade redan klart-skärmen, "Kom igång" på Idag (ADR-034) och tips som visas en gång (UX-plan 4.7).
+De sitter där saken finns, men ingen av dem går igenom hela appen.
+
+**Beslut:**
+- **När guiden visas:** efter första starten på telefonen, det vill säga efter "Visa min dag" för en ny familj,
+  efter "Utforska med en exempelfamilj", när man går med via en inbjudan och vid demobyggets första start.
+  - Den visas i stället för skalet, inte ovanpå det, så att TalkBack bara når guiden.
+  - Telefoner som använde appen innan guiden fanns får den inte av sig själv (`Prefs.Guide` är `NotDue`). De hittar
+    den under Inställningar › Hjälp, och i hjälparvyn under Inställningar och hjälp.
+  - Statusen sparas bara på telefonen och synkas inte (`AppGuide`).
+- **Innehåll:** föräldrar får 14 sidor, en per del av appen, med raden "Finns under Mer › Familjen" i appens egna ord.
+  Andra vuxna får 6 sidor om hjälparvyn, med dess större text och 64 dp-knappar (ADR-029).
+- **Bläddra:** Nästa, Tillbaka, svep eller systemets Bakåt. Bakåt på första sidan stänger guiden.
+- **Stänga:**
+  - "Stäng" (×) stänger tills appen startar om.
+  - "Visa inte igen", och "Klar" på sista sidan, stänger för gott.
+  - En länk, delning eller notis som öppnar appen stänger guiden för stunden, så att man ser det den pekar på.
+- **Vanliga frågor** ligger bredvid guiden och har 20 frågor i fem grupper.
+  - Svaren använder knapparnas och skärmarnas namn.
+  - Frågor om det som bara föräldrar kan göra visas inte för andra vuxna, och frågan om exempelfamiljen visas bara för
+    den.
+
+**Konsekvens:** Guiden och svaren beskriver appen som den är, så de måste ändras när en funktion ändras.
+- Vanliga frågor säger rakt ut att familjen inte följer med till en ny telefon av sig själv än. Man går med igen via
+  en inbjudan (`familyIdsFor` finns men används inte).
+- Premium nämns inte förrän betalningen finns.
+- Svaret om widgets gäller Android, eftersom iOS inte har några widgets än.
+

@@ -325,6 +325,8 @@ class DataPrivacy(
             Prefs.HelperFullView,
             Prefs.SeenHints,
             Prefs.SetupHidden,
+            // "Visa inte igen" is the user's own choice, like the hints they dismissed.
+            Prefs.Guide,
         ).map { it.name }
 
         /** Preferences that point into the family (its lists, stores, members, items, typed text): cleared when it is forgotten. */

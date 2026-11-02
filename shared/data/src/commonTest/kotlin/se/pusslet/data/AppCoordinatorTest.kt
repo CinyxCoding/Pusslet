@@ -10,6 +10,7 @@ import se.pusslet.core.util.SequentialIdGenerator
 import se.pusslet.data.remote.LocalOnlyAuthRepository
 import se.pusslet.data.remote.LocalOnlyFamilyRemote
 import se.pusslet.data.repository.FamilyRepository
+import se.pusslet.data.repository.GuideStatus
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.seed.DemoSeed
@@ -18,6 +19,7 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.InMemoryRemoteStore
 import se.pusslet.data.sync.InMemorySyncLocalStore
 import se.pusslet.data.sync.SyncEngine
+import se.pusslet.data.usecase.AppGuide
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -66,6 +68,35 @@ class AppCoordinatorTest {
     fun developerToolsOnlyInBuildsWithDemoData() {
         assertTrue(demo.developerTools)
         assertFalse(prod.developerTools)
+    }
+
+    /** The demo build skips the welcome screen, so its first start is over once the example family is seeded (ADR-062). */
+    @Test
+    fun theDemoBuildsFirstStartOpensTheGuide() = runTest {
+        val app = AppProcess(backgroundScope, demo)
+        app.coordinator.start()
+        runCurrent()
+        assertTrue(app.coordinator.ready.value)
+        assertTrue(AppGuide(app.prefs).due.first())
+    }
+
+    @Test
+    fun aGuideAlreadyDoneStaysDoneWhenTheExampleFamilyIsSeeded() = runTest {
+        val app = AppProcess(backgroundScope, demo)
+        app.prefs.set(Prefs.Guide, GuideStatus.Done)
+        app.coordinator.start()
+        runCurrent()
+        assertTrue(app.sessions.session.value.hasFamily)
+        assertFalse(AppGuide(app.prefs).due.first())
+    }
+
+    /** Without the example family the welcome screen comes first; onboarding makes the guide due, not the start. */
+    @Test
+    fun aProductionStartLeavesTheGuideToOnboarding() = runTest {
+        val app = AppProcess(backgroundScope, prod)
+        app.coordinator.start()
+        runCurrent()
+        assertFalse(AppGuide(app.prefs).due.first())
     }
 
     @Test

@@ -72,6 +72,8 @@ import se.pusslet.feature.meals.RecipeEditorRoute
 import se.pusslet.feature.meals.RecipeImportRoute
 import se.pusslet.feature.settings.AboutDataRoute
 import se.pusslet.feature.settings.AccountRoute
+import se.pusslet.feature.settings.FaqRoute
+import se.pusslet.feature.settings.GuideRoute
 import se.pusslet.feature.settings.MoreDestination
 import se.pusslet.feature.settings.MoreScreen
 import se.pusslet.feature.settings.PrivacyRoute
@@ -115,6 +117,7 @@ import se.pusslet.ui.resources.nav_shopping
 import se.pusslet.ui.resources.nav_today
 import se.pusslet.ui.resources.quickadd_action_show
 import se.pusslet.ui.resources.weekdays_short
+import se.pusslet.ui.theme.HelperTheme
 import se.pusslet.ui.theme.PussletTheme
 
 /**
@@ -128,11 +131,15 @@ fun PussletApp(
     shell: ShellViewModel = koinViewModel(),
 ) {
     val state by shell.state.collectAsStateWithLifecycle()
+    // A link, share or notification opened the app: show what it points at, and the guide again at the next start.
+    LaunchedEffect(incoming, state.guide) { if (incoming != null && state.guide) shell.closeGuideForNow() }
     PussletTheme(themeMode = state.theme, dynamicColor = state.dynamicColor) {
         Surface(Modifier.fillMaxSize()) {
             when {
                 !state.ready -> LoadingBox()
                 !state.onboarded -> OnboardingFlow(incoming, onIncomingHandled)
+                // After the first start the guide comes before the shell, with "Visa inte igen" (ADR-062).
+                state.guide -> FirstStartGuide(helperView = state.mode == ShellMode.Helper, onClose = shell::closeGuideForNow)
                 // Caregivers get the simple helper view unless they chose the full app (UX plan Steg 3, ADR-029).
                 state.mode == ShellMode.Helper ->
                     HelperShell(incoming, onIncomingHandled, onShowFullApp = { shell.setHelperFullView(true) })
@@ -162,6 +169,16 @@ private fun OnboardingFlow(incoming: IncomingIntent?, onIncomingHandled: () -> U
         JoinRoute(initialCode = joinCode, onBack = { joining = false }, onJoined = {})
     } else {
         OnboardingRoute(onJoin = { joining = true }, onFinished = {})
+    }
+}
+
+/** The guide that opens by itself; in the helper view's larger type when that is the view behind it (ADR-029). */
+@Composable
+private fun FirstStartGuide(helperView: Boolean, onClose: () -> Unit) {
+    if (helperView) {
+        HelperTheme { GuideRoute(onClose = onClose, offerDontShowAgain = true) }
+    } else {
+        GuideRoute(onClose = onClose, offerDontShowAgain = true)
     }
 }
 
@@ -473,6 +490,8 @@ private fun AppNavDisplay(
                     onBack = navigator::goBack,
                     onCustomizeToday = { navigator.navigate(Route.TodayLayout) },
                     onSubscriptions = { navigator.navigate(Route.Subscriptions) },
+                    onGuide = { navigator.navigate(Route.Guide) },
+                    onFaq = { navigator.navigate(Route.Faq) },
                 )
             }
             entry<Route.Subscriptions> { SubscriptionsRoute(onBack = navigator::goBack) }
@@ -480,6 +499,8 @@ private fun AppNavDisplay(
             entry<Route.Account> { AccountRoute(onBack = navigator::goBack) }
             entry<Route.AboutData> { AboutDataRoute(onBack = navigator::goBack) }
             entry<Route.Privacy> { PrivacyRoute(onBack = navigator::goBack, onForgotten = navigator::reset) }
+            entry<Route.Guide> { GuideRoute(onClose = navigator::goBack) }
+            entry<Route.Faq> { FaqRoute(onBack = navigator::goBack, onOpenGuide = { navigator.navigate(Route.Guide) }) }
         },
     )
 }

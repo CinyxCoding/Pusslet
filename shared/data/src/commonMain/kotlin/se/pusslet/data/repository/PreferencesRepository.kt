@@ -28,6 +28,19 @@ enum class CalendarView { Day, Week, Month, Agenda }
 @Serializable
 enum class AppTheme { System, Light, Dark }
 
+/** Where this phone is with the guide through the app (ADR-062); see `AppGuide`. */
+@Serializable
+enum class GuideStatus {
+    /** Never shown by itself: the app was used before the guide existed, or the first start is not over yet. */
+    NotDue,
+
+    /** Shows at every start until it is finished or closed with "Visa inte igen". */
+    Due,
+
+    /** Finished or "Visa inte igen": only opened from Inställningar from now on. */
+    Done,
+}
+
 /** Lives in core now, so the notification rules (`QuietHours`) can use it; stored JSON is unchanged. */
 typealias TimeWindow = se.pusslet.core.time.TimeWindow
 
@@ -91,6 +104,9 @@ object Prefs {
 
     /** Families whose "Kom igång" on Idag was hidden with "Dölj" on this phone (UX plan 4.4). Device-local, never synced. */
     val SetupHidden = PrefKey("today.setupHidden", SetSerializer(String.serializer()), emptySet())
+
+    /** The guide through the app (ADR-062): whether it still shows by itself on this phone. Device-local, never synced. */
+    val Guide = PrefKey("guide.status", GuideStatus.serializer(), GuideStatus.NotDue)
 }
 
 class PreferencesRepository(private val dao: PreferenceDao, private val json: Json = Json { ignoreUnknownKeys = true }) {

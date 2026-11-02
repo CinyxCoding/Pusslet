@@ -260,6 +260,9 @@ fun SettingsRoute(
     onCustomizeToday: () -> Unit = {},
     /** "Prenumerationer" (ICS feeds); the row is shown to parents only, and only when the shell passes this. */
     onSubscriptions: (() -> Unit)? = null,
+    /** "Visa guiden" and "Vanliga frågor" under Hjälp (ADR-062). */
+    onGuide: () -> Unit = {},
+    onFaq: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -406,6 +409,10 @@ fun SettingsRoute(
                     }
                 }
                 if (state.canEditFamily && viewModel.feedAvailable) CalendarFeedRows(viewModel)
+            }
+            Section(stringResource(Res.string.help_title)) {
+                NavRow(stringResource(Res.string.help_guide), onClick = onGuide)
+                NavRow(stringResource(Res.string.help_faq), onClick = onFaq)
             }
             // The crash-report switch comes back with crash reporting itself (Crashlytics is not in the build yet, PRIVACY.md).
             if (state.developerTools) {

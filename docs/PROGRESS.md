@@ -256,7 +256,21 @@ webbsida i Firebase Hosting (`https://<linkHost>/privacy/`, länkad från Integr
 nyare form eller var barnläget. Grenens flödestest och butiksbilder bygger på dess egna skärmar och skulle behöva
 skrivas om; butiksbilderna görs bäst när utseendet är klart inför det stängda testet.
 
+## Guide och vanliga frågor (2026-11-02)
+- [x] Guiden genom appen (ADR-062) visas efter första starten:
+  - Föräldrar får 14 sidor och andra vuxna 6 sidor om hjälparvyn.
+  - Man bläddrar med Nästa, Tillbaka, svep eller Bakåt.
+  - "Stäng" gäller tills nästa start. "Visa inte igen" och "Klar" stänger för gott.
+  - Telefoner som redan använde appen får den bara från Inställningar › Hjälp › Visa guiden.
+- [x] Vanliga frågor under Inställningar › Hjälp, och i hjälparvyn under Inställningar och hjälp: 20 frågor i fem
+  grupper, filtrerade efter roll.
+- Testat: när guiden visas (data, introduktion, skal, demobygget), vilka sidor och frågor varje roll får, och i appen
+  att Nästa, Tillbaka, "Stäng", "Visa inte igen" och "Klar" fungerar. Skärmbilderna `guide_first_page`, `guide_helper`
+  och `faq` har tillgänglighetskontroll.
+
 ## Kända begränsningar / buggar
+- En ny telefon hittar inte familjen efter inloggning: `FamilyRemote.familyIdsFor` finns men används inte, så man går
+  med igen via en inbjudan. Är man ensam i familjen med konto går den inte att flytta. Vanliga frågor säger det.
 - CI hängde en timme 2026-10-14: Idags ViewModel startade en evig `while (true) { delay(1 h) }` i `init`, som fick
   Robolectric-testerna att aldrig bli klara. Vädret laddas nu inuti state-flödet (stannar med skärmen). Regel: inga eviga
   loopar i ViewModel-init; periodiskt arbete hör hemma i ett flöde under `stateIn(WhileSubscribed)`.

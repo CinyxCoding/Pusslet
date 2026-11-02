@@ -12,6 +12,7 @@ import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.Role
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.session.Session
+import se.pusslet.data.usecase.AppGuide
 import se.pusslet.feature.family.TestWorld
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -293,6 +294,30 @@ class OnboardingViewModelTest {
 
         assertTrue(finished)
         assertTrue(world.prefs.get(Prefs.OnboardingDone))
+    }
+
+    /** The guide through the app comes after "Visa min dag", not while the done screen is still showing (ADR-062). */
+    @Test
+    fun theFirstStartEndsWithTheGuide() = runTest {
+        val world = TestWorld()
+        val vm = viewModel(world)
+        vm.runThrough("Ella")
+        assertFalse(AppGuide(world.prefs).due.first())
+
+        vm.showMyDay {}
+
+        assertTrue(AppGuide(world.prefs).due.first())
+    }
+
+    @Test
+    fun theExampleFamilyOpensTheGuideToo() = runTest {
+        val world = TestWorld()
+        var finished = false
+
+        viewModel(world).startDemo { finished = true }
+
+        assertTrue(finished)
+        assertTrue(AppGuide(world.prefs).due.first())
     }
 
     @Test

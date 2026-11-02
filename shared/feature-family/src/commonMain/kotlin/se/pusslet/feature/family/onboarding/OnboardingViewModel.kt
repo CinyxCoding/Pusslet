@@ -24,6 +24,7 @@ import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.seed.DemoSeed
 import se.pusslet.data.session.SessionProvider
+import se.pusslet.data.usecase.AppGuide
 import se.pusslet.feature.family.nextChildColor
 import kotlin.math.abs
 import kotlin.time.Clock
@@ -207,21 +208,27 @@ class OnboardingViewModel(
         }
     }
 
-    /** "Visa min dag": onboarding is done and the shell takes over. */
+    /**
+     * "Visa min dag": onboarding is done and the shell takes over, with the guide through the app first (ADR-062). The guide
+     * is marked before onboarding, so the shell never shows Idag for a moment before it.
+     */
     fun showMyDay(onDone: () -> Unit) {
         if (_state.value.saving) return
         _state.update { it.copy(saving = true) }
         viewModelScope.launch {
+            AppGuide(prefs).firstStartDone()
             prefs.set(Prefs.OnboardingDone, true)
             _state.update { it.copy(saving = false) }
             onDone()
         }
     }
 
+    /** "Utforska med en exempelfamilj": the example family is a first start too, so the guide opens over it. */
     fun startDemo(onDone: () -> Unit) {
         _state.update { it.copy(saving = true) }
         viewModelScope.launch {
             seed.seed(clock.todayIn(zone))
+            AppGuide(prefs).firstStartDone()
             prefs.set(Prefs.OnboardingDone, true)
             onDone()
         }

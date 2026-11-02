@@ -40,6 +40,7 @@ import se.pusslet.data.seed.DemoSeed
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.OfflineRemoteStore
 import se.pusslet.data.sync.RemoteStore
+import se.pusslet.data.usecase.AppGuide
 import se.pusslet.data.usecase.FirstTimeHints
 import se.pusslet.shell.di.appModules
 import java.io.File
@@ -61,8 +62,12 @@ object TestEnvironment {
         override fun now(): Instant = now
     }
 
-    /** [asBengt]: the phone belongs to morfar Bengt (a caregiver), so the simple helper view opens (ADR-029). */
-    fun start(context: Context, seed: Boolean = true, asBengt: Boolean = false) {
+    /**
+     * [asBengt]: the phone belongs to morfar Bengt (a caregiver), so the simple helper view opens (ADR-029). [guide]: the
+     * guide through the app opens first, as after a real first start; otherwise it is done, so screenshots show the app
+     * (ADR-062).
+     */
+    fun start(context: Context, seed: Boolean = true, asBengt: Boolean = false, guide: Boolean = false) {
         if (GlobalContext.getOrNull() != null) stop()
         val config = BackendConfig(BackendMode.LocalOnly, seedDemoData = seed, versionName = "test")
         val platform = module {
@@ -89,7 +94,10 @@ object TestEnvironment {
             allowOverride(true)
             modules(listOf(platform, dataModule, overrides) + appModules)
         }.koin
-        runBlocking { koin.get<FirstTimeHints>().dismissAll() }
+        runBlocking {
+            koin.get<FirstTimeHints>().dismissAll()
+            if (!guide) AppGuide(koin.get()).done()
+        }
         val coordinator = koin.get<AppCoordinator>()
         coordinator.start()
         if (asBengt) {

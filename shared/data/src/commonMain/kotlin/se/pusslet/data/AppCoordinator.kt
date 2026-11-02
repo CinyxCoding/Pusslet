@@ -34,6 +34,7 @@ import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.RemotePermissionException
 import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncLocalStore
+import se.pusslet.data.usecase.AppGuide
 import se.pusslet.data.usecase.OtherHomeSharing
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -112,6 +113,8 @@ class AppCoordinator(
             if (config.seedDemoData && !session.hasFamily && !prefs.get(Prefs.SkipDemoSeed)) {
                 seed.seed(clock.todayIn(zone))
                 prefs.set(Prefs.OnboardingDone, true)
+                // The demo build's first start skips the welcome screen, so the guide opens right away (ADR-062).
+                AppGuide(prefs).firstStartDone()
             }
             _ready.value = true
             processWork.forEach { it.start(scope) }

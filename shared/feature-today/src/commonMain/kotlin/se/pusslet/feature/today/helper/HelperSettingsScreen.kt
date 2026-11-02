@@ -28,6 +28,8 @@ import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.showUndo
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_undo
+import se.pusslet.ui.resources.help_faq
+import se.pusslet.ui.resources.help_guide
 import se.pusslet.ui.resources.helper_full_view
 import se.pusslet.ui.resources.helper_full_view_note
 import se.pusslet.ui.resources.helper_home_sections
@@ -40,11 +42,12 @@ import se.pusslet.ui.theme.HelperDimens
 import se.pusslet.ui.theme.Spacing
 
 /** Where "Inställningar och hjälp" leads. */
-enum class HelperSettingsDestination { HomeSections, Account, Privacy, AboutData }
+enum class HelperSettingsDestination { HomeSections, Account, Privacy, AboutData, Guide, Faq }
 
 /**
- * "Inställningar och hjälp" in the helper view: what the home screen shows, the full app, and the account, privacy and
- * about pages. Nothing here changes the family's settings (a caregiver may not).
+ * "Inställningar och hjälp" in the helper view: what the home screen shows, the full app, the account, privacy and about
+ * pages, and the help – the guide and the common questions (ADR-062). Nothing here changes the family's settings (a
+ * caregiver may not).
  */
 @Composable
 fun HelperSettingsScreen(onBack: () -> Unit, onOpen: (HelperSettingsDestination) -> Unit, onShowFullApp: () -> Unit) {
@@ -67,6 +70,8 @@ fun HelperSettingsScreen(onBack: () -> Unit, onOpen: (HelperSettingsDestination)
             NavRow(stringResource(Res.string.more_account), { onOpen(HelperSettingsDestination.Account) }, modifier = row)
             NavRow(stringResource(Res.string.more_privacy), { onOpen(HelperSettingsDestination.Privacy) }, modifier = row)
             NavRow(stringResource(Res.string.more_about_data), { onOpen(HelperSettingsDestination.AboutData) }, modifier = row)
+            NavRow(stringResource(Res.string.help_guide), { onOpen(HelperSettingsDestination.Guide) }, modifier = row)
+            NavRow(stringResource(Res.string.help_faq), { onOpen(HelperSettingsDestination.Faq) }, modifier = row)
         }
     }
 }

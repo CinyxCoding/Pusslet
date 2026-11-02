@@ -9,4 +9,6 @@ val settingsModule: Module = module {
     viewModel { AccountViewModel(get(), get(), get()) }
     viewModel { AboutDataViewModel(get()) }
     viewModel { PrivacyViewModel(get(), get()) }
+    viewModel { GuideViewModel(get(), get()) }
+    viewModel { FaqViewModel(get()) }
 }

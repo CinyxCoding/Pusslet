@@ -773,8 +773,38 @@ De sitter där saken finns, men ingen av dem går igenom hela appen.
     den.
 
 **Konsekvens:** Guiden och svaren beskriver appen som den är, så de måste ändras när en funktion ändras.
-- Vanliga frågor säger rakt ut att familjen inte följer med till en ny telefon av sig själv än. Man går med igen via
-  en inbjudan (`familyIdsFor` finns men används inte).
+- När vanliga frågor skrevs syntes att familjen inte följde med till en ny telefon. Det byggdes samma dag (ADR-063), och
+  svaret beskriver nu hur man gör.
 - Premium nämns inte förrän betalningen finns.
 - Svaret om widgets gäller Android, eftersom iOS inte har några widgets än.
+
+## ADR-063 – Familjen följer med till en ny telefon
+**Kontext:** En ny telefon kunde inte hämta familjen efter inloggning (2026-11-02). Välkomstskärmen hade ingen
+inloggning, och `FamilyRemote.familyIdsFor` fanns men användes inte. Man fick gå med igen via en inbjudan, och den som
+var ensam i familjen med konto kunde inte flytta den alls. Ägaren bad om att det byggs.
+
+**Beslut:**
+- **Ingång:** välkomstskärmen får "Jag har redan ett konto" när det finns en server. Där loggar man in med e-post och
+  lösenord eller med Google.
+- **Hitta familjen:** appen läser kontots `users/{uid}.familyIds` och kontots egen åtkomstpost i varje familj, direkt
+  från servern (`FamilyRemote.accountFamilies`). Åtkomstposten säger vem man är i familjen och vilken roll man har.
+  - Familjer man har tagits bort ur, eller som har raderats, hoppas över: reglerna släpper inte igenom dem.
+  - Utrymmen som delas med andra hemmet hoppas också över. För en förälder kommer de tillbaka genom hemmet
+    (`OtherHomeSharing.reconcile`).
+- **Ta tillbaka:** man väljer familjen med ett tryck. Bara sessionen ändras (`FamilyRepository.restore`), och sedan
+  hämtar synken resten.
+- **Skydd:** en familj som inte finns på telefonen skapas aldrig på servern igen (`AppCoordinator.connect`). Annars kunde
+  ett tomt namn skrivas över familjens eget.
+- **Guiden** öppnas inte av sig själv, eftersom den som kommer tillbaka har använt appen förut (ADR-062).
+- **Utloggningen** säger nu att en familj som tas bort från telefonen finns kvar på servern och kommer tillbaka vid
+  inloggning. Texten om att familjen inte går att få tillbaka för den som är ensam med konto är borttagen.
+
+**Konsekvens:**
+- Reglerna behövde inte ändras. Ett konto får redan läsa sitt eget `users`-dokument, och åtkomstposter och familjens
+  dokument där det är med.
+- Den som gick med via en inbjudan utan att logga in har ett anonymt konto, som inte går att logga in med på en annan
+  telefon. Vanliga frågor säger därför att man först skapar ett konto på den gamla telefonen. Kontot knyts till samma
+  inloggning, så familjen följer med.
+- Den som redan har skapat en ny familj på den nya telefonen tar först bort den under Integritet. Då listar
+  välkomstskärmen båda familjerna.
 

@@ -66,8 +66,6 @@ data class AccountUiState(
     val sync: SyncStatus = SyncStatus(),
     val busy: Boolean = false,
     val error: AuthError? = null,
-    /** Someone else in the family has an account and can invite this person back after leaving the phone empty. */
-    val othersHaveAccounts: Boolean = true,
 )
 
 class AccountViewModel(private val auth: AuthRepository, engine: SyncEngine, private val privacy: DataPrivacy) : ViewModel() {
@@ -76,9 +74,8 @@ class AccountViewModel(private val auth: AuthRepository, engine: SyncEngine, pri
     private val error = MutableStateFlow<AuthError?>(null)
 
     val state: StateFlow<AccountUiState> =
-        combine(auth.currentUser, engine.status, busy, error, privacy.othersHaveAccounts) { u, s, b, e, others ->
-            AccountUiState(auth.available, u, s, b, e, others)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountUiState(auth.available))
+        combine(auth.currentUser, engine.status, busy, error) { u, s, b, e -> AccountUiState(auth.available, u, s, b, e) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountUiState(auth.available))
 
     private fun run(block: suspend () -> Unit) {
         busy.value = true
@@ -200,7 +197,6 @@ fun AccountRoute(onBack: () -> Unit, viewModel: AccountViewModel = koinViewModel
     }
     if (askSignOut) {
         SignOutDialog(
-            othersHaveAccounts = state.othersHaveAccounts,
             onDismiss = { askSignOut = false },
             onSignOut = { forget ->
                 askSignOut = false
@@ -210,9 +206,12 @@ fun AccountRoute(onBack: () -> Unit, viewModel: AccountViewModel = koinViewModel
     }
 }
 
-/** "Logga ut": keep the family on this phone or remove it, each choice said in plain words (ADR-059). */
+/**
+ * "Logga ut": keep the family on this phone or remove it, each choice said in plain words (ADR-059). A removed family comes
+ * back by signing in again on the welcome screen (ADR-063).
+ */
 @Composable
-private fun SignOutDialog(othersHaveAccounts: Boolean, onDismiss: () -> Unit, onSignOut: (forget: Boolean) -> Unit) {
+private fun SignOutDialog(onDismiss: () -> Unit, onSignOut: (forget: Boolean) -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.account_sign_out)) },
@@ -227,9 +226,7 @@ private fun SignOutDialog(othersHaveAccounts: Boolean, onDismiss: () -> Unit, on
                     Text(stringResource(Res.string.account_sign_out_forget))
                 }
                 Text(
-                    stringResource(
-                        if (othersHaveAccounts) Res.string.account_sign_out_forget_body else Res.string.account_sign_out_forget_alone,
-                    ),
+                    stringResource(Res.string.account_sign_out_forget_body),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }

@@ -65,12 +65,14 @@ import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
 
 /**
- * First run. [onJoin] opens the join flow; [onFinished] is called when the family is ready (created or demo).
+ * First run. [onJoin] opens the join flow and [onSignIn] "Jag har redan ett konto" (ADR-063); [onFinished] is called when
+ * the family is ready (created or demo).
  */
 @Composable
 fun OnboardingRoute(
     onJoin: () -> Unit,
     onFinished: () -> Unit,
+    onSignIn: () -> Unit = {},
     viewModel: OnboardingViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -81,6 +83,7 @@ fun OnboardingRoute(
             OnboardingStep.Welcome -> Welcome(
                 onCreate = { viewModel.go(OnboardingStep.Family) },
                 onJoin = onJoin,
+                onSignIn = onSignIn.takeIf { viewModel.canSignIn },
                 onDemo = { viewModel.startDemo(onFinished) },
                 busy = state.saving,
             )
@@ -109,7 +112,7 @@ fun OnboardingRoute(
 }
 
 @Composable
-private fun Welcome(onCreate: () -> Unit, onJoin: () -> Unit, onDemo: () -> Unit, busy: Boolean) {
+private fun Welcome(onCreate: () -> Unit, onJoin: () -> Unit, onSignIn: (() -> Unit)?, onDemo: () -> Unit, busy: Boolean) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Spacing.xl),
         verticalArrangement = Arrangement.spacedBy(Spacing.lg, Alignment.CenterVertically),
@@ -130,6 +133,8 @@ private fun Welcome(onCreate: () -> Unit, onJoin: () -> Unit, onDemo: () -> Unit
         OutlinedButton(onClick = onJoin, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget)) {
             Text(stringResource(Res.string.onboarding_join))
         }
+        // A new phone: the family comes back with the account used before (ADR-063).
+        if (onSignIn != null) TextButton(onClick = onSignIn, enabled = !busy) { Text(stringResource(Res.string.onboarding_sign_in)) }
         TextButton(onClick = onDemo, enabled = !busy) { Text(stringResource(Res.string.onboarding_demo)) }
     }
 }

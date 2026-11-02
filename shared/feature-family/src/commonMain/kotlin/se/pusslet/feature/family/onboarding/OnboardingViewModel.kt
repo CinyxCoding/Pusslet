@@ -89,6 +89,8 @@ class OnboardingViewModel(
     private val ids: IdGenerator,
     private val clock: Clock,
     private val zone: TimeZone,
+    /** There is a server to sign in to, so the welcome screen offers "Jag har redan ett konto" (ADR-063). */
+    val canSignIn: Boolean = false,
 ) : ViewModel() {
     private val _state = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = _state.asStateFlow()

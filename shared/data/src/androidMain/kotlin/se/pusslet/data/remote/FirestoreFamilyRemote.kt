@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
@@ -106,9 +107,25 @@ class FirestoreFamilyRemote(private val db: FirebaseFirestore, private val calls
         Unit
     }
 
-    override suspend fun familyIdsFor(uid: String): List<String> = guard {
-        @Suppress("UNCHECKED_CAST")
-        (db.document("users/$uid").get().await().get("familyIds") as? List<String>).orEmpty()
+    // From the server, never the cache: a new phone has none, and an old cache may still list a family the account left.
+    override suspend fun accountFamilies(uid: String): List<AccountFamily> = guard {
+        val ids = (db.document("users/$uid").get(Source.SERVER).await().get("familyIds") as? List<*>).orEmpty().filterIsInstance<String>()
+        ids.distinct().mapNotNull { accountFamily(it, uid) }
+    }
+
+    /** Null when the account is no longer in [familyId] (the rules then refuse to read it) or it is a shared space. */
+    private suspend fun accountFamily(familyId: String, uid: String): AccountFamily? {
+        val (access, family) = try {
+            db.document("families/$familyId/access/$uid").get(Source.SERVER).await() to
+                db.document("families/$familyId").get(Source.SERVER).await()
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) return null
+            throw e
+        }
+        val memberId = access.getString("memberId")
+        if (!access.exists() || memberId == null || !family.exists() || family.getBoolean("shared") == true) return null
+        val role = if (access.getString("role") == "caregiver") Role.Caregiver else Role.Parent
+        return AccountFamily(familyId, family.getString("name").orEmpty(), memberId, role)
     }
 
     override suspend fun rememberFamily(uid: String, familyId: String) = guard {

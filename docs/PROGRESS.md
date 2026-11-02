@@ -267,10 +267,15 @@ skrivas om; butiksbilderna görs bäst när utseendet är klart inför det stän
 - Testat: när guiden visas (data, introduktion, skal, demobygget), vilka sidor och frågor varje roll får, och i appen
   att Nästa, Tillbaka, "Stäng", "Visa inte igen" och "Klar" fungerar. Skärmbilderna `guide_first_page`, `guide_helper`
   och `faq` har tillgänglighetskontroll.
+- [x] Familjen följer med till en ny telefon (ADR-063):
+  - "Jag har redan ett konto" på välkomstskärmen loggar in och listar kontots familjer.
+  - Ett tryck tar tillbaka den familj man väljer, och synken hämtar resten.
+  - Föräldrarnas delade utrymmen med andra hemmet kommer tillbaka genom hemmet.
+- Testat: inloggning, fel lösenord, inget nät, ingen familj och byte av konto; att en hämtad familj aldrig skapas på
+  servern igen; skärmbilderna `restore_sign_in` och `restore_found`. Inte provat mot ett riktigt Firebase-projekt, som
+  inte finns än.
 
 ## Kända begränsningar / buggar
-- En ny telefon hittar inte familjen efter inloggning: `FamilyRemote.familyIdsFor` finns men används inte, så man går
-  med igen via en inbjudan. Är man ensam i familjen med konto går den inte att flytta. Vanliga frågor säger det.
 - CI hängde en timme 2026-10-14: Idags ViewModel startade en evig `while (true) { delay(1 h) }` i `init`, som fick
   Robolectric-testerna att aldrig bli klara. Vädret laddas nu inuti state-flödet (stannar med skärmen). Regel: inga eviga
   loopar i ViewModel-init; periodiskt arbete hör hemma i ett flöde under `stateIn(WhileSubscribed)`.

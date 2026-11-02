@@ -177,10 +177,10 @@ class AppCoordinator(
         var backoff = 2_000L
         while (true) {
             try {
-                if (role == Role.Parent) {
-                    val name = docs.get(Collections.Family, familyId, Family.serializer())?.name.orEmpty()
-                    familyRemote.bootstrapFamily(familyId, name, memberId, uid)
-                }
+                // Only a family made on this phone is here before the first pull. One brought back after sign-in on a new
+                // phone (ADR-063) is on the server already, and an empty name must never be written over its own.
+                val family = if (role == Role.Parent) docs.get(Collections.Family, familyId, Family.serializer()) else null
+                if (family != null) familyRemote.bootstrapFamily(familyId, family.name, memberId, uid)
                 familyRemote.rememberFamily(uid, familyId)
                 break
             } catch (e: CancellationException) {

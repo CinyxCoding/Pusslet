@@ -310,6 +310,7 @@
     <string name="onboarding_create">Skapa vår familj</string>
     <string name="onboarding_join">Jag har en inbjudan</string>
     <string name="onboarding_demo">Utforska med en exempelfamilj</string>
+    <string name="onboarding_sign_in">Jag har redan ett konto</string>
     <string name="onboarding_step">%1$d av %2$d</string>
     <string name="onboarding_family_title">Vilka är ni?</string>
     <string name="onboarding_family_name">Familjens namn</string>
@@ -540,8 +541,7 @@
     <string name="account_sign_out_keep">Logga ut och behåll familjen här</string>
     <string name="account_sign_out_keep_body">Kalendern, listorna och bilderna ligger kvar på telefonen och syns för den som använder den.</string>
     <string name="account_sign_out_forget">Logga ut och ta bort familjen härifrån</string>
-    <string name="account_sign_out_forget_body">Allt om familjen tas bort från den här telefonen. De andra i familjen behåller allt, och du kan gå med igen med en ny inbjudan.</string>
-    <string name="account_sign_out_forget_alone">Allt om familjen tas bort från den här telefonen. Du är den enda i familjen med konto, så ingen kan bjuda in dig igen: familjen går inte att få tillbaka hit.</string>
+    <string name="account_sign_out_forget_body">Allt om familjen tas bort från den här telefonen. Den finns kvar på servern, och du får tillbaka den genom att logga in igen.</string>
     <string name="account_signed_in_as">Inloggad som %1$s</string>
     <string name="account_anonymous">Inloggad utan konto (demo)</string>
     <string name="account_local_only">Den här versionen är inte kopplad till någon server. Allt sparas bara på telefonen.</string>
@@ -1691,7 +1691,7 @@
     <string name="faq_invite_q">Inbjudan fungerar inte</string>
     <string name="faq_invite_a">En inbjudan gäller för en person i 7 dagar och kan bara användas en gång. Gör en ny under Mer › Familjen › Bjud in och skicka den igen.</string>
     <string name="faq_new_phone_q">Jag har bytt telefon</string>
-    <string name="faq_new_phone_a">Familjen följer inte med av sig själv än. Be någon annan i familjen bjuda in dig igen, och välj Jag har en inbjudan på den nya telefonen. Är du ensam i familjen med konto går den inte att flytta.</string>
+    <string name="faq_new_phone_a">Har du inget konto, skapa ett under Konto och delning på den gamla telefonen först. Välj sedan Jag har redan ett konto på den nya telefonen och logga in med samma konto, så hämtas familjen.</string>
     <string name="faq_leave_q">Hur lämnar jag familjen eller tar bort mitt konto?</string>
     <string name="faq_leave_a">Under Integritet kan du ta bort familjen från telefonen eller radera ditt konto. En förälder kan också radera familjen för alla. Exportera gärna all data först.</string>
     <string name="faq_roles_q">Vad är skillnaden mellan förälder och annan vuxen?</string>
@@ -1726,4 +1726,13 @@
     <string name="faq_widget_a">Håll fingret på en tom yta på hemskärmen, välj Widgets och sedan Pusslet. Det finns två: Idag och Inköpslistan.</string>
     <string name="faq_demo_q">Hur lämnar jag exempelfamiljen?</string>
     <string name="faq_demo_a">Tryck på Börja på riktigt i raden Exempelfamilj på Idag. Exempeldatan tas bort och du kommer till första start.</string>
+
+    <!-- Hämta familjen till en ny telefon (ADR-063) -->
+    <string name="restore_title">Hämta din familj</string>
+    <string name="restore_body">Logga in med samma konto som på din förra telefon, så hämtas familjen hit.</string>
+    <string name="restore_searching">Letar efter din familj…</string>
+    <string name="restore_choose">Välj familj</string>
+    <string name="restore_unnamed">Familj utan namn</string>
+    <string name="restore_none">Kontot hör inte till någon familj. Gå med via en inbjudan eller skapa en ny familj.</string>
+    <string name="restore_other_account">Byt konto</string>
 </resources>

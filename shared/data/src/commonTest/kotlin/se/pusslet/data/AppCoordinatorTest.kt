@@ -2,11 +2,18 @@ package se.pusslet.data
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.TimeZone
+import se.pusslet.core.model.Role
 import se.pusslet.core.util.SequentialIdGenerator
+import se.pusslet.data.remote.AccountFamily
+import se.pusslet.data.remote.AuthRepository
+import se.pusslet.data.remote.AuthUser
+import se.pusslet.data.remote.FamilyRemote
 import se.pusslet.data.remote.LocalOnlyAuthRepository
 import se.pusslet.data.remote.LocalOnlyFamilyRemote
 import se.pusslet.data.repository.FamilyRepository
@@ -14,6 +21,7 @@ import se.pusslet.data.repository.GuideStatus
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
 import se.pusslet.data.seed.DemoSeed
+import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionRepository
 import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.InMemoryRemoteStore
@@ -43,17 +51,23 @@ class AppCoordinatorTest {
     private val prod = BackendConfig(BackendMode.LocalOnly, seedDemoData = false, versionName = "test")
 
     /** One app process: everything in memory is new, the stored data is shared. */
-    private inner class AppProcess(scope: CoroutineScope, config: BackendConfig, work: List<AppProcessWork> = emptyList()) {
+    private inner class AppProcess(
+        scope: CoroutineScope,
+        config: BackendConfig,
+        work: List<AppProcessWork> = emptyList(),
+        remote: FamilyRemote = LocalOnlyFamilyRemote,
+        auth: AuthRepository = LocalOnlyAuthRepository(),
+    ) {
         val sessions = SessionRepository(prefDao)
         val prefs = PreferencesRepository(prefDao)
         val docs = DocumentStore(local, sessions, clock)
-        val family = FamilyRepository(docs, sessions, LocalOnlyFamilyRemote, LocalOnlyAuthRepository(), SequentialIdGenerator(), clock)
+        val family = FamilyRepository(docs, sessions, remote, auth, SequentialIdGenerator(), clock)
         val coordinator = AppCoordinator(
             scope = scope,
             config = config,
             sessions = sessions,
-            auth = LocalOnlyAuthRepository(),
-            familyRemote = LocalOnlyFamilyRemote,
+            auth = auth,
+            familyRemote = remote,
             docs = docs,
             engine = SyncEngine(local, InMemoryRemoteStore(), docs),
             seed = DemoSeed(family, docs, clock),
@@ -97,6 +111,62 @@ class AppCoordinatorTest {
         app.coordinator.start()
         runCurrent()
         assertFalse(AppGuide(app.prefs).due.first())
+    }
+
+    /** A family brought back after sign-in on a new phone is on the server already, so it is never created again (ADR-063). */
+    @Test
+    fun aFamilyBroughtBackIsNotCreatedAgainOnTheServer() = runTest {
+        val server = RecordingRemote()
+        val app = AppProcess(backgroundScope, prod, remote = server, auth = SignedIn("uid-anna"))
+        app.coordinator.start()
+        runCurrent()
+
+        app.family.restore(AccountFamily("f-berg", "Familjen Berg", "m-anna", Role.Parent))
+        runCurrent()
+
+        assertEquals(Session(familyId = "f-berg", memberId = "m-anna", uid = "uid-anna", role = Role.Parent), app.sessions.session.value)
+        assertEquals(emptyList(), server.bootstrapped, "An empty name must never be written over the family's own")
+        assertEquals(listOf("uid-anna" to "f-berg"), server.remembered)
+    }
+
+    @Test
+    fun aFamilyMadeOnThisPhoneIsCreatedOnTheServerWithItsName() = runTest {
+        val server = RecordingRemote()
+        val app = AppProcess(backgroundScope, prod, remote = server, auth = SignedIn("uid-sara"))
+        app.coordinator.start()
+        runCurrent()
+
+        val family = app.family.createFamily("Familjen Lind", "Sara")
+        runCurrent()
+
+        assertEquals(listOf(family.id to "Familjen Lind"), server.bootstrapped)
+    }
+
+    /** A server that remembers what the coordinator asked of it. */
+    private class RecordingRemote : FamilyRemote by LocalOnlyFamilyRemote {
+        override val available = true
+        val bootstrapped = mutableListOf<Pair<String, String>>()
+        val remembered = mutableListOf<Pair<String, String>>()
+
+        override suspend fun bootstrapFamily(
+            familyId: String,
+            name: String,
+            memberId: String,
+            uid: String,
+            shared: Boolean,
+            home: String?,
+        ) {
+            bootstrapped += familyId to name
+        }
+
+        override suspend fun rememberFamily(uid: String, familyId: String) {
+            remembered += uid to familyId
+        }
+    }
+
+    private class SignedIn(uid: String) : AuthRepository by LocalOnlyAuthRepository() {
+        override val available = true
+        override val currentUser: StateFlow<AuthUser?> = MutableStateFlow(AuthUser(uid, "$uid@example.se", null, isAnonymous = false))
     }
 
     @Test

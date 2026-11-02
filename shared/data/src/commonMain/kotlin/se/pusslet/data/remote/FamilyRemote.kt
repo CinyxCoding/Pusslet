@@ -23,6 +23,12 @@ data class InviteInfo(
 /** A child in an other-home invite: the id the space uses and the first name, so the invitee can match their own. */
 data class SharedChildRef(val id: String, val name: String)
 
+/**
+ * A family the signed-in account belongs to, as its access doc says (ADR-063): who the account is in it ([memberId]) and
+ * with which [role]. Found after signing in on a new phone, so the family can be brought back to it.
+ */
+data class AccountFamily(val familyId: String, val name: String, val memberId: String, val role: Role)
+
 /** Thrown when the backend is not configured (local-only mode) or unreachable for an online-only operation. */
 class BackendUnavailableException(message: String) : Exception(message)
 
@@ -77,8 +83,13 @@ interface FamilyRemote {
      */
     suspend fun join(invite: InviteInfo, uid: String, member: Member, home: String? = null)
 
-    /** Families this account belongs to (for a new device after sign-in). */
-    suspend fun familyIdsFor(uid: String): List<String>
+    /**
+     * The homes this account belongs to, for a new phone after sign-in (ADR-063): from `users/{uid}.familyIds`, each with
+     * the account's own access doc. Families the account has been taken out of, or that were deleted, are left out, and so
+     * are spaces shared with the other home, which come back through the home (`OtherHomeSharing.reconcile`).
+     * @throws Exception when the server cannot be reached.
+     */
+    suspend fun accountFamilies(uid: String): List<AccountFamily>
 
     suspend fun rememberFamily(uid: String, familyId: String)
 
@@ -140,7 +151,7 @@ object LocalOnlyFamilyRemote : FamilyRemote {
 
     override suspend fun join(invite: InviteInfo, uid: String, member: Member, home: String?) = unavailable()
 
-    override suspend fun familyIdsFor(uid: String): List<String> = emptyList()
+    override suspend fun accountFamilies(uid: String): List<AccountFamily> = emptyList()
 
     override suspend fun rememberFamily(uid: String, familyId: String) = Unit
 

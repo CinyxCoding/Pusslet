@@ -309,6 +309,7 @@
     <string name="onboarding_create">Create our family</string>
     <string name="onboarding_join">I have an invite</string>
     <string name="onboarding_demo">Explore with an example family</string>
+    <string name="onboarding_sign_in">I already have an account</string>
     <string name="onboarding_step">%1$d of %2$d</string>
     <string name="onboarding_family_title">Who are you?</string>
     <string name="onboarding_family_name">Family name</string>
@@ -539,8 +540,7 @@
     <string name="account_sign_out_keep">Sign out and keep the family here</string>
     <string name="account_sign_out_keep_body">The calendar, lists and pictures stay on the phone, and whoever uses it can see them.</string>
     <string name="account_sign_out_forget">Sign out and remove the family from here</string>
-    <string name="account_sign_out_forget_body">Everything about the family is removed from this phone. The others in the family keep it all, and you can join again with a new invite.</string>
-    <string name="account_sign_out_forget_alone">Everything about the family is removed from this phone. You are the only one in the family with an account, so nobody can invite you again: the family cannot be brought back here.</string>
+    <string name="account_sign_out_forget_body">Everything about the family is removed from this phone. It stays on the server, and you get it back by signing in again.</string>
     <string name="account_signed_in_as">Signed in as %1$s</string>
     <string name="account_anonymous">Signed in without an account (demo)</string>
     <string name="account_local_only">This version is not connected to a server. Everything is stored only on the phone.</string>
@@ -1690,7 +1690,7 @@
     <string name="faq_invite_q">The invite doesn't work</string>
     <string name="faq_invite_a">An invite is for one person for 7 days and can only be used once. Make a new one under More › The family › Invite and send it again.</string>
     <string name="faq_new_phone_q">I have a new phone</string>
-    <string name="faq_new_phone_a">The family does not come along by itself yet. Ask someone else in the family to invite you again, and choose I have an invite on the new phone. If you are the only one in the family with an account, it can't be moved.</string>
+    <string name="faq_new_phone_a">If you have no account, create one under Account and sharing on the old phone first. Then choose I already have an account on the new phone and sign in with the same account, and the family is fetched.</string>
     <string name="faq_leave_q">How do I leave the family or delete my account?</string>
     <string name="faq_leave_a">Under Privacy you can remove the family from the phone or delete your account. A parent can also delete the family for everyone. You may want to export all data first.</string>
     <string name="faq_roles_q">What is the difference between a parent and another adult?</string>
@@ -1725,4 +1725,13 @@
     <string name="faq_widget_a">Touch and hold an empty spot on the home screen, choose Widgets and then Pusslet. There are two: Today and Shopping list.</string>
     <string name="faq_demo_q">How do I leave the sample family?</string>
     <string name="faq_demo_a">Tap Start for real in the Sample family row on Today. The sample data is removed and you come to the first start.</string>
+
+    <!-- Bring the family to a new phone (ADR-063) -->
+    <string name="restore_title">Get your family back</string>
+    <string name="restore_body">Sign in with the same account as on your old phone, and the family comes here.</string>
+    <string name="restore_searching">Looking for your family…</string>
+    <string name="restore_choose">Choose family</string>
+    <string name="restore_unnamed">Family without a name</string>
+    <string name="restore_none">The account doesn't belong to a family. Join with an invite or create a new family.</string>
+    <string name="restore_other_account">Use another account</string>
 </resources>

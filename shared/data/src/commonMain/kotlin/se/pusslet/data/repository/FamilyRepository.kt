@@ -15,10 +15,12 @@ import se.pusslet.core.model.Role
 import se.pusslet.core.util.IdGenerator
 import se.pusslet.core.util.InviteCodes
 import se.pusslet.core.util.SwedishOrder
+import se.pusslet.data.remote.AccountFamily
 import se.pusslet.data.remote.AuthRepository
 import se.pusslet.data.remote.BackendUnavailableException
 import se.pusslet.data.remote.FamilyRemote
 import se.pusslet.data.remote.InviteInfo
+import se.pusslet.data.session.Session
 import se.pusslet.data.session.SessionProvider
 import se.pusslet.data.sync.Collections
 import se.pusslet.data.sync.DocumentStore
@@ -147,6 +149,16 @@ class FamilyRepository(
         remote.join(invite, uid, member)
         sessions.update { it.copy(familyId = invite.familyId, memberId = memberId, uid = uid, role = invite.role, demo = false) }
         return invite.familyId
+    }
+
+    /**
+     * "Jag har redan ett konto" (ADR-063): this phone becomes [found]'s member again, as the account's access doc says.
+     * Only the session changes: the sync engine fetches the family when the app connects, and the spaces shared with the
+     * other home come back through `OtherHomeSharing.reconcile`. Nothing is written, here or on the server.
+     */
+    suspend fun restore(found: AccountFamily) {
+        val uid = checkNotNull(auth.currentUser.value?.uid) { "Bringing a family back needs a signed-in account" }
+        sessions.update { Session(familyId = found.familyId, memberId = found.memberId, uid = uid, role = found.role) }
     }
 
     companion object {

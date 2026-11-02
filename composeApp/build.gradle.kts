@@ -265,8 +265,9 @@ dependencies {
     testImplementation(libs.roborazzi.junit.rule)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.test.ext.junit)
-    // A feature's screen tested on its own, with its state given (MedicineScreenshotTest).
+    // A feature's screen tested on its own, with its state given (MedicineScreenshotTest, RestoreScreenshotTest).
     testImplementation(projects.shared.featureToday)
+    testImplementation(projects.shared.featureFamily)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 

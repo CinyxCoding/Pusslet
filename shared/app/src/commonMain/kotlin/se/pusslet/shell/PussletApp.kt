@@ -65,6 +65,7 @@ import se.pusslet.feature.family.join.JoinRoute
 import se.pusslet.feature.family.member.MemberEditorRoute
 import se.pusslet.feature.family.onboarding.OnboardingRoute
 import se.pusslet.feature.family.otherhome.OtherHomeRoute
+import se.pusslet.feature.family.restore.RestoreRoute
 import se.pusslet.feature.family.wishlist.WishlistRoute
 import se.pusslet.feature.meals.MealsRoute
 import se.pusslet.feature.meals.RecipeDetailsRoute
@@ -106,6 +107,7 @@ import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.LocalAddButton
 import se.pusslet.ui.components.PussletIcons
 import se.pusslet.ui.components.SelectionColors
+import se.pusslet.ui.components.StepBackHandler
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_undo
 import se.pusslet.ui.resources.attach_failed
@@ -157,18 +159,26 @@ fun PussletApp(
 private fun OnboardingFlow(incoming: IncomingIntent?, onIncomingHandled: () -> Unit) {
     var joinCode by rememberSaveable { mutableStateOf<String?>(null) }
     var joining by rememberSaveable { mutableStateOf(false) }
+    var restoring by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(incoming) {
         if (incoming is IncomingIntent.JoinCode) {
             joinCode = incoming.code
             joining = true
+            restoring = false
             onIncomingHandled()
         }
     }
-    if (joining) {
+    // Back from joining or signing in goes to the welcome screen, not out of the app.
+    StepBackHandler(enabled = joining || restoring) {
+        joining = false
+        restoring = false
+    }
+    when {
         // Joining finishes by marking onboarding done; the shell then switches to the main UI by itself.
-        JoinRoute(initialCode = joinCode, onBack = { joining = false }, onJoined = {})
-    } else {
-        OnboardingRoute(onJoin = { joining = true }, onFinished = {})
+        joining -> JoinRoute(initialCode = joinCode, onBack = { joining = false }, onJoined = {})
+        // So does bringing a family back after signing in on a new phone (ADR-063).
+        restoring -> RestoreRoute(onBack = { restoring = false })
+        else -> OnboardingRoute(onJoin = { joining = true }, onFinished = {}, onSignIn = { restoring = true })
     }
 }
 

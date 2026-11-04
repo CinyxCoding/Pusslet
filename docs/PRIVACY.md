@@ -4,7 +4,7 @@
 > läsa igenom. `firebase deploy --only hosting` publicerar avsnitten Svenska och English som
 > `https://<linkHost>/privacy/` (Play kräver en öppen länk), men först när inget står inom hakparentes (SETUP.md 2.4).
 > Texten beskriver appen som den är byggd
-> 2026-10-21; uppdatera den när appen ändras (se "Att hålla policyn sann" sist). English version below.
+> 2026-11-04; uppdatera den när appen ändras (se "Att hålla policyn sann" sist). English version below.
 
 ---
 
@@ -27,7 +27,7 @@ Personuppgiftsansvarig är [namn på ägaren eller företaget], [ort]. Frågor o
 
 | Uppgifter | Varifrån | Varför | Rättslig grund |
 |---|---|---|---|
-| Konto: e-postadress, inloggningssätt och ett konto-id (vid Google-inloggning även namn från Google-kontot) | Du | Logga in och koppla dig till din familj | Avtal (art. 6.1 b) |
+| Konto: e-postadress, inloggningssätt och ett konto-id (vid Google-inloggning även namn från Google-kontot) | Du | Logga in, koppla dig till din familj och mejla en länk om du glömt lösenordet | Avtal (art. 6.1 b) |
 | Familjen: familjens namn, vuxnas namn eller smeknamn, roll (förälder eller hjälpare), färg | Du och de andra i familjen | Att dela planeringen | Avtal |
 | Barn: förnamn, färg och valfritt födelsedatum, skola, klass, klädstorlekar, kontaktpersoner och anteckningar | Förälder | Visa barnens dag, klädråd utifrån ålder och väder, skollunch | Avtal |
 | Allergier och kost för ett barn | Förälder, bara efter ett aktivt val | Varna i matsedel och inköp | **Uttryckligt samtycke** (art. 9.2 a), kan tas tillbaka när som helst |
@@ -38,6 +38,7 @@ Personuppgiftsansvarig är [namn på ägaren eller företaget], [ort]. Frågor o
 | Medicin och feber: vilken medicin och dos som gavs till ett barn och när, temperaturer, och kurer (medicin, dos, tider, antal dagar). Bara det föräldern skriver, aldrig symtom eller diagnos | Förälder | En delad logg så att föräldrarna vet vad som är givet, och påminnelser om kurens doser | **Uttryckligt samtycke** (art. 9.2 a), givet när du loggar; vyn säger vad som sparas. Bara föräldrar ser loggen. [Kontrollera före publicering.] |
 | Väderort: ett ortsnamn och en position avrundad till ungefär 1 km | Du väljer ort, eller telefonens ungefärliga position om du tillåter det | Väder och klädråd på Idag | Avtal |
 | Notis-token och telefonens språk | Telefonen | Skicka förfrågningar, svar och inköp till rätt telefon | Avtal |
+| Säkerhet: ett intyg från Google Play Integrity om att anropet kommer från vår app (App Check-token) | Telefonen | Hindra att någon annan missbrukar servern | Berättigat intresse (art. 6.1 f) |
 | Inställningar på telefonen (tema, notiser, tysta timmar, vilka kalendrar som visas) | Du | Appens funktion | Avtal; stannar på telefonen |
 
 **Stannar på telefonen och skickas aldrig till oss:** telefonens egna kalendrar (läses för att visa krockar), kamerabilden
@@ -50,9 +51,14 @@ sagt ja i appen, och policyn uppdateras först.
 
 ### Tjänster som får uppgifter
 - **Google Firebase** (Google Ireland Ltd) är personuppgiftsbiträde: Firestore och Cloud Functions i EU (Finland) för
-  familjens data, Firebase Authentication för konton och Firebase Cloud Messaging för notiser. Inloggning och notiser är
-  globala tjänster som kan behandla uppgifter utanför EU; Google skyddar sådana överföringar med EU:s
-  standardavtalsklausuler och EU–USA-ramverket för dataskydd. [Kontrollera mot Googles aktuella villkor före publicering.]
+  familjens data, Firebase Authentication för konton, Firebase Cloud Messaging för notiser och Firebase App Check med
+  Google Play Integrity för att kontrollera att anropen kommer från vår app. Intyget från Play Integrity sparas inte, och
+  en App Check-token gäller i högst 7 dagar. Inloggning, notiser och App Check är globala tjänster som kan behandla
+  uppgifter utanför EU; Google skyddar sådana överföringar med EU:s standardavtalsklausuler och EU–USA-ramverket för
+  dataskydd. [Kontrollera mot Googles aktuella villkor före publicering.]
+- **Webbsidorna** (den här policyn, villkoren, sidan för radering och inbjudningslänken) ligger i Firebase Hosting, som
+  sparar besökarens IP-adress några månader för att upptäcka missbruk. Koden i en inbjudningslänk visas bara i webbläsaren
+  och skickas inte vidare.
 - **Öppna datakällor**, som bara får det som behövs för frågan och inga namn: SMHI (avrundad position för väder),
   Skolverket (sökord vid skolsökning), skolmaten.se (skolans id för skollunchen), Open Food Facts (streckkoden),
   Livsmedelsverket (livsmedelsdatabasen hämtas till telefonen).
@@ -75,8 +81,10 @@ recept och det som också gäller barn ni inte delar – syns aldrig för det an
 båda hemmen en egen kopia.
 
 ### Hur länge
-- Så länge familjen finns. "Radera familjen för alla" tar bort familjen och allt i den från servern; "Radera mitt konto"
-  tar bort ditt konto, dina telefoner och din koppling till familjen (de andra behåller familjen).
+- Så länge familjen finns. "Radera familjen för alla" tar bort familjen och allt i den från servern; kvar finns bara en
+  markering med familjens id och tiden, så att en telefon som varit avstängd inte kan skapa familjen på nytt. "Radera mitt
+  konto" tar bort ditt konto, dina telefoner och din koppling till familjen. De andra behåller familjen, och ditt namn finns
+  kvar i den som en person utan konto tills en förälder tar bort det.
 - Det ni tar bort i appen markeras som borttaget och kan ångras en kort stund. Efter 30 dagar tas innehållet bort från
   servern och från telefonerna; kvar på servern finns bara en markering med tiden för borttagningen, så att en telefon
   som varit avstängd länge också får veta det. Markeringen raderas efter ett år.
@@ -93,7 +101,8 @@ barnen, och vi ber bara om förnamn.
 ### Dina rättigheter
 Du har rätt att få tillgång till, rätta, radera och flytta dina uppgifter, att begränsa eller invända mot behandling och
 att ta tillbaka ett samtycke. Det mesta gör du direkt i appen: **Inställningar → Integritet** har export (JSON), radering
-av familjen och av kontot. Allergier och kost tar du bort under barnets profil. För annat, kontakta [e-postadress].
+av familjen och av kontot. Har du inte appen kvar kan du [radera kontot utan den](/radera/). Allergier och kost tar du
+bort under barnets profil. För annat, kontakta [e-postadress].
 Du kan klaga hos Integritetsskyddsmyndigheten (imy.se).
 
 ### Säkerhet
@@ -124,7 +133,7 @@ The controller is [owner's name or company], [city], Sweden. Privacy questions: 
 
 | Data | Source | Purpose | Legal basis |
 |---|---|---|---|
-| Account: email address, sign-in method and an account id (with Google sign-in also the name on the Google account) | You | Sign in and connect you to your family | Contract (Art. 6(1)(b)) |
+| Account: email address, sign-in method and an account id (with Google sign-in also the name on the Google account) | You | Sign in, connect you to your family and email a link if you forget your password | Contract (Art. 6(1)(b)) |
 | Family: family name, adults' names or nicknames, role (parent or helper), colour | You and the others in the family | Sharing the plan | Contract |
 | Children: first name, colour and optional birth date, school, class, clothing sizes, contacts and notes | A parent | Showing the children's day, clothing advice from age and weather, school lunch | Contract |
 | Allergies and diet for a child | A parent, only after an active choice | Warnings in meal plans and shopping | **Explicit consent** (Art. 9(2)(a)), can be withdrawn at any time |
@@ -132,12 +141,15 @@ The controller is [owner's name or company], [city], Sweden. Privacy questions: 
 | Drop-off/pick-up requests and answers, "I'm shopping now" (which list and until when) | You | Letting the family help each other | Contract |
 | Pick-up receipts: who ticked off that a child is picked up, and when | The one picking up | Letting the others know the child is picked up, and warning when nobody has | Contract |
 | Sick days: which child is sick on which day, who stays home, VAB and whether absence and VAB are reported (never symptoms or a diagnosis) | A parent | Cancelling the day, telling the others and counting VAB | **Explicit consent** (Art. 9(2)(a)), given when reporting; the sheet says what is stored. [Check before publishing.] |
+| Medicine and fever: which medicine and dose a child was given and when, temperatures, and courses (medicine, dose, times, number of days). Only what the parent writes, never symptoms or a diagnosis | A parent | A shared log so the parents know what has been given, and reminders of a course's doses | **Explicit consent** (Art. 9(2)(a)), given when logging; the view says what is stored. Only parents see the log. [Check before publishing.] |
 | Weather place: a place name and a position rounded to about 1 km | You pick a place, or the phone's approximate location if you allow it | Weather and clothing advice in Today | Contract |
 | Notification token and the phone's language | The phone | Sending requests, answers and shopping items to the right phone | Contract |
+| Security: a statement from Google Play Integrity that the request comes from our app (App Check token) | The phone | Stopping others from misusing the server | Legitimate interest (Art. 6(1)(f)) |
 | Settings on the phone (theme, notifications, quiet hours, which calendars are shown) | You | How the app works | Contract; stays on the phone |
 
 **Stays on the phone and is never sent to us:** the phone's own calendars (read to show clashes), the camera image when
-scanning barcodes and QR codes (read on the phone), the purchase history that suggests staples, and the settings above.
+scanning barcodes and QR codes (read on the phone), the purchase history that suggests staples, pictures you share to the
+app (for example a photographed weekly letter; they are not backed up either) and the settings above.
 You can choose to write the family's events to the phone's calendar.
 
 **No crash reports or analytics** are collected in this version. If they are added, it will only be after you say yes in
@@ -145,10 +157,14 @@ the app, and this policy will be updated first.
 
 ### Services that receive data
 - **Google Firebase** (Google Ireland Ltd) is our processor: Firestore and Cloud Functions in the EU (Finland) for the
-  family's data, Firebase Authentication for accounts and Firebase Cloud Messaging for notifications. Sign-in and
-  notifications are global services that may process data outside the EU; Google covers such transfers with the EU
-  Standard Contractual Clauses and the EU–US Data Privacy Framework. [Check against Google's current terms before
-  publishing.]
+  family's data, Firebase Authentication for accounts, Firebase Cloud Messaging for notifications and Firebase App Check
+  with Google Play Integrity to check that requests come from our app. The statement from Play Integrity is not stored, and
+  an App Check token is valid for at most 7 days. Sign-in, notifications and App Check are global services that may process
+  data outside the EU; Google covers such transfers with the EU Standard Contractual Clauses and the EU–US Data Privacy
+  Framework. [Check against Google's current terms before publishing.]
+- **The web pages** (this policy, the terms, the page for deleting an account and the invite link) are on Firebase Hosting,
+  which keeps the visitor's IP address for a few months to detect abuse. The code in an invite link is only shown in the
+  browser and is not passed on.
 - **Open data sources**, which only get what the request needs and never names: SMHI (rounded position for weather),
   Skolverket (search words when finding a school), skolmaten.se (the school's id for school lunch), Open Food Facts (the
   barcode), Livsmedelsverket (the food database is downloaded to the phone).
@@ -164,12 +180,15 @@ We do not sell data and do not hand it to anyone else, unless the law requires i
 
 ### How long
 - As long as the family exists. "Delete the family for everyone" removes the family and everything in it from the server;
-  "Delete my account" removes your account, your phones and your link to the family (the others keep the family).
+  only a marker with the family's id and the time stays, so that a phone that has been switched off cannot create the family
+  again. "Delete my account" removes your account, your phones and your link to the family. The others keep the family, and
+  your name stays in it as a person without an account until a parent removes it.
 - What you remove in the app is marked as removed and can be undone for a short while. After 30 days the content is
   deleted from the server and from the phones; only a marker with the time of removal stays on the server, so a phone
   that has been switched off for a long time also learns about it. The marker is deleted after a year.
 - Calendar links and invitations last until they are stopped or expire (invitations after 7 days).
 - Sick days are kept to count VAB this year and last year, then removed.
+- The medicine log and courses are removed 90 days after the dose or the course's last day.
 - A notification token is removed when Google says it is no longer valid, and when the account is deleted.
 - Backups at Google are cleared according to Google's routines.
 
@@ -188,7 +207,8 @@ never visible to the other home. If you stop sharing, both homes keep their own 
 ### Your rights
 You have the right to access, correct, delete and move your data, to restrict or object to processing and to withdraw
 consent. Most of this you do right in the app: **Settings → Privacy** has export (JSON) and deletion of the family and of
-the account. Allergies and diets are removed in the child's profile. For anything else, contact [email address]. You can
+the account. If you no longer have the app, you can [delete the account without it](/radera/). Allergies and diets are
+removed in the child's profile. For anything else, contact [email address]. You can
 complain to the Swedish Authority for Privacy Protection (imy.se).
 
 ### Security

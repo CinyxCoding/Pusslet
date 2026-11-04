@@ -69,6 +69,8 @@ class OtherHomeSharingTest {
 
         override suspend fun signInWithGoogle(idToken: String) = currentUser.value!!
 
+        override suspend fun sendPasswordReset(email: String) = Unit
+
         override suspend fun signOut() = Unit
     }
 

@@ -324,6 +324,7 @@ Inga filer har tagits bort. Inga funktioner har tagits bort.
 | R13 | Konsolinställningar har inte verifierats: API-nyckelbegränsning, e-postuppräkningsskydd, lösenordspolicy, auktoriserade domäner, `assetlinks.json` på linkHost, budget | Okänt | Se F |
 | R14 | Betalningar är inte aktiva. Köp måste verifieras på servern när de slås på (TODO i `Entitlements.kt`) | – | Före betalningar |
 | R15 | targetSdk 36, där 37 finns | Info | Uppgradera med tester |
+| R16 | Inbjudningskoden står i länkens adress och syns därför i webbläsarens historik och kan hamna i Hostings loggar | Info | Koden gäller en gång och i 7 dagar. Sidan `/join/` kör ingen extern kod och skickar inte koden vidare (ADR-064) |
 
 ---
 

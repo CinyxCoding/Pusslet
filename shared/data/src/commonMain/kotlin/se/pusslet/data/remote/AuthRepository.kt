@@ -5,6 +5,7 @@ import dev.gitlive.firebase.Firebase
 import dev.gitlive.firebase.FirebaseException
 import dev.gitlive.firebase.auth.FirebaseAuth
 import dev.gitlive.firebase.auth.FirebaseAuthException
+import dev.gitlive.firebase.auth.FirebaseAuthInvalidUserException
 import dev.gitlive.firebase.auth.FirebaseUser
 import dev.gitlive.firebase.auth.GoogleAuthProvider
 import dev.gitlive.firebase.auth.auth
@@ -33,6 +34,13 @@ interface AuthRepository {
     suspend fun createAccount(email: String, password: String): AuthUser
 
     suspend fun signInWithGoogle(idToken: String): AuthUser
+
+    /**
+     * Mails a link for choosing a new password (ADR-064). An address without an account counts as sent, so nobody can use
+     * this to find out who uses the app.
+     * @throws AuthException with [AuthError.InvalidCredentials] for an address that is not valid, or [AuthError.Network].
+     */
+    suspend fun sendPasswordReset(email: String)
 
     suspend fun signOut()
 }
@@ -63,6 +71,21 @@ class GitLiveAuthRepository(scope: CoroutineScope, private val auth: FirebaseAut
 
     override suspend fun signInWithGoogle(idToken: String): AuthUser = guard {
         auth.signInWithCredential(GoogleAuthProvider.credential(idToken, null)).user
+    }
+
+    override suspend fun sendPasswordReset(email: String) {
+        try {
+            auth.sendPasswordResetEmail(email.trim())
+        } catch (e: FirebaseAuthInvalidUserException) {
+            // No such account. With e-mail enumeration protection on (SECURITY.md) Firebase says nothing about this either.
+            log.i { "Password reset: ${e::class.simpleName}" }
+        } catch (e: FirebaseAuthException) {
+            log.w { "Password reset failed: ${e::class.simpleName}" }
+            throw AuthException(AuthError.InvalidCredentials, e)
+        } catch (e: FirebaseException) {
+            log.w { "Password reset failed: ${e::class.simpleName}" }
+            throw AuthException(AuthError.Network, e)
+        }
     }
 
     override suspend fun signOut() = auth.signOut()
@@ -101,6 +124,8 @@ class LocalOnlyAuthRepository : AuthRepository {
     override suspend fun createAccount(email: String, password: String): AuthUser = throw AuthException(AuthError.Unavailable)
 
     override suspend fun signInWithGoogle(idToken: String): AuthUser = throw AuthException(AuthError.Unavailable)
+
+    override suspend fun sendPasswordReset(email: String): Unit = throw AuthException(AuthError.Unavailable)
 
     override suspend fun signOut() = Unit
 }

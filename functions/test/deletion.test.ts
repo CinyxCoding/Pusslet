@@ -1,6 +1,7 @@
 // End-to-end tests of the GDPR callables (src/privacy.ts) through the Functions emulator, with real ID tokens from the Auth
 // emulator and the data seeded with the Admin SDK. Run with `npm test` (functions, firestore and auth emulators).
 // Every test seeds its own ids, so a shared emulator with the demo app's data is never touched.
+import { spawnSync } from "node:child_process";
 import { type App, deleteApp, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { type Firestore, Timestamp, getFirestore } from "firebase-admin/firestore";
@@ -342,5 +343,66 @@ describe("deleteAccount", () => {
 
     expect((await call("deleteAccount", {}, w.bengtToken)).result).toEqual({ status: "deleted", familiesDeleted: 0, familiesLeft: 0 });
     expect(await exists(`families/${w.fid}/access/${w.sara}`)).toBe(true);
+  });
+});
+
+/** A request by e-mail from someone without the app (docs/DELETE_ACCOUNT.md): the script with the same steps. */
+describe("scripts/delete-account.mjs", () => {
+  async function withEmail(uid: string): Promise<string> {
+    const email = `${uid}@example.se`;
+    await getAuth(app).updateUser(uid, { email });
+    return email;
+  }
+
+  function run(...args: string[]) {
+    return spawnSync("node", ["scripts/delete-account.mjs", ...args, "--project", PROJECT], { encoding: "utf8", env: process.env });
+  }
+
+  it("deletes the account behind the address, and the family stays for the others", async () => {
+    const w = await seedLind();
+
+    const res = run(await withEmail(w.bengt));
+
+    expect(res.status, res.stderr).toBe(0);
+    expect(res.stdout).toContain("Account deleted. Families deleted: 0. Families left: 1.");
+    expect(await authUserExists(w.bengt)).toBe(false);
+    expect(await exists(`users/${w.bengt}`)).toBe(false);
+    expect(await exists(`families/${w.fid}/access/${w.bengt}`)).toBe(false);
+    expect(await exists(`families/${w.fid}/events/e1`)).toBe(true);
+    expect(await exists(`families/${w.fid}/access/${w.sara}`)).toBe(true);
+  });
+
+  it("says so when the address has no account", () => {
+    const res = run(`ingen-${RUN}@example.se`);
+
+    expect(res.status, res.stderr).toBe(0);
+    expect(res.stdout).toContain("No account with that address");
+  });
+
+  it("refuses the only parent and changes nothing, until the family is to be deleted too", async () => {
+    const w = await seedLind();
+    const email = await withEmail(w.sara);
+
+    const refused = run(email);
+
+    expect(refused.status).toBe(1);
+    expect(refused.stderr).toContain(`the only parent of family ${w.fid}`);
+    expect(await authUserExists(w.sara)).toBe(true);
+    expect(await exists(`families/${w.fid}/events/e1`)).toBe(true);
+
+    const res = run(email, "--delete-family", w.fid);
+
+    expect(res.status, res.stderr).toBe(0);
+    expect(res.stdout).toContain("Account deleted. Families deleted: 1. Families left: 0.");
+    expect(await authUserExists(w.sara)).toBe(false);
+    expect(await exists(`families/${w.fid}/events/e1`)).toBe(false);
+    expect(await exists(`deletedFamilies/${w.fid}`)).toBe(true);
+  });
+
+  it("needs an address and a project", () => {
+    const res = spawnSync("node", ["scripts/delete-account.mjs"], { encoding: "utf8", env: process.env });
+
+    expect(res.status).toBe(2);
+    expect(res.stderr).toContain("Usage:");
   });
 });

@@ -808,3 +808,33 @@ var ensam i familjen med konto kunde inte flytta den alls. Ägaren bad om att de
 - Den som redan har skapat en ny familj på den nya telefonen tar först bort den under Integritet. Då listar
   välkomstskärmen båda familjerna.
 
+## ADR-064 – Det som saknades inför lanseringen: glömt lösenord, webbsidor och villkor
+**Kontext:** Genomgången inför Play-lanseringen (2026-11-03) hittade luckor som varken appen eller checklistan tog upp, och
+ägaren bad om att de byggs (2026-11-04):
+- Den som glömde lösenordet kom aldrig tillbaka till kontot.
+- En inbjudningslänk gav 404 för den som inte hade appen, vilket är det vanliga för den som bjuds in.
+- Google kräver en webbsida för radering av konto, och användarvillkor av den som är näringsidkare. Ingen av dem fanns.
+- Googles policy för hälsoappar kräver en text i butiksbeskrivningen om att appen inte är en medicinteknisk produkt.
+- Integritetspolicyn och Data safety nämnde inte App Check, och den engelska policyn saknade medicinloggen och bilderna.
+
+**Beslut:**
+- **Glömt lösenordet?** finns vid varje inloggning (`PasswordReset`, `ForgotPassword`). Knappen använder adressen i
+  formuläret, utan dialog, och Firebase mejlar en länk till sin egen sida för att välja lösenord. Svaret är detsamma oavsett
+  om adressen har ett konto, så ingen kan använda det för att ta reda på vem som använder appen.
+- **Inbjudningslänken** (`hosting/join/`) visar koden, en länk till Google Play och ett sätt att öppna appen om den redan
+  finns. Allt sker i webbläsaren: sidan kör ingen extern kod och skickar inte koden vidare (`no-referrer`, CSP, `noindex`).
+- **Radering utan appen:** `docs/DELETE_ACCOUNT.md` publiceras som `/radera/`, och säger också vad som finns kvar.
+  Begäran kommer per mejl och hanteras med `functions/scripts/delete-account.mjs`, som kör samma steg som appen
+  (SETUP.md 2.7).
+- **Användarvillkor:** `docs/TERMS.md` publiceras som `/villkor/`. Appen länkar till dem från "Om Pusslet", "Skapa konto" och
+  när man går med i en familj.
+- **Samma väg för alla texter:** `functions/scripts/public-pages.mjs` bygger de tre sidorna från `docs/`, och skriver ingen
+  sida så länge dokumentet har något inom hakparentes.
+- **Butikstexten** har ett stycke om medicin och feber med texten Google kräver.
+
+**Konsekvens:**
+- Villkoren och raderingssidan är utkast som ingen jurist har läst. De väntar på ägarens uppgifter och en genomläsning.
+- Det ägaren lovar på raderingssidan är ett manuellt arbete: en begäran per mejl körs för hand inom 30 dagar.
+- Villkoren säger att appen är gratis. De måste ändras när betalning slås på (MONETIZATION.md).
+- Mejlet om nytt lösenord skickas på det språk som är valt i Firebase-konsolen, inte på appens språk.
+

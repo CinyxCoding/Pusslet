@@ -1,6 +1,6 @@
 # Underlag för Google Plays Data safety-formulär
 
-> Svaren beskriver appen som den är byggd 2026-10-21 (`prod`-flavorn), i samma ordning som formuläret i Play Console
+> Svaren beskriver appen som den är byggd 2026-11-04 (`prod`-flavorn), i samma ordning som formuläret i Play Console
 > (App content → Data safety). Ägaren fyller i formuläret och ansvarar för svaren; se över dem mot PRIVACY.md och koden
 > före varje release som ändrar vilka uppgifter som skickas. English version below.
 
@@ -32,7 +32,7 @@ personuppgiftsbiträde, och frågor till öppna datakällor görs på användare
 | Hälsa och träning → Hälsoinformation | Ja | Nej | Nej | Valfritt | Appens funktion |
 | Kalender → Kalenderhändelser | Ja | Nej | Nej | Valfritt | Appens funktion |
 | Appaktivitet → Annat användargenererat innehåll | Ja | Nej | Nej | Valfritt | Appens funktion |
-| Enhets-id eller andra id:n | Ja | Nej | Nej | Krävs | Appens funktion (notiser) |
+| Enhets-id eller andra id:n | Ja | Nej | Nej | Krävs | Appens funktion (notiser), bedrägeribekämpning och säkerhet (App Check) |
 
 **Inte insamlat:** exakt plats, adress, telefonnummer (användarens eget), ekonomisk information, meddelanden, foton och
 video, ljud, filer, kontakter (telefonens kontaktlista), webbhistorik, appinteraktioner, installerade appar,
@@ -52,7 +52,8 @@ kraschloggar och diagnostik, reklam-id.
 - **Kalenderhändelser:** familjens händelser i appen synkas via Firestore. Telefonens egna kalendrar läses bara på
   telefonen och skickas inte (on-device-åtkomst räknas inte som insamling).
 - **Annat användargenererat innehåll:** listor, recept, matsedlar, uppgifter, sysslor, lämna/hämta-förfrågningar.
-- **Enhets-id:** Firebase Cloud Messaging-token och Firebase-installations-id för push mellan familjens telefoner.
+- **Enhets-id:** Firebase Cloud Messaging-token och Firebase-installations-id för push mellan familjens telefoner, och
+  intyget från Play Integrity som Firebase App Check kontrollerar för att skydda servern mot missbruk. Intyget sparas inte.
 
 ### Saker att dubbelkolla innan formuläret skickas
 - **Sökord till Skolverket och streckkoder till Open Food Facts** skickas direkt från telefonen till respektive tjänst när
@@ -63,14 +64,8 @@ kraschloggar och diagnostik, reklam-id.
 - **Betalning:** slås premium på tillkommer Ekonomisk information → Köphistorik (MONETIZATION.md).
 
 ### Länk för radering av konto
-Play kräver en webbsida där man kan begära radering även utan appen. Publicera en sida (t.ex.
-`https://[din-domän]/radera`) med ungefär detta:
-
-> **Radera ditt Pusslet-konto**
-> I appen: Inställningar → Integritet → "Radera mitt konto" (ditt konto och din koppling till familjen tas bort, de andra
-> behåller familjen) eller "Radera familjen för alla" (familjen och allt i den tas bort). Har du inte appen kvar? Skicka ett
-> mejl till [e-postadress] från adressen du loggar in med, så raderar vi kontot inom 30 dagar och bekräftar det.
-> Raderat: konto, e-postadress, notis-token och kopplingen till familjen; vid radering av familjen allt familjen har sparat.
+Play kräver en webbsida där man kan begära radering även utan appen. Texten står i `docs/DELETE_ACCOUNT.md` och publiceras
+som `https://pusslet.web.app/radera/` (SETUP.md 2.4). Ange den adressen i formuläret. Så hanteras en begäran: SETUP.md 2.7.
 
 ---
 
@@ -100,7 +95,7 @@ processor, and requests to open data sources are made at the user's request with
 | Health and fitness → Health info | Yes | No | No | Optional | App functionality |
 | Calendar → Calendar events | Yes | No | No | Optional | App functionality |
 | App activity → Other user-generated content | Yes | No | No | Optional | App functionality |
-| Device or other IDs | Yes | No | No | Required | App functionality (notifications) |
+| Device or other IDs | Yes | No | No | Required | App functionality (notifications), fraud prevention and security (App Check) |
 
 **Not collected:** precise location, address, phone number (the user's own), financial info, messages, photos and
 videos, audio, files, contacts (the phone's contact list), web browsing, app interactions, installed apps, crash logs and
@@ -122,7 +117,8 @@ diagnostics, advertising ID.
   the phone and never sent (on-device access is not collection).
 - **Other user-generated content:** lists, recipes, meal plans, tasks, chores, drop-off/pick-up requests.
 - **Device IDs:** the Firebase Cloud Messaging token and the Firebase installation ID, for push between the family's
-  phones.
+  phones, and the statement from Play Integrity that Firebase App Check checks to protect the server from abuse. The
+  statement is not stored.
 
 ### Check before submitting
 - **Search words to Skolverket and barcodes to Open Food Facts** go straight from the phone to that service when the user
@@ -134,12 +130,6 @@ diagnostics, advertising ID.
 - **Payments:** if premium is switched on, add Financial info → Purchase history (MONETIZATION.md).
 
 ### Account deletion link
-Play requires a web page where deletion can be requested without the app. Publish a page (e.g.
-`https://[your-domain]/delete`) along these lines:
-
-> **Delete your Pusslet account**
-> In the app: Settings → Privacy → "Delete my account" (your account and your link to the family are removed; the others
-> keep the family) or "Delete the family for everyone" (the family and everything in it is removed). Don't have the app
-> any more? Email [email address] from the address you sign in with, and we delete the account within 30 days and confirm
-> it. Deleted: account, email address, notification tokens and the link to the family; when the family is deleted,
-> everything the family has stored.
+Play requires a web page where deletion can be requested without the app. The text is in `docs/DELETE_ACCOUNT.md` and is
+published as `https://pusslet.web.app/radera/` (SETUP.md 2.4). Give that address in the form. How a request is handled:
+SETUP.md 2.7.

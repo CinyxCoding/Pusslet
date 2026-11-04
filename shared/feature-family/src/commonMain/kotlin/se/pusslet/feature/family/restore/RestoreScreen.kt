@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.account.PasswordResetState
 import se.pusslet.core.model.Role
 import se.pusslet.data.remote.AccountFamily
 import se.pusslet.data.remote.AuthError
@@ -54,8 +55,10 @@ import se.pusslet.data.remote.FamilyRemote
 import se.pusslet.data.repository.FamilyRepository
 import se.pusslet.data.repository.PreferencesRepository
 import se.pusslet.data.repository.Prefs
+import se.pusslet.data.usecase.PasswordReset
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
+import se.pusslet.ui.components.ForgotPassword
 import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.platform.LocalPlatformActions
@@ -103,12 +106,20 @@ class RestoreViewModel(
     private val log = Logger.withTag("Restore")
     private val _state = MutableStateFlow(RestoreUiState())
     val state: StateFlow<RestoreUiState> = _state.asStateFlow()
+    private val passwordReset = PasswordReset(auth)
+    val passwordResetState: StateFlow<PasswordResetState> = passwordReset.state
+
+    /** "Glömt lösenordet?" (ADR-064): on a new phone this is the only way back to the account. */
+    fun sendPasswordReset(email: String) {
+        viewModelScope.launch { passwordReset.send(email) }
+    }
 
     /**
      * Each time the screen opens. An account that is still signed in, for example after the family was removed from this
      * phone, is looked up right away; otherwise the form starts empty.
      */
     fun start() {
+        passwordReset.clear()
         val user = auth.currentUser.value
         if (user != null && !user.isAnonymous) search(user) else _state.value = RestoreUiState()
     }
@@ -126,6 +137,7 @@ class RestoreViewModel(
     fun otherAccount() {
         viewModelScope.launch {
             auth.signOut()
+            passwordReset.clear()
             _state.value = RestoreUiState()
         }
     }
@@ -188,11 +200,13 @@ data class RestoreActions(
     val onChoose: (AccountFamily) -> Unit = {},
     val onRetry: () -> Unit = {},
     val onOtherAccount: () -> Unit = {},
+    val onSendPasswordReset: (email: String) -> Unit = {},
 )
 
 @Composable
 fun RestoreRoute(onBack: () -> Unit, viewModel: RestoreViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val passwordReset by viewModel.passwordResetState.collectAsStateWithLifecycle()
     val platform = LocalPlatformActions.current
     // Once per visit, not again when the phone is turned.
     var started by rememberSaveable { mutableStateOf(false) }
@@ -211,12 +225,14 @@ fun RestoreRoute(onBack: () -> Unit, viewModel: RestoreViewModel = koinViewModel
             onChoose = viewModel::choose,
             onRetry = viewModel::retry,
             onOtherAccount = viewModel::otherAccount,
+            onSendPasswordReset = viewModel::sendPasswordReset,
         ),
+        passwordReset,
     )
 }
 
 @Composable
-fun RestoreScreen(state: RestoreUiState, actions: RestoreActions) {
+fun RestoreScreen(state: RestoreUiState, actions: RestoreActions, passwordReset: PasswordResetState = PasswordResetState.Idle) {
     Scaffold(topBar = { PussletTopBar(stringResource(Res.string.restore_title), onBack = actions.onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(Spacing.screenHorizontal),
@@ -226,7 +242,7 @@ fun RestoreScreen(state: RestoreUiState, actions: RestoreActions) {
                 state.account?.let { Text(stringResource(Res.string.account_signed_in_as, it), style = MaterialTheme.typography.bodyLarge) }
             }
             when (state.step) {
-                RestoreStep.SignIn -> SignInForm(state, actions)
+                RestoreStep.SignIn -> SignInForm(state, actions, passwordReset)
                 RestoreStep.Searching -> Searching()
                 RestoreStep.Found -> Found(state, actions)
                 RestoreStep.NoneFound -> {
@@ -248,7 +264,7 @@ fun RestoreScreen(state: RestoreUiState, actions: RestoreActions) {
 }
 
 @Composable
-private fun SignInForm(state: RestoreUiState, actions: RestoreActions) {
+private fun SignInForm(state: RestoreUiState, actions: RestoreActions, passwordReset: PasswordResetState) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     Text(stringResource(Res.string.restore_body), style = MaterialTheme.typography.bodyLarge)
@@ -275,6 +291,7 @@ private fun SignInForm(state: RestoreUiState, actions: RestoreActions) {
         enabled = !state.busy && email.isNotBlank() && password.isNotBlank(),
         modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
     ) { Text(stringResource(Res.string.account_sign_in)) }
+    ForgotPassword(email, passwordReset, actions.onSendPasswordReset)
     actions.onGoogle?.let { google ->
         OutlinedButton(
             onClick = google,

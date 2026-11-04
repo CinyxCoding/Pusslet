@@ -1734,4 +1734,14 @@
     <string name="restore_unnamed">Family without a name</string>
     <string name="restore_none">The account doesn't belong to a family. Join with an invite or create a new family.</string>
     <string name="restore_other_account">Use another account</string>
+
+    <!-- Forgotten password and terms of use (ADR-064) -->
+    <string name="account_forgot_password">Forgot your password?</string>
+    <string name="account_terms_note">By creating an account you accept the terms of use</string>
+    <string name="join_terms_note">By joining you accept the terms of use</string>
+    <string name="about_terms">Terms of use</string>
+    <string name="password_reset_no_email">Enter your e-mail address above and we will send a link where you choose a new password.</string>
+    <string name="password_reset_sent">If the address has an account, we have sent a link where you choose a new password. Check your spam folder if you can't find the e-mail.</string>
+    <string name="faq_password_q">I forgot my password</string>
+    <string name="faq_password_a">Enter your e-mail address where you sign in and tap Forgot your password?, and we e-mail a link where you choose a new one. If you sign in with Google you don't need a password.</string>
 </resources>

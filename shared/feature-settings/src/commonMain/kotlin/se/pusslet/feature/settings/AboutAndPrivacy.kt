@@ -71,9 +71,12 @@ import kotlin.time.Instant
 private data class Source(val title: StringResource, val body: StringResource, val cachePrefix: String?, val url: String?)
 
 /** Every external source with its licence and when it was last fetched (brief §3 and §9). */
-class AboutDataViewModel(private val cache: CacheDao) : ViewModel() {
+class AboutDataViewModel(private val cache: CacheDao, config: BackendConfig) : ViewModel() {
     private val _fetched = MutableStateFlow<Map<String, Long>>(emptyMap())
     val fetched: StateFlow<Map<String, Long>> = _fetched.asStateFlow()
+
+    /** "Användarvillkor" (ADR-064); null without a server. */
+    val termsUrl: String? = config.termsUrl
 
     init {
         viewModelScope.launch {
@@ -132,6 +135,9 @@ fun AboutDataRoute(onBack: () -> Unit, viewModel: AboutDataViewModel = koinViewM
         ) {
             Text(stringResource(Res.string.about_intro), style = MaterialTheme.typography.bodyLarge)
             Banner(stringResource(Res.string.about_no_ai), kind = BannerKind.Info)
+            viewModel.termsUrl?.let { url ->
+                TextButton(onClick = { platform.openUrl(url) }) { Text(stringResource(Res.string.about_terms)) }
+            }
             SectionCard(null) {
                 sources.forEach { s ->
                     val last = s.cachePrefix?.let { fetched[it] }

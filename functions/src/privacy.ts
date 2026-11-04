@@ -12,6 +12,8 @@
  * timestamp) makes the security rules refuse to create the family again, so a phone that still has it offline cannot
  * bring it back.
  *
+ * Someone without the app can ask by e-mail (docs/DELETE_ACCOUNT.md); `scripts/delete-account.mjs` then runs the same steps.
+ *
  * Logs carry ids and counts only, never names, e-mails or anything a person typed.
  */
 import * as logger from "firebase-functions/logger";
@@ -41,7 +43,7 @@ const OPTIONS = {
   region: REGION,
   timeoutSeconds: 300,
   memory: "512MiB" as const,
-  // The app does not send App Check tokens yet. Turn this on together with Firestore enforcement (docs/SETUP.md, App Check).
+  // The app sends App Check tokens (docs/SETUP.md 2.2). Turn this on together with Firestore enforcement.
   enforceAppCheck: false,
 };
 
@@ -72,6 +74,16 @@ export const deleteFamily = onCall(OPTIONS, async (request) => {
   const uid = callerUid(request);
   const familyId = familyIdFrom(request.data, true);
   if (familyId === undefined) throw new HttpsError("invalid-argument", Reasons.invalidFamilyId);
+  return deleteFamilyFor(uid, familyId);
+});
+
+export const deleteAccount = onCall(OPTIONS, async (request) => {
+  const uid = callerUid(request);
+  return deleteAccountOf(uid, familyIdFrom(request.data, false));
+});
+
+/** What `deleteFamily` does for [uid], who must be a parent of the family. */
+export async function deleteFamilyFor(uid: string, familyId: string): Promise<{ status: string }> {
   const db = getFirestore();
   const [access, tombstone, family] = await db.getAll(
     db.doc(`families/${familyId}/access/${uid}`),
@@ -92,11 +104,16 @@ export const deleteFamily = onCall(OPTIONS, async (request) => {
   const counts = await purgeFamily(db, familyId);
   logger.info("deleteFamily", { familyId, uid, ...counts });
   return { status: "deleted" };
-});
+}
 
-export const deleteAccount = onCall(OPTIONS, async (request) => {
-  const uid = callerUid(request);
-  const hint = familyIdFrom(request.data, false);
+/**
+ * What `deleteAccount` does for [uid]. [hint] is the family on the calling phone (see the top of this file).
+ * @throws HttpsError with `Reasons.lastParent` when the account is the only parent of a family where others have accounts.
+ */
+export async function deleteAccountOf(
+  uid: string,
+  hint?: string,
+): Promise<{ status: string; familiesDeleted: number; familiesLeft: number }> {
   const db = getFirestore();
   const user = db.doc(`users/${uid}`);
   const stored = (await user.get()).get("familyIds");
@@ -136,7 +153,7 @@ export const deleteAccount = onCall(OPTIONS, async (request) => {
     });
   logger.info("deleteAccount", { uid, familiesDeleted, familiesLeft, calendarFeeds });
   return { status: "deleted", familiesDeleted, familiesLeft };
-});
+}
 
 function callerUid(request: CallableRequest<unknown>): string {
   const uid = request.auth?.uid;

@@ -77,6 +77,7 @@ object Faq {
         FaqEntry("sync", FaqGroup.Family, Res.string.faq_sync_q, Res.string.faq_sync_a),
         FaqEntry("invite", FaqGroup.Family, Res.string.faq_invite_q, Res.string.faq_invite_a, FaqFor.Parents),
         FaqEntry("new-phone", FaqGroup.Family, Res.string.faq_new_phone_q, Res.string.faq_new_phone_a),
+        FaqEntry("password", FaqGroup.Family, Res.string.faq_password_q, Res.string.faq_password_a),
         FaqEntry("leave", FaqGroup.Family, Res.string.faq_leave_q, Res.string.faq_leave_a),
         FaqEntry("roles", FaqGroup.Family, Res.string.faq_roles_q, Res.string.faq_roles_a),
         FaqEntry("shared-event", FaqGroup.Calendar, Res.string.faq_shared_event_q, Res.string.faq_shared_event_a, FaqFor.Parents),

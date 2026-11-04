@@ -1,23 +1,33 @@
-// Builds the public privacy policy page (hosting/privacy/index.html) from docs/PRIVACY.md, so the policy has one source.
-// Runs before every hosting deploy (firebase.json predeploy) and by hand:  node functions/scripts/privacy-page.mjs
-// Only the "Svenska" and "English" sections are the policy: the note to the owner at the top and the maintainers' section
-// at the end never go public. While the policy still has [placeholders] no page is written: a half-filled policy must
-// never go public.
+// Builds the public pages in hosting/ from docs/, so each text has one source: the privacy policy, the terms of use and the
+// page for deleting an account (PAGES). Runs before every hosting deploy (firebase.json predeploy) and by hand:
+//   node functions/scripts/public-pages.mjs
+// Only the "Svenska" and "English" sections are the text: the note to the owner at the top and the maintainers' section at the
+// end never go public. While a text still has [placeholders] its page is not written: a half-filled page must never go public.
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
+export const PAGES = [
+  { source: "docs/PRIVACY.md", target: "hosting/privacy/index.html" },
+  { source: "docs/TERMS.md", target: "hosting/villkor/index.html" },
+  { source: "docs/DELETE_ACCOUNT.md", target: "hosting/radera/index.html" },
+];
+
 const escape = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-/** **bold**, `code`, [links](https://…) and bare domains like imy.se (escaped first, so nothing from the text becomes markup). */
+/**
+ * **bold**, `code`, [links](https://… or /path/), bare domains like imy.se and e-mail addresses (escaped first, so nothing
+ * from the text becomes markup).
+ */
 function inline(text) {
   return escape(text)
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, '<a href="$2">$1</a>')
-    .replace(/(^|[\s(])(imy\.se)\b/g, '$1<a href="https://www.$2">$2</a>');
+    .replace(/\[([^\]]+)\]\(((?:https:\/)?\/[^)\s]+)\)/g, '<a href="$2">$1</a>')
+    .replace(/(^|[\s(])(imy\.se)\b/g, '$1<a href="https://www.$2">$2</a>')
+    .replace(/(^|[\s(])([\w.+-]+@[\w-]+(?:\.[\w-]+)+)/g, '$1<a href="mailto:$2">$2</a>');
 }
 
 /** The title and the language sections, without the note to the owner (quoted lines) or any other section. */
@@ -32,12 +42,12 @@ export function publicPart(markdown) {
   return out.join("\n");
 }
 
-/** True while the policy still has a placeholder such as [e-postadress]: square brackets that are not a link. */
+/** True while the text still has a placeholder such as [e-postadress]: square brackets that are not a link. */
 export function hasPlaceholders(markdown) {
   return /\[[^\]\n]+\](?!\()/.test(publicPart(markdown));
 }
 
-/** The subset of Markdown PRIVACY.md uses: headings, paragraphs, lists, tables and rules. */
+/** The subset of Markdown the texts use: headings, paragraphs, lists, tables and rules. */
 export function render(markdown) {
   const lines = publicPart(markdown).split("\n");
   const out = [];
@@ -112,21 +122,7 @@ export function render(markdown) {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escape(title)}</title>
-  <style>
-    body { font-family: system-ui, sans-serif; background: #f8f5ef; color: #2b2a26; margin: 0; padding: 2rem 1rem; line-height: 1.5; }
-    main { max-width: 46rem; margin: 0 auto; }
-    h1, h2, h3 { font-weight: 600; line-height: 1.25; }
-    section + section { margin-top: 3rem; border-top: 1px solid #d9d3c7; padding-top: 1rem; }
-    table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
-    th, td { text-align: left; vertical-align: top; padding: 0.4rem; border-bottom: 1px solid #d9d3c7; }
-    code { font-size: 0.9em; }
-    a { color: #3e6b4f; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #1c1b19; color: #e9e4da; }
-      th, td, section + section { border-color: #45413a; }
-      a { color: #9fc7a9; }
-    }
-  </style>
+  <link rel="stylesheet" href="/site.css">
 </head>
 <body>
   <main>
@@ -138,18 +134,20 @@ export function render(markdown) {
 `;
 }
 
-/** Writes the page, or removes a stale one while the policy has placeholders. Returns the page path or null. */
-export function build(source = resolve(root, "docs/PRIVACY.md"), target = resolve(root, "hosting/privacy/index.html")) {
+/** Writes the page, or removes a stale one while the text has placeholders. Returns the page path or null. */
+export function build(source, target) {
   const markdown = readFileSync(source, "utf8");
   if (hasPlaceholders(markdown)) {
     if (existsSync(target)) rmSync(target);
-    console.warn("privacy-page: docs/PRIVACY.md still has [placeholders] – no public policy page was written.");
+    console.warn(`public-pages: ${source} still has [placeholders] – its public page was not written.`);
     return null;
   }
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, render(markdown));
-  console.log(`privacy-page: wrote ${target}`);
+  console.log(`public-pages: wrote ${target}`);
   return target;
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) build();
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  for (const page of PAGES) build(resolve(root, page.source), resolve(root, page.target));
+}

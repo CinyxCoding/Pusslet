@@ -1735,4 +1735,14 @@
     <string name="restore_unnamed">Familj utan namn</string>
     <string name="restore_none">Kontot hör inte till någon familj. Gå med via en inbjudan eller skapa en ny familj.</string>
     <string name="restore_other_account">Byt konto</string>
+
+    <!-- Glömt lösenord och användarvillkor (ADR-064) -->
+    <string name="account_forgot_password">Glömt lösenordet?</string>
+    <string name="account_terms_note">Genom att skapa ett konto godkänner du användarvillkoren</string>
+    <string name="join_terms_note">Genom att gå med godkänner du användarvillkoren</string>
+    <string name="about_terms">Användarvillkor</string>
+    <string name="password_reset_no_email">Skriv din e-postadress ovan, så skickar vi en länk där du väljer ett nytt lösenord.</string>
+    <string name="password_reset_sent">Om det finns ett konto för adressen har vi skickat en länk där du väljer ett nytt lösenord. Kolla skräpposten om du inte hittar mejlet.</string>
+    <string name="faq_password_q">Jag har glömt lösenordet</string>
+    <string name="faq_password_a">Skriv din e-postadress där du loggar in och tryck på Glömt lösenordet?, så mejlar vi en länk där du väljer ett nytt. Loggar du in med Google behöver du inget lösenord.</string>
 </resources>

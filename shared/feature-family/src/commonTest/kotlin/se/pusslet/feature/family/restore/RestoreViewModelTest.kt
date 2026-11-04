@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import se.pusslet.core.account.PasswordResetState
 import se.pusslet.core.model.Role
 import se.pusslet.data.remote.AccountFamily
 import se.pusslet.data.remote.AuthError
@@ -67,6 +68,12 @@ class RestoreViewModelTest {
 
         override suspend fun signOut() {
             user.value = null
+        }
+
+        val passwordResets = mutableListOf<String>()
+
+        override suspend fun sendPasswordReset(email: String) {
+            passwordResets += email
         }
     }
 
@@ -143,6 +150,23 @@ class RestoreViewModelTest {
         assertEquals(RestoreStep.SignIn, phone.vm.state.value.step)
         assertNull(phone.account.currentUser.value)
         assertFalse(phone.world.sessions.session.value.hasFamily)
+    }
+
+    /** On a new phone a forgotten password would otherwise be the end of the road (ADR-064). */
+    @Test
+    fun aForgottenPasswordIsOneMailAway() = runTest {
+        val phone = Phone(Server(listOf(berg)))
+        phone.vm.start()
+
+        phone.vm.sendPasswordReset("anna@example.se")
+
+        assertEquals(listOf("anna@example.se"), phone.account.passwordResets)
+        assertEquals(PasswordResetState.Sent, phone.vm.passwordResetState.value)
+        assertEquals(RestoreStep.SignIn, phone.vm.state.value.step)
+
+        // The screen opens again later: what was said about the last address no longer applies.
+        phone.vm.start()
+        assertEquals(PasswordResetState.Idle, phone.vm.passwordResetState.value)
     }
 
     @Test

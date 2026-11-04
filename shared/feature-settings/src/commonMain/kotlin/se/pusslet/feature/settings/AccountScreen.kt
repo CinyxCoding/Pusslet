@@ -42,6 +42,8 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import se.pusslet.core.account.PasswordResetState
+import se.pusslet.data.BackendConfig
 import se.pusslet.data.remote.AuthError
 import se.pusslet.data.remote.AuthException
 import se.pusslet.data.remote.AuthRepository
@@ -50,8 +52,10 @@ import se.pusslet.data.sync.SyncEngine
 import se.pusslet.data.sync.SyncState
 import se.pusslet.data.sync.SyncStatus
 import se.pusslet.data.usecase.DataPrivacy
+import se.pusslet.data.usecase.PasswordReset
 import se.pusslet.ui.components.Banner
 import se.pusslet.ui.components.BannerKind
+import se.pusslet.ui.components.ForgotPassword
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.format.formatTime
@@ -68,14 +72,29 @@ data class AccountUiState(
     val error: AuthError? = null,
 )
 
-class AccountViewModel(private val auth: AuthRepository, engine: SyncEngine, private val privacy: DataPrivacy) : ViewModel() {
+class AccountViewModel(
+    private val auth: AuthRepository,
+    engine: SyncEngine,
+    private val privacy: DataPrivacy,
+    config: BackendConfig,
+) : ViewModel() {
     private val log = Logger.withTag("Account")
     private val busy = MutableStateFlow(false)
     private val error = MutableStateFlow<AuthError?>(null)
+    private val passwordReset = PasswordReset(auth)
 
     val state: StateFlow<AccountUiState> =
         combine(auth.currentUser, engine.status, busy, error) { u, s, b, e -> AccountUiState(auth.available, u, s, b, e) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AccountUiState(auth.available))
+
+    val passwordResetState: StateFlow<PasswordResetState> = passwordReset.state
+
+    /** What "Skapa konto" agrees to (ADR-064); null without a server, where there is no account to create. */
+    val termsUrl: String? = config.termsUrl
+
+    fun sendPasswordReset(email: String) {
+        viewModelScope.launch { passwordReset.send(email) }
+    }
 
     private fun run(block: suspend () -> Unit) {
         busy.value = true
@@ -117,6 +136,7 @@ fun AccountRoute(onBack: () -> Unit, viewModel: AccountViewModel = koinViewModel
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var askSignOut by remember { mutableStateOf(false) }
+    val passwordReset by viewModel.passwordResetState.collectAsStateWithLifecycle()
     Scaffold(topBar = { PussletTopBar(stringResource(Res.string.account_title), onBack = onBack) }) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(Spacing.screenHorizontal),
@@ -173,6 +193,10 @@ fun AccountRoute(onBack: () -> Unit, viewModel: AccountViewModel = koinViewModel
                     ) {
                         Text(stringResource(Res.string.account_create))
                     }
+                }
+                ForgotPassword(email, passwordReset, viewModel::sendPasswordReset)
+                viewModel.termsUrl?.let { url ->
+                    TextButton(onClick = { platform.openUrl(url) }) { Text(stringResource(Res.string.account_terms_note)) }
                 }
                 if (platform.googleSignInAvailable) {
                     OutlinedButton(onClick = {

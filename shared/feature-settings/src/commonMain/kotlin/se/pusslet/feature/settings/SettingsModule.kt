@@ -6,8 +6,8 @@ import org.koin.dsl.module
 
 val settingsModule: Module = module {
     viewModel { SettingsViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { AccountViewModel(get(), get(), get()) }
-    viewModel { AboutDataViewModel(get()) }
+    viewModel { AccountViewModel(get(), get(), get(), get()) }
+    viewModel { AboutDataViewModel(get(), get()) }
     viewModel { PrivacyViewModel(get(), get()) }
     viewModel { GuideViewModel(get(), get()) }
     viewModel { FaqViewModel(get()) }

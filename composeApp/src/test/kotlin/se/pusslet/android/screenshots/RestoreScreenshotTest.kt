@@ -1,16 +1,22 @@
 package se.pusslet.android.screenshots
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import se.pusslet.core.account.PasswordResetState
 import se.pusslet.core.model.Role
 import se.pusslet.data.remote.AccountFamily
 import se.pusslet.feature.family.restore.RestoreActions
@@ -42,6 +48,34 @@ class RestoreScreenshotTest {
         compose.setContent { PussletTheme { RestoreScreen(RestoreUiState(), RestoreActions(onGoogle = {})) } }
         compose.onNodeWithText("Logga in med samma konto som på din förra telefon, så hämtas familjen hit.").assertExists()
         snap("restore_sign_in")
+    }
+
+    /** "Glömt lösenordet?" uses the address in the form, and the receipt says nothing about who has an account (ADR-064). */
+    @Test
+    fun aForgottenPasswordGoesToTheAddressInTheForm() {
+        val sent = mutableListOf<String>()
+        var reset by mutableStateOf(PasswordResetState.Idle)
+        compose.setContent {
+            PussletTheme {
+                val actions = RestoreActions(
+                    onSendPasswordReset = {
+                        sent += it
+                        reset = if (it.isBlank()) PasswordResetState.BadEmail else PasswordResetState.Sent
+                    },
+                )
+                RestoreScreen(RestoreUiState(), actions, reset)
+            }
+        }
+
+        compose.onNodeWithText("Glömt lösenordet?").performClick()
+        compose.onNodeWithText("Skriv din e-postadress ovan", substring = true).assertExists()
+
+        compose.onAllNodes(hasSetTextAction())[0].performTextInput("sara@example.se")
+        compose.onNodeWithText("Glömt lösenordet?").performClick()
+
+        assertEquals(listOf("", "sara@example.se"), sent)
+        compose.onNodeWithText("Om det finns ett konto för adressen", substring = true).assertExists()
+        snap("restore_password_sent")
     }
 
     @Test

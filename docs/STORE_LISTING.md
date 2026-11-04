@@ -2,7 +2,9 @@
 
 > Utkast till butikssidan (Play Console → Grow → Store presence → Main store listing). Svenska är huvudspråk, engelska
 > läggs till som översättning. Gränser: namn 30 tecken, kort beskrivning 80 tecken, lång beskrivning 4 000 tecken.
-> Play tillåter inga omdömen om sig själv ("bästa", "nr 1") eller uppmaningar i namn och kort beskrivning.
+> Play tillåter inga omdömen om sig själv ("bästa", "nr 1") eller uppmaningar i namn och kort beskrivning. Play kräver också
+> att beskrivningen av en app med hälsofunktioner säger att den inte är en medicinteknisk produkt, så stycket under MEDICIN
+> OCH FEBER måste stå kvar.
 
 ## Svenska
 
@@ -41,6 +43,13 @@ MAT OCH HANDLA
 
 UPPGIFTER
 • Uppgifter och sysslor som turas om, och en vy över hur ni har delat
+
+MEDICIN OCH FEBER
+• Logga doser och feber per barn, och få påminnelser för en kur tills dosen är given. Bara föräldrar ser det
+• Länkar till FASS och 1177
+
+Pusslet är inte en medicinteknisk produkt. Appen ställer inga diagnoser, behandlar, botar eller förebygger inte sjukdomar och
+föreslår inga doser. Fråga vården vid frågor om hälsa.
 
 PÅ HEMSKÄRMEN
 • Widgets för Idag och inköpslistan
@@ -92,6 +101,13 @@ FOOD AND SHOPPING
 TASKS
 • Tasks and chores that take turns, and a view of how you've shared them
 
+MEDICINE AND FEVER
+• Log doses and fever for each child, and get reminders for a course until the dose is given. Only parents see it
+• Links to FASS and 1177
+
+Pusslet is not a medical device. The app does not diagnose, treat, cure or prevent any medical condition and does not suggest
+doses. Consult a healthcare professional about health questions.
+
 ON THE HOME SCREEN
 • Widgets for Today and the shopping list
 
@@ -117,6 +133,8 @@ Food Facts (ODbL).
 | Kontakt-e-post | Krävs | [e-postadress] |
 | Webbplats | Valfritt | [webbadress] |
 | Integritetspolicy | Krävs, öppen URL | `https://pusslet.web.app/privacy/`, byggs från PRIVACY.md vid `firebase deploy --only hosting` (SETUP.md 2.4) |
+| Radering av konto | Krävs, öppen URL (Data safety) | `https://pusslet.web.app/radera/`, byggs från DELETE_ACCOUNT.md på samma sätt |
+| Användarvillkor | Krävs av näringsidkare, per app | `https://pusslet.web.app/villkor/`, byggs från TERMS.md på samma sätt |
 | Innehållsklassificering | Frågeformulär | Ingen våldsam eller sexuell text, inga köp, användare kan dela innehåll med sin familj (ej offentligt) → väntas bli PEGI 3 / Alla |
 | Målgrupp | | 18+ (appen är för föräldrar, se PLAY_DATA_SAFETY.md) |
 | Annonser | | Nej |

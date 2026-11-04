@@ -16,6 +16,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +37,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import se.pusslet.core.model.MemberColor
 import se.pusslet.core.model.Role
 import se.pusslet.core.util.InviteCodes
+import se.pusslet.data.BackendConfig
 import se.pusslet.data.remote.FamilyRemote
 import se.pusslet.data.remote.InviteInfo
 import se.pusslet.data.repository.FamilyRepository
@@ -66,7 +68,11 @@ class JoinViewModel(
     private val remote: FamilyRemote,
     private val prefs: PreferencesRepository,
     private val clock: Clock,
+    config: BackendConfig,
 ) : ViewModel() {
+    /** What joining agrees to (ADR-064); null without a server, where nobody can join. */
+    val termsUrl: String? = config.termsUrl
+
     private val log = Logger.withTag("Join")
     private val _state = MutableStateFlow(JoinUiState(error = if (remote.available) null else JoinError.Unavailable))
     val state: StateFlow<JoinUiState> = _state.asStateFlow()
@@ -186,6 +192,9 @@ fun JoinRoute(
                     enabled = !state.busy && state.myName.isNotBlank(),
                     modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
                 ) { Text(stringResource(Res.string.join_button)) }
+                viewModel.termsUrl?.let { url ->
+                    TextButton(onClick = { platform.openUrl(url) }) { Text(stringResource(Res.string.join_terms_note)) }
+                }
             }
         }
     }

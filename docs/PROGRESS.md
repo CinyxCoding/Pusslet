@@ -262,7 +262,7 @@ skrivas om; butiksbilderna görs bäst när utseendet är klart inför det stän
   - Man bläddrar med Nästa, Tillbaka, svep eller Bakåt.
   - "Stäng" gäller tills nästa start. "Visa inte igen" och "Klar" stänger för gott.
   - Telefoner som redan använde appen får den bara från Inställningar › Hjälp › Visa guiden.
-- [x] Vanliga frågor under Inställningar › Hjälp, och i hjälparvyn under Inställningar och hjälp: 20 frågor i fem
+- [x] Vanliga frågor under Inställningar › Hjälp, och i hjälparvyn under Inställningar och hjälp: 21 frågor i fem
   grupper, filtrerade efter roll.
 - Testat: när guiden visas (data, introduktion, skal, demobygget), vilka sidor och frågor varje roll får, och i appen
   att Nästa, Tillbaka, "Stäng", "Visa inte igen" och "Klar" fungerar. Skärmbilderna `guide_first_page`, `guide_helper`
@@ -275,7 +275,23 @@ skrivas om; butiksbilderna görs bäst när utseendet är klart inför det stän
   servern igen; skärmbilderna `restore_sign_in` och `restore_found`. Inte provat mot ett riktigt Firebase-projekt, som
   inte finns än.
 
+## Inför lanseringen (2026-11-04, ADR-064)
+- [x] "Glömt lösenordet?" på kontoskärmen och på Hämta din familj.
+- [x] Sidan för inbjudningslänken (`hosting/join/`), som visar koden och länkar till Google Play.
+- [x] Sidan för radering av konto (`docs/DELETE_ACCOUNT.md`) och skriptet för en begäran via mejl (SETUP.md 2.7).
+- [x] Användarvillkor (`docs/TERMS.md`), länkade från appen.
+- [x] Butikstexten om att appen inte är en medicinteknisk produkt.
+- [x] Integritetspolicyn och Data safety tar upp App Check och Hosting. Den engelska policyn tog inte upp medicinloggen och
+  bilderna, och gör det nu.
+- [x] Checklistan i SETUP.md 3.3 har fått Googles nya krav: näringsidkarstatus, hälsodeklaration, ekonomifunktioner och
+  appåtkomst.
+- Kvar för ägaren: fylla i det inom hakparentes, låta någon läsa policyn och villkoren, och allt i SETUP.md 3.3.
+
 ## Kända begränsningar / buggar
+- Ett textfält i en `AlertDialog` blir aldrig idle under Robolectric, inte ens Materials egen dialog utan vår kod
+  (`AppNotIdleException`). Sådana dialoger går inte att testa i skärmdumpstesterna.
+- Hosting-emulatorn skickar inte egna rubriker på Windows, eftersom `glob-slasher` gör om snedstrecken i mönstren. Kontrollera
+  rubrikerna i `firebase.json` i webbläsaren efter första deployen.
 - CI hängde en timme 2026-10-14: Idags ViewModel startade en evig `while (true) { delay(1 h) }` i `init`, som fick
   Robolectric-testerna att aldrig bli klara. Vädret laddas nu inuti state-flödet (stannar med skärmen). Regel: inga eviga
   loopar i ViewModel-init; periodiskt arbete hör hemma i ett flöde under `stateIn(WhileSubscribed)`.

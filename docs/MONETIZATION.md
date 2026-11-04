@@ -152,7 +152,9 @@ bestäms.
      "Från matsedeln" i Handla en hänvisning till premium i stället.
 6. **Skärmar:** en premiumsida (vad som ingår, pris från `products()`, "Återställ köp", länk till Plays
    abonnemangshantering) och en mjuk hänvisning där en spärr slår till.
-7. **Data safety och butik:** lägg till köphistorik i Data safety (PLAY_DATA_SAFETY.md) och nämn premium i
-   butikstexten (STORE_LISTING.md). Play märker appen "Köp i appen".
+7. **Data safety, villkor och butik:** lägg till köphistorik i Data safety (PLAY_DATA_SAFETY.md) och nämn premium i
+   butikstexten (STORE_LISTING.md). Play märker appen "Köp i appen". Skriv in pris, provperiod, uppsägning i Google Play
+   och ångerrätten i användarvillkoren (TERMS.md), och att en prenumeration avslutas i Google Play på sidan för radering
+   (DELETE_ACCOUNT.md).
 8. **Test:** licenstestare i Play Console, testkort, återbetalning och utgång. Enhetstester för `BillingEntitlements`
    finns redan.

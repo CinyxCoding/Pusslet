@@ -79,7 +79,10 @@ med back-off löser det under en session.
    Appen skickar redan tokens. Ett debug-bygge skriver sin felsökningstoken i logcat första gången det startar
    (`DebugAppCheckProvider`); lägg in den under App Check → Manage debug tokens, annars nekas debug-bygget när kravet
    är påslaget.
-4. Crashlytics: aktivera (appen samlar bara in efter samtycke).
+4. Crashlytics finns inte i bygget (PRIVACY.md), så det behöver inte aktiveras. Krascher och ANR syns i Play Console
+   (Android vitals).
+5. Authentication → Templates: välj svenska för mejlet med nytt lösenord. Firebase skickar det när någon trycker på
+   "Glömt lösenordet?" (ADR-064), och länken går till Firebases egen sida för att välja lösenord.
 
 ### 2.3 Blaze-planen
 Cloud Functions kräver **Blaze** (betala per användning). Sätt en **budgetvarning** (t.ex. 50 kr/månad) i Google Cloud Billing.
@@ -90,11 +93,26 @@ firebase use --add                       # välj projektet
 firebase deploy --only firestore:rules,firestore:indexes,functions
 firebase deploy --only hosting           # startsidan och integritetspolicyn
 ```
-Integritetspolicyn ligger i Firebase Hosting, eftersom Play kräver en öppen länk. Före varje hosting-deploy gör
-`functions/scripts/privacy-page.mjs` om avsnitten Svenska och English i `docs/PRIVACY.md` till
-`https://<projekt-id>.web.app/privacy/`. Så länge något står inom hakparentes skrivs ingen sida. Appen länkar dit från
-Integritet via `pusslet.linkHost` (standard `pusslet.web.app`), så sätt den i `local.properties` om projekt-id:t inte är
-`pusslet`. Lägg `assetlinks.json` för inbjudningslänkarna i `hosting/.well-known/` (3.2).
+Webbsidorna ligger i Firebase Hosting, eftersom Play kräver öppna länkar. Före varje hosting-deploy gör
+`functions/scripts/public-pages.mjs` om avsnitten Svenska och English i tre dokument till sidor:
+
+| Dokument | Sida |
+|---|---|
+| `docs/PRIVACY.md` | `https://<projekt-id>.web.app/privacy/` |
+| `docs/TERMS.md` | `https://<projekt-id>.web.app/villkor/` |
+| `docs/DELETE_ACCOUNT.md` | `https://<projekt-id>.web.app/radera/` |
+
+Så länge något står inom hakparentes i ett dokument skrivs inte dess sida. Appen länkar till policyn och villkoren via
+`pusslet.linkHost` (standard `pusslet.web.app`), så sätt den i `local.properties` om projekt-id:t inte är `pusslet`.
+
+`hosting/join/` är sidan som visas när en inbjudningslänk (`/join/<kod>`) öppnas utan appen: den visar koden och länkar till
+Google Play. Under det stängda testet kommer bara testare åt appen där, så en inbjuden partner måste också vara testare. Lägg
+`assetlinks.json` för inbjudningslänkarna i `hosting/.well-known/` (3.2).
+
+Prova sidorna lokalt utan att publicera, och öppna sedan `http://127.0.0.1:5000/join/K7QDM2XP9R`:
+```bash
+firebase emulators:start --only hosting --project demo-pusslet
+```
 
 Familjens kalenderflöde (ADR-041) är funktionen `familyCalendarFeed`; appen bygger länken
 `https://europe-north1-<projekt-id>.cloudfunctions.net/familyCalendarFeed/<token>.ics`, så den behöver ingen egen
@@ -121,6 +139,19 @@ Lägg till SHA-1 och SHA-256 för debug- och release-nyckeln i Firebase (krävs 
 ### 2.6 Kontaktuppgift för öppna datakällor
 Sätt `AppConfig.CONTACT` (webbplats eller e-post) i `shared/core/src/commonMain/kotlin/se/pusslet/core/AppConfig.kt`.
 Open Food Facts kräver att appen identifierar sig med kontaktuppgift i User-Agent.
+
+### 2.7 Radering via mejl
+`docs/DELETE_ACCOUNT.md` lovar att den som inte har appen kvar kan mejla och få kontot raderat inom 30 dagar.
+1. Kontrollera att mejlet kommer från adressen kontot har. Skriptet frågar inte en gång till, och det går inte att ångra.
+2. Kör samma steg som appen:
+   ```bash
+   npm --prefix functions run build
+   gcloud auth application-default login
+   node functions/scripts/delete-account.mjs namn@example.se --project <projekt-id>
+   ```
+3. Är personen enda förälder i en familj där andra har konton vägrar skriptet, skriver ut familjens id och ändrar ingenting.
+   Fråga personen vad som ska hända. Ska familjen raderas för alla, kör igen med `--delete-family <familje-id>`.
+4. Bekräfta per mejl när det är gjort.
 
 ## 3. Release och lansering
 
@@ -165,6 +196,9 @@ Play App Signing rekommenderas: Google håller appens signeringsnyckel och du si
       testare som är med i 14 dagar i följd** innan produktionsåtkomst kan sökas. Planera in det: bjud in fler än 12
       (någon hoppar av) och låt testet löpa minst 14 hela dagar.
 - [ ] Appen skapad med paketnamnet `se.pusslet.app` (kan aldrig ändras), standardspråk svenska.
+- [ ] Näringsidkarstatus deklarerad, vilket nya konton gör direkt. Den som tar betalt räknas troligen som näringsidkare. Då
+      visas namn, adress och telefon i butiken, med ett personligt konto din egen adress, och varje app behöver en länk till
+      användarvillkor. Ett organisationskonto kräver D-U-N-S-nummer.
 
 **Backend**
 - [ ] Firebase `prod`-projekt i EU, `google-services.json` i `composeApp/src/prod/` (2.1).
@@ -173,21 +207,34 @@ Play App Signing rekommenderas: Google håller appens signeringsnyckel och du si
 - [ ] Integritetspolicyn ifylld och publicerad med `firebase deploy --only hosting` (2.4), och länken inlagd i Play
       Console (STORE_LISTING.md).
 - [ ] SHA-fingeravtryck för uppladdnings- och appsigneringsnyckeln i Firebase (2.5, 3.2).
+- [ ] Mejlet för nytt lösenord på svenska, provat med ett riktigt konto (2.2).
 - [ ] `AppConfig.CONTACT` satt (2.6). Länkdomänen (`pusslet.linkHost` i `local.properties`) publicerar
       `/.well-known/assetlinks.json` med appsigneringsnyckelns SHA-256 (t.ex. via Firebase Hosting), annars öppnas
       inbjudningslänkar i webbläsaren.
 
 **Butikssida och policy**
 - [ ] Integritetspolicyn publicerad på en öppen adress (docs/PRIVACY.md, fyll i det inom hakparentes).
-- [ ] Webbsida för radering av konto publicerad (docs/PLAY_DATA_SAFETY.md, sist).
+- [ ] Sidan för radering av konto ifylld och publicerad (docs/DELETE_ACCOUNT.md), adressen inlagd i Data safety och
+      rutinen för mejl känd (2.7).
+- [ ] Användarvillkoren ifyllda, lästa av någon med juridisk kunskap och publicerade (docs/TERMS.md), länken inlagd i Play
+      Console.
+- [ ] Integritetspolicyn läst av någon med GDPR-kunskap. Appen sparar hälsouppgifter om barn på samtycke, så avgör också om
+      det krävs en konsekvensbedömning (DPIA).
+- [ ] Hälsodeklarationen ifylld: medicinpåminnelser hör till Medication and Treatment Management. Butikstexten säger att
+      appen inte är en medicinteknisk produkt (STORE_LISTING.md).
+- [ ] Deklarationen om ekonomifunktioner ifylld; kontrollera Delade kostnader mot Googles lista.
+- [ ] Appåtkomst: testkonto och instruktioner åt granskarna.
 - [ ] Data safety ifyllt (docs/PLAY_DATA_SAFETY.md), innehållsklassificering, målgrupp 18+, annonser: nej.
 - [ ] Butikstexter, ikon, funktionsgrafik och skärmdumpar på svenska och engelska (docs/STORE_LISTING.md).
 
 **Bygget**
 - [ ] `./gradlew build` grönt och `npm test` i `functions/` grönt.
 - [ ] Versionskod höjd, AAB byggd och signerad med uppladdningsnyckeln (3.1–3.2).
-- [ ] Releasen provad på en riktig telefon: inloggning, gå med via inbjudan, synk mellan två telefoner, push
-      (förfrågan och svar), notiser i tysta timmar, kalenderexport, widgets.
+- [ ] Releasen provad på en riktig telefon: inloggning, glömt lösenord, hämta familjen på en ny telefon, gå med via
+      inbjudan (även länken utan appen installerad), synk mellan två telefoner, push (förfrågan och svar), notiser i tysta
+      timmar, kalenderexport, widgets.
+- [ ] Påminnelser kommer i tid när telefonen ligger still, särskilt medicindoser och hämtningar. De går via WorkManager
+      utan exakta alarm (ADR-036).
 - [ ] En runda med TalkBack (Idag, snabbinmatning, kalender, inköpslistan i butiksläge, onboarding) och
       Accessibility Scanner på samma skärmar; de automatiska kontrollerna täcker namn, storlek och kontrast men inte
       läsordning och hur det låter.

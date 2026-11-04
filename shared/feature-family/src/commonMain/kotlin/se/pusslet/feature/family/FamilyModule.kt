@@ -20,7 +20,7 @@ import se.pusslet.feature.family.wishlist.WishlistViewModel
 val familyModule: Module = module {
     viewModel { OnboardingViewModel(get(), get(), get(), get(), get(), get(), get(), canSignIn = get<AuthRepository>().available) }
     viewModel { SchoolPickerViewModel(get()) }
-    viewModel { JoinViewModel(get(), get(), get(), get()) }
+    viewModel { JoinViewModel(get(), get(), get(), get(), get()) }
     viewModel { RestoreViewModel(get(), get(), get(), get()) }
     viewModel { FamilyViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { WishlistViewModel(get(), get(), get()) }

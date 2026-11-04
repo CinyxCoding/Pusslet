@@ -66,7 +66,12 @@ data class BackendConfig(
      * The public privacy policy, built from docs/PRIVACY.md and published with Firebase Hosting on the invite links' host;
      * null without a server, where there is no page to show.
      */
-    val privacyPolicyUrl: String? get() = if (mode == BackendMode.Firebase) "https://$linkHost/privacy/" else null
+    val privacyPolicyUrl: String? get() = publicPage("privacy")
+
+    /** The terms of use, built from docs/TERMS.md and published the same way (ADR-064). */
+    val termsUrl: String? get() = publicPage("villkor")
+
+    private fun publicPage(path: String): String? = if (mode == BackendMode.Firebase) "https://$linkHost/$path/" else null
 }
 
 /**

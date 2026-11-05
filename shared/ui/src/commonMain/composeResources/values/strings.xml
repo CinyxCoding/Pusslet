@@ -1148,6 +1148,51 @@
 
     <string name="distribution_row_a11y">%1$s: %2$d</string>
 
+    <!-- Vanliga sysslor (ADR-065) -->
+    <string name="chores_title">Vanliga sysslor</string>
+    <string name="chores_open">Välj vanliga sysslor</string>
+    <string name="chores_intro">Välj det ni brukar göra. Sysslorna börjar på lördagar, och varje syssla går att ändra sedan.</string>
+    <string name="chores_add_one">Lägg till 1 syssla</string>
+    <string name="chores_add_many">Lägg till %1$d sysslor</string>
+    <string name="chores_added_one">%1$s tillagd</string>
+    <string name="chores_added_many">%1$d sysslor tillagda</string>
+    <string name="chores_exists">Finns redan</string>
+    <string name="chores_group_cleaning">Städning</string>
+    <string name="chores_group_kitchen">Köket</string>
+    <string name="chores_group_bathroom">Badrummet</string>
+    <string name="chores_group_laundry">Tvätten</string>
+    <string name="chores_group_recycling">Sopor och återvinning</string>
+    <string name="chores_group_kids">Barnen</string>
+    <string name="chores_group_outdoors">Blommor och trädgård</string>
+    <string name="chore_vacuum">Dammsuga</string>
+    <string name="chore_mop_floors">Våttorka golven</string>
+    <string name="chore_dust">Damma</string>
+    <string name="chore_change_sheets">Byta lakan</string>
+    <string name="chore_clean_stove">Rengöra spisen</string>
+    <string name="chore_clean_fridge">Rengöra kylskåpet</string>
+    <string name="chore_clean_oven">Rengöra ugnen</string>
+    <string name="chore_clean_microwave">Rengöra mikron</string>
+    <string name="chore_clean_dishwasher">Rengöra diskmaskinen</string>
+    <string name="chore_descale_coffee_maker">Avkalka kaffebryggaren</string>
+    <string name="chore_clean_toilet">Städa toaletten</string>
+    <string name="chore_clean_shower">Städa duschen</string>
+    <string name="chore_change_towels">Byta handdukar</string>
+    <string name="chore_clean_floor_drain">Rensa golvbrunnen</string>
+    <string name="chore_do_laundry">Tvätta</string>
+    <string name="chore_fold_laundry">Vika tvätten</string>
+    <string name="chore_clean_washer">Rengöra tvättmaskinen</string>
+    <string name="chore_take_out_trash">Ta ut soporna</string>
+    <string name="chore_recycle">Lämna på återvinningen</string>
+    <string name="chore_return_deposits">Panta</string>
+    <string name="chore_empty_backpacks">Tömma ryggsäckarna</string>
+    <string name="chore_wash_gym_clothes">Tvätta gympakläderna</string>
+    <string name="chore_check_spare_clothes">Kolla extrakläderna på förskolan</string>
+    <string name="chore_sort_outgrown_clothes">Sortera kläder som blivit små</string>
+    <string name="chore_water_plants">Vattna blommorna</string>
+    <string name="chore_mow_lawn">Klippa gräset</string>
+    <string name="chore_pull_weeds">Rensa ogräs</string>
+    <string name="chore_sweep_balcony">Sopa balkongen</string>
+
     <!-- ICS subscriptions (Fas 3): Inställningar > Prenumerationer -->
     <string name="subs_title">Prenumerationer</string>
     <string name="subs_add">Ny prenumeration</string>
@@ -1309,6 +1354,8 @@
     <string name="notify_evening_title">Kvällskoll</string>
     <string name="notify_evening_body">Packa ikväll: %1$s</string>
     <string name="notify_bundle_reminders">%1$d påminnelser</string>
+    <string name="notify_test_title">Testnotis från Pusslet</string>
+    <string name="notify_test_body">Så här ser en påminnelse ut.</string>
     <string name="notify_bundle_handoffs">%1$d lämningar och hämtningar</string>
     <string name="notify_bundle_other">%1$d notiser</string>
 
@@ -1410,6 +1457,10 @@
     <string name="pickup_done_line">%1$s hämtad %2$s · %3$s</string>
     <string name="settings_pickup_warnings">Varna om en hämtning inte bockas av</string>
     <string name="settings_pickup_warnings_body">Om ingen trycker Hämtad en kvart efter tiden</string>
+    <string name="settings_test_notification">Skicka testnotis</string>
+    <string name="settings_test_notification_sent">Testnotisen är skickad. Syns den inte? Kolla Stör ej i telefonen.</string>
+    <string name="settings_test_notification_blocked">Telefonen stoppar notiser från Pusslet. Slå på dem i telefonens inställningar.</string>
+    <string name="settings_test_notification_open">Öppna inställningar</string>
     <string name="notify_channel_pickups">Hämtningar</string>
     <string name="notify_channel_pickups_desc">När ett barn är hämtat, och när ingen har bockat av en hämtning</string>
     <string name="notify_picked_up_title">%1$s är hämtad</string>
@@ -1661,7 +1712,7 @@
     <string name="guide_two_homes_title">Två hem</string>
     <string name="guide_two_homes_body">Växelvis boende visar var barnen är och när de byter. Med Andra hemmet delar ni barnens schema med det andra hemmet, och Delade kostnader håller räkningen.</string>
     <string name="guide_tasks_title">Uppgifter och sysslor</string>
-    <string name="guide_tasks_body">Det som ska göras, och sysslor som turas om vecka för vecka. Där ser ni också hur ni har delat på dem.</string>
+    <string name="guide_tasks_body">Det som ska göras, och sysslor som turas om vecka för vecka. Börja med Vanliga sysslor, så slipper ni skriva in allt. Här ser ni också hur ni har delat på dem.</string>
     <string name="guide_sick_title">Sjuk eller ledig</string>
     <string name="guide_sick_body">Tryck Sjuk idag? på Idag. Lämning, hämtning och aktiviteter ställs in, och de andra får veta. Loven planerar ni dag för dag under Lov och vistelsetider.</string>
     <string name="guide_medicine_title">Medicin och feber</string>
@@ -1703,7 +1754,7 @@
     <string name="faq_device_calendar_q">Min egen kalender syns inte</string>
     <string name="faq_device_calendar_a">Slå på Visa mina kalendrar under Mer › Inställningar › Kalendrar och ge appen tillgång till kalendern. Välj sedan vilka kalendrar som ska synas. De syns bara på din telefon.</string>
     <string name="faq_notifications_q">Jag får inga notiser</string>
-    <string name="faq_notifications_a">Kolla att Pusslet får visa notiser i telefonens inställningar. Där kan varje sorts notis också stängas av för sig. Notiser från de andra, som förfrågningar och Hämtad, kräver att ni är inloggade och har nät.</string>
+    <string name="faq_notifications_a">Tryck på Skicka testnotis i Inställningar. Kommer den inte, kolla att Pusslet får visa notiser i telefonens inställningar. Där kan varje sorts notis också stängas av för sig. Kommer testnotisen men inte påminnelserna, kolla telefonens batteriinställningar för Pusslet. Notiser från de andra, som förfrågningar och Hämtad, kräver att ni är inloggade och har nät.</string>
     <string name="faq_quiet_hours_q">Notiserna kommer först på morgonen</string>
     <string name="faq_quiet_hours_a">Det är tysta timmar. Påminnelser som du själv har gett en tid kommer ändå, men det mesta annat väntar tills de är slut. Ändra eller stäng av dem under Mer › Inställningar › Notiser.</string>
     <string name="faq_picked_up_q">Jag kan inte trycka Hämtad i notisen</string>

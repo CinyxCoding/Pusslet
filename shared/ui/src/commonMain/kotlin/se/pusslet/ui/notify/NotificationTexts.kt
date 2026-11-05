@@ -90,6 +90,8 @@ import se.pusslet.ui.resources.notify_someone
 import se.pusslet.ui.resources.notify_stop
 import se.pusslet.ui.resources.notify_task_today
 import se.pusslet.ui.resources.notify_task_today_at
+import se.pusslet.ui.resources.notify_test_body
+import se.pusslet.ui.resources.notify_test_title
 import se.pusslet.ui.resources.notify_vab_body
 import se.pusslet.ui.resources.notify_vab_title
 import se.pusslet.ui.resources.notify_you_dropoff
@@ -185,6 +187,7 @@ class NotificationTexts(private val lookup: StringLookup = ComposeStrings) {
             str(Res.string.notify_shopping_added, p.by ?: str(Res.string.notify_someone), p.item),
             str(Res.string.notify_shopping_added_body),
         )
+        NotificationPayload.Test -> NotificationText(str(Res.string.notify_test_title), str(Res.string.notify_test_body))
     }
 
     /** "Kan du hämta Ella?" · "Sara frågar · 15:45" (push, ADR-042). */

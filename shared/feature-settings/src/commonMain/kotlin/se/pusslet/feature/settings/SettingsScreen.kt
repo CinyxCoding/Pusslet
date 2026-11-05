@@ -66,6 +66,7 @@ import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.Section
 import se.pusslet.ui.components.SelectionColors
 import se.pusslet.ui.components.SwitchRow
+import se.pusslet.ui.components.TestNotification
 import se.pusslet.ui.components.TimeField
 import se.pusslet.ui.components.ValueField
 import se.pusslet.ui.format.formatTime
@@ -366,6 +367,7 @@ fun SettingsRoute(
                     viewModel::setPickupWarnings,
                     supporting = stringResource(Res.string.settings_pickup_warnings_body),
                 )
+                TestNotification()
             }
             Section(stringResource(Res.string.settings_calendars)) {
                 if (onSubscriptions != null && state.canEditFamily) NavRow(stringResource(Res.string.subs_title), onClick = onSubscriptions)

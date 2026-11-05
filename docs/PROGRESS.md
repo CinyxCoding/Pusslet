@@ -287,7 +287,18 @@ skrivas om; butiksbilderna görs bäst när utseendet är klart inför det stän
   appåtkomst.
 - Kvar för ägaren: fylla i det inom hakparentes, låta någon läsa policyn och villkoren, och allt i SETUP.md 3.3.
 
+## Våg 1 ur byggplanen (2026-11-05, ADR-065)
+Från genomgången av HouseholdApp (`docs/BUILD_PLAN.md`).
+- [x] Vanliga sysslor: 28 sysslor i sju grupper att välja bland, från tomma listan, från Uppgifter och från en orörd Ny uppgift.
+  Det familjen redan har kan inte läggas till igen, och Ångra tar bort alla på en gång.
+- [x] Turas om följer sysslans egen upprepning, och varje syssla börjar ett steg längre fram.
+- [x] Skicka testnotis under Inställningar › Notiser och hos hjälparen, med vägen till telefonens inställningar när den stoppas.
+- [x] Guiden och vanliga frågor nämner båda.
+- Inte provat på en riktig telefon. Kvar i planen: våg 2 och 3.
+
 ## Kända begränsningar / buggar
+- `compose.waitUntil` kör inte huvudtråden under Robolectric. Ett villkor som väntar på en ViewModels arbete behöver
+  `compose.waitForIdle()` i sig (`ChoreCatalogScreenshotTest`). `waitUntilAtLeastOneExists` gör det av sig självt.
 - Ett textfält i en `AlertDialog` blir aldrig idle under Robolectric, inte ens Materials egen dialog utan vår kod
   (`AppNotIdleException`). Sådana dialoger går inte att testa i skärmdumpstesterna.
 - Hosting-emulatorn skickar inte egna rubriker på Windows, eftersom `glob-slasher` gör om snedstrecken i mönstren. Kontrollera

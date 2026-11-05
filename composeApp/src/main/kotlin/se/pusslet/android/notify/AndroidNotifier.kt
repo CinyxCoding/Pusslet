@@ -21,6 +21,7 @@ import se.pusslet.core.notify.NotificationPayload
 import se.pusslet.core.notify.PlannedNotification
 import se.pusslet.ui.notify.NotificationText
 import se.pusslet.ui.notify.NotificationTexts
+import kotlin.time.Instant
 
 /**
  * Shows a [PlannedNotification] (ADR-036): one channel per [NotificationKind], the texts from the string resources, and a
@@ -71,6 +72,18 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
             // The permission was taken back between the check and the post.
             log.w(e) { "Could not show a ${n.kind} notification" }
         }
+    }
+
+    /**
+     * "Skicka testnotis" (ADR-065): a notification now, on the channel most reminders come on. False when the phone stops it:
+     * notifications are off for the app or for that channel. A notification that is shown says nothing about the planned ones,
+     * which can still be held back by the phone's battery settings.
+     */
+    suspend fun showTest(now: Instant): Boolean {
+        val channel = manager.getNotificationChannelCompat(NotificationKind.Reminder.channelId)
+        if (!allowed() || channel?.importance == NotificationManagerCompat.IMPORTANCE_NONE) return false
+        show(PlannedNotification(TEST_KEY, now, NotificationKind.Reminder, NotificationPayload.Test))
+        return true
     }
 
     /** The channels with names in the app's language; creating them again only updates names and descriptions. */
@@ -144,5 +157,7 @@ internal class AndroidNotifier(private val context: Context, private val texts: 
 
         /** `NotificationTarget.encode()`. */
         const val EXTRA_TARGET = "se.pusslet.extra.NOTIFICATION_TARGET"
+
+        private const val TEST_KEY = "test"
     }
 }

@@ -25,6 +25,7 @@ import se.pusslet.data.session.FixedSessionProvider
 import se.pusslet.data.session.Session
 import se.pusslet.data.sync.DocumentStore
 import se.pusslet.data.sync.InMemorySyncLocalStore
+import se.pusslet.feature.tasks.catalog.ChoreCatalogViewModel
 import se.pusslet.feature.tasks.distribution.DistributionViewModel
 import se.pusslet.feature.tasks.editor.TaskEditorViewModel
 import kotlin.time.Clock
@@ -92,8 +93,11 @@ class TestWorld(
     val calendar = CalendarRepository(docs, FakeCacheDao(), prefs, NoDeviceCalendars, sessions)
     val tasks = TaskRepository(docs)
     val deleted = DeletedTasks()
+    val added = AddedChores()
 
-    fun list() = TasksViewModel(tasks, family, sessions, deleted, clock, zone)
+    fun list() = TasksViewModel(tasks, family, sessions, deleted, added, clock, zone)
+
+    fun catalog() = ChoreCatalogViewModel(tasks, family, sessions, added, clock, zone, ids)
 
     fun editor() = TaskEditorViewModel(tasks, family, sessions, deleted, clock, zone, ids)
 

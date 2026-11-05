@@ -89,6 +89,7 @@ import se.pusslet.ui.resources.action_delete
 import se.pusslet.ui.resources.action_discard
 import se.pusslet.ui.resources.action_save
 import se.pusslet.ui.resources.action_swap_week
+import se.pusslet.ui.resources.chores_open
 import se.pusslet.ui.resources.discard_changes_title
 import se.pusslet.ui.resources.event_note
 import se.pusslet.ui.resources.event_title_required
@@ -136,6 +137,8 @@ fun TaskEditorRoute(
     onDone: () -> Unit,
     /** Pictures kept with the note on this phone (filled in by the app shell, ADR-049). */
     attachments: @Composable () -> Unit = {},
+    /** "Välj vanliga sysslor" on an untouched new task (ADR-065). */
+    onOpenCatalog: () -> Unit = {},
     viewModel: TaskEditorViewModel = koinViewModel(),
 ) {
     LaunchedEffect(taskId) { viewModel.load(taskId) }
@@ -166,6 +169,7 @@ fun TaskEditorRoute(
             onEdit = viewModel::edit,
             onSave = viewModel::save,
             onDelete = viewModel::delete,
+            onOpenCatalog = onOpenCatalog,
         ),
         attachments = attachments,
     )
@@ -187,6 +191,7 @@ fun TaskEditorRoute(
 /** What the editor's controls do. The defaults do nothing, for previews and screenshot tests of the screen alone. */
 data class TaskEditorActions(
     val onBack: () -> Unit = {},
+    val onOpenCatalog: () -> Unit = {},
     val onTitle: (String) -> Unit = {},
     val onKind: (TaskKind) -> Unit = {},
     val onAssignee: (String?) -> Unit = {},
@@ -266,6 +271,11 @@ fun TaskEditorScreen(
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (state.isNew && !state.hasChanges) {
+                TextButton(onClick = actions.onOpenCatalog, modifier = Modifier.heightIn(min = Spacing.touchTarget)) {
+                    Text(stringResource(Res.string.chores_open))
+                }
+            }
             KindSwitch(d.kind, actions.onKind)
             WhoSection(state, d, preview, actions)
             WhenSection(d, state.today, actions)

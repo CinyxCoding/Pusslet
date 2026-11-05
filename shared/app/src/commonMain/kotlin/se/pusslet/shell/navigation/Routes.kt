@@ -102,6 +102,9 @@ sealed interface Route {
     /** "Så har vi delat": how tasks, chores and hand-offs were shared over the last four weeks (parents). */
     @Serializable data object TaskDistribution : Route
 
+    /** "Vanliga sysslor": pick chores instead of typing them (parents, ADR-065). */
+    @Serializable data object ChoreCatalog : Route
+
     /** "Visa guiden": the guide through the app, opened from Hjälp (ADR-062). */
     @Serializable data object Guide : Route
 

@@ -178,6 +178,11 @@ sealed interface NotificationPayload {
         override val target: NotificationTarget get() = NotificationTarget.Today
     }
 
+    /** "Skicka testnotis" (ADR-065): shown at once, never planned. */
+    data object Test : NotificationPayload {
+        override val target: NotificationTarget get() = NotificationTarget.Today
+    }
+
     /** Several notifications of one kind at nearly the same time, as one summary ("3 påminnelser"); see [Bundling]. */
     data class Bundle(val kind: NotificationKind, val items: List<PlannedNotification>) : NotificationPayload {
         override val target: NotificationTarget

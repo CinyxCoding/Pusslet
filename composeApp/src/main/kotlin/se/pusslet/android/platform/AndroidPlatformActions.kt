@@ -9,6 +9,7 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.os.CancellationSignal
+import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
@@ -30,11 +31,13 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingExcept
 import kotlinx.coroutines.launch
 import se.pusslet.android.BuildConfig
 import se.pusslet.android.attachments.AndroidAttachmentFiles
+import se.pusslet.android.notify.AndroidNotifier
 import se.pusslet.android.scanner.ScannerActivity
 import se.pusslet.ui.platform.AppPermission
 import se.pusslet.ui.platform.CoarseLocation
 import se.pusslet.ui.platform.PlatformActions
 import java.io.IOException
+import kotlin.time.Clock
 
 /**
  * Android side of [PlatformActions]. Must be created in `onCreate` (before the activity is started) because it
@@ -100,6 +103,19 @@ class AndroidPlatformActions(
             activity.startActivity(Intent(Intent.ACTION_DIAL, Uri.fromParts("tel", number, null)))
         } catch (e: ActivityNotFoundException) {
             log.w(e) { "No phone app (a tablet without calls)" }
+        }
+    }
+
+    override fun sendTestNotification(onResult: (Boolean) -> Unit) {
+        activity.lifecycleScope.launch { onResult(AndroidNotifier(activity.applicationContext).showTest(Clock.System.now())) }
+    }
+
+    override fun openNotificationSettings() {
+        val settings = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, activity.packageName)
+        try {
+            activity.startActivity(settings)
+        } catch (e: ActivityNotFoundException) {
+            log.w(e) { "No screen for the notification settings" }
         }
     }
 

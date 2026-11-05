@@ -50,6 +50,12 @@ interface PlatformActions {
 
     /** Opens the phone app with [number] filled in; the user presses call, so no permission is needed. */
     fun dial(number: String) = Unit
+
+    /** Shows a test notification now (ADR-065); false when the phone stops notifications from the app. */
+    fun sendTestNotification(onResult: (Boolean) -> Unit) = onResult(false)
+
+    /** Opens the phone's notification settings for this app. */
+    fun openNotificationSettings() = Unit
 }
 
 object NoopPlatformActions : PlatformActions {

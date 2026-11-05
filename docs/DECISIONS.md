@@ -838,3 +838,31 @@ var ensam i familjen med konto kunde inte flytta den alls. Ägaren bad om att de
 - Villkoren säger att appen är gratis. De måste ändras när betalning slås på (MONETIZATION.md).
 - Mejlet om nytt lösenord skickas på det språk som är valt i Firebase-konsolen, inte på appens språk.
 
+## ADR-065 – Vanliga sysslor och testnotis
+**Kontext:** Genomgången av HouseholdApp (`docs/BUILD_PLAN.md`) visade två små saker som saknades inför lanseringen. En ny
+familj fick skriva in sina sysslor en och en, och den som undrade om notiserna fungerar kunde inte prova det.
+
+**Beslut:**
+- **Vanliga sysslor** är 28 sysslor i sju grupper (`CatalogChore`). En vald syssla blir en vanlig `FamilyTask` med namnet
+  sparat som text, så en senare ändring i listan rör inte det familjen redan har. Texterna är våra egna: HouseholdApp har ingen
+  licens, så ingen kod eller text är kopierad.
+- **En egen skärm**, inte ett ark, eftersom listan är lång. Bara föräldrar når den och kan lägga till.
+- **Det familjen redan har** kan inte väljas igen, oavsett om det kom härifrån eller skrevs för hand. Jämförelsen gäller titeln,
+  utan hänsyn till stora bokstäver.
+- **Inga dagliga sysslor** i listan: varje daglig syssla skulle ge en notis varje dag. Listan har varje vecka, varannan vecka
+  och varje månad.
+- **Lördagar.** Allt börjar på kommande lördag, så att inget är försenat direkt. Sysslor med samma upprepning delar på lördagarna
+  i sin runda, så att fyra månadsvisa inte hamnar samma helg. En månadsvis syssla får en dag som finns i varje månad.
+- **Turas om** byter tur efter sysslans egen upprepning. Med en tur per vecka skulle en syssla varannan vecka gå till samma person
+  varje gång. Varje syssla börjar ett steg längre fram, så att en person inte får alla samma vecka.
+- **Skicka testnotis** visar en notis direkt på kanalen Påminnelser. Den har ingen egen kanal, som annars skulle ligga kvar i
+  telefonens inställningar. Stoppar telefonen notisen, för appen eller för kanalen, säger knappen det och öppnar telefonens
+  notisinställningar. Knappen finns också hos hjälparen, som är den som får "Är Ella hämtad?".
+
+**Konsekvens:**
+- Testnotisen visar att notiser kan visas, inte att planerade kommer i tid. De går via WorkManager, och telefonens
+  batteriinställningar kan hålla tillbaka dem. Vanliga frågor säger det.
+- Stör ej går inte att se från knappen, så texten efter en skickad notis nämner det.
+- Väljer en familj många sysslor kommer påminnelserna samlat på lördag morgon (`Bundling`), men första helgen kan ändå bli tung.
+- Båda delarna är bara provade i tester, inte på en riktig telefon.
+

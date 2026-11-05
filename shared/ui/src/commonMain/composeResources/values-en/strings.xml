@@ -1147,6 +1147,51 @@
 
     <string name="distribution_row_a11y">%1$s: %2$d</string>
 
+    <!-- Common chores (ADR-065) -->
+    <string name="chores_title">Common chores</string>
+    <string name="chores_open">Choose common chores</string>
+    <string name="chores_intro">Choose what you usually do. The chores start on Saturdays, and you can change each one later.</string>
+    <string name="chores_add_one">Add 1 chore</string>
+    <string name="chores_add_many">Add %1$d chores</string>
+    <string name="chores_added_one">%1$s added</string>
+    <string name="chores_added_many">%1$d chores added</string>
+    <string name="chores_exists">Already added</string>
+    <string name="chores_group_cleaning">Cleaning</string>
+    <string name="chores_group_kitchen">Kitchen</string>
+    <string name="chores_group_bathroom">Bathroom</string>
+    <string name="chores_group_laundry">Laundry</string>
+    <string name="chores_group_recycling">Trash and recycling</string>
+    <string name="chores_group_kids">Children</string>
+    <string name="chores_group_outdoors">Plants and garden</string>
+    <string name="chore_vacuum">Vacuum</string>
+    <string name="chore_mop_floors">Mop the floors</string>
+    <string name="chore_dust">Dust</string>
+    <string name="chore_change_sheets">Change the sheets</string>
+    <string name="chore_clean_stove">Clean the stove</string>
+    <string name="chore_clean_fridge">Clean the fridge</string>
+    <string name="chore_clean_oven">Clean the oven</string>
+    <string name="chore_clean_microwave">Clean the microwave</string>
+    <string name="chore_clean_dishwasher">Clean the dishwasher</string>
+    <string name="chore_descale_coffee_maker">Descale the coffee maker</string>
+    <string name="chore_clean_toilet">Clean the toilet</string>
+    <string name="chore_clean_shower">Clean the shower</string>
+    <string name="chore_change_towels">Change the towels</string>
+    <string name="chore_clean_floor_drain">Clean the floor drain</string>
+    <string name="chore_do_laundry">Do the laundry</string>
+    <string name="chore_fold_laundry">Fold the laundry</string>
+    <string name="chore_clean_washer">Clean the washing machine</string>
+    <string name="chore_take_out_trash">Take out the trash</string>
+    <string name="chore_recycle">Take things to recycling</string>
+    <string name="chore_return_deposits">Return bottles and cans</string>
+    <string name="chore_empty_backpacks">Empty the backpacks</string>
+    <string name="chore_wash_gym_clothes">Wash the gym clothes</string>
+    <string name="chore_check_spare_clothes">Check the spare clothes at preschool</string>
+    <string name="chore_sort_outgrown_clothes">Sort out clothes that are too small</string>
+    <string name="chore_water_plants">Water the plants</string>
+    <string name="chore_mow_lawn">Mow the lawn</string>
+    <string name="chore_pull_weeds">Pull weeds</string>
+    <string name="chore_sweep_balcony">Sweep the balcony</string>
+
     <!-- ICS subscriptions (Fas 3): Inställningar > Prenumerationer -->
     <string name="subs_title">Subscriptions</string>
     <string name="subs_add">New subscription</string>
@@ -1308,6 +1353,8 @@
     <string name="notify_evening_title">Evening check</string>
     <string name="notify_evening_body">Pack tonight: %1$s</string>
     <string name="notify_bundle_reminders">%1$d reminders</string>
+    <string name="notify_test_title">Test notification from Pusslet</string>
+    <string name="notify_test_body">This is what a reminder looks like.</string>
     <string name="notify_bundle_handoffs">%1$d drop-offs and pick-ups</string>
     <string name="notify_bundle_other">%1$d notifications</string>
 
@@ -1409,6 +1456,10 @@
     <string name="pickup_done_line">%1$s picked up %2$s · %3$s</string>
     <string name="settings_pickup_warnings">Warn if a pick-up isn't ticked off</string>
     <string name="settings_pickup_warnings_body">If nobody taps Picked up a quarter of an hour after the time</string>
+    <string name="settings_test_notification">Send test notification</string>
+    <string name="settings_test_notification_sent">The test notification is sent. Can't see it? Check Do Not Disturb on the phone.</string>
+    <string name="settings_test_notification_blocked">The phone is stopping notifications from Pusslet. Turn them on in the phone's settings.</string>
+    <string name="settings_test_notification_open">Open settings</string>
     <string name="notify_channel_pickups">Pick-ups</string>
     <string name="notify_channel_pickups_desc">When a child is picked up, and when nobody has ticked off a pick-up</string>
     <string name="notify_picked_up_title">%1$s is picked up</string>
@@ -1660,7 +1711,7 @@
     <string name="guide_two_homes_title">Two homes</string>
     <string name="guide_two_homes_body">Shared custody shows where the children are and when they switch. With The other home you share the children's schedule with the other home, and Shared costs keeps the tally.</string>
     <string name="guide_tasks_title">Tasks and chores</string>
-    <string name="guide_tasks_body">Things to do, and chores that rotate week by week. You can also see how you have shared them.</string>
+    <string name="guide_tasks_body">Things to do, and chores that rotate week by week. Start with Common chores, so you don't have to type everything in. You can also see how you have shared them.</string>
     <string name="guide_sick_title">Sick or off</string>
     <string name="guide_sick_body">Tap Sick today? on Today. Drop-off, pick-up and activities are called off, and the others are told. Plan the breaks day by day under Breaks and preschool hours.</string>
     <string name="guide_medicine_title">Medicine and fever</string>
@@ -1702,7 +1753,7 @@
     <string name="faq_device_calendar_q">My own calendar doesn't show</string>
     <string name="faq_device_calendar_a">Turn on Show my calendars under More › Settings › Calendars and give the app access to the calendar. Then choose which calendars to show. They only show on your phone.</string>
     <string name="faq_notifications_q">I don't get any notifications</string>
-    <string name="faq_notifications_a">Check that Pusslet may show notifications in the phone's settings. Each kind of notification can also be turned off there on its own. Notifications from the others, such as requests and Picked up, need you to be signed in and online.</string>
+    <string name="faq_notifications_a">Tap Send test notification in Settings. If it doesn't arrive, check that Pusslet may show notifications in the phone's settings. Each kind of notification can also be turned off there on its own. If the test arrives but the reminders don't, check the phone's battery settings for Pusslet. Notifications from the others, such as requests and Picked up, need you to be signed in and online.</string>
     <string name="faq_quiet_hours_q">Notifications only arrive in the morning</string>
     <string name="faq_quiet_hours_a">That is quiet hours. Reminders you gave a time yourself still arrive, but most other things wait until quiet hours are over. Change or turn them off under More › Settings › Notifications.</string>
     <string name="faq_picked_up_q">I can't tap Picked up in the notification</string>

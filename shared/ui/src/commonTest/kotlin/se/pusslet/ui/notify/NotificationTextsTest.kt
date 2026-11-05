@@ -38,6 +38,8 @@ class NotificationTextsTest {
         "notify_you_dropoff" to "Du lämnar %1\$s",
         "notify_you_pickup" to "Du hämtar %1\$s",
         "notify_stop" to "%1\$s %2\$s",
+        "notify_test_title" to "Testnotis från Pusslet",
+        "notify_test_body" to "Så här ser en påminnelse ut.",
         "notify_task_today" to "Att göra idag",
         "notify_task_today_at" to "Att göra idag %1\$s",
         "notify_brief_person_dropoff" to "%1\$s lämnar %2\$s",
@@ -130,6 +132,14 @@ class NotificationTextsTest {
         assertEquals("Du hämtar Ella 15:45 · Björkängsskolan", text.oneLine)
         val both = p.copy(kind = HandoffKind.DropOff, time = LocalTime(8, 5), children = listOf("Ella", "Simon"))
         assertEquals("Du lämnar Ella och Simon 08:05", texts.text(n(both, NotificationKind.HandoffSoon)).title)
+    }
+
+    @Test
+    fun theTestNotification() = runTest {
+        assertEquals(
+            NotificationText("Testnotis från Pusslet", "Så här ser en påminnelse ut."),
+            texts.text(n(NotificationPayload.Test)),
+        )
     }
 
     @Test

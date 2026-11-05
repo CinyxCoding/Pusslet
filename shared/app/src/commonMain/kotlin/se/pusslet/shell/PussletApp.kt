@@ -85,6 +85,7 @@ import se.pusslet.feature.shopping.StoreEditorRoute
 import se.pusslet.feature.shopping.StoreModeRoute
 import se.pusslet.feature.shopping.StoresRoute
 import se.pusslet.feature.tasks.TasksRoute
+import se.pusslet.feature.tasks.catalog.ChoreCatalogRoute
 import se.pusslet.feature.tasks.distribution.TaskDistributionRoute
 import se.pusslet.feature.tasks.editor.TaskEditorRoute
 import se.pusslet.feature.today.TodayLayoutRoute
@@ -404,12 +405,21 @@ private fun AppNavDisplay(
                     onBack = navigator::goBack,
                     onOpenTask = { navigator.navigate(Route.TaskEditor(it)) },
                     onOpenDistribution = { navigator.navigate(Route.TaskDistribution) },
+                    onOpenCatalog = { navigator.navigate(Route.ChoreCatalog) },
                 )
             }
+            entry<Route.ChoreCatalog> { ChoreCatalogRoute(onBack = navigator::goBack, onDone = navigator::goBack) }
             entry<Route.TaskEditor> { r ->
-                TaskEditorRoute(r.taskId, onDone = navigator::goBack, attachments = {
-                    r.taskId?.let { AttachmentsRoute(AttachmentOwner.Task, it) }
-                })
+                TaskEditorRoute(
+                    r.taskId,
+                    onDone = navigator::goBack,
+                    attachments = { r.taskId?.let { AttachmentsRoute(AttachmentOwner.Task, it) } },
+                    // The list instead of the empty form, so that adding returns to the list and not to the form.
+                    onOpenCatalog = {
+                        navigator.goBack()
+                        navigator.navigate(Route.ChoreCatalog)
+                    },
+                )
             }
             entry<Route.Medicine> { r -> MedicineRoute(r.childId, onBack = navigator::goBack) }
             entry<Route.Breaks> { r -> BreaksRoute(r.stays, onBack = navigator::goBack) }

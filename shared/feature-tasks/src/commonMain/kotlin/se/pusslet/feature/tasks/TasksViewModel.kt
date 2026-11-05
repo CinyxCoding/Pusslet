@@ -58,6 +58,8 @@ data class TasksUiState(
     val done: List<DoneRow> = emptyList(),
     /** The task the editor just deleted, for "… borttagen · Ångra". */
     val deleted: FamilyTask? = null,
+    /** The chores "Vanliga sysslor" just added, for "5 sysslor tillagda · Ångra" (ADR-065). */
+    val added: List<FamilyTask> = emptyList(),
 ) {
     val isEmpty: Boolean get() = !loading && mine.isEmpty() && unassigned.isEmpty() && family.isEmpty() && done.isEmpty()
 }
@@ -71,14 +73,16 @@ class TasksViewModel(
     family: FamilyRepository,
     private val sessions: SessionProvider,
     private val deletedTasks: DeletedTasks,
+    private val addedChores: AddedChores,
     private val clock: Clock,
     private val zone: TimeZone,
 ) : ViewModel() {
-    val state: StateFlow<TasksUiState> = combine(tasks.tasks, family.people, sessions.session, deletedTasks.last) {
+    val state: StateFlow<TasksUiState> = combine(tasks.tasks, family.people, sessions.session, deletedTasks.last, addedChores.last) {
         all,
         people,
         s,
         deleted,
+        added,
         ->
         val today = clock.todayIn(zone)
         val parent = s.role == Role.Parent
@@ -95,6 +99,7 @@ class TasksViewModel(
             family = (if (parent) board.others else board.unassigned + board.others).map(::row),
             done = board.done.map { d -> DoneRow(d, d.doneBy?.let(byId::get), d.date ?: d.doneAt?.toLocalDateTime(zone)?.date) },
             deleted = deleted.takeIf { parent },
+            added = if (parent) added else emptyList(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS), TasksUiState())
 
@@ -143,6 +148,14 @@ class TasksViewModel(
     }
 
     fun deletedShown(task: FamilyTask) = deletedTasks.clear(task)
+
+    /** "Ångra" on "5 sysslor tillagda": they go away again, all at once. */
+    fun removeAdded(added: List<FamilyTask>) {
+        addedChores.clear(added)
+        viewModelScope.launch { added.forEach { tasks.delete(it.id) } }
+    }
+
+    fun addedShown(added: List<FamilyTask>) = addedChores.clear(added)
 
     private companion object {
         const val STOP_TIMEOUT_MS = 5_000L

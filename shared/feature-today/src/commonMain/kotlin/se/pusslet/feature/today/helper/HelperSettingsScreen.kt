@@ -25,6 +25,7 @@ import se.pusslet.feature.today.TodayLayoutViewModel
 import se.pusslet.ui.components.LoadingBox
 import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
+import se.pusslet.ui.components.TestNotification
 import se.pusslet.ui.components.showUndo
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_undo
@@ -72,6 +73,7 @@ fun HelperSettingsScreen(onBack: () -> Unit, onOpen: (HelperSettingsDestination)
             NavRow(stringResource(Res.string.more_about_data), { onOpen(HelperSettingsDestination.AboutData) }, modifier = row)
             NavRow(stringResource(Res.string.help_guide), { onOpen(HelperSettingsDestination.Guide) }, modifier = row)
             NavRow(stringResource(Res.string.help_faq), { onOpen(HelperSettingsDestination.Faq) }, modifier = row)
+            TestNotification(Modifier.padding(top = Spacing.md))
         }
     }
 }

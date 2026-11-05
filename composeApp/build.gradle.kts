@@ -268,6 +268,7 @@ dependencies {
     // A feature's screen tested on its own, with its state given (MedicineScreenshotTest, RestoreScreenshotTest).
     testImplementation(projects.shared.featureToday)
     testImplementation(projects.shared.featureFamily)
+    testImplementation(projects.shared.featureTasks)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 

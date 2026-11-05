@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -65,6 +66,10 @@ import se.pusslet.ui.components.showUndo
 import se.pusslet.ui.resources.Res
 import se.pusslet.ui.resources.action_edit
 import se.pusslet.ui.resources.action_undo
+import se.pusslet.ui.resources.chores_added_many
+import se.pusslet.ui.resources.chores_added_one
+import se.pusslet.ui.resources.chores_open
+import se.pusslet.ui.resources.chores_title
 import se.pusslet.ui.resources.more_tasks
 import se.pusslet.ui.resources.state_collapsed
 import se.pusslet.ui.resources.state_expanded
@@ -95,6 +100,7 @@ fun TasksRoute(
     onBack: () -> Unit,
     onOpenTask: (taskId: String?) -> Unit,
     onOpenDistribution: () -> Unit,
+    onOpenCatalog: () -> Unit,
     viewModel: TasksViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -106,6 +112,14 @@ fun TasksRoute(
         if (deleted == null) return@LaunchedEffect
         val undo = snackbar.showUndo(getString(Res.string.tasks_deleted_receipt, deleted.title), getString(Res.string.action_undo))
         if (undo) viewModel.restoreDeleted(deleted) else viewModel.deletedShown(deleted)
+    }
+    // "5 sysslor tillagda · Ångra" when "Vanliga sysslor" added some and closed (ADR-065).
+    val added = state.added
+    LaunchedEffect(added) {
+        if (added.isEmpty()) return@LaunchedEffect
+        val message = added.singleOrNull()?.let { getString(Res.string.chores_added_one, it.title) }
+            ?: getString(Res.string.chores_added_many, added.size)
+        if (snackbar.showUndo(message, getString(Res.string.action_undo))) viewModel.removeAdded(added) else viewModel.addedShown(added)
     }
 
     fun receipt(title: String, done: Boolean, onUndo: () -> Unit) {
@@ -128,6 +142,7 @@ fun TasksRoute(
                 viewModel.reopen(row)?.let { undo -> receipt(row.done.task.title, done = false) { viewModel.undo(undo) } }
             },
             onOpenDistribution = onOpenDistribution,
+            onOpenCatalog = onOpenCatalog,
         ),
     )
 }
@@ -140,6 +155,7 @@ data class TasksActions(
     val onToggle: (TaskRow, Boolean) -> Unit = { _, _ -> },
     val onReopen: (DoneRow) -> Unit = {},
     val onOpenDistribution: () -> Unit = {},
+    val onOpenCatalog: () -> Unit = {},
 )
 
 @Composable
@@ -176,7 +192,7 @@ fun TasksScreen(
                 bottom = padding.calculateBottomPadding() + Spacing.listBottomInset,
             ),
         ) {
-            if (state.isEmpty) item(key = "empty") { EmptyState(message = stringResource(Res.string.tasks_empty)) }
+            if (state.isEmpty) item(key = "empty") { TasksEmpty(state.canEdit, actions.onOpenCatalog) }
             var first = true
 
             fun gap(): Modifier = if (first) Modifier.also { first = false } else Modifier.padding(top = Spacing.sectionGap)
@@ -217,10 +233,26 @@ fun TasksScreen(
             }
             if (state.canEdit) {
                 val m = gap()
-                item(key = "distribution") { NavRow(stringResource(Res.string.tasks_distribution), actions.onOpenDistribution, m) }
+                // On an empty list the button in the middle offers it already.
+                val offerCatalog = !state.isEmpty
+                if (offerCatalog) item(key = "catalog") { NavRow(stringResource(Res.string.chores_title), actions.onOpenCatalog, m) }
+                item(key = "distribution") {
+                    NavRow(stringResource(Res.string.tasks_distribution), actions.onOpenDistribution, if (offerCatalog) Modifier else m)
+                }
             }
         }
     }
+}
+
+/** The empty list, with the quickest way to fill it for those who can. */
+@Composable
+private fun TasksEmpty(canEdit: Boolean, onOpenCatalog: () -> Unit) {
+    val action: (@Composable () -> Unit)? = if (canEdit) {
+        { Button(onClick = onOpenCatalog) { Text(stringResource(Res.string.chores_open)) } }
+    } else {
+        null
+    }
+    EmptyState(message = stringResource(Res.string.tasks_empty), action = action)
 }
 
 private fun LazyListScope.taskRows(rows: List<TaskRow>, today: LocalDate, canEdit: Boolean, actions: TasksActions) {

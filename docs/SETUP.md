@@ -233,6 +233,7 @@ Play App Signing rekommenderas: Google håller appens signeringsnyckel och du si
 - [ ] Releasen provad på en riktig telefon: inloggning, glömt lösenord, hämta familjen på en ny telefon, gå med via
       inbjudan (även länken utan appen installerad), synk mellan två telefoner, push (förfrågan och svar), notiser i tysta
       timmar, kalenderexport, widgets.
+- [ ] Fortsätt med Google fungerar, även på en telefon utan Google-konto, där Google ska erbjuda att lägga till ett (ADR-066).
 - [ ] Testnotisen syns (Inställningar › Notiser), och utan tillstånd förklarar appen vad som stoppar den (ADR-065).
 - [ ] Påminnelser kommer i tid när telefonen ligger still, särskilt medicindoser och hämtningar. De går via WorkManager
       utan exakta alarm (ADR-036).

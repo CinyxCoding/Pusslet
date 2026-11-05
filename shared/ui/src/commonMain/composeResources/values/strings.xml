@@ -549,6 +549,7 @@
     <string name="account_error_email_in_use">Det finns redan ett konto med den e-posten.</string>
     <string name="account_error_weak_password">Lösenordet behöver minst 6 tecken.</string>
     <string name="account_error_network">Ingen kontakt med servern. Är du uppkopplad?</string>
+    <string name="account_error_google">Det gick inte att logga in med Google. Försök igen, eller logga in med e-post.</string>
     <string name="sync_title">Synk</string>
     <string name="sync_synced">Synkat %1$s</string>
     <string name="sync_pending">Ändringar väntar på att skickas: %1$d</string>

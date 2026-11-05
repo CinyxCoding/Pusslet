@@ -296,7 +296,14 @@ Från genomgången av HouseholdApp (`docs/BUILD_PLAN.md`).
 - [x] Guiden och vanliga frågor nämner båda.
 - Inte provat på en riktig telefon. Kvar i planen: våg 2 och 3.
 
+## Google-knappen (2026-11-05, ADR-066)
+- [x] Knappen använder Googles flöde för en inloggningsknapp, som också fungerar utan Google-konto på telefonen.
+- [x] Misslyckas inloggningen säger skärmen det. Att stänga Googles ruta säger ingenting, och ett tryck till öppnar ingen ny ruta.
+- Hela inloggningen är inte provad: det kräver ett riktigt Google-konto och att fingeravtrycket finns i Firebase.
+
 ## Kända begränsningar / buggar
+- `ShoppingListPerformanceTest` kan falla när datorn är hårt belastad, eftersom den mäter tiden för ett tryck. Kör om det innan du
+  letar efter ett fel.
 - `compose.waitUntil` kör inte huvudtråden under Robolectric. Ett villkor som väntar på en ViewModels arbete behöver
   `compose.waitForIdle()` i sig (`ChoreCatalogScreenshotTest`). `waitUntilAtLeastOneExists` gör det av sig självt.
 - Ett textfält i en `AlertDialog` blir aldrig idle under Robolectric, inte ens Materials egen dialog utan vår kod

@@ -548,6 +548,7 @@
     <string name="account_error_email_in_use">There is already an account with that email.</string>
     <string name="account_error_weak_password">The password needs at least 6 characters.</string>
     <string name="account_error_network">No contact with the server. Are you online?</string>
+    <string name="account_error_google">Could not sign in with Google. Try again, or sign in with email.</string>
     <string name="sync_title">Sync</string>
     <string name="sync_synced">Synced %1$s</string>
     <string name="sync_pending">Changes waiting to be sent: %1$d</string>

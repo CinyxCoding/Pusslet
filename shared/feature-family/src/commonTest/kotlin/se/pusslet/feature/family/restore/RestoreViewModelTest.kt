@@ -24,6 +24,7 @@ import se.pusslet.data.repository.Prefs
 import se.pusslet.data.session.Session
 import se.pusslet.data.usecase.AppGuide
 import se.pusslet.feature.family.TestWorld
+import se.pusslet.ui.platform.GoogleSignInResult
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -69,6 +70,9 @@ class RestoreViewModelTest {
         override suspend fun signOut() {
             user.value = null
         }
+
+        override suspend fun signInWithGoogle(idToken: String): AuthUser =
+            AuthUser("uid-anna", "anna@example.se", null, isAnonymous = false).also { user.value = it }
 
         val passwordResets = mutableListOf<String>()
 
@@ -167,6 +171,42 @@ class RestoreViewModelTest {
         // The screen opens again later: what was said about the last address no longer applies.
         phone.vm.start()
         assertEquals(PasswordResetState.Idle, phone.vm.passwordResetState.value)
+    }
+
+    @Test
+    fun aTokenFromGoogleSignsIn() = runTest {
+        val phone = Phone(Server(listOf(berg)))
+        phone.vm.start()
+
+        phone.vm.google(GoogleSignInResult.Token("token"))
+
+        assertEquals(RestoreStep.Found, phone.vm.state.value.step)
+    }
+
+    /** Before, a failure looked the same as closing Google's sign-in: the button seemed dead (ADR-066). */
+    @Test
+    fun aGoogleSignInThatFailsSaysSo() = runTest {
+        val phone = Phone(Server(listOf(berg)))
+        phone.vm.start()
+
+        phone.vm.google(GoogleSignInResult.Failed)
+
+        assertEquals(RestoreStep.SignIn, phone.vm.state.value.step)
+        assertEquals(AuthError.GoogleSignInFailed, phone.vm.state.value.error)
+        assertFalse(phone.vm.state.value.busy)
+    }
+
+    /** Closing it is the person's own choice, and also clears what the last try said. */
+    @Test
+    fun closingGoogleSaysNothing() = runTest {
+        val phone = Phone(Server(listOf(berg)))
+        phone.vm.start()
+        phone.vm.google(GoogleSignInResult.Failed)
+
+        phone.vm.google(GoogleSignInResult.Cancelled)
+
+        assertEquals(RestoreStep.SignIn, phone.vm.state.value.step)
+        assertNull(phone.vm.state.value.error)
     }
 
     @Test

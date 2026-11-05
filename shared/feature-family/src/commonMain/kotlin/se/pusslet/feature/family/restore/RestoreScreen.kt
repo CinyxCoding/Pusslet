@@ -61,6 +61,7 @@ import se.pusslet.ui.components.BannerKind
 import se.pusslet.ui.components.ForgotPassword
 import se.pusslet.ui.components.NavRow
 import se.pusslet.ui.components.PussletTopBar
+import se.pusslet.ui.platform.GoogleSignInResult
 import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
@@ -127,6 +128,15 @@ class RestoreViewModel(
     fun signIn(email: String, password: String) = signInWith { auth.signInWithEmail(email, password) }
 
     fun google(idToken: String) = signInWith { auth.signInWithGoogle(idToken) }
+
+    /** What Google's sign-in came back with (ADR-066): closing it says nothing, a failure says so. */
+    fun google(result: GoogleSignInResult) {
+        when (result) {
+            is GoogleSignInResult.Token -> google(result.idToken)
+            GoogleSignInResult.Cancelled -> _state.update { it.copy(error = null) }
+            GoogleSignInResult.Failed -> _state.update { it.copy(error = AuthError.GoogleSignInFailed) }
+        }
+    }
 
     /** "Försök igen" after no answer from the server. */
     fun retry() {
@@ -221,7 +231,7 @@ fun RestoreRoute(onBack: () -> Unit, viewModel: RestoreViewModel = koinViewModel
         RestoreActions(
             onBack = onBack,
             onSignIn = viewModel::signIn,
-            onGoogle = if (platform.googleSignInAvailable) ({ platform.googleSignIn { token -> token?.let(viewModel::google) } }) else null,
+            onGoogle = if (platform.googleSignInAvailable) ({ platform.googleSignIn(viewModel::google) }) else null,
             onChoose = viewModel::choose,
             onRetry = viewModel::retry,
             onOtherAccount = viewModel::otherAccount,
@@ -285,7 +295,9 @@ private fun SignInForm(state: RestoreUiState, actions: RestoreActions, passwordR
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
     )
-    state.error?.let { Banner(stringResource(errorText(it)), kind = BannerKind.Problem) }
+    state.error?.let {
+        Banner(stringResource(errorText(it)), Modifier.semantics { liveRegion = LiveRegionMode.Polite }, BannerKind.Problem)
+    }
     Button(
         onClick = { actions.onSignIn(email, password) },
         enabled = !state.busy && email.isNotBlank() && password.isNotBlank(),
@@ -329,5 +341,9 @@ private fun Found(state: RestoreUiState, actions: RestoreActions) {
 }
 
 /** Only signing in happens here, so a wrong password or no contact are the errors there are. */
-private fun errorText(e: AuthError): StringResource =
-    if (e == AuthError.InvalidCredentials) Res.string.account_error_credentials else Res.string.account_error_network
+private fun errorText(e: AuthError): StringResource = when (e) {
+    AuthError.InvalidCredentials -> Res.string.account_error_credentials
+    AuthError.GoogleSignInFailed -> Res.string.account_error_google
+    AuthError.EmailInUse, AuthError.WeakPassword, AuthError.Network, AuthError.Unavailable, AuthError.Unknown ->
+        Res.string.account_error_network
+}

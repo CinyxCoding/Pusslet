@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.stateIn
 
 data class AuthUser(val uid: String, val email: String?, val displayName: String?, val isAnonymous: Boolean)
 
-enum class AuthError { InvalidCredentials, EmailInUse, WeakPassword, Network, Unavailable, Unknown }
+enum class AuthError { InvalidCredentials, EmailInUse, WeakPassword, Network, Unavailable, GoogleSignInFailed, Unknown }
 
 class AuthException(val error: AuthError, cause: Throwable? = null) : Exception(error.name, cause)
 

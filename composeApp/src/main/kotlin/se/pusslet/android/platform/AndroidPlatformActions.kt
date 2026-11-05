@@ -22,10 +22,11 @@ import androidx.core.location.LocationManagerCompat
 import androidx.core.os.LocaleListCompat
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.lifecycleScope
 import co.touchlab.kermit.Logger
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import kotlinx.coroutines.launch
@@ -35,6 +36,7 @@ import se.pusslet.android.notify.AndroidNotifier
 import se.pusslet.android.scanner.ScannerActivity
 import se.pusslet.ui.platform.AppPermission
 import se.pusslet.ui.platform.CoarseLocation
+import se.pusslet.ui.platform.GoogleSignInResult
 import se.pusslet.ui.platform.PlatformActions
 import java.io.IOException
 import kotlin.time.Clock
@@ -55,6 +57,8 @@ class AndroidPlatformActions(
             pendingPermission?.invoke(result.isNotEmpty() && result.values.all { it })
             pendingPermission = null
         }
+
+    private var googleSignInRunning = false
 
     private var pendingScan: ((String?) -> Unit)? = null
     private val scanLauncher = activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -218,28 +222,34 @@ class AndroidPlatformActions(
 
     override val googleSignInAvailable: Boolean = BuildConfig.FIREBASE_WEB_CLIENT_ID.isNotBlank()
 
-    override fun googleSignIn(onResult: (String?) -> Unit) {
+    override fun googleSignIn(onResult: (GoogleSignInResult) -> Unit) {
         if (!googleSignInAvailable) {
-            onResult(null)
+            onResult(GoogleSignInResult.Failed)
             return
         }
-        val option = GetGoogleIdOption.Builder()
-            .setServerClientId(BuildConfig.FIREBASE_WEB_CLIENT_ID)
-            .setFilterByAuthorizedAccounts(false)
-            .build()
+        // Google's sign-in takes a moment to open: another tap meanwhile must not open a second one.
+        if (googleSignInRunning) return
+        googleSignInRunning = true
+        // The option for a sign-in button (ADR-066): it also works with no Google account on the phone, where it offers to add
+        // one, and with an account that has to sign in again. `GetGoogleIdOption` only answers NoCredentialException then.
+        val option = GetSignInWithGoogleOption.Builder(BuildConfig.FIREBASE_WEB_CLIENT_ID).build()
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
         activity.lifecycleScope.launch {
-            val token = try {
+            val result = try {
                 val response = CredentialManager.create(activity).getCredential(activity, request)
-                GoogleIdTokenCredential.createFrom(response.credential.data).idToken
+                GoogleSignInResult.Token(GoogleIdTokenCredential.createFrom(response.credential.data).idToken)
             } catch (e: GetCredentialException) {
-                log.i { "Google sign-in cancelled or unavailable (${e.type})" }
-                null
+                log.i { "Google sign-in ended (${e.type})" }
+                // Says what is wrong with a project's setup. Only in debug builds: it is Google's own free text.
+                if (BuildConfig.DEBUG) log.d { "Google sign-in: ${e.errorMessage}" }
+                googleSignInResultOf(e)
             } catch (e: GoogleIdTokenParsingException) {
                 log.w(e) { "Unexpected credential from Google sign-in" }
-                null
+                GoogleSignInResult.Failed
+            } finally {
+                googleSignInRunning = false
             }
-            onResult(token)
+            onResult(result)
         }
     }
 
@@ -263,3 +273,7 @@ class AndroidPlatformActions(
         val PHONE_NUMBER = Regex("""\+?\d+""")
     }
 }
+
+/** Closing Google's sign-in is the person's own choice; anything else is worth telling them. */
+internal fun googleSignInResultOf(e: GetCredentialException): GoogleSignInResult =
+    if (e is GetCredentialCancellationException) GoogleSignInResult.Cancelled else GoogleSignInResult.Failed

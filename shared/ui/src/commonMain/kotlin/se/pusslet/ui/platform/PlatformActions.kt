@@ -7,6 +7,17 @@ enum class AppPermission { Notifications, Calendar, Camera, CoarseLocation }
 
 data class CoarseLocation(val latitude: Double, val longitude: Double)
 
+/** What Google sign-in came back with. */
+sealed interface GoogleSignInResult {
+    data class Token(val idToken: String) : GoogleSignInResult
+
+    /** The person closed Google's sign-in: not an error, so nothing is said. */
+    data object Cancelled : GoogleSignInResult
+
+    /** It did not work. The screen says so, or the button would seem dead. */
+    data object Failed : GoogleSignInResult
+}
+
 /**
  * Things only the platform can do. Android implements this in MainActivity; previews and tests use [NoopPlatformActions].
  * Permissions are always requested in context, from the feature that needs them.
@@ -39,8 +50,8 @@ interface PlatformActions {
     /** True when Google sign-in is configured for this build (needs the owner's Firebase web client id). */
     val googleSignInAvailable: Boolean
 
-    /** Google sign-in via Credential Manager; returns an ID token or null. */
-    fun googleSignIn(onResult: (String?) -> Unit)
+    /** Google sign-in via Credential Manager. */
+    fun googleSignIn(onResult: (GoogleSignInResult) -> Unit)
 
     /** An attached picture from the app's private folder: a small [thumbnail] or the full picture. Null if it is gone. */
     fun loadImage(fileName: String, thumbnail: Boolean, onResult: (ImageBitmap?) -> Unit) = onResult(null)
@@ -81,7 +92,7 @@ object NoopPlatformActions : PlatformActions {
 
     override val googleSignInAvailable = false
 
-    override fun googleSignIn(onResult: (String?) -> Unit) = onResult(null)
+    override fun googleSignIn(onResult: (GoogleSignInResult) -> Unit) = onResult(GoogleSignInResult.Failed)
 }
 
 val LocalPlatformActions = staticCompositionLocalOf<PlatformActions> { NoopPlatformActions }

@@ -58,6 +58,8 @@ object TestEnvironment {
     /** Thursday 8 October 2026, 07:10 in Stockholm (week 41) – matches the recorded forecast. */
     val now: Instant = Instant.parse("2026-10-08T05:10:00Z")
 
+    private var lastDatabase: PussletDatabase? = null
+
     private object FixedClock : Clock {
         override fun now(): Instant = now
     }
@@ -68,6 +70,8 @@ object TestEnvironment {
      * (ADR-062).
      */
     fun start(context: Context, seed: Boolean = true, asBengt: Boolean = false, guide: Boolean = false) {
+        lastDatabase?.close()
+        lastDatabase = null
         if (GlobalContext.getOrNull() != null) stop()
         val config = BackendConfig(BackendMode.LocalOnly, seedDemoData = seed, versionName = "test")
         val platform = module {
@@ -111,7 +115,9 @@ object TestEnvironment {
     fun stop() {
         GlobalContext.getOrNull()?.let { koin ->
             koin.get<CoroutineScope>(AppScope).cancel()
-            koin.get<PussletDatabase>().close()
+            // Not closed yet: the compose rule ends after @After, so a view model can still start reading, and Room's
+            // "Database is closed" would then fail whichever test runs next. [start] closes it.
+            lastDatabase = koin.get<PussletDatabase>()
         }
         stopKoin()
     }

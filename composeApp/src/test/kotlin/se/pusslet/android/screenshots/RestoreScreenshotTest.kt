@@ -3,6 +3,7 @@ package se.pusslet.android.screenshots
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -19,6 +20,7 @@ import org.robolectric.annotation.Config
 import se.pusslet.core.account.PasswordResetState
 import se.pusslet.core.model.Role
 import se.pusslet.data.remote.AccountFamily
+import se.pusslet.data.remote.AuthError
 import se.pusslet.feature.family.restore.RestoreActions
 import se.pusslet.feature.family.restore.RestoreScreen
 import se.pusslet.feature.family.restore.RestoreStep
@@ -48,6 +50,17 @@ class RestoreScreenshotTest {
         compose.setContent { PussletTheme { RestoreScreen(RestoreUiState(), RestoreActions(onGoogle = {})) } }
         compose.onNodeWithText("Logga in med samma konto som på din förra telefon, så hämtas familjen hit.").assertExists()
         snap("restore_sign_in")
+    }
+
+    /** The button must not seem dead when Google's sign-in fails (ADR-066). */
+    @Test
+    fun aGoogleSignInThatFailedSaysSoAndTheFormStays() {
+        val state = RestoreUiState(error = AuthError.GoogleSignInFailed)
+        compose.setContent { PussletTheme { RestoreScreen(state, RestoreActions(onGoogle = {})) } }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Det gick inte att logga in med Google", substring = true).assertExists()
+        compose.onNodeWithText("Fortsätt med Google").assertIsEnabled()
     }
 
     /** "Glömt lösenordet?" uses the address in the form, and the receipt says nothing about who has an account (ADR-064). */

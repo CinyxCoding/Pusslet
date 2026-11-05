@@ -24,6 +24,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.ViewModel
@@ -59,6 +62,7 @@ import se.pusslet.ui.components.ForgotPassword
 import se.pusslet.ui.components.PussletTopBar
 import se.pusslet.ui.components.SectionCard
 import se.pusslet.ui.format.formatTime
+import se.pusslet.ui.platform.GoogleSignInResult
 import se.pusslet.ui.platform.LocalPlatformActions
 import se.pusslet.ui.resources.*
 import se.pusslet.ui.theme.Spacing
@@ -115,6 +119,15 @@ class AccountViewModel(
     fun create(email: String, password: String) = run { auth.createAccount(email, password) }
 
     fun google(idToken: String) = run { auth.signInWithGoogle(idToken) }
+
+    /** What Google's sign-in came back with (ADR-066): closing it says nothing, a failure says so. */
+    fun google(result: GoogleSignInResult) {
+        when (result) {
+            is GoogleSignInResult.Token -> google(result.idToken)
+            GoogleSignInResult.Cancelled -> error.value = null
+            GoogleSignInResult.Failed -> error.value = AuthError.GoogleSignInFailed
+        }
+    }
 
     /** "Logga ut" (ADR-059): with [forget] the family is also removed from this phone; the others keep everything. */
     fun signOut(forget: Boolean) = run {
@@ -175,7 +188,9 @@ fun AccountRoute(onBack: () -> Unit, viewModel: AccountViewModel = koinViewModel
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 )
-                state.error?.let { Banner(stringResource(errorText(it)), kind = BannerKind.Problem) }
+                state.error?.let {
+                    Banner(stringResource(errorText(it)), Modifier.semantics { liveRegion = LiveRegionMode.Polite }, BannerKind.Problem)
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     Button(
                         onClick = { viewModel.signIn(email, password) },
@@ -199,11 +214,10 @@ fun AccountRoute(onBack: () -> Unit, viewModel: AccountViewModel = koinViewModel
                     TextButton(onClick = { platform.openUrl(url) }) { Text(stringResource(Res.string.account_terms_note)) }
                 }
                 if (platform.googleSignInAvailable) {
-                    OutlinedButton(onClick = {
-                        platform.googleSignIn { token ->
-                            token?.let(viewModel::google)
-                        }
-                    }, modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget)) {
+                    OutlinedButton(
+                        onClick = { platform.googleSignIn(viewModel::google) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.primaryTouchTarget),
+                    ) {
                         Text(stringResource(Res.string.account_google))
                     }
                 }
@@ -295,5 +309,6 @@ private fun errorText(e: AuthError): StringResource = when (e) {
     AuthError.InvalidCredentials -> Res.string.account_error_credentials
     AuthError.EmailInUse -> Res.string.account_error_email_in_use
     AuthError.WeakPassword -> Res.string.account_error_weak_password
+    AuthError.GoogleSignInFailed -> Res.string.account_error_google
     AuthError.Network, AuthError.Unavailable, AuthError.Unknown -> Res.string.account_error_network
 }

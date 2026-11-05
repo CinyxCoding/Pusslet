@@ -64,7 +64,7 @@ det är provat på en riktig telefon än.
 - **Gräns:** testnotisen visar att notiser kan visas, inte att planerade kommer i tid, eftersom batteriinställningarna kan
   hålla tillbaka dem.
 
-> Utanför den här planen men före lanseringen: Google-knappen ger ingen reaktion när inloggningen misslyckas.
+> Utanför den här planen, men gjort före lanseringen: Google-knappen säger nu till när inloggningen misslyckas (ADR-066).
 
 ### Våg 2: första uppdateringen
 Bara lokal logik och nya fält, så det fungerar på Spark.

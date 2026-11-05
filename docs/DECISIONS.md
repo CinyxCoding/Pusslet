@@ -866,3 +866,20 @@ familj fick skriva in sina sysslor en och en, och den som undrade om notiserna f
 - Väljer en familj många sysslor kommer påminnelserna samlat på lördag morgon (`Bundling`), men första helgen kan ändå bli tung.
 - Båda delarna är bara provade i tester, inte på en riktig telefon.
 
+## ADR-066 – Google-knappen säger till när inloggningen inte går
+**Kontext:** Första provet mot ett riktigt Firebase-projekt gav `TYPE_NO_CREDENTIAL` fem gånger, och inget hände på skärmen. Emulatorn
+saknade Google-konto. Appen bad om `GetGoogleIdOption`, som Google anger för inloggningsrutan längst ned, och behandlade varje fel
+som att personen stängt rutan. Samma sak hade hänt en riktig användare utan konto, eller med ett konto som måste logga in igen.
+
+**Beslut:**
+- Knappen använder `GetSignInWithGoogleOption`, Googles val för en inloggningsknapp. Det kan enligt Google lägga till ett konto
+  på telefonen och når konton som måste logga in igen.
+- `googleSignIn` svarar med `GoogleSignInResult`: en token, avbrutet eller misslyckat. Avbrutet säger ingenting, och misslyckat
+  visar `AuthError.GoogleSignInFailed` på kontoskärmen och på Hämta din familj.
+- Ett tryck till medan Googles ruta öppnas gör ingenting.
+- Googles egen feltext loggas bara i debug-byggen. Den säger vad som är fel i ett projekts inställningar, men är fritext.
+
+**Konsekvens:**
+- En uppdatering till `credentials` eller `googleid` behöver prövas på en riktig telefon: testerna kör inte Googles inloggning.
+- Felet säger inte varför det misslyckades, eftersom det inte går att göra något åt de flesta orsakerna i appen. E-post finns kvar som väg in.
+

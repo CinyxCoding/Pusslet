@@ -114,7 +114,8 @@ varianten ska köra mot emulatorerna helt utan nycklar.
 API-nyckel, sändar-id, bucket och OAuth-webbklient (typ 3) i `BuildConfig`. `FirebaseSetup` initierar `FirebaseApp` manuellt.
 Saknas filen körs appen lokalt (`BackendMode.LocalOnly`); demo använder projektet `demo-pusslet` och emulatorerna.
 **Konsekvens:** Bygget fungerar på en ren maskin och i CI utan hemligheter. Crashlytics-pluginet (fas 4) behöver mappningsfilen
-via sin egen konfiguration.
+via sin egen konfiguration. Byggskriptet måste läsa filens text själv: configuration cachen ser bara det skriptet läser, och
+märkte annars inte en utbytt fil (rättat 2026-11-05).
 
 ## ADR-014 – Skanner: CameraX + ML Kit (gebundlad modell) i egen aktivitet
 **Kontext:** QR-koder för inbjudningar och EAN-koder i butiksläget. Googles Code Scanner kräver Play-tjänstmodulen och ger ingen

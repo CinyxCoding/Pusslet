@@ -47,7 +47,9 @@ val uploadKey: Map<String, String>? = run {
 fun firebaseOptions(flavor: String, packageName: String): Map<String, String> {
     val file = file("src/$flavor/google-services.json")
     if (!file.exists()) return emptyMap()
-    val json = JsonSlurper().parse(file) as Map<String, Any?>
+    // The text is read here and not by JsonSlurper: the configuration cache only sees what the build script reads itself, so a
+    // replaced file would otherwise keep its old values without a word.
+    val json = JsonSlurper().parseText(file.readText()) as Map<String, Any?>
     val project = json["project_info"] as Map<String, Any?>
     val clients = json["client"] as List<Map<String, Any?>>
 

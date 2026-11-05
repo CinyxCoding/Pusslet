@@ -301,6 +301,10 @@ Från genomgången av HouseholdApp (`docs/BUILD_PLAN.md`).
 - [x] Misslyckas inloggningen säger skärmen det. Att stänga Googles ruta säger ingenting, och ett tryck till öppnar ingen ny ruta.
 - Hela inloggningen är inte provad: det kräver ett riktigt Google-konto och att fingeravtrycket finns i Firebase.
 
+## Bygget och google-services.json (2026-11-05)
+- [x] En utbytt fil märks nu. Förut använde bygget de gamla värdena utan att säga något, eftersom configuration cachen inte såg
+  när filen lästes (ADR-013). Provat i det riktiga bygget med en påhittad `prod`-fil. CI täcker det inte, eftersom CI saknar filen.
+
 ## Kända begränsningar / buggar
 - `ShoppingListPerformanceTest` kan falla när datorn är hårt belastad, eftersom den mäter tiden för ett tryck. Kör om det innan du
   letar efter ett fel.
